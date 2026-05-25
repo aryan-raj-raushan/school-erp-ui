@@ -4,11 +4,15 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { SCHOOLS_PAGE } from '@/constants';
 import { useSchools } from '@/hooks/useSchools';
+import { useAuthStore } from '@/store/auth.store';
+import { Role } from '@/types';
 import { CreateSchoolModal } from '@/components/schools/CreateSchoolModal';
 import type { CreateSchoolPayload } from '@/services/schools.service';
 
 export default function SchoolsPage() {
   const { schools, pagination, isLoading, isCreating, createSchool } = useSchools();
+  const user = useAuthStore((s) => s.user);
+  const canCreate = user?.role === Role.SUPER_ADMIN;
   const [showModal, setShowModal] = useState(false);
 
   async function handleCreate(payload: CreateSchoolPayload) {
@@ -26,13 +30,15 @@ export default function SchoolsPage() {
             </h1>
             <p className="text-sm text-zinc-500 mt-0.5">{SCHOOLS_PAGE.description}</p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 px-4 py-2 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
-          >
-            <Plus size={16} />
-            {SCHOOLS_PAGE.addButton}
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 rounded-lg bg-zinc-900 dark:bg-zinc-50 px-4 py-2 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
+            >
+              <Plus size={16} />
+              {SCHOOLS_PAGE.addButton}
+            </button>
+          )}
         </div>
 
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
@@ -105,12 +111,14 @@ export default function SchoolsPage() {
         </div>
       </div>
 
-      <CreateSchoolModal
-        isOpen={showModal}
-        isSubmitting={isCreating}
-        onClose={() => setShowModal(false)}
-        onSubmit={handleCreate}
-      />
+      {canCreate && (
+        <CreateSchoolModal
+          isOpen={showModal}
+          isSubmitting={isCreating}
+          onClose={() => setShowModal(false)}
+          onSubmit={handleCreate}
+        />
+      )}
     </>
   );
 }
