@@ -1,23 +1,10 @@
-/**
- * services/schools.service.ts
- *
- * Domain-level wrapper for the Schools resource.
- * Demonstrates GET (list + single), POST, PATCH, DELETE usage.
- */
+import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
+import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
+import type { PaginationMeta } from '@/types/api-gateway.types';
+import type { School } from '@/types';
+import type { BoardType } from '@/constants';
 
-import { apiGateway } from '../api-gateway.instance';
-import type { PaginationMeta } from '../types';
-
-// ─── DTOs ──────────────────────────────────────────────────────────────────────
-
-export interface School {
-  id: string;
-  name: string;
-  code?: string;
-  address?: string;
-  created_at: string;
-  updated_at: string;
-}
+export type { School };
 
 export interface SchoolFilters {
   page?: number;
@@ -28,49 +15,47 @@ export interface SchoolFilters {
 
 export interface PaginatedSchools {
   items: School[];
-  meta: PaginationMeta;
+  pagination: PaginationMeta;
 }
 
 export interface CreateSchoolPayload {
   name: string;
   code?: string;
+  email?: string;
+  contact_number?: string;
+  dial_code?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  website?: string;
+  board_type?: BoardType;
 }
 
 export interface UpdateSchoolPayload extends Partial<CreateSchoolPayload> {}
 
-// ─── Service ──────────────────────────────────────────────────────────────────
-
 export const SchoolsService = {
-  /** GET /schools?page=1&limit=20&search= */
   async list(filters: SchoolFilters = {}): Promise<PaginatedSchools> {
-    const res = await apiGateway.get<School[]>('/schools', { params: filters });
-    return {
-      items: res.data,
-      meta: res.meta!,
-    };
+    const res = await apiGateway.get<School[]>(ENDPOINTS.schools.list, { params: filters });
+    return { items: res.data, pagination: res.pagination! };
   },
 
-  /** GET /schools/:id */
   async getById(id: string): Promise<School> {
-    const res = await apiGateway.get<School>(`/schools/${id}`);
+    const res = await apiGateway.get<School>(ENDPOINTS.schools.byId(id));
     return res.data;
   },
 
-  /** POST /schools */
   async create(payload: CreateSchoolPayload): Promise<School> {
-    const res = await apiGateway.post<School>('/schools', payload);
+    const res = await apiGateway.post<School>(ENDPOINTS.schools.list, payload);
     return res.data;
   },
 
-  /** PATCH /schools/:id */
   async update(id: string, payload: UpdateSchoolPayload): Promise<School> {
-    const res = await apiGateway.patch<School>(`/schools/${id}`, payload);
+    const res = await apiGateway.patch<School>(ENDPOINTS.schools.byId(id), payload);
     return res.data;
   },
 
-  /** DELETE /schools/:id */
   async remove(id: string): Promise<void> {
-    await apiGateway.delete(`/schools/${id}`);
+    await apiGateway.delete(ENDPOINTS.schools.byId(id));
   },
 };

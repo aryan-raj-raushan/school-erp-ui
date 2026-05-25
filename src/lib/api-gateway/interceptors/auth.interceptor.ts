@@ -1,22 +1,12 @@
-/**
- * interceptors/auth.interceptor.ts
- *
- * Axios interceptors that:
- *   1. Inject the Authorization header on every outbound request (unless skipAuth).
- *   2. Transparently refresh the access token on a 401 and retry the original request once.
- *   3. Queue concurrent 401 requests so only one refresh call is made.
- */
-
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { TokenStorage } from '../token.storage';
-import type { RefreshTokenFn } from '../types';
+import type { RefreshTokenFn } from '@/types/api-gateway.types';
 
 interface QueuedRequest {
   resolve: (token: string) => void;
   reject: (err: unknown) => void;
 }
 
-// Extend InternalAxiosRequestConfig to carry our custom flags
 declare module 'axios' {
   interface InternalAxiosRequestConfig {
     skipAuth?: boolean;
@@ -30,33 +20,25 @@ export function applyAuthInterceptors(
   onRefreshToken: RefreshTokenFn,
   onAuthFailure: () => void,
 ): void {
-  // ── REQUEST interceptor ──────────────────────────────────────────────────
   axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       if (config.skipAuth) return config;
-
       const token = TokenStorage.getAccessToken();
       if (token) {
         config.headers = config.headers ?? {};
         config.headers['Authorization'] = `Bearer ${token}`;
       }
-
       return config;
     },
     (error) => Promise.reject(error),
   );
 
-  // ── RESPONSE interceptor ─────────────────────────────────────────────────
   let isRefreshing = false;
   let failedQueue: QueuedRequest[] = [];
 
   function processQueue(error: unknown, token: string | null = null): void {
     failedQueue.forEach(({ resolve, reject }) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(token!);
-      }
+      error ? reject(error) : resolve(token!);
     });
     failedQueue = [];
   }
@@ -66,16 +48,12 @@ export function applyAuthInterceptors(
 
     async (error: AxiosError) => {
       const originalRequest = error.config as InternalAxiosRequestConfig;
-
       const is401 = error.response?.status === 401;
-      const alreadyRetried = originalRequest._retry;
-      const shouldSkipRefresh = originalRequest.skipRefresh;
 
-      if (!is401 || alreadyRetried || shouldSkipRefresh) {
+      if (!is401 || originalRequest._retry || originalRequest.skipRefresh) {
         return Promise.reject(error);
       }
 
-      // ── Queue concurrent requests while a refresh is in-flight ──────────
       if (isRefreshing) {
         return new Promise<AxiosResponse>((resolve, reject) => {
           failedQueue.push({
@@ -94,10 +72,8 @@ export function applyAuthInterceptors(
       try {
         const tokens = await onRefreshToken();
         TokenStorage.updateTokens(tokens);
-
         originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`;
         processQueue(null, tokens.accessToken);
-
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

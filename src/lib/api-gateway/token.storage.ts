@@ -1,14 +1,7 @@
-/**
- * token.storage.ts
- *
- * Centralised, type-safe wrapper around sessionStorage / localStorage for JWT
- * tokens. Mirrors the backend's AuthContext enum so keys stay consistent.
- */
+import { AuthContext } from '@/types';
+import { STORAGE_KEYS } from '@/constants';
 
-export enum AuthContext {
-  COMPANY = 'COMPANY',
-  SCHOOL = 'SCHOOL',
-}
+export { AuthContext };
 
 export interface TokenPair {
   accessToken: string;
@@ -21,48 +14,29 @@ export interface StoredSession {
   context: AuthContext;
 }
 
-// ─── key helpers ─────────────────────────────────────────────────────────────
-
-const ACCESS_KEY = 'auth:access_token';
-const REFRESH_KEY = 'auth:refresh_token';
-const CONTEXT_KEY = 'auth:context';
-
-// ─── public API ──────────────────────────────────────────────────────────────
-
 export const TokenStorage = {
-  /** Persist tokens after a successful login / refresh. */
   save(tokens: TokenPair, context: AuthContext): void {
     try {
-      localStorage.setItem(ACCESS_KEY, tokens.accessToken);
-      localStorage.setItem(REFRESH_KEY, tokens.refreshToken);
-      localStorage.setItem(CONTEXT_KEY, context);
+      localStorage.setItem(STORAGE_KEYS.accessToken, tokens.accessToken);
+      localStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refreshToken);
+      localStorage.setItem(STORAGE_KEYS.context, context);
     } catch {
-      // localStorage may be unavailable (SSR, private mode)
+      // localStorage unavailable in SSR / private mode
     }
   },
 
   getAccessToken(): string | null {
-    try {
-      return localStorage.getItem(ACCESS_KEY);
-    } catch {
-      return null;
-    }
+    try { return localStorage.getItem(STORAGE_KEYS.accessToken); } catch { return null; }
   },
 
   getRefreshToken(): string | null {
-    try {
-      return localStorage.getItem(REFRESH_KEY);
-    } catch {
-      return null;
-    }
+    try { return localStorage.getItem(STORAGE_KEYS.refreshToken); } catch { return null; }
   },
 
   getContext(): AuthContext | null {
     try {
-      return (localStorage.getItem(CONTEXT_KEY) as AuthContext) ?? null;
-    } catch {
-      return null;
-    }
+      return (localStorage.getItem(STORAGE_KEYS.context) as AuthContext) ?? null;
+    } catch { return null; }
   },
 
   getSession(): StoredSession | null {
@@ -73,34 +47,23 @@ export const TokenStorage = {
     return { accessToken, refreshToken, context };
   },
 
-  /** Update only the access token (e.g. after a silent refresh). */
   updateAccessToken(token: string): void {
-    try {
-      localStorage.setItem(ACCESS_KEY, token);
-    } catch {
-      // noop
-    }
+    try { localStorage.setItem(STORAGE_KEYS.accessToken, token); } catch { /* noop */ }
   },
 
-  /** Update both tokens (e.g. after a full refresh cycle). */
   updateTokens(tokens: TokenPair): void {
     try {
-      localStorage.setItem(ACCESS_KEY, tokens.accessToken);
-      localStorage.setItem(REFRESH_KEY, tokens.refreshToken);
-    } catch {
-      // noop
-    }
+      localStorage.setItem(STORAGE_KEYS.accessToken, tokens.accessToken);
+      localStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refreshToken);
+    } catch { /* noop */ }
   },
 
-  /** Remove all auth data on logout. */
   clear(): void {
     try {
-      localStorage.removeItem(ACCESS_KEY);
-      localStorage.removeItem(REFRESH_KEY);
-      localStorage.removeItem(CONTEXT_KEY);
-    } catch {
-      // noop
-    }
+      localStorage.removeItem(STORAGE_KEYS.accessToken);
+      localStorage.removeItem(STORAGE_KEYS.refreshToken);
+      localStorage.removeItem(STORAGE_KEYS.context);
+    } catch { /* noop */ }
   },
 
   isAuthenticated(): boolean {

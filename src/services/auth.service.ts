@@ -1,21 +1,14 @@
-/**
- * services/auth.service.ts
- *
- * Domain-level wrapper for all authentication endpoints.
- * Keeps API URLs in one place and maps raw responses to clean DTOs.
- */
-
-import { apiGateway } from "@/lib/api-gateway/api-gateway.instance"; 
-import { TokenStorage, AuthContext } from '@/lib/api-gateway/token.storage';
-
-// ─── Request / Response types (mirror backend DTOs) ──────────────────────────
+import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
+import { TokenStorage } from '@/lib/api-gateway/token.storage';
+import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
+import { AuthContext, type Role, type UserProfile } from '@/types';
 
 export interface RegisterCompanyPayload {
   first_name: string;
   last_name: string;
   email: string;
   password: string;
-  role?: string;
+  role?: Role;
 }
 
 export interface LoginCompanyPayload {
@@ -33,7 +26,7 @@ export interface AuthUser {
   id: string;
   email?: string;
   phone?: string;
-  role: string;
+  role: Role;
   context: AuthContext;
   schoolId?: string;
 }
@@ -44,66 +37,36 @@ export interface LoginResult {
   user: AuthUser;
 }
 
-export interface UserProfile {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  phone_number?: string;
-  role: string;
-  school_id?: string;
-  profile_image?: string;
-  created_at: string;
-}
-
-// ─── Service ──────────────────────────────────────────────────────────────────
+export type { UserProfile };
 
 export const AuthService = {
   async registerCompany(payload: RegisterCompanyPayload): Promise<AuthUser> {
-    const res = await apiGateway.post<AuthUser>('/auth/company/register', payload, {
-      skipAuth: true,
-    });
+    const res = await apiGateway.post<AuthUser>(ENDPOINTS.auth.companyRegister, payload, { skipAuth: true });
     return res.data;
   },
 
   async loginCompany(payload: LoginCompanyPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>('/auth/company/login', payload, {
-      skipAuth: true,
-    });
-
-    // Persist tokens immediately after a successful login
-    TokenStorage.save(
-      { accessToken: res.data.accessToken, refreshToken: res.data.refreshToken },
-      AuthContext.COMPANY,
-    );
-
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.companyLogin, payload, { skipAuth: true });
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.COMPANY);
     return res.data;
   },
 
   async loginSchool(payload: LoginSchoolPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>('/auth/school/login', payload, {
-      skipAuth: true,
-    });
-
-    TokenStorage.save(
-      { accessToken: res.data.accessToken, refreshToken: res.data.refreshToken },
-      AuthContext.SCHOOL,
-    );
-
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolLogin, payload, { skipAuth: true });
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
     return res.data;
   },
 
   async logout(): Promise<void> {
     try {
-      await apiGateway.post('/auth/logout', {});
+      await apiGateway.post(ENDPOINTS.auth.logout, {});
     } finally {
-      // Always clear local storage even if the server call fails
       TokenStorage.clear();
     }
   },
 
   async getMe(): Promise<UserProfile> {
-    const res = await apiGateway.get<UserProfile>('/auth/me');
+    const res = await apiGateway.get<UserProfile>(ENDPOINTS.auth.me);
     return res.data;
   },
 };
