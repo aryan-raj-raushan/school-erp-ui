@@ -1,3 +1,4 @@
+import { CookieUtils } from '@/lib/cookie.utils';
 import { AuthContext } from '@/types';
 import { STORAGE_KEYS } from '@/constants';
 
@@ -16,27 +17,21 @@ export interface StoredSession {
 
 export const TokenStorage = {
   save(tokens: TokenPair, context: AuthContext): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.accessToken, tokens.accessToken);
-      localStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refreshToken);
-      localStorage.setItem(STORAGE_KEYS.context, context);
-    } catch {
-      // localStorage unavailable in SSR / private mode
-    }
+    CookieUtils.set(STORAGE_KEYS.accessToken, tokens.accessToken);
+    CookieUtils.set(STORAGE_KEYS.refreshToken, tokens.refreshToken);
+    CookieUtils.set(STORAGE_KEYS.context, context);
   },
 
   getAccessToken(): string | null {
-    try { return localStorage.getItem(STORAGE_KEYS.accessToken); } catch { return null; }
+    return CookieUtils.get(STORAGE_KEYS.accessToken);
   },
 
   getRefreshToken(): string | null {
-    try { return localStorage.getItem(STORAGE_KEYS.refreshToken); } catch { return null; }
+    return CookieUtils.get(STORAGE_KEYS.refreshToken);
   },
 
   getContext(): AuthContext | null {
-    try {
-      return (localStorage.getItem(STORAGE_KEYS.context) as AuthContext) ?? null;
-    } catch { return null; }
+    return (CookieUtils.get(STORAGE_KEYS.context) as AuthContext) ?? null;
   },
 
   getSession(): StoredSession | null {
@@ -48,22 +43,18 @@ export const TokenStorage = {
   },
 
   updateAccessToken(token: string): void {
-    try { localStorage.setItem(STORAGE_KEYS.accessToken, token); } catch { /* noop */ }
+    CookieUtils.set(STORAGE_KEYS.accessToken, token);
   },
 
   updateTokens(tokens: TokenPair): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.accessToken, tokens.accessToken);
-      localStorage.setItem(STORAGE_KEYS.refreshToken, tokens.refreshToken);
-    } catch { /* noop */ }
+    CookieUtils.set(STORAGE_KEYS.accessToken, tokens.accessToken);
+    CookieUtils.set(STORAGE_KEYS.refreshToken, tokens.refreshToken);
   },
 
   clear(): void {
-    try {
-      localStorage.removeItem(STORAGE_KEYS.accessToken);
-      localStorage.removeItem(STORAGE_KEYS.refreshToken);
-      localStorage.removeItem(STORAGE_KEYS.context);
-    } catch { /* noop */ }
+    CookieUtils.delete(STORAGE_KEYS.accessToken);
+    CookieUtils.delete(STORAGE_KEYS.refreshToken);
+    CookieUtils.delete(STORAGE_KEYS.context);
   },
 
   isAuthenticated(): boolean {

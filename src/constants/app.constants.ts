@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   refreshToken: 'auth:refresh_token',
   context: 'auth:context',
   isAuthenticated: 'auth:is_authenticated',
+  user: 'auth:user',
 } as const;
 
 export const ROUTES = {
