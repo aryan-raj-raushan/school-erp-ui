@@ -1,12 +1,25 @@
-import { SCHOOL_DASHBOARD_PAGE } from '@/constants';
+import { Section } from "@/components/utils/Section";
+import { Title } from "@/components/utils/Title";
+import { Image } from "@/components/utils/Image";
 
-export default function SchoolDashboardPage() {
+const DashboardPage = () => {
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-        {SCHOOL_DASHBOARD_PAGE.title}
-      </h1>
-      <p className="text-sm text-zinc-500">{SCHOOL_DASHBOARD_PAGE.description}</p>
-    </div>
-  );
+    <Section.Col gap="lg" full>
+      <Section.Row justify="between" align="center" full>
+        <Title.H1>Analytics Overview</Title.H1>
+        {/* <Image.Avatar src="" alt="User avatar" width={40} height={40} /> */}
+      </Section.Row>
+
+      <Section.Grid cols={3} gap="md" responsive>
+        {[{label: "1", value: "One"},{label: "2", value: "Two"}, {label: "3", value: "Three"}].map(m => (
+          <div key={m.label}>
+            <Title.H3>{m.label}</Title.H3>
+            <Title.H2 color="primary">{m.value}</Title.H2>
+          </div>
+        ))}
+      </Section.Grid>
+    </Section.Col>
+  )
 }
+
+export default DashboardPage
