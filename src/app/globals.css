@@ -81,6 +81,30 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Colors — overridden per tenant */
+  --color-primary:          #3B82F6;
+  --color-secondary:        #10B981;
+  --color-text-primary:     #111827;
+  --color-text-secondary:   #6B7280;
+  --color-background:       #FFFFFF;
+  --color-danger:           #EF4444;
+
+  /* Typography — overridden per tenant */
+  --font-family-base:       'Inter', sans-serif;
+  --font-size-base:         16px;
+  --font-size-h1:           calc(var(--font-size-base) * 2.25);   /* 36px */
+  --font-size-h2:           calc(var(--font-size-base) * 1.875);  /* 30px */
+  --font-size-h3:           calc(var(--font-size-base) * 1.5);    /* 24px */
+  --font-size-h4:           calc(var(--font-size-base) * 1.25);   /* 20px */
+  --font-size-h5:           calc(var(--font-size-base) * 1.125);  /* 18px */
+  --font-size-h6:           var(--font-size-base);                /* 16px */
+
+  /* Spacing */
+  --border-radius:          8px;
+  --card-radius:            12px;
+  --border-radius-sm:       4px;
+  --spacing-unit:           6px;
 }
 
 .dark {
