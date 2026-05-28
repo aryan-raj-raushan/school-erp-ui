@@ -14,7 +14,14 @@ export const STORAGE_KEYS = {
 export const ROUTES = {
   root: '/',
   login: '/login',
+  // Super admin routes
   dashboard: '/dashboard',
   schools: '/dashboard/schools',
+  subscriptions: '/dashboard/subscriptions',
+  // School admin routes
   schoolDashboard: '/dashboard/school',
+  academicYears: '/dashboard/school/academic-years',
+  classes: '/dashboard/school/classes',
+  students: '/dashboard/school/students',
+  studentDetail: (id: string) => `/dashboard/school/students/${id}`,
 } as const;

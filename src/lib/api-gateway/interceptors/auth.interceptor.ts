@@ -1,6 +1,6 @@
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { TokenStorage } from '../token.storage';
-import type { RefreshTokenFn } from '@/types/api-gateway.types';
+import type { RefreshTokenFn } from '@/types';
 
 interface QueuedRequest {
   resolve: (token: string) => void;

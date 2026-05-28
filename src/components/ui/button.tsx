@@ -46,10 +46,16 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  loading = false,
+  fullWidth = false,
+  children,
+  disabled,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
+    asChild?: boolean;
+    loading?: boolean;
+    fullWidth?: boolean;
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
@@ -58,9 +64,17 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      disabled={disabled || loading}
+      className={cn(buttonVariants({ variant, size, className }), fullWidth && 'w-full')}
       {...props}
-    />
+    >
+      {loading ? (
+        <span className="flex items-center gap-2">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          {children}
+        </span>
+      ) : children}
+    </Comp>
   )
 }
 

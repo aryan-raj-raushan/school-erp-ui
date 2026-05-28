@@ -1,7 +1,6 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { PaginationMeta } from '@/types/api-gateway.types';
-import type { School } from '@/types';
+import type { PaginationMeta, School } from '@/types';
 import type { BoardType } from '@/constants';
 
 export type { School };

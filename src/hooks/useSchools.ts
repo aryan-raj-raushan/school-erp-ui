@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { SchoolsService, type SchoolFilters, type CreateSchoolPayload } from '@/services/schools.service';
-import type { PaginationMeta } from '@/types/api-gateway.types';
-import type { School } from '@/types';
+import type { PaginationMeta, School } from '@/types';
 
 export function useSchools(initialFilters: SchoolFilters = {}) {
   const [schools, setSchools] = useState<School[]>([]);

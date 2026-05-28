@@ -10,7 +10,7 @@ import type {
   GatewayResponse,
   RequestOptions,
   RefreshTokenFn,
-} from '@/types/api-gateway.types';
+} from '@/types';
 
 export class ApiGateway {
   private readonly http: AxiosInstance;

@@ -60,7 +60,3 @@ export const CREATE_SCHOOL_FORM = {
   cancel: 'Cancel',
 } as const;
 
-export const SCHOOL_DASHBOARD_PAGE = {
-  title: 'School Dashboard',
-  description: 'School portal coming soon.',
-} as const;

@@ -1,33 +1,91 @@
 'use client';
 
-import { useState } from 'react';
-import { AUTH_TABS } from '@/constants';
+import { AUTH_TABS, COMPANY_LOGIN_FORM, SCHOOL_LOGIN_FORM } from '@/constants';
 import { AuthLoginTab } from '@/types';
-import { CompanyLoginForm } from '@/components/auth/CompanyLoginForm';
-import { SchoolLoginForm } from '@/components/auth/SchoolLoginForm';
+import { useLoginPage } from '@/hooks/useLoginPage';
+import { Div, Label, ErrorText, Button, Input, Tabs, FormField } from '@/components/ui';
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<AuthLoginTab>(AuthLoginTab.COMPANY);
+  const { tab, setTab, companyForm, schoolForm, submitCompany, submitSchool, isLoading } = useLoginPage();
 
   return (
-    <div className="space-y-6">
-      <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-800 p-1">
-        {AUTH_TABS.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setTab(value)}
-            className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
-              tab === value
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <Div type="col" gap="lg">
+      <Tabs options={AUTH_TABS} value={tab} onChange={setTab} />
 
-      {tab === AuthLoginTab.COMPANY ? <CompanyLoginForm /> : <SchoolLoginForm />}
-    </div>
+      {tab === AuthLoginTab.COMPANY ? (
+        <form onSubmit={companyForm.handleSubmit(submitCompany)}>
+          <Div type="col" gap="md">
+            <FormField
+              label={COMPANY_LOGIN_FORM.labels.email}
+              htmlFor="email"
+              error={companyForm.formState.errors.email?.message}
+            >
+              <Input
+                id="email"
+                type="email"
+                placeholder={COMPANY_LOGIN_FORM.placeholders.email}
+                {...companyForm.register('email')}
+              />
+            </FormField>
+            <FormField
+              label={COMPANY_LOGIN_FORM.labels.password}
+              htmlFor="password"
+              error={companyForm.formState.errors.password?.message}
+            >
+              <Input
+                id="password"
+                type="password"
+                placeholder={COMPANY_LOGIN_FORM.placeholders.password}
+                {...companyForm.register('password')}
+              />
+            </FormField>
+            <Button type="submit" loading={isLoading} fullWidth>
+              {COMPANY_LOGIN_FORM.submit.idle}
+            </Button>
+          </Div>
+        </form>
+      ) : (
+        <form onSubmit={schoolForm.handleSubmit(submitSchool)}>
+          <Div type="col" gap="md">
+            <Div type="col" gap="xs">
+              <Label>{SCHOOL_LOGIN_FORM.labels.phone}</Label>
+              <Div type="row" gap="sm">
+                <Input
+                  width="xs"
+                  placeholder={SCHOOL_LOGIN_FORM.placeholders.dialCode}
+                  {...schoolForm.register('dial_code')}
+                />
+                <Input
+                  type="tel"
+                  placeholder={SCHOOL_LOGIN_FORM.placeholders.phone}
+                  {...schoolForm.register('phone_number')}
+                />
+              </Div>
+              {(schoolForm.formState.errors.dial_code || schoolForm.formState.errors.phone_number) && (
+                <ErrorText>
+                  {schoolForm.formState.errors.dial_code?.message ??
+                    schoolForm.formState.errors.phone_number?.message}
+                </ErrorText>
+              )}
+            </Div>
+            <FormField
+              label={SCHOOL_LOGIN_FORM.labels.password}
+              htmlFor="school-password"
+              error={schoolForm.formState.errors.password?.message}
+            >
+              <Input
+                id="school-password"
+                type="password"
+                placeholder={SCHOOL_LOGIN_FORM.placeholders.password}
+                {...schoolForm.register('password')}
+              />
+            </FormField>
+            <Button type="submit" loading={isLoading} fullWidth>
+              {SCHOOL_LOGIN_FORM.submit.idle}
+            </Button>
+          </Div>
+        </form>
+      )}
+    </Div>
   );
 }
