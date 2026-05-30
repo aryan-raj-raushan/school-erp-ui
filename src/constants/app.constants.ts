@@ -16,12 +16,12 @@ export const ROUTES = {
   login: '/login',
   // Super admin routes
   dashboard: '/dashboard',
-  schools: '/dashboard/schools',
-  subscriptions: '/dashboard/subscriptions',
+  schools: '/schools',
+  subscriptions: '/subscriptions',
   // School admin routes
-  schoolDashboard: '/dashboard/school',
-  academicYears: '/dashboard/school/academic-years',
-  classes: '/dashboard/school/classes',
-  students: '/dashboard/school/students',
-  studentDetail: (id: string) => `/dashboard/school/students/${id}`,
+  schoolDashboard: '/school',
+  academicYears: '/school/academic-years',
+  classes: '/school/classes',
+  students: '/school/students',
+  studentDetail: (id: string) => `/school/students/${id}`,
 } as const;

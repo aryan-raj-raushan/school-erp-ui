@@ -1,31 +1,60 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { LogOut, Building2, LayoutDashboard, CreditCard, CalendarDays, BookOpen, Users } from 'lucide-react';
-import { ROUTES, APP, NAV_LABELS } from '@/constants';
-import { TokenStorage } from '@/lib/api-gateway/token.storage';
-import { useDashboardLayout } from '@/hooks/useDashboardLayout';
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
-  DashboardShell, DashboardMain,
-  Sidebar, SidebarHeader, SidebarBrand, SidebarToggle, SidebarFooter, SidebarUserInfo,
-  Nav, NavItem, NavButton,
+  LogOut,
+  Building2,
+  LayoutDashboard,
+  CreditCard,
+  CalendarDays,
+  BookOpen,
+  Users,
+} from "lucide-react";
+import { ROUTES, APP, NAV_LABELS } from "@/constants";
+import { TokenStorage } from "@/lib/api-gateway/token.storage";
+import { useDashboardLayout } from "@/hooks/useDashboardLayout";
+import {
+  DashboardShell,
+  DashboardMain,
+  Sidebar,
+  SidebarHeader,
+  SidebarBrand,
+  SidebarToggle,
+  SidebarFooter,
+  SidebarUserInfo,
+  Nav,
+  NavItem,
+  NavButton,
   ThemeToggle,
-  H3, P,
-} from '@/components/ui';
+  H3,
+  P,
+} from "@/components/ui";
 
 const NAV_ICONS = {
   dashboard: <LayoutDashboard size={18} />,
   schools: <Building2 size={18} />,
   subscriptions: <CreditCard size={18} />,
-  'academic-years': <CalendarDays size={18} />,
+  "academic-years": <CalendarDays size={18} />,
   classes: <BookOpen size={18} />,
   students: <Users size={18} />,
 };
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
-  const { user, pathname, navItems, logout, isLoading, isCollapsed, toggleSidebar } = useDashboardLayout();
+  const {
+    user,
+    pathname,
+    navItems,
+    logout,
+    isLoading,
+    isCollapsed,
+    toggleSidebar,
+  } = useDashboardLayout();
 
   useEffect(() => {
     if (!TokenStorage.isAuthenticated()) {
@@ -58,7 +87,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarFooter>
           <ThemeToggle collapsed={isCollapsed} />
           <SidebarUserInfo collapsed={isCollapsed}>
-            <H3 color="default">{user?.first_name} {user?.last_name}</H3>
+            <H3 color="default">
+              {user?.first_name} {user?.last_name}
+            </H3>
             <P color="muted">{user?.role}</P>
           </SidebarUserInfo>
           <NavButton
