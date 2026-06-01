@@ -1,54 +1,38 @@
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { AuthLoginTab } from '@/types';
-import {
-  companyLoginSchema,
-  schoolLoginSchema,
-  type CompanyLoginFormValues,
-  type SchoolLoginFormValues,
-} from '@/lib/validations/auth.validation';
+import { REGEX } from '@/constants';
+import { unifiedLoginSchema, type UnifiedLoginFormValues } from '@/lib/validations/auth.validation';
 import { useAuth } from './useAuth';
 
 export function useLoginPage() {
-  const [tab, setTab] = useState<AuthLoginTab>(AuthLoginTab.COMPANY);
-  const { loginCompany, loginSchool, isLoading, error } = useAuth();
+  const { loginCompany, loginSchool, isLoading } = useAuth();
 
-  const companyForm = useForm<CompanyLoginFormValues>({
-    resolver: zodResolver(companyLoginSchema),
+  const form = useForm<UnifiedLoginFormValues>({
+    resolver: zodResolver(unifiedLoginSchema),
+    defaultValues: { identifier: '', dial_code: '+91', password: '' },
   });
 
-  const schoolForm = useForm<SchoolLoginFormValues>({
-    resolver: zodResolver(schoolLoginSchema),
-  });
+  const identifier = form.watch('identifier');
+  const isPhone = REGEX.phone.test(identifier.trim()) && !REGEX.email.test(identifier.trim());
 
-  async function submitCompany(values: CompanyLoginFormValues) {
+  async function onSubmit(values: UnifiedLoginFormValues) {
     try {
-      await loginCompany(values);
+      if (REGEX.email.test(values.identifier.trim())) {
+        await loginCompany({ email: values.identifier.trim().toLowerCase(), password: values.password });
+      } else {
+        await loginSchool({
+          phone_number: values.identifier.trim(),
+          dial_code: values.dial_code ?? '+91',
+          password: values.password,
+        });
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Login failed');
     }
   }
 
-  async function submitSchool(values: SchoolLoginFormValues) {
-    try {
-      await loginSchool(values);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Login failed');
-    }
-  }
-
-  return {
-    tab,
-    setTab,
-    companyForm,
-    schoolForm,
-    submitCompany,
-    submitSchool,
-    isLoading,
-    error,
-  };
+  return { form, onSubmit, isLoading, isPhone };
 }
