@@ -60,4 +60,5 @@ export const TokenStorage = {
   isAuthenticated(): boolean {
     return Boolean(TokenStorage.getAccessToken());
   },
+  
 };
