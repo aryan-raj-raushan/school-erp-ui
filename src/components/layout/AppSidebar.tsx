@@ -16,14 +16,18 @@ import { NavSecondary } from "./NavSecondary";
 import {
   APP_NAV_MAIN,
   APP_NAV_SECONDARY,
-  APP_NAV_USER,
 } from "@/constants/layout/app-sidebar.constants";
-import { useAuthStore } from "@/store/auth.store";
 import { APP } from "@/constants";
 import { H1 } from "../ui";
+import { useDashboardLayout } from "@/hooks";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const user = useAuthStore((s) => s.user);
+  const {
+    user,
+    userInfo,
+    logout,
+    isLoading,
+  } = useDashboardLayout();
 
   const VISIBLE_NAV_MAIN = APP_NAV_MAIN.filter(
     (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
@@ -53,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={VISIBLE_NAV_SECONDARY} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser userInfo={userInfo} logout={logout} isLoading={isLoading}/>
       </SidebarFooter>
     </Sidebar>
   );
