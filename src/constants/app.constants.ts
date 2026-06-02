@@ -22,6 +22,8 @@ export const ROUTES = {
   schoolDashboard: '/school',
   academicYears: '/school/academic-years',
   classes: '/school/classes',
-  students: '/school/students',
-  studentDetail: (id: string) => `/school/students/${id}`,
+  students: '/students',
+  studentDetail: (id: string) => `/students/${id}`,
+  staffs: '/staffs',
+  parents: '/parents',
 } as const;

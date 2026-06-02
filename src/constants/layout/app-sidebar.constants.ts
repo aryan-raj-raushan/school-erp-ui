@@ -8,6 +8,9 @@ import {
   CalendarDays,
   Building2,
   CircleDollarSign,
+  GraduationCap,
+  LayoutDashboard,
+  BookOpen,
 } from "lucide-react";
 import { Role } from "@/types";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -18,126 +21,101 @@ export const APP_NAV_USER = {
   avatar: "/avatars/shadcn.jpg",
 };
 
+const SCHOOL_ROLES = [Role.SCHOOL_ADMIN];
+const SUPER_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
+
 export const APP_NAV_MAIN: NavItemConfig[] = [
+  // ── Super Admin ──────────────────────────────────────────────────────────────
   {
-    title: "Team Management",
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    roles: SUPER_ROLES,
+  },
+
+  // ── School Admin ─────────────────────────────────────────────────────────────
+  {
+    title: "Dashboard",
+    url: "/school",
+    icon: LayoutDashboard,
+    roles: SCHOOL_ROLES,
+  },
+  {
+    title: "School Setup",
+    url: "#",
+    icon: GraduationCap,
+    roles: SCHOOL_ROLES,
+    items: [
+      { title: "Academic Years", url: "/school/academic-years" },
+      { title: "Classes & Sections", url: "/school/classes" },
+    ],
+  },
+  {
+    title: "People",
     url: "#",
     icon: Users,
+    roles: SCHOOL_ROLES,
     items: [
-      {
-        title: "Students",
-        url: "/students",
-      },
-      {
-        title: "Staffs",
-        url: "/staffs",
-      },
-      {
-        title: "Parents",
-        url: "/parents",
-      },
+      { title: "Students", url: "/students" },
+      { title: "Staff", url: "/staffs" },
+      { title: "Parents", url: "/parents" },
     ],
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   },
   {
     title: "Attendance",
     url: "#",
     icon: ClipboardCheck,
+    roles: SCHOOL_ROLES,
     items: [
-      {
-        title: "Students Attendance",
-        url: "/attendance/students",
-      },
-      {
-        title: "Students Attendance Report",
-        url: "/attendance/report/students",
-      },
-      {
-        title: "Staffs Attendance",
-        url: "/attendance/staffs",
-      },
-      {
-        title: "Staffs Attendance Report",
-        url: "/attendance/report/staffs",
-      },
+      { title: "Mark Attendance", url: "/attendance/students" },
+      { title: "Attendance Reports", url: "/attendance/report/students" },
     ],
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   },
   {
     title: "Finance",
     url: "#",
     icon: Wallet,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
+    roles: SCHOOL_ROLES,
     items: [
-      {
-        title: "Finance Types",
-        url: "/finance/types",
-      },
-      {
-        title: "Finance Generation",
-        url: "/finance/generate",
-      },
-      {
-        title: "Finance Receipts",
-        url: "/finance/receipts",
-      },
+      { title: "Fee Types", url: "/finance/types" },
+      { title: "Generate Fee", url: "/finance/generate" },
+      { title: "Receipts", url: "/finance/receipts" },
     ],
   },
   {
     title: "Examinations",
     url: "#",
-    icon: FileText,
+    icon: BookOpen,
+    roles: SCHOOL_ROLES,
     items: [
-      {
-        title: "Exam Setup",
-        url: "/exams/master-data",
-      },
-      {
-        title: "Exam Rules",
-        url: "/exams/policy",
-      },
-      {
-        title: "Eligibile Students",
-        url: "/exams/eligible-students",
-      },
-      {
-        title: "Exam Schedule",
-        url: "/exams/timetable",
-      },
-      {
-        title: "Rooms Allocation",
-        url: "/exams/rooms",
-      },
-      {
-        title: "Seat Allocation",
-        url: "/exams/seating-arrangement",
-      },
-      {
-        title: "Hall Tickets",
-        url: "/exams/admit-cards",
-      },
+      { title: "Exam Setup", url: "/exams/master-data" },
+      { title: "Exam Schedule", url: "/exams/timetable" },
+      { title: "Hall Tickets", url: "/exams/admit-cards" },
     ],
   },
   {
     title: "Leave",
-    url: "/leave",
+    url: "#",
     icon: CalendarDays,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
-
+    roles: SCHOOL_ROLES,
     items: [
-      {
-        title: "Leave Policy",
-        url: "/leave/policy",
-      },
-      {
-        title: "Leave Provision",
-        url: "/leave/provision",
-      },
-      {
-        title: "Leave Management",
-        url: "/leave",
-      },
+      { title: "Leave Policy", url: "/leave/policy" },
+      { title: "Leave Management", url: "/leave" },
     ],
+  },
+
+  // ── Shared ────────────────────────────────────────────────────────────────────
+  {
+    title: "Schools",
+    url: "/schools",
+    icon: Building2,
+    roles: SUPER_ROLES,
+  },
+  {
+    title: "Subscriptions",
+    url: "/subscriptions",
+    icon: CircleDollarSign,
+    roles: SUPER_ROLES,
   },
 ];
 
@@ -147,19 +125,6 @@ export const APP_NAV_SECONDARY: NavItemConfig[] = [
     url: "#",
     icon: Settings,
   },
-  {
-    title: "Schools",
-    url: "/schools",
-    icon: Building2,
-    roles: [Role.SUPER_ADMIN]
-  },
-  {
-    title: "Subscription",
-    url: "/subscriptions",
-    icon: CircleDollarSign,
-    roles: [Role.SUPER_ADMIN]
-  },
-
   {
     title: "Get Help",
     url: "/help",

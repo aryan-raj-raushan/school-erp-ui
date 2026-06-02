@@ -176,6 +176,281 @@ export interface Parent {
   created_at: string;
 }
 
+// ─── Staff ────────────────────────────────────────────────────────────────────
+
+export type StaffStatus = 'ACTIVE' | 'INACTIVE' | 'OFFBOARDED';
+export type StaffRole = 'TEACHER' | 'ACCOUNTANT' | 'LIBRARIAN' | 'COUNSELOR' | 'COORDINATOR' | 'PRINCIPAL' | 'VICE_PRINCIPAL' | 'ADMIN_STAFF' | 'OTHER';
+
+export interface Staff {
+  id: string;
+  school_id: string;
+  user_id?: string | null;
+  first_name: string;
+  last_name?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  dial_code?: string;
+  employee_id?: string | null;
+  designation?: string | null;
+  department?: string | null;
+  staff_role?: StaffRole | null;
+  date_of_joining?: string | null;
+  date_of_birth?: string | null;
+  gender?: Gender | null;
+  status: StaffStatus;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// ─── Standalone Parent ────────────────────────────────────────────────────────
+
+export interface SchoolParent {
+  id: string;
+  school_id: string;
+  user_id?: string | null;
+  first_name: string;
+  last_name?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  dial_code?: string;
+  occupation?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// ─── Bulk Import ──────────────────────────────────────────────────────────────
+
+export type BulkImportStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export interface BulkImportJob {
+  jobId: string;
+  status: BulkImportStatus;
+  total?: number;
+  processed?: number;
+  failed?: number;
+  errors?: string[];
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXCUSED' | 'HOLIDAY';
+
+export interface AttendanceRecord {
+  id: string;
+  student_id: string;
+  school_id: string;
+  class_section_id?: string | null;
+  date: string;
+  status: AttendanceStatus;
+  remarks?: string | null;
+  marked_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface MarkAttendanceEntry {
+  student_id: string;
+  status: AttendanceStatus;
+  remarks?: string;
+}
+
+export interface MarkAttendancePayload {
+  date: string;
+  academic_year_id: string;
+  class_section_id: string;
+  entries: MarkAttendanceEntry[];
+}
+
+export interface DailyAttendanceReport {
+  date: string;
+  class_section_id?: string;
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+  half_day?: number;
+  excused?: number;
+  records: AttendanceRecord[];
+}
+
+export interface MonthlyAttendanceSummary {
+  student_id: string;
+  student_name?: string;
+  total_days: number;
+  present: number;
+  absent: number;
+  late: number;
+  half_day?: number;
+  percentage: number;
+}
+
+export interface AttendanceSummary {
+  student_id: string;
+  total_days: number;
+  present: number;
+  absent: number;
+  late: number;
+  half_day?: number;
+  percentage: number;
+  monthly?: {
+    month: number;
+    year: number;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  }[];
+}
+
+export interface AttendanceDefaulter {
+  student_id: string;
+  student_name?: string;
+  admission_number?: string;
+  class_name?: string;
+  section_name?: string;
+  percentage: number;
+  total_days: number;
+  present: number;
+  absent: number;
+}
+
+export interface AttendanceExportJob {
+  jobId: string;
+  status: string;
+}
+
+// ─── Student Document ─────────────────────────────────────────────────────────
+
+export type DocumentType = 'BIRTH_CERTIFICATE' | 'TRANSFER_CERTIFICATE' | 'MARKSHEET' | 'ID_PROOF' | 'ADDRESS_PROOF' | 'MEDICAL_RECORD' | 'OTHER';
+
+export interface StudentDocument {
+  id: string;
+  student_id: string;
+  document_type: DocumentType;
+  file_name: string;
+  file_url: string;
+  file_size?: number | null;
+  mime_type?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// ─── Exam ─────────────────────────────────────────────────────────────────────
+
+export interface Exam {
+  id: string;
+  school_id: string;
+  academic_year_id: string;
+  name: string;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface ExamPolicy {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  name: string;
+  passing_marks?: number | null;
+  total_marks?: number | null;
+  marking_system?: 'MARKS' | 'GRADES' | 'PERCENTAGE' | null;
+  grace_marks?: number | null;
+  created_at: string;
+}
+
+export interface ExamTimetableEntry {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  class_section_id: string;
+  subject_id: string;
+  date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  room_number?: string | null;
+  created_at: string;
+}
+
+export interface ExamStudent {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  student_id: string;
+  roll_number?: string | null;
+  is_eligible: boolean;
+  created_at: string;
+}
+
+export interface ExamRoom {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  room_name: string;
+  capacity: number;
+  created_at: string;
+}
+
+export interface ExamSeat {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  exam_room_id: string;
+  student_id: string;
+  seat_number: string;
+  date: string;
+  created_at: string;
+}
+
+export interface AdmitCard {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  student_id: string;
+  admit_card_number?: string | null;
+  is_issued: boolean;
+  issued_at?: string | null;
+  created_at: string;
+}
+
+export interface ExamMarkEntry {
+  student_id: string;
+  marks_obtained?: number;
+  is_absent?: boolean;
+  grade?: string;
+}
+
+export interface ExamMark {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  student_id: string;
+  subject_id: string;
+  class_section_id: string;
+  marks_obtained?: number | null;
+  total_marks: number;
+  is_absent: boolean;
+  grade?: string | null;
+  entered_by?: string | null;
+  created_at: string;
+}
+
+export interface TeacherRemark {
+  id: string;
+  school_id: string;
+  exam_id: string;
+  student_id: string;
+  remark: string;
+  entered_by?: string | null;
+  created_at: string;
+}
+
 // ─── Subscription ─────────────────────────────────────────────────────────────
 
 export type SubscriptionStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'CANCELLED' | 'EXPIRED';

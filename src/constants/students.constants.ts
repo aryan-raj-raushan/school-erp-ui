@@ -56,6 +56,7 @@ export const STUDENTS_PAGE = {
     section: 'Section',
     gender: 'Gender',
     status: 'Status',
+    actions: 'Actions',
   },
   empty: 'No students found.',
   form: {
@@ -76,6 +77,11 @@ export const STUDENTS_PAGE = {
     cancel: 'Cancel',
     title: 'Add Student',
   },
+  editForm: {
+    title: 'Edit Student',
+    submit: 'Save Changes',
+    cancel: 'Cancel',
+  },
   placeholders: {
     firstName: 'John',
     lastName: 'Doe',
@@ -87,6 +93,16 @@ export const STUDENTS_PAGE = {
   },
 } as const;
 
+export const DOCUMENT_TYPE_OPTIONS = [
+  { value: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
+  { value: 'TRANSFER_CERTIFICATE', label: 'Transfer Certificate' },
+  { value: 'MARKSHEET', label: 'Marksheet' },
+  { value: 'ID_PROOF', label: 'ID Proof' },
+  { value: 'ADDRESS_PROOF', label: 'Address Proof' },
+  { value: 'MEDICAL_RECORD', label: 'Medical Record' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
+
 export const STUDENT_DETAIL_PAGE = {
   back: 'Back',
   sections: {
@@ -94,6 +110,7 @@ export const STUDENT_DETAIL_PAGE = {
     academic: 'Academic Info',
     contact: 'Contact Info',
     parents: 'Parents / Guardians',
+    documents: 'Documents',
   },
   labels: {
     fullName: 'Full Name',
@@ -119,9 +136,17 @@ export const STUDENT_DETAIL_PAGE = {
     canPickup: 'Can Pickup',
     actions: 'Actions',
   },
+  documentsTable: {
+    fileName: 'File Name',
+    type: 'Type',
+    actions: 'Actions',
+  },
   addParent: 'Add Parent',
   removeParent: 'Remove',
+  editParent: 'Edit',
   empty: 'No parents/guardians added.',
+  documentsEmpty: 'No documents uploaded.',
+  addDocument: 'Upload Document',
   parentForm: {
     title: 'Add Parent / Guardian',
     firstName: 'First Name *',
@@ -134,6 +159,18 @@ export const STUDENT_DETAIL_PAGE = {
     isPrimary: 'Primary contact',
     canPickup: 'Can pickup student',
     submit: 'Add Parent',
+    cancel: 'Cancel',
+  },
+  editParentForm: {
+    title: 'Edit Parent / Guardian',
+    submit: 'Save Changes',
+    cancel: 'Cancel',
+  },
+  documentForm: {
+    title: 'Upload Document',
+    type: 'Document Type *',
+    file: 'File *',
+    submit: 'Upload',
     cancel: 'Cancel',
   },
   placeholders: {
