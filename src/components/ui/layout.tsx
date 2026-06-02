@@ -50,6 +50,7 @@ interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
   full?: boolean;
   responsive?: boolean;
   wrap?: boolean;
+  padding?:string
 }
 
 export function Div({
@@ -61,6 +62,7 @@ export function Div({
   full,
   responsive,
   wrap,
+  padding,
   className,
   children,
   ...props
@@ -81,6 +83,7 @@ export function Div({
     gap && gapMap[gap],
     full && 'w-full',
     wrap && 'flex-wrap',
+    padding,
     className,
   );
 

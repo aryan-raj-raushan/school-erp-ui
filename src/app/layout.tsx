@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import './globals.css';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geist.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full font-[family-name:var(--font-geist)]">
         <ThemeProvider>
-          {children}
+          <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
         <Toaster position="top-right" richColors />
       </body>
