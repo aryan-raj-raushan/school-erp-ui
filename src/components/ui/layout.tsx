@@ -5,6 +5,8 @@ type JustifyValue = 'start' | 'end' | 'center' | 'between' | 'around' | 'evenly'
 type AlignValue = 'start' | 'end' | 'center' | 'stretch' | 'baseline';
 type GapValue = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type ColsValue = 1 | 2 | 3 | 4 | 6 | 12;
+type DivVariant = 'card' | 'card-dashed' | 'inset' | 'preview';
+type DivColor = 'default' | 'green' | 'red' | 'yellow';
 
 const justifyMap: Record<JustifyValue, string> = {
   start: 'justify-start',
@@ -41,6 +43,20 @@ const colsMap: Record<ColsValue, string> = {
   12: 'grid-cols-12',
 };
 
+const variantMap: Record<DivVariant, string> = {
+  card: 'rounded-xl border border-border bg-card',
+  'card-dashed': 'rounded-xl border border-dashed border-border p-8 text-center',
+  inset: 'rounded-lg bg-muted/40 px-3 py-2',
+  preview: 'overflow-auto max-h-[70vh] rounded border border-border bg-white p-4',
+};
+
+const colorMap: Record<DivColor, string> = {
+  default: 'rounded-lg border border-border bg-card px-4 py-2 text-center',
+  green: 'rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 px-4 py-2 text-center',
+  red: 'rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 px-4 py-2 text-center',
+  yellow: 'rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 px-4 py-2 text-center',
+};
+
 interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
   type?: 'row' | 'col' | 'grid';
   justify?: JustifyValue;
@@ -50,6 +66,20 @@ interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
   full?: boolean;
   responsive?: boolean;
   wrap?: boolean;
+  padding?: string;
+  /** Card / inset / preview surface variant */
+  variant?: DivVariant;
+  /** Colored stat-box variant (sets border + bg + center) */
+  color?: DivColor;
+  /** cursor-pointer + hover:bg-muted/50 + transition */
+  interactive?: boolean;
+  /** border-primary bg-primary/5 when true (use with interactive) */
+  selected?: boolean;
+  /** text-center */
+  center?: boolean;
+  /** flex-1 */
+  grow?: boolean;
+  boxCard?: boolean
 }
 
 export function Div({
@@ -61,6 +91,14 @@ export function Div({
   full,
   responsive,
   wrap,
+  padding,
+  variant,
+  color,
+  interactive,
+  selected,
+  center,
+  grow,
+  boxCard,
   className,
   children,
   ...props
@@ -81,6 +119,18 @@ export function Div({
     gap && gapMap[gap],
     full && 'w-full',
     wrap && 'flex-wrap',
+    grow && 'flex-1',
+    center && 'text-center',
+    // color stat-box takes full styling
+    color && colorMap[color],
+    // variant card/inset/preview — padding is separate via padding prop
+    variant && variantMap[variant],
+    // interactive selectable card
+    interactive && 'cursor-pointer transition-colors',
+    interactive && !selected && 'hover:bg-muted/50',
+    selected && 'border-primary bg-primary/5',
+    boxCard && 'group rounded-xl border border-border bg-card p-5 hover:bg-muted/40 hover:border-border/80 transition-all',
+    padding,
     className,
   );
 

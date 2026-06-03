@@ -590,7 +590,7 @@ export default function DashboardPage() {
     <Div
       type="col"
       gap="lg"
-      className="min-h-screen bg-background px-6 py-8 max-w-screen-6xl mx-auto"
+      className="min-h-screen bg-background px-6 py-8 max-w-screen-7xl mx-auto"
     >
       {/* Header */}
       <Div type="row" justify="between" align="center">

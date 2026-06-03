@@ -1,6 +1,6 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { Class, Section, PaginationMeta } from '@/types';
+import type { Class, Section, Subject, PaginationMeta } from '@/types';
 
 export interface ClassFilters {
   page?: number;
@@ -56,6 +56,11 @@ export const ClassesService = {
 
   async remove(id: string): Promise<void> {
     await apiGateway.delete(ENDPOINTS.classes.byId(id));
+  },
+
+  async listSubjects(class_id: string): Promise<Subject[]> {
+    const res = await apiGateway.get<Subject[]>(ENDPOINTS.subjects.list, { params: { class_id } });
+    return res.data;
   },
 };
 
