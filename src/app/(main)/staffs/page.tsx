@@ -30,6 +30,7 @@ import {
   FormField,
   Badge,
   Spinner,
+  FileInput,
 } from "@/components/ui";
 
 export default function StaffsPage() {
@@ -511,11 +512,10 @@ export default function StaffsPage() {
           <ModalBody>
             <Div type="col" gap="md">
               <FormField label={STAFF_PAGE.bulkImportForm.file}>
-                <input
+                <FileInput
                   ref={bulkFileRef}
                   type="file"
                   accept=".xlsx,.xls,.csv"
-                  className="text-sm text-foreground"
                 />
               </FormField>
               {bulkJob && (

@@ -23,6 +23,7 @@ import {
   FormField,
   Badge,
   Spinner,
+  FileInput,
 } from "@/components/ui";
 
 export default function ParentsPage() {
@@ -365,11 +366,10 @@ export default function ParentsPage() {
           <ModalBody>
             <Div type="col" gap="md">
               <FormField label={PARENTS_PAGE.bulkImportForm.file}>
-                <input
+                <FileInput
                   ref={bulkFileRef}
                   type="file"
                   accept=".xlsx,.xls,.csv"
-                  className="text-sm text-foreground"
                 />
               </FormField>
               {bulkJob && (

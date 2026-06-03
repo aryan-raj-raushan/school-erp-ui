@@ -21,6 +21,9 @@ import {
   Spinner,
   Modal,
   FormField,
+  MiniStat,
+  FilterLabel,
+  Icon,
 } from "@/components/ui";
 import { Trash2, Pencil, ChevronRight, Plus } from "lucide-react";
 
@@ -62,19 +65,19 @@ export default function ExamMasterDataPage() {
       <Div type="row" justify="between" align="center">
         <H1>{EXAMS_PAGE.title}</H1>
         <Button onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4 mr-1" />
+          <Icon icon={Plus} type="btn-icon" />
           {EXAMS_PAGE.addButton}
         </Button>
       </Div>
 
       {/* Academic Year filter */}
-      <Div className="rounded-xl border border-border bg-card p-4">
+      <Div variant="card" padding="p-4">
         <Div type="row" gap="md" align="center">
-          <P className="text-sm font-medium text-muted-foreground min-w-max">Academic Year</P>
+          <FilterLabel noWrap>Academic Year</FilterLabel>
           <Select
             value={selectedAcademicYearId}
             onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-            className="max-w-xs"
+            width="md"
           >
             <option value="">Select year</option>
             {years.map((y) => (
@@ -91,32 +94,29 @@ export default function ExamMasterDataPage() {
         {/* Left: exam list */}
         <Div type="col" gap="sm">
           {isLoading ? (
-            <Div type="col" align="center" className="py-8"><Spinner /></Div>
+            <Div type="col" align="center" padding="py-8"><Spinner /></Div>
           ) : exams.length === 0 ? (
-            <Div className="rounded-xl border border-dashed border-border p-8 text-center">
-              <P className="text-muted-foreground">{EXAMS_PAGE.empty}</P>
+            <Div variant="card-dashed">
+              <P>{EXAMS_PAGE.empty}</P>
             </Div>
           ) : (
             exams.map((exam) => (
               <Div
                 key={exam.id}
+                variant="card"
+                padding="p-4"
+                interactive
+                selected={selectedExamId === exam.id}
                 onClick={() => handleSelectExam(exam.id)}
-                className={`rounded-xl border p-4 cursor-pointer transition-colors ${
-                  selectedExamId === exam.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-card hover:bg-muted/50"
-                }`}
               >
                 <Div type="row" justify="between" align="center">
                   <Div type="col" gap="xs">
-                    <P className="font-medium">{exam.name}</P>
+                    <P color="default" weight="medium">{exam.name}</P>
                     {(exam.start_date || exam.end_date) && (
-                      <P className="text-xs text-muted-foreground">
-                        {exam.start_date ?? "—"} → {exam.end_date ?? "—"}
-                      </P>
+                      <P size="xs">{exam.start_date ?? "—"} → {exam.end_date ?? "—"}</P>
                     )}
                     {exam.description && (
-                      <P className="text-xs text-muted-foreground">{exam.description}</P>
+                      <P size="xs">{exam.description}</P>
                     )}
                   </Div>
                   <Div type="row" gap="xs" align="center">
@@ -125,16 +125,16 @@ export default function ExamMasterDataPage() {
                       variant="ghost"
                       onClick={(e) => { e.stopPropagation(); openEditModal(exam); }}
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Icon icon={Pencil} type="sm" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={(e) => { e.stopPropagation(); handleDelete(exam.id); }}
                     >
-                      <Trash2 className="h-3 w-3 text-destructive" />
+                      <Icon icon={Trash2} type="sm-danger" />
                     </Button>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <Icon icon={ChevronRight} type="muted" />
                   </Div>
                 </Div>
               </Div>
@@ -145,39 +145,30 @@ export default function ExamMasterDataPage() {
         {/* Right: exam detail */}
         {selectedExam && (
           <Div type="col" gap="md">
-            {/* Summary badges */}
+            {/* Summary */}
             <Div type="row" gap="sm">
-              <Div className="rounded-lg border border-border bg-card px-4 py-2 text-center">
-                <P className="text-xs text-muted-foreground">Students</P>
-                <H2>{examStudents.length}</H2>
-              </Div>
-              <Div className="rounded-lg border border-border bg-card px-4 py-2 text-center">
-                <P className="text-xs text-muted-foreground">Policies</P>
-                <H2>{policies.length}</H2>
-              </Div>
-              <Div className="rounded-lg border border-border bg-card px-4 py-2 text-center">
-                <P className="text-xs text-muted-foreground">Rooms</P>
-                <H2>{rooms.length}</H2>
-              </Div>
+              <MiniStat label="Students" value={examStudents.length} />
+              <MiniStat label="Policies" value={policies.length} />
+              <MiniStat label="Rooms" value={rooms.length} />
             </Div>
 
             {/* Policy section */}
-            <Div className="rounded-xl border border-border bg-card p-4">
-              <Div type="row" justify="between" align="center" className="mb-3">
-                <P className="font-medium">{EXAMS_PAGE.policy.title}</P>
+            <Div variant="card" padding="p-4">
+              <Div type="row" justify="between" align="center" padding="mb-3">
+                <P color="default" weight="medium">{EXAMS_PAGE.policy.title}</P>
                 <Button size="sm" variant="outline" onClick={() => setShowPolicyModal(true)}>
-                  <Plus className="h-3 w-3 mr-1" />{EXAMS_PAGE.policy.addButton}
+                  <Icon icon={Plus} type="sm-inline" />{EXAMS_PAGE.policy.addButton}
                 </Button>
               </Div>
               {policies.length === 0 ? (
-                <P className="text-sm text-muted-foreground">{EXAMS_PAGE.policy.empty}</P>
+                <P>{EXAMS_PAGE.policy.empty}</P>
               ) : (
                 <Div type="col" gap="xs">
                   {policies.map((p) => (
-                    <Div key={p.id} type="row" justify="between" align="center" className="rounded-lg bg-muted/40 px-3 py-2">
+                    <Div key={p.id} variant="inset" type="row" justify="between" align="center">
                       <Div type="col" gap="xs">
-                        <P className="text-sm font-medium">{p.name}</P>
-                        <P className="text-xs text-muted-foreground">
+                        <P color="default" weight="medium">{p.name}</P>
+                        <P size="xs">
                           {p.total_marks != null && `Total: ${p.total_marks}`}
                           {p.passing_marks != null && ` · Pass: ${p.passing_marks}`}
                           {p.marking_system && ` · ${p.marking_system}`}
@@ -185,7 +176,7 @@ export default function ExamMasterDataPage() {
                         </P>
                       </Div>
                       <Button size="sm" variant="ghost" onClick={() => handleDeletePolicy(p.id)}>
-                        <Trash2 className="h-3 w-3 text-destructive" />
+                        <Icon icon={Trash2} type="sm-danger" />
                       </Button>
                     </Div>
                   ))}
@@ -194,15 +185,15 @@ export default function ExamMasterDataPage() {
             </Div>
 
             {/* Rooms section */}
-            <Div className="rounded-xl border border-border bg-card p-4">
-              <Div type="row" justify="between" align="center" className="mb-3">
-                <P className="font-medium">{EXAMS_PAGE.rooms.title}</P>
+            <Div variant="card" padding="p-4">
+              <Div type="row" justify="between" align="center" padding="mb-3">
+                <P color="default" weight="medium">{EXAMS_PAGE.rooms.title}</P>
                 <Button size="sm" variant="outline" onClick={() => setShowRoomModal(true)}>
-                  <Plus className="h-3 w-3 mr-1" />{EXAMS_PAGE.rooms.addButton}
+                  <Icon icon={Plus} type="sm-inline" />{EXAMS_PAGE.rooms.addButton}
                 </Button>
               </Div>
               {rooms.length === 0 ? (
-                <P className="text-sm text-muted-foreground">{EXAMS_PAGE.rooms.empty}</P>
+                <P>{EXAMS_PAGE.rooms.empty}</P>
               ) : (
                 <Table>
                   <TableHead>
@@ -219,7 +210,7 @@ export default function ExamMasterDataPage() {
                         <TableCell>{r.capacity}</TableCell>
                         <TableCell>
                           <Button size="sm" variant="ghost" onClick={() => handleDeleteRoom(r.id)}>
-                            <Trash2 className="h-3 w-3 text-destructive" />
+                            <Icon icon={Trash2} type="sm-danger" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -235,8 +226,8 @@ export default function ExamMasterDataPage() {
       {/* Add Exam Modal */}
       {showAddModal && (
         <Modal title={EXAMS_PAGE.form.title} onClose={() => setShowAddModal(false)}>
-          <form onSubmit={addForm.handleSubmit(handleCreate)} className="px-6 py-5">
-            <Div type="col" gap="md">
+          <form onSubmit={addForm.handleSubmit(handleCreate)}>
+            <Div type="col" gap="md" padding="px-6 py-5">
               <FormField label={EXAMS_PAGE.form.name} error={addForm.formState.errors.name?.message}>
                 <Input {...addForm.register("name")} placeholder="Mid-Term Examination 2025" />
               </FormField>
@@ -255,9 +246,7 @@ export default function ExamMasterDataPage() {
                 <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
                   {EXAMS_PAGE.form.cancel}
                 </Button>
-                <Button type="submit" loading={isSaving}>
-                  {EXAMS_PAGE.form.submit}
-                </Button>
+                <Button type="submit" loading={isSaving}>{EXAMS_PAGE.form.submit}</Button>
               </Div>
             </Div>
           </form>
@@ -267,8 +256,8 @@ export default function ExamMasterDataPage() {
       {/* Edit Exam Modal */}
       {showEditModal && (
         <Modal title={EXAMS_PAGE.form.editTitle} onClose={() => setShowEditModal(false)}>
-          <form onSubmit={editForm.handleSubmit(handleEdit)} className="px-6 py-5">
-            <Div type="col" gap="md">
+          <form onSubmit={editForm.handleSubmit(handleEdit)}>
+            <Div type="col" gap="md" padding="px-6 py-5">
               <FormField label={EXAMS_PAGE.form.name} error={editForm.formState.errors.name?.message}>
                 <Input {...editForm.register("name")} />
               </FormField>
@@ -287,9 +276,7 @@ export default function ExamMasterDataPage() {
                 <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
                   {EXAMS_PAGE.form.cancel}
                 </Button>
-                <Button type="submit" loading={isSaving}>
-                  {EXAMS_PAGE.form.save}
-                </Button>
+                <Button type="submit" loading={isSaving}>{EXAMS_PAGE.form.save}</Button>
               </Div>
             </Div>
           </form>
@@ -299,8 +286,8 @@ export default function ExamMasterDataPage() {
       {/* Add Policy Modal */}
       {showPolicyModal && (
         <Modal title={EXAMS_PAGE.policy.title} onClose={() => setShowPolicyModal(false)}>
-          <form onSubmit={policyForm.handleSubmit(handleAddPolicy)} className="px-6 py-5">
-            <Div type="col" gap="md">
+          <form onSubmit={policyForm.handleSubmit(handleAddPolicy)}>
+            <Div type="col" gap="md" padding="px-6 py-5">
               <FormField label={EXAMS_PAGE.policy.name} error={policyForm.formState.errors.name?.message}>
                 <Input {...policyForm.register("name")} placeholder="Standard Marking Policy" />
               </FormField>
@@ -328,9 +315,7 @@ export default function ExamMasterDataPage() {
                 <Button type="button" variant="outline" onClick={() => setShowPolicyModal(false)}>
                   {EXAMS_PAGE.policy.cancel}
                 </Button>
-                <Button type="submit" loading={isSaving}>
-                  {EXAMS_PAGE.policy.submit}
-                </Button>
+                <Button type="submit" loading={isSaving}>{EXAMS_PAGE.policy.submit}</Button>
               </Div>
             </Div>
           </form>
@@ -340,8 +325,8 @@ export default function ExamMasterDataPage() {
       {/* Add Room Modal */}
       {showRoomModal && (
         <Modal title={EXAMS_PAGE.rooms.title} onClose={() => setShowRoomModal(false)}>
-          <form onSubmit={roomForm.handleSubmit(handleAddRoom)} className="px-6 py-5">
-            <Div type="col" gap="md">
+          <form onSubmit={roomForm.handleSubmit(handleAddRoom)}>
+            <Div type="col" gap="md" padding="px-6 py-5">
               <FormField label={EXAMS_PAGE.rooms.name} error={roomForm.formState.errors.room_name?.message}>
                 <Input {...roomForm.register("room_name")} placeholder="Main Hall" />
               </FormField>
@@ -352,9 +337,7 @@ export default function ExamMasterDataPage() {
                 <Button type="button" variant="outline" onClick={() => setShowRoomModal(false)}>
                   {EXAMS_PAGE.rooms.cancel}
                 </Button>
-                <Button type="submit" loading={isSaving}>
-                  {EXAMS_PAGE.rooms.submit}
-                </Button>
+                <Button type="submit" loading={isSaving}>{EXAMS_PAGE.rooms.submit}</Button>
               </Div>
             </Div>
           </form>

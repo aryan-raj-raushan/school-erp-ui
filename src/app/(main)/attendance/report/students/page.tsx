@@ -24,6 +24,7 @@ import {
   TablePagination,
   Badge,
   Spinner,
+  MiniStat,
 } from "@/components/ui";
 
 const MONTHS = [
@@ -169,30 +170,15 @@ export default function StudentAttendanceReportPage() {
           {dailyReport && (
             <Div type="col" gap="md">
               <Div type="row" gap="md">
-                <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4 min-w-[100px]">
-                  <P className="text-xs text-muted-foreground">{ATTENDANCE_REPORT_PAGE.daily.stats.total}</P>
-                  <H2>{dailyReport.total}</H2>
-                </Div>
-                <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4 min-w-[100px]">
-                  <P className="text-xs text-muted-foreground">{ATTENDANCE_REPORT_PAGE.daily.stats.present}</P>
-                  <H2 className="text-green-600">{dailyReport.present}</H2>
-                </Div>
-                <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4 min-w-[100px]">
-                  <P className="text-xs text-muted-foreground">{ATTENDANCE_REPORT_PAGE.daily.stats.absent}</P>
-                  <H2 className="text-red-600">{dailyReport.absent}</H2>
-                </Div>
-                <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4 min-w-[100px]">
-                  <P className="text-xs text-muted-foreground">{ATTENDANCE_REPORT_PAGE.daily.stats.late}</P>
-                  <H2 className="text-yellow-600">{dailyReport.late}</H2>
-                </Div>
-                <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4 min-w-[100px]">
-                  <P className="text-xs text-muted-foreground">{ATTENDANCE_REPORT_PAGE.daily.stats.percentage}</P>
-                  <H2>
-                    {dailyReport.total > 0
-                      ? Math.round((dailyReport.present / dailyReport.total) * 100)
-                      : 0}%
-                  </H2>
-                </Div>
+                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.total} value={dailyReport.total} />
+                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.present} value={dailyReport.present} color="green" />
+                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.absent} value={dailyReport.absent} color="red" />
+                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.late} value={dailyReport.late} color="yellow" />
+                <MiniStat
+                  label={ATTENDANCE_REPORT_PAGE.daily.stats.percentage}
+                  value={`${dailyReport.total > 0 ? Math.round((dailyReport.present / dailyReport.total) * 100) : 0}%`}
+                  color={dailyReport.total > 0 && Math.round((dailyReport.present / dailyReport.total) * 100) >= 75 ? "green" : "red"}
+                />
               </Div>
 
               <Table>
@@ -317,9 +303,7 @@ export default function StudentAttendanceReportPage() {
               ))}
             </Select>
             <Div type="row" align="center" gap="sm">
-              <P className="text-sm text-muted-foreground whitespace-nowrap">
-                {ATTENDANCE_REPORT_PAGE.defaulters.threshold}
-              </P>
+              <P noWrap>{ATTENDANCE_REPORT_PAGE.defaulters.threshold}</P>
               <Input
                 type="number"
                 width="xs"
@@ -328,7 +312,7 @@ export default function StudentAttendanceReportPage() {
                 min={0}
                 max={100}
               />
-              <P className="text-sm">%</P>
+              <P color="default">%</P>
             </Div>
             <Button onClick={fetchDefaulters} loading={isLoadingDefaulters}>
               {ATTENDANCE_REPORT_PAGE.defaulters.fetch}

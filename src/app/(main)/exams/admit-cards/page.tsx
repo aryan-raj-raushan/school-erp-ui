@@ -19,6 +19,9 @@ import {
   Badge,
   Spinner,
   Modal,
+  MiniStat,
+  FilterLabel,
+  Icon,
 } from "@/components/ui";
 import { Eye, FileText } from "lucide-react";
 
@@ -64,17 +67,17 @@ export default function AdmitCardsPage() {
         <H1>{ADMIT_CARDS_PAGE.title}</H1>
         {selectedSectionId && (
           <Button loading={isGenerating} onClick={generateForClass}>
-            <FileText className="h-4 w-4 mr-1" />
+            <Icon icon={FileText} type="btn-icon" />
             {ADMIT_CARDS_PAGE.generateButton}
           </Button>
         )}
       </Div>
 
       {/* Filters */}
-      <Div className="rounded-xl border border-border bg-card p-4">
+      <Div variant="card" padding="p-4">
         <Div type="grid" cols={4} gap="md">
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Academic Year</P>
+            <FilterLabel>Academic Year</FilterLabel>
             <Select
               value={selectedAcademicYearId}
               onChange={(e) => setSelectedAcademicYearId(e.target.value)}
@@ -87,9 +90,8 @@ export default function AdmitCardsPage() {
               ))}
             </Select>
           </Div>
-
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Exam</P>
+            <FilterLabel>Exam</FilterLabel>
             <Select
               value={selectedExamId}
               onChange={(e) => setSelectedExamId(e.target.value)}
@@ -101,9 +103,8 @@ export default function AdmitCardsPage() {
               ))}
             </Select>
           </Div>
-
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Class</P>
+            <FilterLabel>Class</FilterLabel>
             <Select
               value={selectedClassId}
               onChange={(e) => handleClassChange(e.target.value)}
@@ -115,9 +116,8 @@ export default function AdmitCardsPage() {
               ))}
             </Select>
           </Div>
-
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Section</P>
+            <FilterLabel>Section</FilterLabel>
             <Select
               value={selectedSectionId}
               onChange={(e) => handleSectionChange(e.target.value)}
@@ -135,14 +135,8 @@ export default function AdmitCardsPage() {
       {/* Summary */}
       {selectedSectionId && (
         <Div type="row" gap="sm">
-          <Div className="rounded-lg border border-border bg-card px-4 py-2 text-center">
-            <P className="text-xs text-muted-foreground">Registered Students</P>
-            <P className="font-semibold text-lg">{registeredInSection}</P>
-          </Div>
-          <Div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 px-4 py-2 text-center">
-            <P className="text-xs text-green-600">Hall Tickets Generated</P>
-            <P className="font-semibold text-lg text-green-600">{admitCards.length}</P>
-          </Div>
+          <MiniStat label="Registered Students" value={registeredInSection} />
+          <MiniStat label="Hall Tickets Generated" value={admitCards.length} color="green" />
         </Div>
       )}
 
@@ -179,7 +173,7 @@ export default function AdmitCardsPage() {
                   </TableCell>
                   <TableCell>
                     <Button size="sm" variant="ghost" onClick={() => previewCard(card.student_id)}>
-                      <Eye className="h-3 w-3 mr-1" />
+                      <Icon icon={Eye} type="sm-inline" />
                       {ADMIT_CARDS_PAGE.previewButton}
                     </Button>
                   </TableCell>
@@ -193,7 +187,7 @@ export default function AdmitCardsPage() {
       {/* Preview Modal */}
       {showPreviewModal && (
         <Modal title="Hall Ticket Preview" onClose={() => setShowPreviewModal(false)} size="lg">
-          <Div className="overflow-auto max-h-[70vh] rounded border border-border bg-white p-4 mx-6 mb-6">
+          <Div variant="preview" padding="mx-6 mb-6">
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </Div>
         </Modal>

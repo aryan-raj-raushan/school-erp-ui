@@ -20,6 +20,8 @@ import {
   Spinner,
   Modal,
   FormField,
+  FilterLabel,
+  Icon,
 } from "@/components/ui";
 import { Pencil, Trash2, Plus } from "lucide-react";
 
@@ -56,16 +58,16 @@ export default function ExamTimetablePage() {
       <Div type="row" justify="between" align="center">
         <H1>{TIMETABLE_PAGE.title}</H1>
         <Button onClick={openAddModal} disabled={!selectedExamId}>
-          <Plus className="h-4 w-4 mr-1" />
+          <Icon icon={Plus} type="btn-icon" />
           {TIMETABLE_PAGE.addButton}
         </Button>
       </Div>
 
       {/* Filters */}
-      <Div className="rounded-xl border border-border bg-card p-4">
+      <Div variant="card" padding="p-4">
         <Div type="grid" cols={2} gap="md">
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Academic Year</P>
+            <FilterLabel>Academic Year</FilterLabel>
             <Select
               value={selectedAcademicYearId}
               onChange={(e) => setSelectedAcademicYearId(e.target.value)}
@@ -79,7 +81,7 @@ export default function ExamTimetablePage() {
             </Select>
           </Div>
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Exam</P>
+            <FilterLabel>Exam</FilterLabel>
             <Select
               value={selectedExamId}
               onChange={(e) => setSelectedExamId(e.target.value)}
@@ -119,17 +121,15 @@ export default function ExamTimetablePage() {
                 <TableCell>{i + 1}</TableCell>
                 <TableCell primary>{entry.date}</TableCell>
                 <TableCell>{entry.subject_id}</TableCell>
-                <TableCell>
-                  {entry.start_time ?? "—"} – {entry.end_time ?? "—"}
-                </TableCell>
+                <TableCell>{entry.start_time ?? "—"} – {entry.end_time ?? "—"}</TableCell>
                 <TableCell>{entry.room_number ?? "—"}</TableCell>
                 <TableCell>
                   <Div type="row" gap="xs">
                     <Button size="sm" variant="ghost" onClick={() => openEditEntry(entry)}>
-                      <Pencil className="h-3 w-3" />
+                      <Icon icon={Pencil} type="sm" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDelete(entry.id)}>
-                      <Trash2 className="h-3 w-3 text-destructive" />
+                      <Icon icon={Trash2} type="sm-danger" />
                     </Button>
                   </Div>
                 </TableCell>
@@ -145,8 +145,8 @@ export default function ExamTimetablePage() {
           title={editingEntry ? TIMETABLE_PAGE.form.editTitle : TIMETABLE_PAGE.form.title}
           onClose={() => setShowModal(false)}
         >
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="px-6 py-5">
-            <Div type="col" gap="md">
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <Div type="col" gap="md" padding="px-6 py-5">
               <FormField label={TIMETABLE_PAGE.form.exam} error={errors.exam_id?.message}>
                 <Select {...register("exam_id")}>
                   <option value="">Select exam</option>

@@ -60,6 +60,18 @@ interface FormFieldProps {
   children: React.ReactNode;
 }
 
+export const FileInput = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement>
+>(({ className, ...props }, ref) => (
+  <input
+    ref={ref}
+    className={cn('text-sm text-foreground file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-muted file:text-foreground', className)}
+    {...props}
+  />
+));
+FileInput.displayName = 'FileInput';
+
 export function FormField({ label, error, htmlFor, children }: FormFieldProps) {
   return (
     <div className="space-y-1">

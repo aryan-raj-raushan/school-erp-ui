@@ -4,12 +4,10 @@ import { useAttendance } from "@/hooks/useAttendance";
 import {
   STUDENT_ATTENDANCE_PAGE,
   ATTENDANCE_STATUS_OPTIONS,
-  ATTENDANCE_STATUS_BADGE,
 } from "@/constants";
 import {
   Div,
   H1,
-  H2,
   P,
   Button,
   Select,
@@ -22,8 +20,9 @@ import {
   TableRow,
   TableCell,
   TableEmptyRow,
-  Badge,
   Spinner,
+  MiniStat,
+  FilterLabel,
 } from "@/components/ui";
 
 export default function StudentAttendancePage() {
@@ -78,11 +77,11 @@ export default function StudentAttendancePage() {
         )}
       </Div>
 
-      {/* Filters — academic year → class → section → date */}
-      <Div className="rounded-xl border border-border bg-card p-4">
+      {/* Filters */}
+      <Div variant="card" padding="p-4">
         <Div type="grid" cols={4} gap="md">
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Academic Year</P>
+            <FilterLabel>Academic Year</FilterLabel>
             <Select
               value={selectedAcademicYearId}
               onChange={(e) => setSelectedAcademicYearId(e.target.value)}
@@ -97,7 +96,7 @@ export default function StudentAttendancePage() {
           </Div>
 
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Class</P>
+            <FilterLabel>Class</FilterLabel>
             <Select
               value={selectedClassId}
               onChange={(e) => handleClassChange(e.target.value)}
@@ -111,7 +110,7 @@ export default function StudentAttendancePage() {
           </Div>
 
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Section</P>
+            <FilterLabel>Section</FilterLabel>
             <Select
               value={selectedSectionId}
               onChange={(e) => handleSectionChange(e.target.value)}
@@ -125,7 +124,7 @@ export default function StudentAttendancePage() {
           </Div>
 
           <Div type="col" gap="xs">
-            <P className="text-xs font-medium text-muted-foreground">Date</P>
+            <FilterLabel>Date</FilterLabel>
             <Input
               type="date"
               value={date}
@@ -139,28 +138,15 @@ export default function StudentAttendancePage() {
       {hasStudents && (
         <Div type="row" justify="between" align="center">
           <Div type="row" gap="sm">
-            <Div className="rounded-lg border border-border bg-card px-4 py-2 text-center">
-              <P className="text-xs text-muted-foreground">Total</P>
-              <H2>{students.length}</H2>
-            </Div>
-            <Div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 px-4 py-2 text-center">
-              <P className="text-xs text-green-600">Present</P>
-              <H2 className="text-green-600">{presentCount}</H2>
-            </Div>
-            <Div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 px-4 py-2 text-center">
-              <P className="text-xs text-red-600">Absent</P>
-              <H2 className="text-red-600">{absentCount}</H2>
-            </Div>
-            <Div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 px-4 py-2 text-center">
-              <P className="text-xs text-yellow-600">Late</P>
-              <H2 className="text-yellow-600">{lateCount}</H2>
-            </Div>
-            <Div className="rounded-lg border border-border bg-card px-4 py-2 text-center">
-              <P className="text-xs text-muted-foreground">Attendance</P>
-              <H2 className={attendancePct >= 75 ? "text-green-600" : "text-red-600"}>
-                {attendancePct}%
-              </H2>
-            </Div>
+            <MiniStat label="Total" value={students.length} />
+            <MiniStat label="Present" value={presentCount} color="green" />
+            <MiniStat label="Absent" value={absentCount} color="red" />
+            <MiniStat label="Late" value={lateCount} color="yellow" />
+            <MiniStat
+              label="Attendance"
+              value={`${attendancePct}%`}
+              color={attendancePct >= 75 ? "green" : "red"}
+            />
           </Div>
           <Div type="row" gap="sm">
             <Button size="sm" variant="outline" onClick={() => markAll("PRESENT")}>
@@ -189,22 +175,15 @@ export default function StudentAttendancePage() {
           {isLoadingStudents ? (
             <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
           ) : !selectedSectionId ? (
-            <TableEmptyRow colSpan={6}>
-              {STUDENT_ATTENDANCE_PAGE.empty}
-            </TableEmptyRow>
+            <TableEmptyRow colSpan={6}>{STUDENT_ATTENDANCE_PAGE.empty}</TableEmptyRow>
           ) : students.length === 0 ? (
-            <TableEmptyRow colSpan={6}>
-              {STUDENT_ATTENDANCE_PAGE.noStudents}
-            </TableEmptyRow>
+            <TableEmptyRow colSpan={6}>{STUDENT_ATTENDANCE_PAGE.noStudents}</TableEmptyRow>
           ) : (
             students.map((student, i) => {
               const entry = attendanceMap[student.id] ?? { status: "PRESENT", remarks: "" };
               const isAbsent = entry.status === "ABSENT";
               return (
-                <TableRow
-                  key={student.id}
-                  className={isAbsent ? "bg-red-50/50 dark:bg-red-950/10" : undefined}
-                >
+                <TableRow key={student.id} variant={isAbsent ? "danger" : undefined}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell primary>
                     {student.first_name} {student.last_name ?? ""}

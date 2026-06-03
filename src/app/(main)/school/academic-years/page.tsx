@@ -6,7 +6,7 @@ import {
   Div, H1, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Modal, ModalBody, ModalFooter, FormField, Input,
-  Badge, Spinner,
+  Badge, Spinner, CheckboxLabel,
 } from '@/components/ui';
 
 export default function AcademicYearsPage() {
@@ -79,9 +79,9 @@ export default function AcademicYearsPage() {
                 </Div>
                 <Div type="row" align="center" gap="sm">
                   <input type="checkbox" id="is_current" {...form.register('is_current')} />
-                  <label htmlFor="is_current" className="text-sm text-foreground/80 cursor-pointer">
+                  <CheckboxLabel htmlFor="is_current">
                     {ACADEMIC_YEARS_PAGE.form.isCurrent}
-                  </label>
+                  </CheckboxLabel>
                 </Div>
               </Div>
             </ModalBody>

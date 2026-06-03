@@ -36,6 +36,8 @@ import {
   Badge,
   Spinner,
   InfoRow,
+  CheckboxLabel,
+  FileInput,
 } from "@/components/ui";
 
 export default function StudentDetailPage({
@@ -87,7 +89,7 @@ export default function StudentDetailPage({
 
   if (isLoading) {
     return (
-      <Div type="row" justify="center" align="center" full className="h-64">
+      <Div type="row" justify="center" align="center" full padding="py-32">
         <Spinner size="lg" />
       </Div>
     );
@@ -123,7 +125,7 @@ export default function StudentDetailPage({
           <Div
             type="col"
             gap="sm"
-            className="rounded-xl border border-border bg-card p-4"
+            variant="card" padding="p-4"
           >
             <InfoRow
               label={STUDENT_DETAIL_PAGE.labels.fullName}
@@ -161,7 +163,7 @@ export default function StudentDetailPage({
           <Div
             type="col"
             gap="sm"
-            className="rounded-xl border border-border bg-card p-4"
+            variant="card" padding="p-4"
           >
             <InfoRow
               label={STUDENT_DETAIL_PAGE.labels.academicYear}
@@ -202,7 +204,7 @@ export default function StudentDetailPage({
           <Div
             type="col"
             gap="sm"
-            className="rounded-xl border border-border bg-card p-4"
+            variant="card" padding="p-4"
           >
             <InfoRow
               label={STUDENT_DETAIL_PAGE.labels.email}
@@ -322,7 +324,6 @@ export default function StudentDetailPage({
                       href={doc.file_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary underline"
                     >
                       {doc.file_name}
                     </a>
@@ -437,12 +438,9 @@ export default function StudentDetailPage({
                       id="is_primary"
                       {...parentForm.register("is_primary")}
                     />
-                    <label
-                      htmlFor="is_primary"
-                      className="text-sm text-foreground/80 cursor-pointer"
-                    >
+                    <CheckboxLabel htmlFor="is_primary">
                       {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
-                    </label>
+                    </CheckboxLabel>
                   </Div>
                   <Div type="row" align="center" gap="sm">
                     <input
@@ -450,12 +448,9 @@ export default function StudentDetailPage({
                       id="can_pickup"
                       {...parentForm.register("can_pickup")}
                     />
-                    <label
-                      htmlFor="can_pickup"
-                      className="text-sm text-foreground/80 cursor-pointer"
-                    >
+                    <CheckboxLabel htmlFor="can_pickup">
                       {STUDENT_DETAIL_PAGE.parentForm.canPickup}
-                    </label>
+                    </CheckboxLabel>
                   </Div>
                 </Div>
               </Div>
@@ -565,7 +560,6 @@ export default function StudentDetailPage({
                     />
                     <label
                       htmlFor="edit_is_primary"
-                      className="text-sm text-foreground/80 cursor-pointer"
                     >
                       {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
                     </label>
@@ -578,7 +572,6 @@ export default function StudentDetailPage({
                     />
                     <label
                       htmlFor="edit_can_pickup"
-                      className="text-sm text-foreground/80 cursor-pointer"
                     >
                       {STUDENT_DETAIL_PAGE.parentForm.canPickup}
                     </label>
@@ -620,10 +613,9 @@ export default function StudentDetailPage({
                   </Select>
                 </FormField>
                 <FormField label={STUDENT_DETAIL_PAGE.documentForm.file}>
-                  <input
+                  <FileInput
                     ref={fileInputRef}
                     type="file"
-                    className="text-sm text-foreground"
                     required
                   />
                 </FormField>

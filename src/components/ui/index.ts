@@ -13,3 +13,5 @@ export { Button, buttonVariants } from './button';
 export * from './info-row';
 export * from './setup-step';
 export * from './stat-card';
+export * from './mini-stat';
+export * from './icon';
