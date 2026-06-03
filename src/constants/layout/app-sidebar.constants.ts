@@ -9,8 +9,8 @@ import {
   Building2,
   CircleDollarSign,
   GraduationCap,
-  LayoutDashboard,
   BookOpen,
+  CalendarCheck,
 } from "lucide-react";
 import { Role } from "@/types";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -25,33 +25,15 @@ const SCHOOL_ROLES = [Role.SCHOOL_ADMIN];
 const SUPER_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
 export const APP_NAV_MAIN: NavItemConfig[] = [
-  // ── Super Admin ──────────────────────────────────────────────────────────────
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-    roles: SUPER_ROLES,
-  },
+  /* ---------------------------------------------------
+  Super Admin
+  --------------------------------------------------- */
 
-  // ── School Admin ─────────────────────────────────────────────────────────────
+  /* ---------------------------------------------------
+  School Admin
+  --------------------------------------------------- */
   {
-    title: "Dashboard",
-    url: "/school",
-    icon: LayoutDashboard,
-    roles: SCHOOL_ROLES,
-  },
-  {
-    title: "School Setup",
-    url: "#",
-    icon: GraduationCap,
-    roles: SCHOOL_ROLES,
-    items: [
-      { title: "Academic Years", url: "/school/academic-years" },
-      { title: "Classes & Sections", url: "/school/classes" },
-    ],
-  },
-  {
-    title: "People",
+    title: "Teams",
     url: "#",
     icon: Users,
     roles: SCHOOL_ROLES,
@@ -61,14 +43,26 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Parents", url: "/parents" },
     ],
   },
+  
+  
   {
     title: "Attendance",
     url: "#",
     icon: ClipboardCheck,
     roles: SCHOOL_ROLES,
     items: [
-      { title: "Mark Attendance", url: "/attendance/students" },
-      { title: "Attendance Reports", url: "/attendance/report/students" },
+      { title: "Students Attendance", url: "/attendance/students" },
+      { title: "Staff Attendance", url: "/attendance/staffs" },
+    ],
+  },
+  {
+    title: "Attendance Report",
+    url: "#",
+    icon: CalendarCheck,
+    roles: SCHOOL_ROLES,
+    items: [
+      { title: "Students Attendance Reports", url: "/attendance/report/students" },
+      { title: "Staffs Attendance Reports", url: "/attendance/report/staffs" },
     ],
   },
   {
@@ -114,7 +108,20 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     ],
   },
 
-  // ── Shared ────────────────────────────────────────────────────────────────────
+  {
+    title: "School Setup",
+    url: "#",
+    icon: GraduationCap,
+    roles: SCHOOL_ROLES,
+    items: [
+      { title: "Academic Years", url: "/school/academic-years" },
+      { title: "Classes & Sections", url: "/school/classes" },
+    ],
+  },
+
+  /* ---------------------------------------------------
+  SUPER ROLES
+  --------------------------------------------------- */
   {
     title: "Schools",
     url: "/schools",

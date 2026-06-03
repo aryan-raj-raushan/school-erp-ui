@@ -443,12 +443,16 @@ function SidebarGroupContent({
   )
 }
 
-function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
+interface SidebarMenuProps extends React.ComponentProps<"ul"> {
+  childrenItem?: boolean;
+}
+
+function SidebarMenu({ className, childrenItem=false, ...props }: SidebarMenuProps) {
   return (
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
-      className={cn("flex w-full min-w-0 flex-col gap-0", className)}
+      className={cn("flex w-full min-w-0 flex-col gap-0",  childrenItem && "mt-1 ml-4 border-l pl-2",className)}
       {...props}
     />
   )

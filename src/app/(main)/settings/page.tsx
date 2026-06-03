@@ -20,34 +20,27 @@ export default function SettingsIndexPage() {
       {/* Grid of setting cards */}
       <Div type="grid" cols={2} gap="md">
         {SETTINGS_ITEMS.map((item) => (
-          <Link
-            key={item.slug}
-            href={`/settings/${item.slug}`}
-            className="group rounded-xl border border-border bg-card p-5 hover:bg-muted/40 hover:border-border/80 transition-all"
-          >
-            <Div type="row" justify="between" align="start" gap="md">
-              <Div type="col" gap="sm">
-                {/* Icon + label */}
-                <Div type="row" align="center" gap="sm">
-                  <Div
-                    type="row"
-                    align="center"
-                    justify="center"
-                    // className="h-8 w-8 rounded-lg bg-muted text-muted-foreground shrink-0"
-                  >
-                    <item.icon size={16} />
+          <Div boxCard>
+            <Link key={item.slug} href={`/settings/${item.slug}`}>
+              <Div type="row" justify="between" align="start" gap="md">
+                <Div type="col" gap="sm">
+                  {/* Icon + label */}
+                  <Div type="row" align="center" gap="sm">
+                    <Div type="row" align="center" justify="center">
+                      <item.icon size={16} />
+                    </Div>
+                    <H3 color="default">{item.label}</H3>
                   </Div>
-                  <H3 color="default">{item.label}</H3>
+
+                  {/* Description */}
+                  <P color="muted">{item.description}</P>
                 </Div>
 
-                {/* Description */}
-                <P color="muted">{item.description}</P>
+                {/* Arrow */}
+                <ChevronRight size={16} />
               </Div>
-
-              {/* Arrow */}
-              <ChevronRight size={16} />
-            </Div>
-          </Link>
+            </Link>
+          </Div>
         ))}
       </Div>
     </Div>

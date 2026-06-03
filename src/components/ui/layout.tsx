@@ -79,6 +79,7 @@ interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
   center?: boolean;
   /** flex-1 */
   grow?: boolean;
+  boxCard?: boolean
 }
 
 export function Div({
@@ -97,6 +98,7 @@ export function Div({
   selected,
   center,
   grow,
+  boxCard,
   className,
   children,
   ...props
@@ -127,6 +129,7 @@ export function Div({
     interactive && 'cursor-pointer transition-colors',
     interactive && !selected && 'hover:bg-muted/50',
     selected && 'border-primary bg-primary/5',
+    boxCard && 'group rounded-xl border border-border bg-card p-5 hover:bg-muted/40 hover:border-border/80 transition-all',
     padding,
     className,
   );

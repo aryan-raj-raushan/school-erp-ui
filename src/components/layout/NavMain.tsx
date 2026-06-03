@@ -7,7 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, LayoutDashboard } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -46,7 +46,6 @@ export function NavMain({ items }: { items: NavItemConfig[] }) {
                   return (
                     <Collapsible
                       key={item.title}
-                      // defaultOpen={item.isActive}
                       className="group/collapsible"
                     >
                       <SidebarMenuItem>
@@ -60,7 +59,7 @@ export function NavMain({ items }: { items: NavItemConfig[] }) {
                         </CollapsibleTrigger>
 
                         <CollapsibleContent>
-                          <SidebarMenu>
+                          <SidebarMenu childrenItem>
                             {item.items?.map((subItem) => (
                               <SidebarMenuItem key={subItem.title}>
                                 <SidebarMenuButton asChild>
@@ -77,18 +76,20 @@ export function NavMain({ items }: { items: NavItemConfig[] }) {
                   );
                 }
 
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild tooltip={item.title}>
-                  <Link href={item.url}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <Link href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarMenu>
+        </Div>
       </SidebarGroupContent>
     </SidebarGroup>
   );
