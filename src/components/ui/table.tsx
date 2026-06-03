@@ -29,11 +29,23 @@ export function TableHeadRow({ className, ...props }: React.HTMLAttributes<HTMLT
   );
 }
 
-export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
+type TableRowVariant = 'default' | 'danger';
+
+const rowVariantMap: Record<TableRowVariant, string> = {
+  default: '',
+  danger: 'bg-red-50/50 dark:bg-red-950/10',
+};
+
+export function TableRow({
+  className,
+  variant = 'default',
+  ...props
+}: React.HTMLAttributes<HTMLTableRowElement> & { variant?: TableRowVariant }) {
   return (
     <tr
       className={cn(
         'border-b border-border last:border-0 hover:bg-muted/40 transition-colors',
+        rowVariantMap[variant],
         className,
       )}
       {...props}

@@ -37,7 +37,7 @@ export default function SchoolDashboardPage() {
       </Div>
 
       {showSetup && (
-        <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-6">
+        <Div type="col" gap="md" variant="card" padding="p-6">
           <H2>{SCHOOL_DASHBOARD_PAGE.gettingStartedTitle}</H2>
           <P>{SCHOOL_DASHBOARD_PAGE.gettingStartedDesc}</P>
           <Div type="col" gap="sm">

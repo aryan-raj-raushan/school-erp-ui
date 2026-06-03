@@ -13,7 +13,7 @@ import {
   Div, H1, H2, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Modal, ModalBody, ModalFooter, FormField, Input, Select,
-  Badge, Spinner, InfoRow,
+  Badge, Spinner, InfoRow, CheckboxLabel,
 } from '@/components/ui';
 
 export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +30,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
   if (isLoading) {
     return (
-      <Div type="row" justify="center" align="center" full className="h-64">
+      <Div type="row" justify="center" align="center" full padding="py-32">
         <Spinner size="lg" />
       </Div>
     );
@@ -55,7 +55,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       <Div type="grid" cols={2} gap="lg">
         <Div type="col" gap="md">
           <H2>{STUDENT_DETAIL_PAGE.sections.personal}</H2>
-          <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-4">
+          <Div type="col" gap="sm" variant="card" padding="p-4">
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.fullName} value={`${student.first_name} ${student.last_name ?? ''}`} />
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.gender} value={student.gender ?? '—'} />
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.dob} value={student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : '—'} />
@@ -67,7 +67,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
         <Div type="col" gap="md">
           <H2>{STUDENT_DETAIL_PAGE.sections.academic}</H2>
-          <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-4">
+          <Div type="col" gap="sm" variant="card" padding="p-4">
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.academicYear} value={years.find((y) => y.id === student.academic_year_id)?.name ?? '—'} />
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.class} value={classes.find((c) => c.id === student.class_id)?.name ?? '—'} />
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.section} value={sections.find((s) => s.id === student.section_id)?.name ?? '—'} />
@@ -78,7 +78,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
         <Div type="col" gap="md">
           <H2>{STUDENT_DETAIL_PAGE.sections.contact}</H2>
-          <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-4">
+          <Div type="col" gap="sm" variant="card" padding="p-4">
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.email} value={student.email ?? '—'} />
             <InfoRow label={STUDENT_DETAIL_PAGE.labels.phone} value={student.phone_number ? `${student.dial_code ?? ''} ${student.phone_number}` : '—'} />
           </Div>
@@ -166,15 +166,15 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                 <Div type="row" gap="lg">
                   <Div type="row" align="center" gap="sm">
                     <input type="checkbox" id="is_primary" {...parentForm.register('is_primary')} />
-                    <label htmlFor="is_primary" className="text-sm text-foreground/80 cursor-pointer">
+                    <CheckboxLabel htmlFor="is_primary">
                       {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
-                    </label>
+                    </CheckboxLabel>
                   </Div>
                   <Div type="row" align="center" gap="sm">
                     <input type="checkbox" id="can_pickup" {...parentForm.register('can_pickup')} />
-                    <label htmlFor="can_pickup" className="text-sm text-foreground/80 cursor-pointer">
+                    <CheckboxLabel htmlFor="can_pickup">
                       {STUDENT_DETAIL_PAGE.parentForm.canPickup}
-                    </label>
+                    </CheckboxLabel>
                   </Div>
                 </Div>
               </Div>

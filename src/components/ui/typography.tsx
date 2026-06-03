@@ -1,7 +1,19 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type ColorValue = 'default' | 'muted' | 'primary' | 'danger' | 'success';
+type ColorValue =
+  | 'default'
+  | 'muted'
+  | 'primary'
+  | 'danger'
+  | 'success'
+  | 'green'
+  | 'red'
+  | 'yellow'
+  | 'link';
+
+type SizeValue = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl';
+type WeightValue = 'normal' | 'medium' | 'semibold' | 'bold';
 
 const colorMap: Record<ColorValue, string> = {
   default: 'text-foreground',
@@ -9,10 +21,38 @@ const colorMap: Record<ColorValue, string> = {
   primary: 'text-foreground/80',
   danger: 'text-destructive',
   success: 'text-emerald-600 dark:text-emerald-400',
+  green: 'text-green-600 dark:text-green-400',
+  red: 'text-red-600 dark:text-red-400',
+  yellow: 'text-yellow-600 dark:text-yellow-400',
+  link: 'text-primary underline',
+};
+
+const sizeMap: Record<SizeValue, string> = {
+  xs: 'text-xs',
+  sm: 'text-sm',
+  base: 'text-base',
+  lg: 'text-lg',
+  xl: 'text-xl',
+  '2xl': 'text-2xl',
+  '3xl': 'text-3xl',
+};
+
+const weightMap: Record<WeightValue, string> = {
+  normal: 'font-normal',
+  medium: 'font-medium',
+  semibold: 'font-semibold',
+  bold: 'font-bold',
 };
 
 interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
   color?: ColorValue;
+}
+
+interface PProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  color?: ColorValue;
+  size?: SizeValue;
+  weight?: WeightValue;
+  noWrap?: boolean;
 }
 
 export function H1({ color = 'default', className, ...props }: TypographyProps) {
@@ -33,9 +73,18 @@ export function H3({ color = 'muted', className, ...props }: TypographyProps) {
   );
 }
 
-export function P({ color = 'muted', className, ...props }: TypographyProps) {
+export function P({ color = 'muted', size = 'sm', weight, noWrap, className, ...props }: PProps) {
   return (
-    <p className={cn('text-sm', colorMap[color], className)} {...props} />
+    <p
+      className={cn(
+        sizeMap[size],
+        colorMap[color],
+        weight && weightMap[weight],
+        noWrap && 'whitespace-nowrap',
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
@@ -51,7 +100,10 @@ export function Label({
   ...props
 }: React.LabelHTMLAttributes<HTMLLabelElement> & { color?: ColorValue }) {
   return (
-    <label className={cn('text-sm font-medium text-foreground/80', colorMap[color === 'default' ? 'primary' : color], className)} {...props} />
+    <label
+      className={cn('text-sm font-medium text-foreground/80', colorMap[color === 'default' ? 'primary' : color], className)}
+      {...props}
+    />
   );
 }
 
@@ -64,5 +116,19 @@ export function ErrorText({ className, ...props }: React.HTMLAttributes<HTMLPara
 export function SectionLabel({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p className={cn('text-xs font-semibold uppercase tracking-wider text-muted-foreground', className)} {...props} />
+  );
+}
+
+/** Replaces <P className="text-xs font-medium text-muted-foreground"> in filter rows */
+export function FilterLabel({ className, noWrap, ...props }: React.HTMLAttributes<HTMLParagraphElement> & { noWrap?: boolean }) {
+  return (
+    <p className={cn('text-xs font-medium text-muted-foreground', noWrap && 'min-w-max', className)} {...props} />
+  );
+}
+
+/** Replaces <label className="text-sm text-foreground/80 cursor-pointer"> for checkboxes */
+export function CheckboxLabel({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
+  return (
+    <label className={cn('text-sm text-foreground/80 cursor-pointer', className)} {...props} />
   );
 }

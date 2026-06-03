@@ -1,6 +1,6 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { Student, Parent, PaginationMeta, Gender, BloodGroup, StudentStatus, ParentRelation } from '@/types';
+import type { Student, Parent, StudentDocument, PaginationMeta, Gender, BloodGroup, StudentStatus, ParentRelation } from '@/types';
 
 export interface StudentFilters {
   page?: number;
@@ -94,5 +94,19 @@ export const StudentsService = {
 
   async removeParent(studentId: string, parentId: string): Promise<void> {
     await apiGateway.delete(ENDPOINTS.students.parentById(studentId, parentId));
+  },
+
+  async getDocuments(studentId: string): Promise<StudentDocument[]> {
+    const res = await apiGateway.get<StudentDocument[]>(ENDPOINTS.students.documents(studentId));
+    return res.data;
+  },
+
+  async uploadDocument(studentId: string, formData: FormData): Promise<StudentDocument> {
+    const res = await apiGateway.upload<StudentDocument>(ENDPOINTS.students.documents(studentId), formData);
+    return res.data;
+  },
+
+  async deleteDocument(studentId: string, docId: string): Promise<void> {
+    await apiGateway.delete(ENDPOINTS.students.documentById(studentId, docId));
   },
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useStudentDetail } from "@/hooks/useStudents";
@@ -11,6 +11,7 @@ import {
   STUDENT_STATUS_BADGE,
   STUDENT_DETAIL_PAGE,
   PARENT_RELATION_OPTIONS,
+  DOCUMENT_TYPE_OPTIONS,
 } from "@/constants";
 import {
   Div,
@@ -35,6 +36,8 @@ import {
   Badge,
   Spinner,
   InfoRow,
+  CheckboxLabel,
+  FileInput,
 } from "@/components/ui";
 
 export default function StudentDetailPage({
@@ -49,6 +52,7 @@ export default function StudentDetailPage({
   const {
     student,
     parents,
+    documents,
     isLoading,
     showParentModal,
     openParentModal,
@@ -56,12 +60,36 @@ export default function StudentDetailPage({
     parentForm,
     handleParentSubmit,
     isParentSubmitting,
+    showEditParentModal,
+    openEditParentModal,
+    closeEditParentModal,
+    editParentForm,
+    handleEditParentSubmit,
+    isEditParentSubmitting,
     removeParent,
+    showDocumentModal,
+    openDocumentModal,
+    closeDocumentModal,
+    isUploadingDocument,
+    uploadDocument,
+    deleteDocument,
   } = useStudentDetail(id);
+
+  const [selectedDocType, setSelectedDocType] = useState<string>(DOCUMENT_TYPE_OPTIONS[0].value);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleDocumentUpload(e: React.FormEvent) {
+    e.preventDefault();
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+    await uploadDocument(file, selectedDocType);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setSelectedDocType(DOCUMENT_TYPE_OPTIONS[0].value);
+  }
 
   if (isLoading) {
     return (
-      <Div type="row" justify="center" align="center" full className="h-64">
+      <Div type="row" justify="center" align="center" full padding="py-32">
         <Spinner size="lg" />
       </Div>
     );
@@ -97,7 +125,7 @@ export default function StudentDetailPage({
           <Div
             type="col"
             gap="sm"
-            className="rounded-xl border border-border bg-card p-4"
+            variant="card" padding="p-4"
           >
             <InfoRow
               label={STUDENT_DETAIL_PAGE.labels.fullName}
@@ -135,7 +163,7 @@ export default function StudentDetailPage({
           <Div
             type="col"
             gap="sm"
-            className="rounded-xl border border-border bg-card p-4"
+            variant="card" padding="p-4"
           >
             <InfoRow
               label={STUDENT_DETAIL_PAGE.labels.academicYear}
@@ -176,7 +204,7 @@ export default function StudentDetailPage({
           <Div
             type="col"
             gap="sm"
-            className="rounded-xl border border-border bg-card p-4"
+            variant="card" padding="p-4"
           >
             <InfoRow
               label={STUDENT_DETAIL_PAGE.labels.email}
@@ -194,6 +222,7 @@ export default function StudentDetailPage({
         </Div>
       </Div>
 
+      {/* Parents Section */}
       <Div type="col" gap="md">
         <Div type="row" justify="between" align="center">
           <H2>{STUDENT_DETAIL_PAGE.sections.parents}</H2>
@@ -205,27 +234,13 @@ export default function StudentDetailPage({
         <Table>
           <TableHead>
             <TableHeadRow>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.name}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.relation}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.phone}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.email}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.primary}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.canPickup}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {STUDENT_DETAIL_PAGE.table.actions}
-              </TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.name}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.relation}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.phone}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.email}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.primary}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.canPickup}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.actions}</TableHeaderCell>
             </TableHeadRow>
           </TableHead>
           <TableBody>
@@ -255,12 +270,74 @@ export default function StudentDetailPage({
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    <Div type="row" gap="sm">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditParentModal(parent)}
+                      >
+                        {STUDENT_DETAIL_PAGE.editParent}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeParent(parent.id)}
+                      >
+                        {STUDENT_DETAIL_PAGE.removeParent}
+                      </Button>
+                    </Div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Div>
+
+      {/* Documents Section */}
+      <Div type="col" gap="md">
+        <Div type="row" justify="between" align="center">
+          <H2>{STUDENT_DETAIL_PAGE.sections.documents}</H2>
+          <Button onClick={openDocumentModal}>
+            {STUDENT_DETAIL_PAGE.addDocument}
+          </Button>
+        </Div>
+
+        <Table>
+          <TableHead>
+            <TableHeadRow>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.documentsTable.fileName}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.documentsTable.type}</TableHeaderCell>
+              <TableHeaderCell>{STUDENT_DETAIL_PAGE.documentsTable.actions}</TableHeaderCell>
+            </TableHeadRow>
+          </TableHead>
+          <TableBody>
+            {documents.length === 0 ? (
+              <TableEmptyRow colSpan={3}>
+                {STUDENT_DETAIL_PAGE.documentsEmpty}
+              </TableEmptyRow>
+            ) : (
+              documents.map((doc) => (
+                <TableRow key={doc.id}>
+                  <TableCell primary>
+                    <a
+                      href={doc.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {doc.file_name}
+                    </a>
+                  </TableCell>
+                  <TableCell>
+                    {DOCUMENT_TYPE_OPTIONS.find((o) => o.value === doc.document_type)?.label ?? doc.document_type}
+                  </TableCell>
+                  <TableCell>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => removeParent(parent.id)}
+                      onClick={() => deleteDocument(doc.id)}
                     >
-                      {STUDENT_DETAIL_PAGE.removeParent}
+                      Delete
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -270,6 +347,7 @@ export default function StudentDetailPage({
         </Table>
       </Div>
 
+      {/* Add Parent Modal */}
       {showParentModal && (
         <Modal
           onClose={closeParentModal}
@@ -360,12 +438,9 @@ export default function StudentDetailPage({
                       id="is_primary"
                       {...parentForm.register("is_primary")}
                     />
-                    <label
-                      htmlFor="is_primary"
-                      className="text-sm text-foreground/80 cursor-pointer"
-                    >
+                    <CheckboxLabel htmlFor="is_primary">
                       {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
-                    </label>
+                    </CheckboxLabel>
                   </Div>
                   <Div type="row" align="center" gap="sm">
                     <input
@@ -373,9 +448,130 @@ export default function StudentDetailPage({
                       id="can_pickup"
                       {...parentForm.register("can_pickup")}
                     />
+                    <CheckboxLabel htmlFor="can_pickup">
+                      {STUDENT_DETAIL_PAGE.parentForm.canPickup}
+                    </CheckboxLabel>
+                  </Div>
+                </Div>
+              </Div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="outline" onClick={closeParentModal}>
+                {STUDENT_DETAIL_PAGE.parentForm.cancel}
+              </Button>
+              <Button type="submit" loading={isParentSubmitting}>
+                {STUDENT_DETAIL_PAGE.parentForm.submit}
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Parent Modal */}
+      {showEditParentModal && (
+        <Modal
+          onClose={closeEditParentModal}
+          title={STUDENT_DETAIL_PAGE.editParentForm.title}
+        >
+          <form onSubmit={handleEditParentSubmit}>
+            <ModalBody>
+              <Div type="col" gap="md">
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENT_DETAIL_PAGE.parentForm.firstName}
+                    error={editParentForm.formState.errors.first_name?.message}
+                  >
+                    <Input
+                      placeholder={STUDENT_DETAIL_PAGE.placeholders.firstName}
+                      {...editParentForm.register("first_name")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENT_DETAIL_PAGE.parentForm.lastName}
+                    error={editParentForm.formState.errors.last_name?.message}
+                  >
+                    <Input
+                      placeholder={STUDENT_DETAIL_PAGE.placeholders.lastName}
+                      {...editParentForm.register("last_name")}
+                    />
+                  </FormField>
+                </Div>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENT_DETAIL_PAGE.parentForm.relation}
+                    error={editParentForm.formState.errors.relation?.message}
+                  >
+                    <Select {...editParentForm.register("relation")}>
+                      {PARENT_RELATION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label={STUDENT_DETAIL_PAGE.parentForm.occupation}
+                    error={editParentForm.formState.errors.occupation?.message}
+                  >
+                    <Input
+                      placeholder={STUDENT_DETAIL_PAGE.placeholders.occupation}
+                      {...editParentForm.register("occupation")}
+                    />
+                  </FormField>
+                </Div>
+                <Div type="row" gap="sm">
+                  <FormField
+                    label={STUDENT_DETAIL_PAGE.parentForm.dialCode}
+                    error={editParentForm.formState.errors.dial_code?.message}
+                  >
+                    <Input
+                      width="xs"
+                      placeholder={STUDENT_DETAIL_PAGE.placeholders.dialCode}
+                      {...editParentForm.register("dial_code")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENT_DETAIL_PAGE.parentForm.phone}
+                    error={editParentForm.formState.errors.phone_number?.message}
+                  >
+                    <Input
+                      type="tel"
+                      placeholder={STUDENT_DETAIL_PAGE.placeholders.phone}
+                      {...editParentForm.register("phone_number")}
+                    />
+                  </FormField>
+                </Div>
+                <FormField
+                  label={STUDENT_DETAIL_PAGE.parentForm.email}
+                  error={editParentForm.formState.errors.email?.message}
+                >
+                  <Input
+                    type="email"
+                    placeholder={STUDENT_DETAIL_PAGE.placeholders.email}
+                    {...editParentForm.register("email")}
+                  />
+                </FormField>
+                <Div type="row" gap="lg">
+                  <Div type="row" align="center" gap="sm">
+                    <input
+                      type="checkbox"
+                      id="edit_is_primary"
+                      {...editParentForm.register("is_primary")}
+                    />
                     <label
-                      htmlFor="can_pickup"
-                      className="text-sm text-foreground/80 cursor-pointer"
+                      htmlFor="edit_is_primary"
+                    >
+                      {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
+                    </label>
+                  </Div>
+                  <Div type="row" align="center" gap="sm">
+                    <input
+                      type="checkbox"
+                      id="edit_can_pickup"
+                      {...editParentForm.register("can_pickup")}
+                    />
+                    <label
+                      htmlFor="edit_can_pickup"
                     >
                       {STUDENT_DETAIL_PAGE.parentForm.canPickup}
                     </label>
@@ -384,15 +580,53 @@ export default function StudentDetailPage({
               </Div>
             </ModalBody>
             <ModalFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeParentModal}
-              >
-                {STUDENT_DETAIL_PAGE.parentForm.cancel}
+              <Button type="button" variant="outline" onClick={closeEditParentModal}>
+                {STUDENT_DETAIL_PAGE.editParentForm.cancel}
               </Button>
-              <Button type="submit" loading={isParentSubmitting}>
-                {STUDENT_DETAIL_PAGE.parentForm.submit}
+              <Button type="submit" loading={isEditParentSubmitting}>
+                {STUDENT_DETAIL_PAGE.editParentForm.submit}
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
+
+      {/* Upload Document Modal */}
+      {showDocumentModal && (
+        <Modal
+          onClose={closeDocumentModal}
+          title={STUDENT_DETAIL_PAGE.documentForm.title}
+        >
+          <form onSubmit={handleDocumentUpload}>
+            <ModalBody>
+              <Div type="col" gap="md">
+                <FormField label={STUDENT_DETAIL_PAGE.documentForm.type}>
+                  <Select
+                    value={selectedDocType}
+                    onChange={(e) => setSelectedDocType(e.target.value)}
+                  >
+                    {DOCUMENT_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={STUDENT_DETAIL_PAGE.documentForm.file}>
+                  <FileInput
+                    ref={fileInputRef}
+                    type="file"
+                    required
+                  />
+                </FormField>
+              </Div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="outline" onClick={closeDocumentModal}>
+                {STUDENT_DETAIL_PAGE.documentForm.cancel}
+              </Button>
+              <Button type="submit" loading={isUploadingDocument}>
+                {STUDENT_DETAIL_PAGE.documentForm.submit}
               </Button>
             </ModalFooter>
           </form>
