@@ -132,7 +132,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
 export const APP_NAV_SECONDARY: NavItemConfig[] = [
   {
     title: "Settings",
-    url: "#",
+    url: "/settings",
     icon: Settings,
   },
   {
