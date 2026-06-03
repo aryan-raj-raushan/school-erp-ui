@@ -2,11 +2,6 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosErr
 import { TokenStorage } from '../token.storage';
 import type { RefreshTokenFn } from '@/types';
 
-interface QueuedRequest {
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}
-
 declare module 'axios' {
   interface InternalAxiosRequestConfig {
     skipAuth?: boolean;
@@ -20,6 +15,7 @@ export function applyAuthInterceptors(
   onRefreshToken: RefreshTokenFn,
   onAuthFailure: () => void,
 ): void {
+  // ── Request: attach access token ─────────────────────────────────────────
   axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       if (config.skipAuth) return config;
@@ -33,36 +29,43 @@ export function applyAuthInterceptors(
     (error) => Promise.reject(error),
   );
 
+  // ── Response: 401 → refresh → retry ──────────────────────────────────────
   let isRefreshing = false;
-  let failedQueue: QueuedRequest[] = [];
+  // Each queued item holds resolve/reject AND its original config for retry
+  const failedQueue: Array<{
+    config: InternalAxiosRequestConfig;
+    resolve: (res: AxiosResponse) => void;
+    reject: (err: unknown) => void;
+  }> = [];
 
-  function processQueue(error: unknown, token: string | null = null): void {
-    failedQueue.forEach(({ resolve, reject }) => {
-      error ? reject(error) : resolve(token!);
-    });
-    failedQueue = [];
+  function flushQueue(error: unknown, accessToken: string | null): void {
+    const queue = failedQueue.splice(0);
+    if (error) {
+      queue.forEach(({ reject }) => reject(error));
+    } else {
+      queue.forEach(({ config, resolve, reject }) => {
+        config.headers['Authorization'] = `Bearer ${accessToken}`;
+        axiosInstance(config).then(resolve).catch(reject);
+      });
+    }
   }
 
   axiosInstance.interceptors.response.use(
-    (response: AxiosResponse) => response,
+    (res: AxiosResponse) => res,
 
     async (error: AxiosError) => {
       const originalRequest = error.config as InternalAxiosRequestConfig;
-      const is401 = error.response?.status === 401;
+      if (!originalRequest) return Promise.reject(error);
 
+      const is401 = error.response?.status === 401;
       if (!is401 || originalRequest._retry || originalRequest.skipRefresh) {
         return Promise.reject(error);
       }
 
+      // Already refreshing — queue this request
       if (isRefreshing) {
         return new Promise<AxiosResponse>((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              originalRequest.headers['Authorization'] = `Bearer ${token}`;
-              resolve(axiosInstance(originalRequest));
-            },
-            reject,
-          });
+          failedQueue.push({ config: originalRequest, resolve, reject });
         });
       }
 
@@ -73,11 +76,10 @@ export function applyAuthInterceptors(
         const tokens = await onRefreshToken();
         TokenStorage.updateTokens(tokens);
         originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`;
-        processQueue(null, tokens.accessToken);
+        flushQueue(null, tokens.accessToken);
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
-        TokenStorage.clear();
+        flushQueue(refreshError, null);
         onAuthFailure();
         return Promise.reject(refreshError);
       } finally {

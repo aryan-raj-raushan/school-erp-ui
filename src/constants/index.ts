@@ -12,3 +12,5 @@ export * from './staff.constants';
 export * from './parents.constants';
 export * from './attendance.constants';
 export * from './exams.constants';
+export * from './leave.constants';
+export * from './academics.constants';

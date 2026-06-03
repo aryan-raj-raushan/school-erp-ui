@@ -451,6 +451,185 @@ export interface TeacherRemark {
   created_at: string;
 }
 
+// ─── Homework ─────────────────────────────────────────────────────────────────
+
+export type SubmissionStatus = 'PENDING' | 'SUBMITTED' | 'GRADED' | 'LATE';
+
+export interface Homework {
+  id: string;
+  school_id: string;
+  academic_year_id: string;
+  class_section_id: string;
+  subject_id: string;
+  title: string;
+  description?: string | null;
+  due_date: string;
+  attachment_url?: string | null;
+  created_by?: string | null;
+  deleted: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface HomeworkSubmission {
+  id: string;
+  homework_id: string;
+  student_id: string;
+  school_id: string;
+  status: SubmissionStatus;
+  remarks?: string | null;
+  submission_url?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// ─── Study Materials ──────────────────────────────────────────────────────────
+
+export interface StudyMaterial {
+  id: string;
+  school_id: string;
+  academic_year_id: string;
+  class_section_id: string;
+  subject_id: string;
+  title: string;
+  description?: string | null;
+  file_url: string;
+  file_type?: string | null;
+  uploaded_by?: string | null;
+  deleted: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// ─── Fees ─────────────────────────────────────────────────────────────────────
+
+export type FeeStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'OVERDUE' | 'WAIVED';
+export type PaymentMode = 'CASH' | 'ONLINE' | 'CHEQUE' | 'DD' | 'NEFT' | 'UPI';
+
+export interface FeeMasterType {
+  id: string;
+  school_id: string;
+  name: string;
+  description?: string | null;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface FeeItem {
+  fee_type_id: string;
+  fee_type_name: string;
+  amount: number;
+}
+
+export interface FeeReceipt {
+  id: string;
+  school_id: string;
+  student_id: string;
+  academic_year_id: string;
+  receipt_number?: string | null;
+  fee_items: FeeItem[];
+  total_amount: number;
+  paid_amount: number;
+  discount_amount: number;
+  balance_amount: number;
+  status: FeeStatus;
+  due_date?: string | null;
+  notes?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface FeePayment {
+  id: string;
+  receipt_id: string;
+  school_id: string;
+  amount: number;
+  payment_mode: PaymentMode;
+  transaction_id?: string | null;
+  notes?: string | null;
+  paid_by?: string | null;
+  created_at: string;
+}
+
+// ─── Uploads ──────────────────────────────────────────────────────────────────
+
+export interface UploadResult {
+  url: string;
+  s3Key: string;
+}
+
+// ─── Leave ────────────────────────────────────────────────────────────────────
+
+export type LeaveRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface LeaveType {
+  id: string;
+  policy_id: string;
+  school_id: string;
+  name: string;
+  max_days: number;
+  is_paid: boolean;
+  description?: string | null;
+  created_at: string;
+}
+
+export interface LeavePolicy {
+  id: string;
+  school_id: string;
+  academic_year_id: string;
+  name: string;
+  description?: string | null;
+  leave_types?: LeaveType[];
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface LeaveBalance {
+  id: string;
+  school_id: string;
+  staff_id: string;
+  leave_type_id: string;
+  academic_year_id: string;
+  total_days: number;
+  used_days: number;
+  remaining_days: number;
+  leave_type?: LeaveType;
+}
+
+export interface TeacherLeaveRequest {
+  id: string;
+  school_id: string;
+  staff_id: string;
+  leave_type_id: string;
+  from_date: string;
+  to_date: string;
+  total_days: number;
+  reason: string;
+  status: LeaveRequestStatus;
+  reviewer_id?: string | null;
+  reviewer_remarks?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  leave_type?: LeaveType;
+}
+
+export interface StudentLeaveRequest {
+  id: string;
+  school_id: string;
+  student_id: string;
+  applied_by?: string | null;
+  from_date: string;
+  to_date: string;
+  total_days: number;
+  reason: string;
+  status: LeaveRequestStatus;
+  reviewer_id?: string | null;
+  reviewer_remarks?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+}
+
 // ─── Subscription ─────────────────────────────────────────────────────────────
 
 export type SubscriptionStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'CANCELLED' | 'EXPIRED';

@@ -72,6 +72,16 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     ],
   },
   {
+    title: "Academics",
+    url: "#",
+    icon: FileText,
+    roles: SCHOOL_ROLES,
+    items: [
+      { title: "Homework", url: "/school/homework" },
+      { title: "Study Materials", url: "/school/materials" },
+    ],
+  },
+  {
     title: "Finance",
     url: "#",
     icon: Wallet,
