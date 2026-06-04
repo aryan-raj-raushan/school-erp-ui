@@ -11,6 +11,7 @@ import {
   GraduationCap,
   BookOpen,
   CalendarCheck,
+  Palette,
 } from "lucide-react";
 import { Role } from "@/types";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -143,6 +144,11 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
 ];
 
 export const APP_NAV_SECONDARY: NavItemConfig[] = [
+  {
+    title: "Appearance",
+    url: "/appearance",
+    icon: Palette,
+  },
   {
     title: "Settings",
     url: "/settings",

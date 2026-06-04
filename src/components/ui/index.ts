@@ -15,3 +15,6 @@ export * from './setup-step';
 export * from './stat-card';
 export * from './mini-stat';
 export * from './icon';
+export * from './empty-state';
+export * from './page-header';
+export * from './theme-selector';

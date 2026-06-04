@@ -15,10 +15,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { MoreHorizontal, LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, MoreHorizontal } from "lucide-react";
 import { Icon } from "../ui/icon";
 import { Div } from "../ui";
-import { useThemeStore } from "@/store/theme.store";
 
 interface UserInfo {
   fullName: string;
@@ -35,7 +34,6 @@ interface NavUserProps {
 
 export function NavUser({ userInfo, logout }: NavUserProps) {
   const { isMobile } = useSidebar();
-  const { mode, toggleMode } = useThemeStore();
 
   return (
     <SidebarMenu>
@@ -54,6 +52,7 @@ export function NavUser({ userInfo, logout }: NavUserProps) {
               <Icon icon={MoreHorizontal} className="ml-auto" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             side={isMobile ? "bottom" : "right"}
             align="end"
@@ -62,25 +61,15 @@ export function NavUser({ userInfo, logout }: NavUserProps) {
             <DropdownMenuLabel>
               <Div type="row" align="center" justify="center">
                 <Avatar>
-                  <AvatarImage
-                    src={userInfo?.avatar}
-                    alt={userInfo?.fullName}
-                  />
+                  <AvatarImage src={userInfo?.avatar} alt={userInfo?.fullName} />
                   <AvatarFallback>{userInfo.initials}</AvatarFallback>
                 </Avatar>
-
                 <Div type="col">
                   <span>{userInfo?.fullName}</span>
                   <span>{userInfo?.email}</span>
                 </Div>
               </Div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem onClick={toggleMode}>
-              <Icon icon={mode === "light" ? Moon : Sun} />
-              {mode === "light" ? "Dark mode" : "Light mode"}
-            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 

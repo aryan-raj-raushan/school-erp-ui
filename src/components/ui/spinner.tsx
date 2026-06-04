@@ -15,11 +15,11 @@ const sizeMap = {
 export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <div
-      className={cn(
-        'animate-spin rounded-full border-zinc-300 border-t-zinc-700 dark:border-zinc-600 dark:border-t-zinc-200',
-        sizeMap[size],
-        className,
-      )}
+      className={cn('animate-spin rounded-full', sizeMap[size], className)}
+      style={{
+        borderColor: 'var(--theme-glow-soft)',
+        borderTopColor: 'var(--theme-gradient-from)',
+      }}
     />
   );
 }

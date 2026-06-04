@@ -5,7 +5,11 @@ type JustifyValue = 'start' | 'end' | 'center' | 'between' | 'around' | 'evenly'
 type AlignValue = 'start' | 'end' | 'center' | 'stretch' | 'baseline';
 type GapValue = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type ColsValue = 1 | 2 | 3 | 4 | 6 | 12;
-type DivVariant = 'card' | 'card-dashed' | 'inset' | 'preview';
+type DivVariant =
+  | 'card' | 'card-dashed' | 'inset' | 'preview'
+  | 'glass' | 'glass-sm' | 'glass-flat'
+  | 'theme-icon' | 'theme-icon-lg' | 'theme-icon-sm'
+  | 'gradient-bar';
 type DivColor = 'default' | 'green' | 'red' | 'yellow';
 
 const justifyMap: Record<JustifyValue, string> = {
@@ -44,10 +48,19 @@ const colsMap: Record<ColsValue, string> = {
 };
 
 const variantMap: Record<DivVariant, string> = {
-  card: 'rounded-xl border border-border bg-card',
-  'card-dashed': 'rounded-xl border border-dashed border-border p-8 text-center',
+  card: 'rounded-2xl border border-border/50 bg-card backdrop-blur-sm glass-card',
+  'card-dashed': 'rounded-2xl border border-dashed border-border p-8 text-center',
   inset: 'rounded-lg bg-muted/40 px-3 py-2',
   preview: 'overflow-auto max-h-[70vh] rounded border border-border bg-white p-4',
+  glass: 'rounded-2xl border border-border/50 bg-card backdrop-blur-sm glass-card',
+  'glass-sm': 'rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm glass-card',
+  'glass-flat': 'rounded-xl border border-border/40 bg-card/60 backdrop-blur-sm',
+  /* Theme-aware icon circles — uses CSS utility classes */
+  'theme-icon':    'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl theme-gradient-bg theme-glow-shadow theme-icon-children',
+  'theme-icon-lg': 'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl theme-gradient-bg theme-glow-shadow theme-icon-children',
+  'theme-icon-sm': 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg theme-gradient-bg theme-glow-shadow theme-icon-children',
+  /* Thin gradient accent bar */
+  'gradient-bar': 'h-[3px] w-full theme-gradient-bg rounded-full',
 };
 
 const colorMap: Record<DivColor, string> = {

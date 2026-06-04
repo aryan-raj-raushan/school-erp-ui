@@ -4,6 +4,7 @@ import { CalendarDays, BookOpen, Users } from 'lucide-react';
 import type { DashboardStatKey } from '@/constants';
 import { Div } from './layout';
 import { H2, P } from './typography';
+import { motion } from 'framer-motion';
 
 const ICONS: Record<DashboardStatKey, React.ReactNode> = {
   'academic-years': <CalendarDays size={20} />,
@@ -21,20 +22,23 @@ interface StatCardProps {
 
 export function StatCard({ iconKey, label, value, sub, onClick }: StatCardProps) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className="rounded-xl border border-border bg-card p-5 text-left hover:bg-muted/40 transition-colors w-full"
+      whileHover={{ y: -4 }}
+      whileTap={{ y: 0 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
-      <Div type="row" justify="between" align="center">
+      <Div variant="glass" padding="p-5" type="row" justify="between" align="center">
         <Div type="col" gap="xs">
           <P color="muted">{label}</P>
           <H2>{value}</H2>
           <P color="muted">{sub}</P>
         </Div>
-        <Div type="row" align="center" justify="center" className="h-10 w-10 rounded-lg bg-muted text-muted-foreground">
+        {/* Theme-gradient icon circle — uses variant, no raw classnames */}
+        <Div variant="theme-icon">
           {ICONS[iconKey]}
         </Div>
       </Div>
-    </button>
+    </motion.button>
   );
 }

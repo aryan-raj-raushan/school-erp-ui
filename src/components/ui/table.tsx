@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 export function Table({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('rounded-xl border border-border bg-card overflow-hidden', className)}
+      className={cn('rounded-2xl border border-border/50 bg-card backdrop-blur-sm overflow-hidden glass-card', className)}
       {...props}
     >
       <table className="w-full text-sm">{children}</table>
@@ -23,7 +23,10 @@ export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTabl
 export function TableHeadRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={cn('border-b border-border bg-muted/50', className)}
+      className={cn(
+        'border-b border-border/60 bg-white/80 dark:bg-white/5 backdrop-blur-sm sticky top-0',
+        className,
+      )}
       {...props}
     />
   );
@@ -43,8 +46,9 @@ export function TableRow({
 }: React.HTMLAttributes<HTMLTableRowElement> & { variant?: TableRowVariant }) {
   return (
     <tr
+      /* table-row-hover applies var(--theme-glow-soft) on hover — theme-aware */
       className={cn(
-        'border-b border-border last:border-0 hover:bg-muted/40 transition-colors',
+        'border-b border-border/40 last:border-0 table-row-hover transition-colors duration-150',
         rowVariantMap[variant],
         className,
       )}
@@ -59,7 +63,10 @@ export function TableHeaderCell({
 }: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
-      className={cn('px-4 py-3 text-left font-medium text-muted-foreground', className)}
+      className={cn(
+        'px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground',
+        className,
+      )}
       {...props}
     />
   );
@@ -73,7 +80,7 @@ export function TableCell({
   return (
     <td
       className={cn(
-        'px-4 py-3',
+        'px-5 py-3.5',
         primary ? 'font-medium text-foreground' : 'text-muted-foreground',
         className,
       )}
@@ -82,33 +89,21 @@ export function TableCell({
   );
 }
 
-export function TableEmptyRow({
-  colSpan,
-  children,
-}: {
-  colSpan: number;
-  children: React.ReactNode;
-}) {
+export function TableEmptyRow({ colSpan, children }: { colSpan: number; children: React.ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-12 text-center text-muted-foreground">
+      <td colSpan={colSpan} className="px-5 py-16 text-center text-muted-foreground">
         {children}
       </td>
     </tr>
   );
 }
 
-interface TableFooterProps {
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-export function TablePagination({ total, page, totalPages }: TableFooterProps) {
+export function TablePagination({ total, page, totalPages }: { total: number; page: number; totalPages: number }) {
   return (
-    <div className="px-4 py-3 border-t border-border flex items-center justify-between">
-      <p className="text-xs text-muted-foreground">{total} total</p>
-      <p className="text-xs text-muted-foreground">
+    <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between bg-white/50 dark:bg-white/3">
+      <p className="text-xs text-muted-foreground font-medium">{total} total</p>
+      <p className="text-xs text-muted-foreground font-medium">
         Page {page} / {totalPages}
       </p>
     </div>

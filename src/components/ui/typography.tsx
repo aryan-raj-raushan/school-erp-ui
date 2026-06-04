@@ -10,7 +10,8 @@ type ColorValue =
   | 'green'
   | 'red'
   | 'yellow'
-  | 'link';
+  | 'link'
+  | 'theme'; /* gradient text using --theme-gradient-from/to */
 
 type SizeValue = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl';
 type WeightValue = 'normal' | 'medium' | 'semibold' | 'bold';
@@ -25,6 +26,7 @@ const colorMap: Record<ColorValue, string> = {
   red: 'text-red-600 dark:text-red-400',
   yellow: 'text-yellow-600 dark:text-yellow-400',
   link: 'text-primary underline',
+  theme: 'theme-gradient-text font-semibold', /* uses CSS utility class */
 };
 
 const sizeMap: Record<SizeValue, string> = {
@@ -58,6 +60,16 @@ interface PProps extends React.HTMLAttributes<HTMLParagraphElement> {
 export function H1({ color = 'default', className, ...props }: TypographyProps) {
   return (
     <h1 className={cn('text-xl font-semibold', colorMap[color], className)} {...props} />
+  );
+}
+
+/** 32px bold page-level heading — use in PageHeader */
+export function PageTitle({ color = 'default', className, ...props }: TypographyProps) {
+  return (
+    <h1
+      className={cn('text-[32px] font-bold tracking-tight leading-tight', colorMap[color], className)}
+      {...props}
+    />
   );
 }
 
