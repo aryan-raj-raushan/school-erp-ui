@@ -45,7 +45,11 @@ export interface OffboardPayload {
 
 export const StaffService = {
   async list(filters: StaffFilters = {}): Promise<{ items: Staff[]; pagination: PaginationMeta }> {
-    const res = await apiGateway.get<Staff[]>(ENDPOINTS.staff.list, { params: filters });
+    const { status, ...rest } = filters;
+    const params: Record<string, unknown> = { ...rest };
+    if (status === 'ACTIVE') params.is_active = true;
+    else if (status === 'OFFBOARDED' || status === 'INACTIVE') params.is_active = false;
+    const res = await apiGateway.get<Staff[]>(ENDPOINTS.staff.list, { params });
     return { items: res.data, pagination: res.pagination! };
   },
 
