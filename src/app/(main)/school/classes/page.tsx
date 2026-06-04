@@ -3,8 +3,9 @@
 import { useClasses, DEFAULT_SECTION_NAMES } from '@/hooks/useClasses';
 import { useAcademicYears } from '@/hooks/useAcademicYears';
 import { CLASSES_PAGE } from '@/constants';
+import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div, H1, P, Button,
+  Div, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Modal, ModalBody, ModalFooter, FormField, Input, Select,
   Badge, Spinner, CheckboxLabel, Icon,
@@ -37,13 +38,12 @@ export default function ClassesPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{CLASSES_PAGE.title}</H1>
-          <P>{currentYear ? `Academic Year: ${currentYear.name}` : 'No current academic year set'}</P>
-        </Div>
-        <Button onClick={openClassModal}>{CLASSES_PAGE.addClassButton}</Button>
-      </Div>
+      <PageHeader
+        title={CLASSES_PAGE.title}
+        subtitle={currentYear ? `Academic Year: ${currentYear.name}` : 'No current academic year set'}
+        illustration="/illustrations/graduation.svg"
+        actions={<Button onClick={openClassModal}>{CLASSES_PAGE.addClassButton}</Button>}
+      />
 
       <Table>
         <TableHead>

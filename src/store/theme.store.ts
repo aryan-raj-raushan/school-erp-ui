@@ -16,6 +16,15 @@ export const THEME_OPTIONS: ThemeOption[] = [
   { id: 'violet', label: 'Violet', color: '#8B5CF6' },
 ];
 
+export const THEME_PALETTE: string[] = [
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308',
+  '#84CC16', '#22C55E', '#14B8A6', '#06B6D4',
+  '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7',
+  '#EC4899', '#F43F5E', '#64748B', '#0F172A',
+];
+
+export const THEME_FALLBACK_COLOR = '#6366F1';
+
 /* ─── Color helpers (exported so ThemeSelector can use them) ─────────── */
 
 export function hexToRgba(hex: string, alpha: number): string {

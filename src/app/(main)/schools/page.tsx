@@ -4,8 +4,9 @@ import { SCHOOLS_PAGE, CREATE_SCHOOL_FORM, BOARD_TYPES } from '@/constants';
 import { Role } from '@/types';
 import { useCreateSchoolForm } from '@/hooks/useCreateSchoolForm';
 import { useAuthStore } from '@/store/auth.store';
+import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div, H1, P, Button,
+  Div, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
   Modal, ModalBody, ModalFooter, FormField, Input, Select,
   Badge, Spinner,
@@ -20,15 +21,12 @@ export default function SchoolsPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{SCHOOLS_PAGE.title}</H1>
-          <P>{SCHOOLS_PAGE.description}</P>
-        </Div>
-        {canCreate && (
-          <Button onClick={openModal}>{SCHOOLS_PAGE.addButton}</Button>
-        )}
-      </Div>
+      <PageHeader
+        title={SCHOOLS_PAGE.title}
+        subtitle={SCHOOLS_PAGE.description}
+        illustration="/illustrations/school.svg"
+        actions={canCreate ? <Button onClick={openModal}>{SCHOOLS_PAGE.addButton}</Button> : undefined}
+      />
 
       <Table>
         <TableHead>

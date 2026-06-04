@@ -2,10 +2,14 @@ import * as React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-export function Nav({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
+interface NavProps extends React.HTMLAttributes<HTMLElement> {
+  padding?: string;
+}
+
+export function Nav({ className, padding, ...props }: NavProps) {
   return (
     <nav
-      className={cn('flex-1 overflow-y-auto px-3 py-4 space-y-1', className)}
+      className={cn('flex-1 overflow-y-auto px-3 py-4 space-y-1', padding, className)}
       {...props}
     />
   );

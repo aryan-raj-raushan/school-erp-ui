@@ -36,19 +36,22 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
   icon: LucideIcon;
   type?: IconType;
   size?: number;
+  /** Adds ml-auto to push icon to far right in a flex row */
+  pushRight?: boolean;
 }
 
 export function Icon({
   icon: IconComponent,
   type = "default",
   size = 18,
+  pushRight,
   className,
   ...props
 }: IconProps) {
   return (
     <IconComponent
       size={size}
-      className={cn(typeMap[type], className)}
+      className={cn(typeMap[type], pushRight && "ml-auto", className)}
       {...props}
     />
   );

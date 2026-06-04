@@ -34,19 +34,10 @@ import {
 } from "recharts";
 
 import { Div } from "@/components/ui/layout";
-import { H1, H2, H3, P, Span, SectionLabel } from "@/components/ui/typography";
+import { H1, H2, H3, P, SectionLabel } from "@/components/ui/typography";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-const ADMIN_NAME = "Aryan Raj";
-const SCHOOL = {
-  name: "Active Demo School",
-  description:
-    "Manage academics, attendance, fees, and school operations efficiently.",
-  academicYear: "2025–2026",
-};
+import { useSchoolDashboard } from "@/hooks/useSchoolDashboard";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -157,16 +148,16 @@ const FEES_DATA = [
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function GreetingHeader() {
+function GreetingHeader({ name }: { name: string }) {
   return (
     <Div type="col" gap="xs">
-      <P color="muted">Hi, {ADMIN_NAME}</P>
+      <P color="muted">Hi, {name || "there"}</P>
       <H1 className="text-2xl font-bold">{getGreeting()}</H1>
     </Div>
   );
 }
 
-function SchoolBanner() {
+function SchoolBanner({ academicYear }: { academicYear: string }) {
   return (
     <Div
       type="row"
@@ -185,8 +176,8 @@ function SchoolBanner() {
         </Div>
         <Div type="col" gap="xs">
           <SectionLabel>School Dashboard</SectionLabel>
-          <H2 className="text-xl font-bold">{SCHOOL.name}</H2>
-          <P color="muted">{SCHOOL.description}</P>
+          <H2 className="text-xl font-bold">School Management</H2>
+          <P color="muted">Manage academics, attendance, fees, and school operations efficiently.</P>
         </Div>
       </Div>
 
@@ -208,7 +199,7 @@ function SchoolBanner() {
           <SectionLabel>Academic Year</SectionLabel>
           <Div type="row" align="center" gap="xs">
             <H3 color="default" className="font-semibold text-base">
-              {SCHOOL.academicYear}
+              {academicYear}
             </H3>
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
           </Div>
@@ -586,6 +577,16 @@ function FeesChart() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { user, currentYear, stats } = useSchoolDashboard();
+
+  const firstName = user?.first_name ?? "";
+  const academicYear = currentYear?.name ?? "—";
+  const totalStudents = stats.find((s) => s.key === "students")?.value ?? "…";
+
+  const kpiCards = KPI_CARDS.map((card) =>
+    card.label === "Total Students" ? { ...card, value: totalStudents } : card
+  );
+
   return (
     <Div
       type="col"
@@ -594,7 +595,7 @@ export default function DashboardPage() {
     >
       {/* Header */}
       <Div type="row" justify="between" align="center">
-        <GreetingHeader />
+        <GreetingHeader name={firstName} />
         <Div type="row" align="center" gap="sm">
           <Badge variant="info" className="gap-1.5 px-3 py-1">
             <CalendarCheck size={12} />
@@ -608,11 +609,11 @@ export default function DashboardPage() {
       </Div>
 
       {/* School Banner */}
-      <SchoolBanner />
+      <SchoolBanner academicYear={academicYear} />
 
       {/* KPI Cards */}
       <Div type="grid" cols={4} gap="md">
-        {KPI_CARDS.map((card) => (
+        {kpiCards.map((card) => (
           <KpiCard key={card.label} card={card} />
         ))}
       </Div>

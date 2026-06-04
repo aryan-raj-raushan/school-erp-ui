@@ -8,9 +8,9 @@ import {
   STAFF_ROLE_OPTIONS,
   GENDER_OPTIONS,
 } from "@/constants";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H1,
   P,
   Button,
   Input,
@@ -74,21 +74,22 @@ export default function StaffsPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{STAFF_PAGE.title}</H1>
-          <P>{pagination ? `${pagination.total} staff members` : "Loading..."}</P>
-        </Div>
-        <Div type="row" gap="sm">
-          <Button variant="outline" onClick={downloadTemplate}>
-            {STAFF_PAGE.downloadTemplate}
-          </Button>
-          <Button variant="outline" onClick={openBulkModal}>
-            {STAFF_PAGE.bulkImport}
-          </Button>
-          <Button onClick={openModal}>{STAFF_PAGE.addButton}</Button>
-        </Div>
-      </Div>
+      <PageHeader
+        title={STAFF_PAGE.title}
+        subtitle={pagination ? `${pagination.total} staff members` : "Loading..."}
+        illustration="/illustrations/staffs.svg"
+        actions={
+          <>
+            <Button variant="outline" onClick={downloadTemplate}>
+              {STAFF_PAGE.downloadTemplate}
+            </Button>
+            <Button variant="outline" onClick={openBulkModal}>
+              {STAFF_PAGE.bulkImport}
+            </Button>
+            <Button onClick={openModal}>{STAFF_PAGE.addButton}</Button>
+          </>
+        }
+      />
 
       <Div type="row" gap="md" align="center" wrap>
         <Input

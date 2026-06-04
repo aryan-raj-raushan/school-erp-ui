@@ -12,6 +12,7 @@ import {
   BookOpen,
   CalendarCheck,
   Palette,
+  LayoutDashboard,
 } from "lucide-react";
 import { Role } from "@/types";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -27,8 +28,14 @@ const SUPER_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
 export const APP_NAV_MAIN: NavItemConfig[] = [
   /* ---------------------------------------------------
-  Super Admin
+  Shared — visible to all authenticated roles
   --------------------------------------------------- */
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    roles: [...SCHOOL_ROLES, ...SUPER_ROLES],
+  },
 
   /* ---------------------------------------------------
   School Admin

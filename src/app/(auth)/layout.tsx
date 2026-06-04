@@ -1,19 +1,24 @@
 import { APP } from '@/constants';
+import { Div } from '@/components/ui/layout';
+import { H1, P } from '@/components/ui/typography';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {APP.name}
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">{APP.tagline}</p>
-        </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-8">
+    <Div
+      type="col"
+      align="center"
+      justify="center"
+      padding="min-h-screen bg-background px-4"
+    >
+      <Div type="col" padding="w-full max-w-md" gap="none">
+        <Div type="col" align="center" padding="mb-8" gap="xs">
+          <H1>{APP.name}</H1>
+          <P color="muted">{APP.tagline}</P>
+        </Div>
+        <Div variant="card" padding="p-8">
           {children}
-        </div>
-      </div>
-    </div>
+        </Div>
+      </Div>
+    </Div>
   );
 }

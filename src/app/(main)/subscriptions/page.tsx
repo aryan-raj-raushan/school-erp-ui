@@ -3,8 +3,9 @@
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useSchools } from '@/hooks/useSchools';
 import { SUBSCRIPTIONS_PAGE, SUBSCRIPTION_STATUS_BADGE, PLAN_TYPE_OPTIONS } from '@/constants';
+import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div, H1, P, Button,
+  Div, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
   Modal, ModalBody, ModalFooter, FormField, Input, Select,
   Badge, Spinner,
@@ -16,13 +17,12 @@ export default function SubscriptionsPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{SUBSCRIPTIONS_PAGE.title}</H1>
-          <P>{SUBSCRIPTIONS_PAGE.description}</P>
-        </Div>
-        <Button onClick={openModal}>{SUBSCRIPTIONS_PAGE.addButton}</Button>
-      </Div>
+      <PageHeader
+        title={SUBSCRIPTIONS_PAGE.title}
+        subtitle={SUBSCRIPTIONS_PAGE.description}
+        illustration="/illustrations/sparkles.svg"
+        actions={<Button onClick={openModal}>{SUBSCRIPTIONS_PAGE.addButton}</Button>}
+      />
 
       <Table>
         <TableHead>

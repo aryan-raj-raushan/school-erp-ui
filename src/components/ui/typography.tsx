@@ -125,9 +125,13 @@ export function ErrorText({ className, ...props }: React.HTMLAttributes<HTMLPara
   );
 }
 
-export function SectionLabel({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+interface SectionLabelProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  padding?: string;
+}
+
+export function SectionLabel({ className, padding, ...props }: SectionLabelProps) {
   return (
-    <p className={cn('text-xs font-semibold uppercase tracking-wider text-muted-foreground', className)} {...props} />
+    <p className={cn('text-xs font-semibold uppercase tracking-wider text-muted-foreground', padding, className)} {...props} />
   );
 }
 

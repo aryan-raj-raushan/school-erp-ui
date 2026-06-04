@@ -2,9 +2,9 @@
 
 import { useParents } from "@/hooks/useParents";
 import { PARENTS_PAGE } from "@/constants";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H1,
   P,
   Button,
   Input,
@@ -66,21 +66,22 @@ export default function ParentsPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{PARENTS_PAGE.title}</H1>
-          <P>{pagination ? `${pagination.total} parents` : "Loading..."}</P>
-        </Div>
-        <Div type="row" gap="sm">
-          <Button variant="outline" onClick={downloadTemplate}>
-            {PARENTS_PAGE.downloadTemplate}
-          </Button>
-          <Button variant="outline" onClick={openBulkModal}>
-            {PARENTS_PAGE.bulkImport}
-          </Button>
-          <Button onClick={openModal}>{PARENTS_PAGE.addButton}</Button>
-        </Div>
-      </Div>
+      <PageHeader
+        title={PARENTS_PAGE.title}
+        subtitle={pagination ? `${pagination.total} parents` : "Loading..."}
+        illustration="/illustrations/parents.svg"
+        actions={
+          <>
+            <Button variant="outline" onClick={downloadTemplate}>
+              {PARENTS_PAGE.downloadTemplate}
+            </Button>
+            <Button variant="outline" onClick={openBulkModal}>
+              {PARENTS_PAGE.bulkImport}
+            </Button>
+            <Button onClick={openModal}>{PARENTS_PAGE.addButton}</Button>
+          </>
+        }
+      />
 
       <Div type="row" gap="md" align="center" wrap>
         <Input

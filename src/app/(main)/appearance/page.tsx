@@ -5,6 +5,8 @@ import { Check, Moon, Sun } from "lucide-react";
 import {
   useThemeStore,
   THEME_OPTIONS,
+  THEME_PALETTE,
+  THEME_FALLBACK_COLOR,
   isLightColor,
   type TemplateId,
 } from "@/store/theme.store";
@@ -12,13 +14,6 @@ import { Div } from "@/components/ui/layout";
 import { PageTitle, H2, H3, P, SectionLabel } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const PALETTE: string[] = [
-  "#EF4444", "#F97316", "#F59E0B", "#EAB308",
-  "#84CC16", "#22C55E", "#14B8A6", "#06B6D4",
-  "#3B82F6", "#6366F1", "#8B5CF6", "#A855F7",
-  "#EC4899", "#F43F5E", "#64748B", "#0F172A",
-];
 
 export default function AppearancePage() {
   const {
@@ -31,8 +26,7 @@ export default function AppearancePage() {
   } = useThemeStore();
 
   const isCustom = templateId === "custom";
-  const pickerColor =
-    isCustom && customColor ? customColor : "#6366F1";
+  const pickerColor = isCustom && customColor ? customColor : THEME_FALLBACK_COLOR;
 
   return (
     <Div type="col" gap="lg">
@@ -114,7 +108,7 @@ export default function AppearancePage() {
               <P>One-click custom accent.</P>
             </Div>
             <Div type="grid" cols={4} gap="xs">
-              {PALETTE.map((color) => {
+              {THEME_PALETTE.map((color) => {
                 const active = isCustom && customColor === color;
                 return (
                   <Button

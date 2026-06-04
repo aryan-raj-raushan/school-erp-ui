@@ -16,8 +16,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { LogOut, MoreHorizontal } from "lucide-react";
-import { Icon } from "../ui/icon";
-import { Div } from "../ui";
+import { NavTooltip } from "../ui/nav-tooltip";
 
 interface UserInfo {
   fullName: string;
@@ -30,9 +29,10 @@ interface NavUserProps {
   userInfo: UserInfo;
   logout: () => void;
   isLoading?: boolean;
+  isCollapsed?: boolean;
 }
 
-export function NavUser({ userInfo, logout }: NavUserProps) {
+export function NavUser({ userInfo, logout, isCollapsed = false }: NavUserProps) {
   const { isMobile } = useSidebar();
 
   return (
@@ -40,17 +40,49 @@ export function NavUser({ userInfo, logout }: NavUserProps) {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg">
-              <Avatar>
-                <AvatarImage src={userInfo?.avatar} alt={userInfo.fullName} />
-                <AvatarFallback>{userInfo?.initials}</AvatarFallback>
-              </Avatar>
-              <Div wrap={true}>
-                <span>{userInfo.fullName}</span>
-                <span>{userInfo?.email}</span>
-              </Div>
-              <Icon icon={MoreHorizontal} className="ml-auto" />
-            </SidebarMenuButton>
+            <div style={{ position: "relative" }}>
+              <NavTooltip
+                label={userInfo.fullName || "Account"}
+                side="right"
+                disabled={!isCollapsed}
+              >
+                <SidebarMenuButton
+                  size="lg"
+                  style={isCollapsed
+                    ? { width: 40, padding: 0, justifyContent: "center", gap: 0, margin: "0 auto", display: "flex", alignItems: "center" }
+                    : undefined}
+                >
+                  <Avatar>
+                    <AvatarImage src={userInfo?.avatar} alt={userInfo.fullName} />
+                    <AvatarFallback>{userInfo?.initials}</AvatarFallback>
+                  </Avatar>
+
+                  {!isCollapsed && (
+                    <>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          flex: 1,
+                          minWidth: 0,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {userInfo.fullName}
+                        </span>
+                        <span style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", opacity: 0.6 }}>
+                          {userInfo?.email}
+                        </span>
+                      </div>
+                      <span style={{ marginLeft: "auto", flexShrink: 0, display: "flex" }}>
+                        <MoreHorizontal size={15} />
+                      </span>
+                    </>
+                  )}
+                </SidebarMenuButton>
+              </NavTooltip>
+            </div>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
@@ -59,22 +91,22 @@ export function NavUser({ userInfo, logout }: NavUserProps) {
             sideOffset={4}
           >
             <DropdownMenuLabel>
-              <Div type="row" align="center" justify="center">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Avatar>
                   <AvatarImage src={userInfo?.avatar} alt={userInfo?.fullName} />
                   <AvatarFallback>{userInfo.initials}</AvatarFallback>
                 </Avatar>
-                <Div type="col">
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   <span>{userInfo?.fullName}</span>
-                  <span>{userInfo?.email}</span>
-                </Div>
-              </Div>
+                  <span style={{ fontSize: 11, opacity: 0.6 }}>{userInfo?.email}</span>
+                </div>
+              </div>
             </DropdownMenuLabel>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onClick={logout}>
-              <Icon icon={LogOut} />
+              <LogOut size={14} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

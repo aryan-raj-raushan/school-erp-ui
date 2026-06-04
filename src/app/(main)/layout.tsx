@@ -2,10 +2,9 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-
 import { ROUTES } from "@/constants";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
-import { SidebarProvider, SidebarInset } from "@/components/ui";
+import { SidebarProvider } from "@/components/ui";
 import dynamic from "next/dynamic";
 
 const AppSidebar = dynamic(
@@ -27,25 +26,13 @@ export default function DashboardLayout({
   }, [router]);
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "17rem",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="floating" />
-      {/*
-        SidebarInset fills remaining flex space.
-        ml-2 adds a small gap between sidebar panel edge and content area.
-        bg-transparent lets the graffiti background show through.
-      */}
-      <SidebarInset className="bg-transparent ml-2 min-h-screen">
-        <div className="flex min-h-full flex-col gap-0 p-5 md:p-7">
+    <SidebarProvider>
+      <AppSidebar />
+      <main style={{ flex: 1, minHeight: "100vh", overflow: "auto" }}>
+        <div style={{ padding: "20px 28px", minHeight: "100%" }}>
           {children}
         </div>
-      </SidebarInset>
+      </main>
     </SidebarProvider>
   );
 }

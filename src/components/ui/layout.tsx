@@ -9,6 +9,7 @@ type DivVariant =
   | 'card' | 'card-dashed' | 'inset' | 'preview'
   | 'glass' | 'glass-sm' | 'glass-flat'
   | 'theme-icon' | 'theme-icon-lg' | 'theme-icon-sm'
+  | 'icon-muted'
   | 'gradient-bar';
 type DivColor = 'default' | 'green' | 'red' | 'yellow';
 
@@ -59,6 +60,8 @@ const variantMap: Record<DivVariant, string> = {
   'theme-icon':    'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl theme-gradient-bg theme-glow-shadow theme-icon-children',
   'theme-icon-lg': 'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl theme-gradient-bg theme-glow-shadow theme-icon-children',
   'theme-icon-sm': 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg theme-gradient-bg theme-glow-shadow theme-icon-children',
+  /* Neutral muted icon circle */
+  'icon-muted':    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground',
   /* Thin gradient accent bar */
   'gradient-bar': 'h-[3px] w-full theme-gradient-bg rounded-full',
 };

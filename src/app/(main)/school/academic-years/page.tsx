@@ -2,8 +2,9 @@
 
 import { useAcademicYears } from '@/hooks/useAcademicYears';
 import { ACADEMIC_YEARS_PAGE } from '@/constants';
+import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div, H1, P, Button,
+  Div, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Modal, ModalBody, ModalFooter, FormField, Input,
   Badge, Spinner, Icon,
@@ -20,13 +21,12 @@ export default function AcademicYearsPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{ACADEMIC_YEARS_PAGE.title}</H1>
-          <P>{ACADEMIC_YEARS_PAGE.description}</P>
-        </Div>
-        <Button onClick={openModal}>{ACADEMIC_YEARS_PAGE.addButton}</Button>
-      </Div>
+      <PageHeader
+        title={ACADEMIC_YEARS_PAGE.title}
+        subtitle={ACADEMIC_YEARS_PAGE.description}
+        illustration="/illustrations/graduation.svg"
+        actions={<Button onClick={openModal}>{ACADEMIC_YEARS_PAGE.addButton}</Button>}
+      />
 
       <Table>
         <TableHead>

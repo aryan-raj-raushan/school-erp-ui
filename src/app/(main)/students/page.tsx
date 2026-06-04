@@ -11,9 +11,9 @@ import {
   STUDENT_STATUS_OPTIONS,
   GENDER_OPTIONS,
 } from "@/constants";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H1,
   P,
   Button,
   Input,
@@ -69,13 +69,12 @@ export default function StudentsPage() {
 
   return (
     <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{STUDENTS_PAGE.title}</H1>
-          <P>{pagination ? `${pagination.total} students` : "Loading..."}</P>
-        </Div>
-        <Button onClick={openModal}>{STUDENTS_PAGE.addButton}</Button>
-      </Div>
+      <PageHeader
+        title={STUDENTS_PAGE.title}
+        subtitle={pagination ? `${pagination.total} students` : "Loading..."}
+        illustration="/illustrations/students.svg"
+        actions={<Button onClick={openModal}>{STUDENTS_PAGE.addButton}</Button>}
+      />
 
       <Div type="row" gap="md" align="center" wrap>
         <Input
