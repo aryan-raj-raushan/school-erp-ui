@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const studentSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   date_of_birth: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
-  phone_number: z.string().optional(),
+  phone_number: z.string().regex(/^\d{7,15}$/, 'Enter valid phone number').optional().or(z.literal('')),
   dial_code: z.string().optional(),
   nationality: z.string().optional(),
   admission_date: z.string().optional(),
@@ -31,7 +31,7 @@ const parentSchema = z.object({
   first_name: z.string().min(1, 'First name required'),
   last_name: z.string().optional(),
   dial_code: z.string().min(1, 'Dial code required'),
-  phone_number: z.string().min(1, 'Phone required'),
+  phone_number: z.string().min(7, 'Valid phone required').regex(/^\d+$/, 'Numbers only'),
   email: z.string().email().optional().or(z.literal('')),
   occupation: z.string().optional(),
   is_primary: z.boolean().optional(),
@@ -54,24 +54,19 @@ export function useStudents(initialFilters: StudentFilters = {}) {
   const [students, setStudents] = useState<Student[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState(initialFilters);
+  const [searchInput, setSearchInput] = useState(initialFilters.search ?? '');
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
-    defaultValues: {
-      dial_code: '+91',
-      status: 'ACTIVE',
-      nationality: 'Indian',
-      ...initialFilters,
-    },
+    defaultValues: { dial_code: '+91', status: 'ACTIVE', nationality: 'Indian' },
   });
 
-  const editForm = useForm<StudentFormValues>({
-    resolver: zodResolver(studentSchema),
-  });
+  const editForm = useForm<StudentFormValues>({ resolver: zodResolver(studentSchema) });
 
   const fetchStudents = useCallback(async (overrideFilters?: StudentFilters) => {
     setIsLoading(true);
@@ -87,53 +82,61 @@ export function useStudents(initialFilters: StudentFilters = {}) {
   }, [filters]);
 
   async function createStudent(values: StudentFormValues) {
-    const payload: CreateStudentPayload = {
-      first_name: values.first_name,
-      admission_number: values.admission_number,
-      academic_year_id: values.academic_year_id,
-      class_id: values.class_id,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.section_id && { section_id: values.section_id }),
-      ...(values.roll_number && { roll_number: values.roll_number }),
-      ...(values.gender && { gender: values.gender }),
-      ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
-      ...(values.email && { email: values.email }),
-      ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
-      ...(values.nationality && { nationality: values.nationality }),
-      ...(values.admission_date && { admission_date: values.admission_date }),
-      status: values.status ?? 'ACTIVE',
-    };
-    const student = await StudentsService.create(payload);
-    toast.success(`${student.first_name} added`);
-    await fetchStudents();
-    setShowModal(false);
-    form.reset();
+    try {
+      const payload: CreateStudentPayload = {
+        first_name: values.first_name,
+        admission_number: values.admission_number,
+        academic_year_id: values.academic_year_id,
+        class_id: values.class_id,
+        status: values.status ?? 'ACTIVE',
+        ...(values.last_name && { last_name: values.last_name }),
+        ...(values.section_id && { section_id: values.section_id }),
+        ...(values.roll_number && { roll_number: values.roll_number }),
+        ...(values.gender && { gender: values.gender }),
+        ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
+        ...(values.email && { email: values.email }),
+        ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
+        ...(values.nationality && { nationality: values.nationality }),
+        ...(values.admission_date && { admission_date: values.admission_date }),
+      };
+      const student = await StudentsService.create(payload);
+      toast.success(`${student.first_name} added`);
+      await fetchStudents();
+      setShowModal(false);
+      form.reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add student');
+    }
   }
 
   async function updateStudent(values: StudentFormValues) {
     if (!editingStudent) return;
-    const payload: UpdateStudentPayload = {
-      first_name: values.first_name,
-      admission_number: values.admission_number,
-      academic_year_id: values.academic_year_id,
-      class_id: values.class_id,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.section_id && { section_id: values.section_id }),
-      ...(values.roll_number && { roll_number: values.roll_number }),
-      ...(values.gender && { gender: values.gender }),
-      ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
-      ...(values.email && { email: values.email }),
-      ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
-      ...(values.nationality && { nationality: values.nationality }),
-      ...(values.admission_date && { admission_date: values.admission_date }),
-      ...(values.status && { status: values.status }),
-    };
-    const student = await StudentsService.update(editingStudent.id, payload);
-    toast.success(`${student.first_name} updated`);
-    await fetchStudents();
-    setShowEditModal(false);
-    setEditingStudent(null);
-    editForm.reset();
+    try {
+      const payload: UpdateStudentPayload = {
+        first_name: values.first_name,
+        admission_number: values.admission_number,
+        academic_year_id: values.academic_year_id,
+        class_id: values.class_id,
+        ...(values.last_name !== undefined && { last_name: values.last_name }),
+        ...(values.section_id && { section_id: values.section_id }),
+        ...(values.roll_number !== undefined && { roll_number: values.roll_number }),
+        ...(values.gender && { gender: values.gender }),
+        ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
+        ...(values.email !== undefined && { email: values.email }),
+        ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
+        ...(values.nationality && { nationality: values.nationality }),
+        ...(values.admission_date && { admission_date: values.admission_date }),
+        ...(values.status && { status: values.status }),
+      };
+      const student = await StudentsService.update(editingStudent.id, payload);
+      toast.success(`${student.first_name} updated`);
+      await fetchStudents();
+      setShowEditModal(false);
+      setEditingStudent(null);
+      editForm.reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update student');
+    }
   }
 
   async function deleteStudent(id: string) {
@@ -168,14 +171,24 @@ export function useStudents(initialFilters: StudentFilters = {}) {
     setShowEditModal(true);
   }
 
+  // Debounced search: non-search filters apply immediately, search debounced 400ms
   function updateFilters(next: Partial<StudentFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    if ('search' in next) {
+      const val = next.search ?? '';
+      setSearchInput(val);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setFilters((prev) => ({ ...prev, search: val || undefined, page: 1 }));
+      }, 400);
+    } else {
+      setFilters((prev) => ({ ...prev, ...next }));
+    }
   }
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
   return {
-    students, pagination, filters, isLoading,
+    students, pagination, filters, searchInput, isLoading,
     showModal,
     openModal: () => setShowModal(true),
     closeModal: () => { setShowModal(false); form.reset(); },
@@ -211,9 +224,7 @@ export function useStudentDetail(studentId: string) {
     defaultValues: { dial_code: '+91', is_primary: false, can_pickup: false, relation: 'FATHER' },
   });
 
-  const editParentForm = useForm<ParentFormValues>({
-    resolver: zodResolver(parentSchema),
-  });
+  const editParentForm = useForm<ParentFormValues>({ resolver: zodResolver(parentSchema) });
 
   const fetchStudent = useCallback(async () => {
     setIsLoading(true);
@@ -234,43 +245,51 @@ export function useStudentDetail(studentId: string) {
   }, [studentId]);
 
   async function addParent(values: ParentFormValues) {
-    const payload: CreateParentPayload = {
-      relation: values.relation,
-      first_name: values.first_name,
-      dial_code: values.dial_code,
-      phone_number: values.phone_number,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.email && { email: values.email }),
-      ...(values.occupation && { occupation: values.occupation }),
-      is_primary: values.is_primary ?? false,
-      can_pickup: values.can_pickup ?? false,
-    };
-    const parent = await StudentsService.addParent(studentId, payload);
-    toast.success(`${parent.first_name} added`);
-    setParents((prev) => [...prev, parent]);
-    setShowParentModal(false);
-    parentForm.reset();
+    try {
+      const payload: CreateParentPayload = {
+        relation: values.relation,
+        first_name: values.first_name,
+        dial_code: values.dial_code,
+        phone_number: values.phone_number,
+        ...(values.last_name && { last_name: values.last_name }),
+        ...(values.email && { email: values.email }),
+        ...(values.occupation && { occupation: values.occupation }),
+        is_primary: values.is_primary ?? false,
+        can_pickup: values.can_pickup ?? false,
+      };
+      const parent = await StudentsService.addParent(studentId, payload);
+      toast.success(`${parent.first_name} added`);
+      setParents((prev) => [...prev, parent]);
+      setShowParentModal(false);
+      parentForm.reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add parent');
+    }
   }
 
   async function updateParent(values: ParentFormValues) {
     if (!editingParent) return;
-    const payload: UpdateParentPayload = {
-      relation: values.relation,
-      first_name: values.first_name,
-      dial_code: values.dial_code,
-      phone_number: values.phone_number,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.email && { email: values.email }),
-      ...(values.occupation && { occupation: values.occupation }),
-      is_primary: values.is_primary ?? false,
-      can_pickup: values.can_pickup ?? false,
-    };
-    const updated = await StudentsService.updateParent(studentId, editingParent.id, payload);
-    toast.success(`${updated.first_name} updated`);
-    setParents((prev) => prev.map((p) => (p.id === editingParent.id ? updated : p)));
-    setShowEditParentModal(false);
-    setEditingParent(null);
-    editParentForm.reset();
+    try {
+      const payload: UpdateParentPayload = {
+        relation: values.relation,
+        first_name: values.first_name,
+        dial_code: values.dial_code,
+        phone_number: values.phone_number,
+        ...(values.last_name !== undefined && { last_name: values.last_name }),
+        ...(values.email !== undefined && { email: values.email }),
+        ...(values.occupation !== undefined && { occupation: values.occupation }),
+        is_primary: values.is_primary ?? false,
+        can_pickup: values.can_pickup ?? false,
+      };
+      const updated = await StudentsService.updateParent(studentId, editingParent.id, payload);
+      toast.success(`${updated.first_name} updated`);
+      setParents((prev) => prev.map((p) => (p.id === editingParent.id ? updated : p)));
+      setShowEditParentModal(false);
+      setEditingParent(null);
+      editParentForm.reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update parent');
+    }
   }
 
   async function removeParent(parentId: string) {

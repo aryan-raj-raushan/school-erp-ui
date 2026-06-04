@@ -14,17 +14,15 @@ export const STAFF_STATUS_OPTIONS = [
   { value: 'OFFBOARDED', label: 'Offboarded' },
 ] as const;
 
+// Matches backend SchoolRole enum exactly
 export const STAFF_ROLE_OPTIONS = [
-  { value: '', label: 'Select role' },
   { value: 'TEACHER', label: 'Teacher' },
+  { value: 'CLASS_TEACHER', label: 'Class Teacher' },
   { value: 'ACCOUNTANT', label: 'Accountant' },
   { value: 'LIBRARIAN', label: 'Librarian' },
-  { value: 'COUNSELOR', label: 'Counselor' },
-  { value: 'COORDINATOR', label: 'Coordinator' },
   { value: 'PRINCIPAL', label: 'Principal' },
   { value: 'VICE_PRINCIPAL', label: 'Vice Principal' },
-  { value: 'ADMIN_STAFF', label: 'Admin Staff' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'SCHOOL_ADMIN', label: 'Admin' },
 ] as const;
 
 export const STAFF_PAGE = {
@@ -34,9 +32,6 @@ export const STAFF_PAGE = {
   downloadTemplate: 'Download Template',
   table: {
     name: 'Name',
-    employeeId: 'Employee ID',
-    designation: 'Designation',
-    department: 'Department',
     role: 'Role',
     email: 'Email',
     phone: 'Phone',
@@ -48,16 +43,12 @@ export const STAFF_PAGE = {
     title: 'Add Staff Member',
     firstName: 'First Name *',
     lastName: 'Last Name',
+    dialCode: 'Dial Code *',
+    phone: 'Phone *',
     email: 'Email',
-    dialCode: 'Dial Code',
-    phone: 'Phone',
-    employeeId: 'Employee ID',
-    designation: 'Designation',
-    department: 'Department',
-    role: 'Role',
-    dateOfJoining: 'Date of Joining',
-    dateOfBirth: 'Date of Birth',
+    role: 'Role *',
     gender: 'Gender',
+    dateOfBirth: 'Date of Birth',
     submit: 'Add Staff',
     cancel: 'Cancel',
   },
@@ -78,9 +69,6 @@ export const STAFF_PAGE = {
     email: 'staff@school.edu',
     dialCode: '+91',
     phone: '9876543210',
-    employeeId: 'EMP001',
-    designation: 'Class Teacher',
-    department: 'Science',
   },
   offboardForm: {
     title: 'Offboard Staff Member',

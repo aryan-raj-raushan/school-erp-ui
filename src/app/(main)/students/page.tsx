@@ -43,6 +43,7 @@ export default function StudentsPage() {
     students,
     pagination,
     filters,
+    searchInput,
     isLoading,
     showModal,
     openModal,
@@ -60,6 +61,12 @@ export default function StudentsPage() {
     updateFilters,
   } = useStudents();
 
+  // Cascade: section filtered by selected class in add/edit form
+  const watchedAddClassId = form.watch("class_id");
+  const watchedEditClassId = editForm.watch("class_id");
+  const addSections = sections.filter((s) => s.class_id === watchedAddClassId);
+  const editSections = sections.filter((s) => s.class_id === watchedEditClassId);
+
   return (
     <Div type="col" gap="lg">
       <Div type="row" justify="between" align="center">
@@ -74,7 +81,7 @@ export default function StudentsPage() {
         <Input
           width="md"
           placeholder="Search by name or admission no."
-          value={filters.search ?? ""}
+          value={searchInput}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
         <Select
@@ -265,7 +272,7 @@ export default function StudentsPage() {
                   >
                     <Select {...form.register("section_id")}>
                       <option value="">Select section</option>
-                      {sections.map((s) => (
+                      {addSections.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>
@@ -310,6 +317,13 @@ export default function StudentsPage() {
                     <Input type="date" {...form.register("admission_date")} />
                   </FormField>
                 </Div>
+                <FormField label="Status">
+                  <Select {...form.register("status")}>
+                    {STUDENT_STATUS_OPTIONS.filter((o) => o.value !== "").map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </Select>
+                </FormField>
                 <FormField
                   label={STUDENTS_PAGE.form.email}
                   error={form.formState.errors.email?.message}
@@ -424,7 +438,7 @@ export default function StudentsPage() {
                   >
                     <Select {...editForm.register("section_id")}>
                       <option value="">Select section</option>
-                      {sections.map((s) => (
+                      {editSections.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>

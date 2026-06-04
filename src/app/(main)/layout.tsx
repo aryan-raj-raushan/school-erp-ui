@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
 import { SidebarProvider, SidebarInset, Div } from "@/components/ui";
-import { AppSidebar } from "@/components/layout/AppSidebar";
+import dynamic from "next/dynamic";
+
+const AppSidebar = dynamic(
+  () => import("@/components/layout/AppSidebar").then((m) => m.AppSidebar),
+  { ssr: false },
+);
 
 export default function DashboardLayout({
   children,

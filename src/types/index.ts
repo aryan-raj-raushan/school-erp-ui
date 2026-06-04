@@ -179,7 +179,7 @@ export interface Parent {
 // ─── Staff ────────────────────────────────────────────────────────────────────
 
 export type StaffStatus = 'ACTIVE' | 'INACTIVE' | 'OFFBOARDED';
-export type StaffRole = 'TEACHER' | 'ACCOUNTANT' | 'LIBRARIAN' | 'COUNSELOR' | 'COORDINATOR' | 'PRINCIPAL' | 'VICE_PRINCIPAL' | 'ADMIN_STAFF' | 'OTHER';
+export type StaffRole = 'SCHOOL_ADMIN' | 'PRINCIPAL' | 'VICE_PRINCIPAL' | 'TEACHER' | 'CLASS_TEACHER' | 'ACCOUNTANT' | 'LIBRARIAN';
 
 export interface Staff {
   id: string;
@@ -324,7 +324,7 @@ export interface AttendanceExportJob {
 
 // ─── Student Document ─────────────────────────────────────────────────────────
 
-export type DocumentType = 'BIRTH_CERTIFICATE' | 'TRANSFER_CERTIFICATE' | 'MARKSHEET' | 'ID_PROOF' | 'ADDRESS_PROOF' | 'MEDICAL_RECORD' | 'OTHER';
+export type DocumentType = 'BIRTH_CERTIFICATE' | 'TRANSFER_CERTIFICATE' | 'AADHAAR' | 'PHOTO' | 'MEDICAL_CERTIFICATE' | 'CASTE_CERTIFICATE' | 'INCOME_CERTIFICATE' | 'PREVIOUS_MARKSHEET' | 'OTHER';
 
 export interface StudentDocument {
   id: string;

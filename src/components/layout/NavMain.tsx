@@ -38,26 +38,20 @@ export function NavMain({ items }: { items: NavItemConfig[] }) {
             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarMenu>
-            <SidebarMenu>
-              {items.map((item: NavItemConfig) => {
+            {items.map((item: NavItemConfig) => {
                 const hasChildren = item.items?.length;
 
                 if (hasChildren) {
                   return (
-                    <Collapsible
-                      key={item.title}
-                      className="group/collapsible"
-                    >
-                      <SidebarMenuItem>
+                    <SidebarMenuItem key={item.title}>
+                      <Collapsible className="group/collapsible">
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton tooltip={item.title}>
                             <item.icon />
                             <span>{item.title}</span>
-
                             <Icon icon={ChevronRight} type="chevron-icon" />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
-
                         <CollapsibleContent>
                           <SidebarMenu childrenItem>
                             {item.items?.map((subItem) => (
@@ -71,8 +65,8 @@ export function NavMain({ items }: { items: NavItemConfig[] }) {
                             ))}
                           </SidebarMenu>
                         </CollapsibleContent>
-                      </SidebarMenuItem>
-                    </Collapsible>
+                      </Collapsible>
+                    </SidebarMenuItem>
                   );
                 }
 
@@ -87,7 +81,6 @@ export function NavMain({ items }: { items: NavItemConfig[] }) {
                   </SidebarMenuItem>
                 );
               })}
-            </SidebarMenu>
           </SidebarMenu>
         </Div>
       </SidebarGroupContent>

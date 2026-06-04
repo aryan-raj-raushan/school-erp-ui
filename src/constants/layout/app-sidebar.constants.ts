@@ -107,6 +107,12 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Leave Management", url: "/leave" },
     ],
   },
+  {
+    title: "Leave",
+    url: "/leave",
+    icon: CalendarDays,
+    roles: [Role.TEACHER],
+  },
 
   {
     title: "School Setup",

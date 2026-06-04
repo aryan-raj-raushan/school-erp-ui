@@ -96,10 +96,12 @@ export const STUDENTS_PAGE = {
 export const DOCUMENT_TYPE_OPTIONS = [
   { value: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
   { value: 'TRANSFER_CERTIFICATE', label: 'Transfer Certificate' },
-  { value: 'MARKSHEET', label: 'Marksheet' },
-  { value: 'ID_PROOF', label: 'ID Proof' },
-  { value: 'ADDRESS_PROOF', label: 'Address Proof' },
-  { value: 'MEDICAL_RECORD', label: 'Medical Record' },
+  { value: 'AADHAAR', label: 'Aadhaar Card' },
+  { value: 'PHOTO', label: 'Photo' },
+  { value: 'MEDICAL_CERTIFICATE', label: 'Medical Certificate' },
+  { value: 'CASTE_CERTIFICATE', label: 'Caste Certificate' },
+  { value: 'INCOME_CERTIFICATE', label: 'Income Certificate' },
+  { value: 'PREVIOUS_MARKSHEET', label: 'Previous Marksheet' },
   { value: 'OTHER', label: 'Other' },
 ] as const;
 

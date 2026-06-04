@@ -11,23 +11,31 @@ export interface StaffFilters {
   [key: string]: unknown;
 }
 
+// Backend CreateStaffDto fields only — no designation/department/employee_id
 export interface CreateStaffPayload {
   first_name: string;
   last_name?: string;
+  dial_code: string;
+  phone_number: string;
   email?: string;
-  phone_number?: string;
-  dial_code?: string;
-  employee_id?: string;
-  designation?: string;
-  department?: string;
-  staff_role?: StaffRole;
-  date_of_joining?: string;
-  date_of_birth?: string;
+  role: StaffRole;
   gender?: Gender;
+  date_of_birth?: string;
+  blood_group?: string;
+  address?: string;
 }
 
-export interface UpdateStaffPayload extends Partial<CreateStaffPayload> {
-  status?: StaffStatus;
+// UpdateStaffDto = PartialType(OmitType(Create, ['role'])) — no role field
+export interface UpdateStaffPayload {
+  first_name?: string;
+  last_name?: string;
+  dial_code?: string;
+  phone_number?: string;
+  email?: string;
+  gender?: Gender;
+  date_of_birth?: string;
+  blood_group?: string;
+  address?: string;
 }
 
 export interface OffboardPayload {

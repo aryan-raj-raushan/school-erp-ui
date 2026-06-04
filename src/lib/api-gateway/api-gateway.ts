@@ -34,8 +34,8 @@ export class ApiGateway {
 
       const response = await this.post<{ accessToken: string; refreshToken: string }>(
         ENDPOINTS.auth.refresh,
-        {},
-        { skipRefresh: true, headers: { Authorization: `Bearer ${refreshToken}` } },
+        { refreshToken },
+        { skipRefresh: true, skipAuth: true },
       );
       return response.data;
     };

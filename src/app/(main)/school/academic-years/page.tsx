@@ -6,11 +6,17 @@ import {
   Div, H1, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Modal, ModalBody, ModalFooter, FormField, Input,
-  Badge, Spinner, CheckboxLabel,
+  Badge, Spinner, Icon,
 } from '@/components/ui';
+import { Pencil } from 'lucide-react';
 
 export default function AcademicYearsPage() {
-  const { years, isLoading, showModal, openModal, closeModal, form, handleSubmit, isSubmitting, setCurrent } = useAcademicYears();
+  const {
+    years, isLoading,
+    showModal, openModal, closeModal, form, handleSubmit, isSubmitting,
+    showEditModal, openEditModal, closeEditModal, editForm, handleEditSubmit, isEditSubmitting,
+    setCurrent,
+  } = useAcademicYears();
 
   return (
     <Div type="col" gap="lg">
@@ -49,11 +55,16 @@ export default function AcademicYearsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {!year.is_current && (
-                    <Button size="sm" variant="outline" onClick={() => setCurrent(year.id)}>
-                      {ACADEMIC_YEARS_PAGE.setCurrentButton}
+                  <Div type="row" gap="xs">
+                    <Button size="sm" variant="ghost" onClick={() => openEditModal(year)}>
+                      <Icon icon={Pencil} type="sm" />
                     </Button>
-                  )}
+                    {!year.is_current && (
+                      <Button size="sm" variant="outline" onClick={() => setCurrent(year.id)}>
+                        {ACADEMIC_YEARS_PAGE.setCurrentButton}
+                      </Button>
+                    )}
+                  </Div>
                 </TableCell>
               </TableRow>
             ))
@@ -61,6 +72,7 @@ export default function AcademicYearsPage() {
         </TableBody>
       </Table>
 
+      {/* Create Modal — no is_current checkbox */}
       {showModal && (
         <Modal onClose={closeModal} title={ACADEMIC_YEARS_PAGE.form.title} size="md">
           <form onSubmit={handleSubmit}>
@@ -77,17 +89,38 @@ export default function AcademicYearsPage() {
                     <Input type="date" {...form.register('end_date')} />
                   </FormField>
                 </Div>
-                <Div type="row" align="center" gap="sm">
-                  <input type="checkbox" id="is_current" {...form.register('is_current')} />
-                  <CheckboxLabel htmlFor="is_current">
-                    {ACADEMIC_YEARS_PAGE.form.isCurrent}
-                  </CheckboxLabel>
-                </Div>
               </Div>
             </ModalBody>
             <ModalFooter>
               <Button type="button" variant="outline" onClick={closeModal}>{ACADEMIC_YEARS_PAGE.form.cancel}</Button>
               <Button type="submit" loading={isSubmitting}>{ACADEMIC_YEARS_PAGE.form.submit}</Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <Modal onClose={closeEditModal} title="Edit Academic Year" size="md">
+          <form onSubmit={handleEditSubmit}>
+            <ModalBody>
+              <Div type="col" gap="md">
+                <FormField label={ACADEMIC_YEARS_PAGE.form.name} error={editForm.formState.errors.name?.message}>
+                  <Input {...editForm.register('name')} />
+                </FormField>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField label={ACADEMIC_YEARS_PAGE.form.startDate} error={editForm.formState.errors.start_date?.message}>
+                    <Input type="date" {...editForm.register('start_date')} />
+                  </FormField>
+                  <FormField label={ACADEMIC_YEARS_PAGE.form.endDate} error={editForm.formState.errors.end_date?.message}>
+                    <Input type="date" {...editForm.register('end_date')} />
+                  </FormField>
+                </Div>
+              </Div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="outline" onClick={closeEditModal}>Cancel</Button>
+              <Button type="submit" loading={isEditSubmitting}>Save Changes</Button>
             </ModalFooter>
           </form>
         </Modal>

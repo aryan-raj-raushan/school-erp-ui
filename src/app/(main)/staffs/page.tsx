@@ -116,10 +116,9 @@ export default function StaffsPage() {
         <TableHead>
           <TableHeadRow>
             <TableHeaderCell>{STAFF_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.employeeId}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.designation}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.department}</TableHeaderCell>
+            <TableHeaderCell>{STAFF_PAGE.table.role}</TableHeaderCell>
             <TableHeaderCell>{STAFF_PAGE.table.email}</TableHeaderCell>
+            <TableHeaderCell>{STAFF_PAGE.table.phone}</TableHeaderCell>
             <TableHeaderCell>{STAFF_PAGE.table.status}</TableHeaderCell>
             <TableHeaderCell>{STAFF_PAGE.table.actions}</TableHeaderCell>
           </TableHeadRow>
@@ -137,10 +136,9 @@ export default function StaffsPage() {
                 <TableCell primary>
                   {staff.first_name} {staff.last_name ?? ""}
                 </TableCell>
-                <TableCell>{staff.employee_id ?? "—"}</TableCell>
-                <TableCell>{staff.designation ?? "—"}</TableCell>
-                <TableCell>{staff.department ?? "—"}</TableCell>
+                <TableCell>{staff.staff_role ?? "—"}</TableCell>
                 <TableCell>{staff.email ?? "—"}</TableCell>
+                <TableCell>{staff.phone_number ?? "—"}</TableCell>
                 <TableCell>
                   <Badge variant={STAFF_STATUS_BADGE[staff.status]}>
                     {staff.status}
@@ -211,118 +209,42 @@ export default function StaffsPage() {
             <ModalBody>
               <Div type="col" gap="md">
                 <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.firstName}
-                    error={form.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.firstName}
-                      {...form.register("first_name")}
-                    />
+                  <FormField label={STAFF_PAGE.form.firstName} error={form.formState.errors.first_name?.message}>
+                    <Input placeholder={STAFF_PAGE.placeholders.firstName} {...form.register("first_name")} />
                   </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.lastName}
-                    error={form.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.lastName}
-                      {...form.register("last_name")}
-                    />
+                  <FormField label={STAFF_PAGE.form.lastName}>
+                    <Input placeholder={STAFF_PAGE.placeholders.lastName} {...form.register("last_name")} />
                   </FormField>
                 </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.employeeId}
-                    error={form.formState.errors.employee_id?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.employeeId}
-                      {...form.register("employee_id")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.role}
-                    error={form.formState.errors.staff_role?.message}
-                  >
-                    <Select {...form.register("staff_role")}>
-                      {STAFF_ROLE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.designation}
-                    error={form.formState.errors.designation?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.designation}
-                      {...form.register("designation")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.department}
-                    error={form.formState.errors.department?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.department}
-                      {...form.register("department")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={STAFF_PAGE.form.email}
-                  error={form.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={STAFF_PAGE.placeholders.email}
-                    {...form.register("email")}
-                  />
+                <FormField label={STAFF_PAGE.form.role} error={form.formState.errors.role?.message}>
+                  <Select {...form.register("role")}>
+                    <option value="">Select role</option>
+                    {STAFF_ROLE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </Select>
                 </FormField>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={STAFF_PAGE.form.dialCode}
-                    error={form.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={STAFF_PAGE.placeholders.dialCode}
-                      {...form.register("dial_code")}
-                    />
+                <FormField label={STAFF_PAGE.form.email} error={form.formState.errors.email?.message}>
+                  <Input type="email" placeholder={STAFF_PAGE.placeholders.email} {...form.register("email")} />
+                </FormField>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField label={STAFF_PAGE.form.dialCode} error={form.formState.errors.dial_code?.message}>
+                    <Input width="xs" placeholder={STAFF_PAGE.placeholders.dialCode} {...form.register("dial_code")} />
                   </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.phone}
-                    error={form.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={STAFF_PAGE.placeholders.phone}
-                      {...form.register("phone_number")}
-                    />
+                  <FormField label={STAFF_PAGE.form.phone} error={form.formState.errors.phone_number?.message}>
+                    <Input type="tel" placeholder={STAFF_PAGE.placeholders.phone} {...form.register("phone_number")} />
                   </FormField>
                 </Div>
                 <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.gender}
-                    error={form.formState.errors.gender?.message}
-                  >
+                  <FormField label={STAFF_PAGE.form.gender}>
                     <Select {...form.register("gender")}>
                       {GENDER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </Select>
                   </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.dateOfJoining}
-                    error={form.formState.errors.date_of_joining?.message}
-                  >
-                    <Input type="date" {...form.register("date_of_joining")} />
+                  <FormField label={STAFF_PAGE.form.dateOfBirth}>
+                    <Input type="date" {...form.register("date_of_birth")} />
                   </FormField>
                 </Div>
               </Div>
@@ -346,118 +268,34 @@ export default function StaffsPage() {
             <ModalBody>
               <Div type="col" gap="md">
                 <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.firstName}
-                    error={editForm.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.firstName}
-                      {...editForm.register("first_name")}
-                    />
+                  <FormField label={STAFF_PAGE.form.firstName} error={editForm.formState.errors.first_name?.message}>
+                    <Input placeholder={STAFF_PAGE.placeholders.firstName} {...editForm.register("first_name")} />
                   </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.lastName}
-                    error={editForm.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.lastName}
-                      {...editForm.register("last_name")}
-                    />
+                  <FormField label={STAFF_PAGE.form.lastName}>
+                    <Input placeholder={STAFF_PAGE.placeholders.lastName} {...editForm.register("last_name")} />
                   </FormField>
                 </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.employeeId}
-                    error={editForm.formState.errors.employee_id?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.employeeId}
-                      {...editForm.register("employee_id")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.role}
-                    error={editForm.formState.errors.staff_role?.message}
-                  >
-                    <Select {...editForm.register("staff_role")}>
-                      {STAFF_ROLE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.designation}
-                    error={editForm.formState.errors.designation?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.designation}
-                      {...editForm.register("designation")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.department}
-                    error={editForm.formState.errors.department?.message}
-                  >
-                    <Input
-                      placeholder={STAFF_PAGE.placeholders.department}
-                      {...editForm.register("department")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={STAFF_PAGE.form.email}
-                  error={editForm.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={STAFF_PAGE.placeholders.email}
-                    {...editForm.register("email")}
-                  />
+                <FormField label={STAFF_PAGE.form.email} error={editForm.formState.errors.email?.message}>
+                  <Input type="email" placeholder={STAFF_PAGE.placeholders.email} {...editForm.register("email")} />
                 </FormField>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={STAFF_PAGE.form.dialCode}
-                    error={editForm.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={STAFF_PAGE.placeholders.dialCode}
-                      {...editForm.register("dial_code")}
-                    />
+                <Div type="grid" cols={2} gap="md">
+                  <FormField label={STAFF_PAGE.form.dialCode} error={editForm.formState.errors.dial_code?.message}>
+                    <Input width="xs" placeholder={STAFF_PAGE.placeholders.dialCode} {...editForm.register("dial_code")} />
                   </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.phone}
-                    error={editForm.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={STAFF_PAGE.placeholders.phone}
-                      {...editForm.register("phone_number")}
-                    />
+                  <FormField label={STAFF_PAGE.form.phone} error={editForm.formState.errors.phone_number?.message}>
+                    <Input type="tel" placeholder={STAFF_PAGE.placeholders.phone} {...editForm.register("phone_number")} />
                   </FormField>
                 </Div>
                 <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STAFF_PAGE.form.gender}
-                    error={editForm.formState.errors.gender?.message}
-                  >
+                  <FormField label={STAFF_PAGE.form.gender}>
                     <Select {...editForm.register("gender")}>
                       {GENDER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </Select>
                   </FormField>
-                  <FormField
-                    label={STAFF_PAGE.form.dateOfJoining}
-                    error={editForm.formState.errors.date_of_joining?.message}
-                  >
-                    <Input type="date" {...editForm.register("date_of_joining")} />
+                  <FormField label={STAFF_PAGE.form.dateOfBirth}>
+                    <Input type="date" {...editForm.register("date_of_birth")} />
                   </FormField>
                 </Div>
               </Div>

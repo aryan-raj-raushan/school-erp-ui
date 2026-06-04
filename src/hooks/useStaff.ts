@@ -11,16 +11,12 @@ import type { Staff, StaffStatus, PaginationMeta, BulkImportJob } from '@/types'
 const staffSchema = z.object({
   first_name: z.string().min(1, 'First name required'),
   last_name: z.string().optional(),
+  dial_code: z.string().min(1, 'Dial code required'),
+  phone_number: z.string().min(7, 'Valid phone required').regex(/^\d+$/, 'Numbers only'),
   email: z.string().email().optional().or(z.literal('')),
-  phone_number: z.string().optional(),
-  dial_code: z.string().optional(),
-  employee_id: z.string().optional(),
-  designation: z.string().optional(),
-  department: z.string().optional(),
-  staff_role: z.enum(['TEACHER', 'ACCOUNTANT', 'LIBRARIAN', 'COUNSELOR', 'COORDINATOR', 'PRINCIPAL', 'VICE_PRINCIPAL', 'ADMIN_STAFF', 'OTHER']).optional(),
-  date_of_joining: z.string().optional(),
-  date_of_birth: z.string().optional(),
+  role: z.enum(['SCHOOL_ADMIN', 'PRINCIPAL', 'VICE_PRINCIPAL', 'TEACHER', 'CLASS_TEACHER', 'ACCOUNTANT', 'LIBRARIAN']),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  date_of_birth: z.string().optional(),
 });
 
 const offboardSchema = z.object({
@@ -73,47 +69,48 @@ export function useStaff(initialFilters: StaffFilters = {}) {
   }, [filters]);
 
   async function createStaff(values: StaffFormValues) {
-    const payload: CreateStaffPayload = {
-      first_name: values.first_name,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.email && { email: values.email }),
-      ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
-      ...(values.employee_id && { employee_id: values.employee_id }),
-      ...(values.designation && { designation: values.designation }),
-      ...(values.department && { department: values.department }),
-      ...(values.staff_role && { staff_role: values.staff_role }),
-      ...(values.date_of_joining && { date_of_joining: values.date_of_joining }),
-      ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
-      ...(values.gender && { gender: values.gender }),
-    };
-    const staff = await StaffService.create(payload);
-    toast.success(`${staff.first_name} added`);
-    await fetchStaff();
-    setShowModal(false);
-    form.reset();
+    try {
+      const payload: CreateStaffPayload = {
+        first_name: values.first_name,
+        dial_code: values.dial_code,
+        phone_number: values.phone_number,
+        role: values.role,
+        ...(values.last_name && { last_name: values.last_name }),
+        ...(values.email && { email: values.email }),
+        ...(values.gender && { gender: values.gender }),
+        ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
+      };
+      const staff = await StaffService.create(payload);
+      toast.success(`${staff.first_name} added`);
+      await fetchStaff();
+      setShowModal(false);
+      form.reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add staff');
+    }
   }
 
   async function updateStaff(values: StaffFormValues) {
     if (!editingStaff) return;
-    const payload: UpdateStaffPayload = {
-      first_name: values.first_name,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.email && { email: values.email }),
-      ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
-      ...(values.employee_id && { employee_id: values.employee_id }),
-      ...(values.designation && { designation: values.designation }),
-      ...(values.department && { department: values.department }),
-      ...(values.staff_role && { staff_role: values.staff_role }),
-      ...(values.date_of_joining && { date_of_joining: values.date_of_joining }),
-      ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
-      ...(values.gender && { gender: values.gender }),
-    };
-    const staff = await StaffService.update(editingStaff.id, payload);
-    toast.success(`${staff.first_name} updated`);
-    await fetchStaff();
-    setShowEditModal(false);
-    setEditingStaff(null);
-    editForm.reset();
+    try {
+      const payload: UpdateStaffPayload = {
+        first_name: values.first_name,
+        dial_code: values.dial_code,
+        phone_number: values.phone_number,
+        ...(values.last_name && { last_name: values.last_name }),
+        ...(values.email && { email: values.email }),
+        ...(values.gender && { gender: values.gender }),
+        ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
+      };
+      const staff = await StaffService.update(editingStaff.id, payload);
+      toast.success(`${staff.first_name} updated`);
+      await fetchStaff();
+      setShowEditModal(false);
+      setEditingStaff(null);
+      editForm.reset();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update staff');
+    }
   }
 
   async function deleteStaff(id: string) {
@@ -170,11 +167,7 @@ export function useStaff(initialFilters: StaffFilters = {}) {
       email: staff.email ?? '',
       phone_number: staff.phone_number ?? '',
       dial_code: staff.dial_code ?? '+91',
-      employee_id: staff.employee_id ?? '',
-      designation: staff.designation ?? '',
-      department: staff.department ?? '',
-      staff_role: staff.staff_role ?? undefined,
-      date_of_joining: staff.date_of_joining ?? '',
+      role: (staff.staff_role as StaffFormValues['role']) ?? 'TEACHER',
       date_of_birth: staff.date_of_birth ?? '',
       gender: staff.gender ?? undefined,
     });

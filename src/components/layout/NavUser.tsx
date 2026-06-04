@@ -15,18 +15,27 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { MoreHorizontal, LogOut } from "lucide-react";
+import { MoreHorizontal, LogOut, Moon, Sun } from "lucide-react";
 import { Icon } from "../ui/icon";
 import { Div } from "../ui";
+import { useThemeStore } from "@/store/theme.store";
 
-interface Props {
-  userInfo: any;
-  logout: () => void;
-  isLoading: boolean;
+interface UserInfo {
+  fullName: string;
+  initials: string;
+  email: string;
+  avatar?: string;
 }
 
-export function NavUser({ userInfo, logout, isLoading }: Props) {
+interface NavUserProps {
+  userInfo: UserInfo;
+  logout: () => void;
+  isLoading?: boolean;
+}
+
+export function NavUser({ userInfo, logout }: NavUserProps) {
   const { isMobile } = useSidebar();
+  const { mode, toggleMode } = useThemeStore();
 
   return (
     <SidebarMenu>
@@ -68,7 +77,14 @@ export function NavUser({ userInfo, logout, isLoading }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={logout} disabled={isLoading}>
+            <DropdownMenuItem onClick={toggleMode}>
+              <Icon icon={mode === "light" ? Moon : Sun} />
+              {mode === "light" ? "Dark mode" : "Light mode"}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem onClick={logout}>
               <Icon icon={LogOut} />
               Log out
             </DropdownMenuItem>

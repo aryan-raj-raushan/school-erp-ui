@@ -8,27 +8,16 @@ import { toast } from 'sonner';
 import { ClassesService, SectionsService, type CreateClassPayload, type CreateSectionPayload } from '@/services/classes.service';
 import type { Class, Section, PaginationMeta } from '@/types';
 
-const toOptionalNumber = z.preprocess(
-  (v) => (v === '' || v == null ? undefined : Number(v)),
-  z.number().optional(),
-);
+export const DEFAULT_SECTION_NAMES = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
 
 const classSchema = z.object({
   name: z.string().min(1, 'Class name required'),
   academic_year_id: z.string().min(1, 'Academic year required'),
-  numeric_value: toOptionalNumber,
   description: z.string().optional(),
-});
-
-const sectionSchema = z.object({
-  name: z.string().min(1, 'Section name required'),
-  class_id: z.string().min(1, 'Class required'),
-  room_number: z.string().optional(),
-  max_strength: toOptionalNumber,
+  sections: z.array(z.string()).min(1, 'Select at least one section'),
 });
 
 export type ClassFormValues = z.infer<typeof classSchema>;
-export type SectionFormValues = z.infer<typeof sectionSchema>;
 
 export function useClasses(academicYearId?: string) {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -36,12 +25,14 @@ export function useClasses(academicYearId?: string) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showClassModal, setShowClassModal] = useState(false);
-  const [showSectionModal, setShowSectionModal] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const classForm = useForm<ClassFormValues>({ resolver: zodResolver(classSchema) as any, defaultValues: { academic_year_id: academicYearId ?? '' } });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sectionForm = useForm<SectionFormValues>({ resolver: zodResolver(sectionSchema) as any });
+  const classForm = useForm<ClassFormValues>({
+    resolver: zodResolver(classSchema) as any,
+    defaultValues: {
+      academic_year_id: academicYearId ?? '',
+      sections: ['A'],
+    },
+  });
 
   const fetchClasses = useCallback(async () => {
     setIsLoading(true);
@@ -61,31 +52,28 @@ export function useClasses(academicYearId?: string) {
   }, [academicYearId]);
 
   async function createClass(values: ClassFormValues) {
-    const payload: CreateClassPayload = {
-      name: values.name,
-      academic_year_id: values.academic_year_id,
-      ...(values.numeric_value && { numeric_value: values.numeric_value }),
-      ...(values.description && { description: values.description }),
-    };
-    const cls = await ClassesService.create(payload);
-    toast.success(`Class ${cls.name} created`);
-    await fetchClasses();
-    setShowClassModal(false);
-    classForm.reset();
-  }
+    try {
+      const payload: CreateClassPayload = {
+        name: values.name,
+        academic_year_id: values.academic_year_id,
+        ...(values.description && { description: values.description }),
+      };
+      const cls = await ClassesService.create(payload);
 
-  async function createSection(values: SectionFormValues) {
-    const payload: CreateSectionPayload = {
-      name: values.name,
-      class_id: values.class_id,
-      ...(values.room_number && { room_number: values.room_number }),
-      ...(values.max_strength && { max_strength: values.max_strength }),
-    };
-    const sec = await SectionsService.create(payload);
-    toast.success(`Section ${sec.name} created`);
-    await fetchClasses();
-    setShowSectionModal(false);
-    sectionForm.reset();
+      // Auto-create selected sections
+      await Promise.all(
+        values.sections.map((sectionName) =>
+          SectionsService.create({ name: sectionName, class_id: cls.id } as CreateSectionPayload),
+        ),
+      );
+
+      toast.success(`Class ${cls.name} created with sections ${values.sections.join(', ')}`);
+      await fetchClasses();
+      setShowClassModal(false);
+      classForm.reset({ sections: ['A'] });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create class');
+    }
   }
 
   async function removeClass(id: string) {
@@ -110,19 +98,21 @@ export function useClasses(academicYearId?: string) {
 
   useEffect(() => { fetchClasses(); }, [fetchClasses]);
 
+  // Sections for a specific class
+  function sectionsForClass(classId: string) {
+    return sections.filter((s) => s.class_id === classId);
+  }
+
   return {
     classes, sections, pagination, isLoading,
-    showClassModal, showSectionModal,
+    showClassModal,
     openClassModal: () => setShowClassModal(true),
-    closeClassModal: () => { setShowClassModal(false); classForm.reset(); },
-    openSectionModal: () => setShowSectionModal(true),
-    closeSectionModal: () => { setShowSectionModal(false); sectionForm.reset(); },
-    classForm, sectionForm,
+    closeClassModal: () => { setShowClassModal(false); classForm.reset({ sections: ['A'] }); },
+    classForm,
     handleClassSubmit: classForm.handleSubmit(createClass),
-    handleSectionSubmit: sectionForm.handleSubmit(createSection),
     isClassSubmitting: classForm.formState.isSubmitting,
-    isSectionSubmitting: sectionForm.formState.isSubmitting,
     removeClass, removeSection,
+    sectionsForClass,
     refetch: fetchClasses,
   };
 }
