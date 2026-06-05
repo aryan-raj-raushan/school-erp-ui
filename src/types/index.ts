@@ -90,6 +90,8 @@ export interface Class {
   school_id: string;
   academic_year_id: string;
   name: string;
+  display_name: string;
+  class_id: string;
   numeric_value?: number | null;
   description?: string | null;
   created_at: string;
