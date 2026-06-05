@@ -82,6 +82,8 @@ export const ATTENDANCE_REPORT_PAGE = {
     fetch: 'Fetch Summary',
     table: {
       student: 'Student',
+      admissionNumber: "Admission No.",
+      rollNumber: "Roll No.",
       totalDays: 'Total Days',
       present: 'Present',
       absent: 'Absent',

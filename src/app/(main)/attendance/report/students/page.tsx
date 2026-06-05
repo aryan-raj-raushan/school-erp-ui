@@ -295,14 +295,14 @@ export default function StudentAttendanceReportPage() {
               width="md"
               value={monthlySectionId}
               onChange={(e) => setMonthlySectionId(e.target.value)}
-              disabled={isLoadingSections}
+              disabled={isLoadingClassSection}
             >
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.monthly.selectSection}
               </option>
-              {sections.map((s) => (
+              {classSection.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.display_name}
                 </option>
               ))}
             </Select>
@@ -340,6 +340,12 @@ export default function StudentAttendanceReportPage() {
                   {ATTENDANCE_REPORT_PAGE.monthly.table.student}
                 </TableHeaderCell>
                 <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.admissionNumber}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.rollNumber}
+                </TableHeaderCell>
+                <TableHeaderCell>
                   {ATTENDANCE_REPORT_PAGE.monthly.table.totalDays}
                 </TableHeaderCell>
                 <TableHeaderCell>
@@ -347,9 +353,6 @@ export default function StudentAttendanceReportPage() {
                 </TableHeaderCell>
                 <TableHeaderCell>
                   {ATTENDANCE_REPORT_PAGE.monthly.table.absent}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.late}
                 </TableHeaderCell>
                 <TableHeaderCell>
                   {ATTENDANCE_REPORT_PAGE.monthly.table.percentage}
@@ -361,20 +364,21 @@ export default function StudentAttendanceReportPage() {
                 <TableEmptyRow colSpan={6}>
                   <Spinner />
                 </TableEmptyRow>
-              ) : monthlyReport.length === 0 ? (
-                <TableEmptyRow colSpan={6}>
+              ) : !monthlyReport?.student_summaries?.length ? (
+                <TableEmptyRow colSpan={7}>
                   {ATTENDANCE_REPORT_PAGE.monthly.empty}
                 </TableEmptyRow>
               ) : (
-                monthlyReport.map((r, i) => (
+                monthlyReport?.student_summaries.map((r, i) => (
                   <TableRow key={r.student_id ?? i}>
                     <TableCell primary>
                       {r.student_name ?? r.student_id}
                     </TableCell>
+                    <TableCell>{r.admission_number}</TableCell>
+                    <TableCell>{r.roll_number}</TableCell>
                     <TableCell>{r.total_days}</TableCell>
                     <TableCell>{r.present}</TableCell>
                     <TableCell>{r.absent}</TableCell>
-                    <TableCell>{r.late}</TableCell>
                     <TableCell>
                       <Badge
                         variant={r.percentage >= 75 ? "success" : "danger"}

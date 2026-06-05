@@ -12,6 +12,7 @@ import type {
   PaginationMeta,
   Section,
   Class,
+  MonthlyAttendanceReport,
 } from "@/types";
 
 type ReportTab = "daily" | "monthly" | "defaulters" | "studentHistory";
@@ -49,9 +50,7 @@ export function useAttendanceReports() {
   const [monthlySectionId, setMonthlySectionId] = useState("");
   const [monthlyMonth, setMonthlyMonth] = useState(currentMonth());
   const [monthlyYear, setMonthlyYear] = useState(currentYear());
-  const [monthlyReport, setMonthlyReport] = useState<
-    MonthlyAttendanceSummary[]
-  >([]);
+  const [monthlyReport, setMonthlyReport] = useState<MonthlyAttendanceReport | null>(null);
   const [isLoadingMonthly, setIsLoadingMonthly] = useState(false);
 
   // Defaulters

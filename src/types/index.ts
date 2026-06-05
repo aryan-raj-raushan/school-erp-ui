@@ -270,6 +270,7 @@ export interface MarkAttendancePayload {
   entries: MarkAttendanceEntry[];
 }
 
+
 export interface DailyAttendanceReport {
   date: string;
   class_section_id?: string;
@@ -291,6 +292,37 @@ export interface MonthlyAttendanceSummary {
   late: number;
   half_day?: number;
   percentage: number;
+  student_summaries: MonthlyStudentSummary[];
+  records: AttendanceRecord[];
+}
+
+export interface MonthlyStudentSummary {
+  student_id: string;
+  student_name: string;
+  roll_number: string;
+  admission_number: string;
+  present: number;
+  absent: number;
+  total: number;
+  total_days: number;
+  percentage: number;
+}
+
+export interface MonthlyAttendanceStats {
+  total_students: number;
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+}
+
+export interface MonthlyAttendanceReport {
+  class_section_id: string;
+  class_section_name: string;
+  year: number;
+  month: number;
+  stats: MonthlyAttendanceStats;
+  student_summaries: MonthlyStudentSummary[];
 }
 
 export interface AttendanceSummary {

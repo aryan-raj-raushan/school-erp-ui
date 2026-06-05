@@ -10,6 +10,7 @@ import type {
   AttendanceExportJob,
   AttendanceStatus,
   PaginationMeta,
+  MonthlyAttendanceReport,
 } from '@/types';
 
 export interface AttendanceFilters {
@@ -78,8 +79,8 @@ export const AttendanceService = {
     return res.data;
   },
 
-  async getMonthlyReport(filters: MonthlyReportFilters): Promise<MonthlyAttendanceSummary[]> {
-    const res = await apiGateway.get<MonthlyAttendanceSummary[]>(ENDPOINTS.attendance.monthly, { params: filters });
+  async getMonthlyReport(filters: MonthlyReportFilters): Promise<MonthlyAttendanceReport> {
+    const res = await apiGateway.get<MonthlyAttendanceReport>(ENDPOINTS.attendance.monthly, { params: filters });
     return res.data;
   },
 
