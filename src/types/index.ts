@@ -354,6 +354,12 @@ export interface AttendanceDefaulter {
   total_days: number;
   present: number;
   absent: number;
+  studentName?: string;
+  admissionNo?: string;
+  rollNo?: string;
+  roll_number?:string;
+  total_present?: string;
+  total_absent?: string;
 }
 
 export interface AttendanceExportJob {
@@ -500,6 +506,7 @@ export interface Homework {
   academic_year_id: string;
   class_section_id: string;
   subject_id: string;
+  subject_name: string;
   title: string;
   description?: string | null;
   due_date: string;
@@ -508,6 +515,7 @@ export interface Homework {
   deleted: boolean;
   created_at: string;
   updated_at?: string | null;
+  created_by_name?: string;
 }
 
 export interface HomeworkSubmission {

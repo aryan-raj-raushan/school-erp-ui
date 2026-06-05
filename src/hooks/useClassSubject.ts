@@ -12,7 +12,7 @@ import {
 } from "@/services/class-subject.service";
 import { SectionsService } from "@/services/classes.service";
 import type { Section, Subject, PaginationMeta } from "@/types";
-import type { ClassSectionSubject } from "@/types/setting/class-subject.types";
+import type { ClassSectionSubject, ClassSectionSubjectsResponse } from "@/types/setting/class-subject.types";
 
 const classSubjectSchema = z.object({
   class_section_id: z.string().min(1, "Section is required"),
@@ -29,7 +29,7 @@ export interface ClassSubjectFilters {
 }
 
 export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
-  const [classSubjects, setClassSubjects] = useState<ClassSectionSubject[]>([]);
+  const [classSubjects, setClassSubjects] = useState<ClassSectionSubjectsResponse>();
   const [sections, setSections] = useState<Section[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +50,7 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
       setIsLoading(true);
       try {
         const result = await ClassSubjectsService.list(filters);
-        setClassSubjects(result.items);
+        setClassSubjects(result);
         setPagination(result.pagination);
       } catch (err: unknown) {
         toast.error(

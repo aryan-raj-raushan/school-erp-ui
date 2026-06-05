@@ -41,6 +41,7 @@ export const HOMEWORK_PAGE = {
     section: 'Section',
     dueDate: 'Due Date',
     submissions: 'Submissions',
+    createdBy: "Created By",
     actions: 'Actions',
   },
   empty: 'No homework assigned. Select a section and subject to view.',

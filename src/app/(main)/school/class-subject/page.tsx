@@ -125,8 +125,6 @@ export default function ClassSubjectsPage() {
   const { years, currentYear } = useAcademicYears();
   const { classes, sections: allSections } = useClasses();
 
-  console.log("classes : ", classes);
-
   const subjects = useMasterSubjects();
 
   const {
@@ -145,7 +143,6 @@ export default function ClassSubjectsPage() {
     academic_year_id: filterAcademicYearId || undefined,
   });
 
-  console.log("classSubjects: ", classSubjects);
 
   // Re-fetch when filters change
   const handleAcademicYearChange = (id: string) => {
@@ -209,10 +206,10 @@ export default function ClassSubjectsPage() {
             <TableEmptyRow colSpan={5}>
               <Spinner />
             </TableEmptyRow>
-          ) : classSubjects.length === 0 ? (
+          ) : classSubjects?.data?.items?.length === 0 ? (
             <TableEmptyRow colSpan={5}>{PAGE.empty}</TableEmptyRow>
           ) : (
-            classSubjects.items.map((cs) => (
+            classSubjects?.data?.items.map((cs) => (
               <TableRow key={cs.id}>
                 <TableCell primary>
                   {getSectionLabel(cs.class_section_id)}

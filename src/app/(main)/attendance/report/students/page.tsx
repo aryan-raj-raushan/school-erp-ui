@@ -402,14 +402,14 @@ export default function StudentAttendanceReportPage() {
               width="md"
               value={defaulterSectionId}
               onChange={(e) => setDefaulterSectionId(e.target.value)}
-              disabled={isLoadingSections}
+              disabled={isLoadingClassSection}
             >
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
               </option>
-              {sections.map((s) => (
+              {classSection.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.display_name}
                 </option>
               ))}
             </Select>
@@ -440,10 +440,16 @@ export default function StudentAttendanceReportPage() {
                   {ATTENDANCE_REPORT_PAGE.defaulters.table.admissionNo}
                 </TableHeaderCell>
                 <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.rollNo}
+                </TableHeaderCell>
+                <TableHeaderCell>
                   {ATTENDANCE_REPORT_PAGE.defaulters.table.class}
                 </TableHeaderCell>
                 <TableHeaderCell>
                   {ATTENDANCE_REPORT_PAGE.defaulters.table.present}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.totalDays}
                 </TableHeaderCell>
                 <TableHeaderCell>
                   {ATTENDANCE_REPORT_PAGE.defaulters.table.absent}
@@ -466,15 +472,17 @@ export default function StudentAttendanceReportPage() {
                 defaulters.map((d, i) => (
                   <TableRow key={d.student_id ?? i}>
                     <TableCell primary>
-                      {d.student_name ?? d.student_id}
+                      {d.student_name ?? d?.studentName ?? d.student_id}
                     </TableCell>
-                    <TableCell>{d.admission_number ?? "—"}</TableCell>
+                    <TableCell>{d.admission_number ?? d?.admissionNo ?? "—"}</TableCell>
+                    <TableCell>{d.roll_number ?? d?.rollNo ?? "—"}</TableCell>
                     <TableCell>
                       {d.class_name ?? "—"}
                       {d.section_name ? ` / ${d.section_name}` : ""}
                     </TableCell>
-                    <TableCell>{d.present}</TableCell>
-                    <TableCell>{d.absent}</TableCell>
+                    <TableCell>{d.total_days}</TableCell>
+                    <TableCell>{d.total_present}</TableCell>
+                    <TableCell>{d.total_absent}</TableCell>
                     <TableCell>
                       <Badge variant="danger">
                         {Math.round(d.percentage)}%

@@ -99,8 +99,10 @@ export const ATTENDANCE_REPORT_PAGE = {
     table: {
       student: 'Student',
       admissionNo: 'Admission No.',
+      rollNo: "Roll No.",
       class: 'Class / Section',
       percentage: 'Attendance %',
+      totalDays: "Total Days",
       present: 'Present',
       absent: 'Absent',
     },

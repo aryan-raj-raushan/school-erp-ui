@@ -1,7 +1,7 @@
 import { apiGateway } from "@/lib/api-gateway/api-gateway.instance";
 import { ENDPOINTS } from "@/lib/api-gateway/endpoints";
 import type { PaginationMeta } from "@/types";
-import type { ClassSectionSubject } from "@/types/setting/class-subject.types";
+import type { ClassSectionSubject, ClassSectionSubjectsResponse } from "@/types/setting/class-subject.types";
 export interface ClassSubjectFilters {
   page?: number;
   limit?: number;
@@ -21,14 +21,14 @@ export interface UpdateClassSubjectPayload extends Partial<CreateClassSubjectPay
 export const ClassSubjectsService = {
   async list(
     filters: ClassSubjectFilters = {},
-  ): Promise<{ items: ClassSectionSubject[]; pagination: PaginationMeta }> {
-    const res = await apiGateway.get<ClassSectionSubject[]>(
+  ): Promise<any> {
+    const res = await apiGateway.get<ClassSectionSubjectsResponse>(
       ENDPOINTS.classSubjects.list,
       {
         params: filters,
       },
     );
-    return { items: res.data, pagination: res.pagination! };
+    return res;
   },
 
   async getById(id: string): Promise<ClassSectionSubject> {
