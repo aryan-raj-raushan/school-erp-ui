@@ -246,6 +246,7 @@ export interface AttendanceRecord {
   class_section_id?: string | null;
   date: string;
   status: AttendanceStatus;
+  is_late: boolean;
   remarks?: string | null;
   marked_by?: string | null;
   created_at: string;

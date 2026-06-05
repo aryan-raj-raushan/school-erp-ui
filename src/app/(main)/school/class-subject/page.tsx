@@ -158,10 +158,8 @@ export default function ClassSubjectsPage() {
 
   // Helper: resolve display names from ids
   function getSectionLabel(sectionId: string) {
-    const section = allSections.find((s) => s.id === sectionId);
-    if (!section) return sectionId;
-    const cls = classes.find((c) => c.id === section.class_id);
-    return cls ? `${cls.display_name} — ${section.name}` : section.name;
+    const cls = classes.find((c) => c.id === sectionId);
+    return cls ? `${cls.display_name}` : "--"
   }
 
   function getSubjectLabel(subjectId: string) {
