@@ -242,6 +242,9 @@ export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXC
 export interface AttendanceRecord {
   id: string;
   student_id: string;
+  student_name: string;
+  admission_number: string;
+  roll_number: string;
   school_id: string;
   class_section_id?: string | null;
   date: string;
@@ -249,6 +252,7 @@ export interface AttendanceRecord {
   is_late: boolean;
   remarks?: string | null;
   marked_by?: string | null;
+  marked_by_username?: string | null;
   created_at: string;
   updated_at?: string | null;
 }
@@ -269,12 +273,12 @@ export interface MarkAttendancePayload {
 export interface DailyAttendanceReport {
   date: string;
   class_section_id?: string;
-  total: number;
-  present: number;
-  absent: number;
-  late: number;
-  half_day?: number;
-  excused?: number;
+  stats: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+  }
   records: AttendanceRecord[];
 }
 

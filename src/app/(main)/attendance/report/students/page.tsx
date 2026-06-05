@@ -1,10 +1,7 @@
 "use client";
 
 import { useAttendanceReports } from "@/hooks/useAttendanceReports";
-import {
-  ATTENDANCE_REPORT_PAGE,
-  ATTENDANCE_STATUS_BADGE,
-} from "@/constants";
+import { ATTENDANCE_REPORT_PAGE, ATTENDANCE_STATUS_BADGE } from "@/constants";
 import {
   Div,
   H1,
@@ -50,8 +47,10 @@ export default function StudentAttendanceReportPage() {
   const {
     activeTab,
     setActiveTab,
+    classSection,
     sections,
     isLoadingSections,
+    isLoadingClassSection,
 
     dailySectionId,
     setDailySectionId,
@@ -100,7 +99,10 @@ export default function StudentAttendanceReportPage() {
     { key: "daily", label: ATTENDANCE_REPORT_PAGE.tabs.daily },
     { key: "monthly", label: ATTENDANCE_REPORT_PAGE.tabs.monthly },
     { key: "defaulters", label: ATTENDANCE_REPORT_PAGE.tabs.defaulters },
-    { key: "studentHistory", label: ATTENDANCE_REPORT_PAGE.tabs.studentHistory },
+    {
+      key: "studentHistory",
+      label: ATTENDANCE_REPORT_PAGE.tabs.studentHistory,
+    },
   ];
 
   return (
@@ -114,14 +116,30 @@ export default function StudentAttendanceReportPage() {
             onChange={(e) => setExportSectionId(e.target.value)}
             disabled={isLoadingSections}
           >
-            <option value="">All Sections</option>
-            {sections.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+            <option value="">All Class/Sections</option>
+            {classSection.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.display_name}
+              </option>
             ))}
           </Select>
-          <Input type="date" width="sm" value={exportStartDate} onChange={(e) => setExportStartDate(e.target.value)} />
-          <Input type="date" width="sm" value={exportEndDate} onChange={(e) => setExportEndDate(e.target.value)} />
-          <Button variant="outline" loading={isExporting} onClick={exportAttendance}>
+          <Input
+            type="date"
+            width="sm"
+            value={exportStartDate}
+            onChange={(e) => setExportStartDate(e.target.value)}
+          />
+          <Input
+            type="date"
+            width="sm"
+            value={exportEndDate}
+            onChange={(e) => setExportEndDate(e.target.value)}
+          />
+          <Button
+            variant="outline"
+            loading={isExporting}
+            onClick={exportAttendance}
+          >
             {ATTENDANCE_REPORT_PAGE.export}
           </Button>
         </Div>
@@ -149,11 +167,18 @@ export default function StudentAttendanceReportPage() {
               width="md"
               value={dailySectionId}
               onChange={(e) => setDailySectionId(e.target.value)}
-              disabled={isLoadingSections}
+              disabled={isLoadingClassSection}
             >
-              <option value="">{ATTENDANCE_REPORT_PAGE.daily.selectSection}</option>
-              {sections.map((s) => (
+              <option value="">
+                {ATTENDANCE_REPORT_PAGE.daily.selectSection}
+              </option>
+              {/* {sections.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
+              ))} */}
+              {classSection.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.display_name}
+                </option>
               ))}
             </Select>
             <Input
@@ -170,38 +195,88 @@ export default function StudentAttendanceReportPage() {
           {dailyReport && (
             <Div type="col" gap="md">
               <Div type="row" gap="md">
-                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.total} value={dailyReport.total} />
-                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.present} value={dailyReport.present} color="green" />
-                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.absent} value={dailyReport.absent} color="red" />
-                <MiniStat label={ATTENDANCE_REPORT_PAGE.daily.stats.late} value={dailyReport.late} color="yellow" />
+                <MiniStat
+                  label={ATTENDANCE_REPORT_PAGE.daily.stats.total}
+                  value={dailyReport.stats.total}
+                />
+                <MiniStat
+                  label={ATTENDANCE_REPORT_PAGE.daily.stats.present}
+                  value={dailyReport.stats.present}
+                  color="green"
+                />
+                <MiniStat
+                  label={ATTENDANCE_REPORT_PAGE.daily.stats.absent}
+                  value={dailyReport.stats.absent}
+                  color="red"
+                />
+                <MiniStat
+                  label={ATTENDANCE_REPORT_PAGE.daily.stats.late}
+                  value={dailyReport.stats.late}
+                  color="yellow"
+                />
                 <MiniStat
                   label={ATTENDANCE_REPORT_PAGE.daily.stats.percentage}
-                  value={`${dailyReport.total > 0 ? Math.round((dailyReport.present / dailyReport.total) * 100) : 0}%`}
-                  color={dailyReport.total > 0 && Math.round((dailyReport.present / dailyReport.total) * 100) >= 75 ? "green" : "red"}
+                  value={`${dailyReport.stats.total > 0 ? Math.round((dailyReport.stats.present / dailyReport.stats.total) * 100) : 0}%`}
+                  color={
+                    dailyReport.stats.total > 0 &&
+                    Math.round(
+                      (dailyReport.stats.present / dailyReport.stats.total) *
+                        100,
+                    ) >= 75
+                      ? "green"
+                      : "red"
+                  }
                 />
               </Div>
 
               <Table>
                 <TableHead>
                   <TableHeadRow>
-                    <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.daily.table.student}</TableHeaderCell>
-                    <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.daily.table.status}</TableHeaderCell>
-                    <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.daily.table.remarks}</TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.studentName}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.admissionNumber}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.rollNumber}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.status}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.isLate}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.remarks}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {ATTENDANCE_REPORT_PAGE.daily.table.markedBy}
+                    </TableHeaderCell>
                   </TableHeadRow>
                 </TableHead>
                 <TableBody>
                   {dailyReport.records.length === 0 ? (
-                    <TableEmptyRow colSpan={3}>{ATTENDANCE_REPORT_PAGE.daily.empty}</TableEmptyRow>
+                    <TableEmptyRow colSpan={7}>
+                      {ATTENDANCE_REPORT_PAGE.daily.empty}
+                    </TableEmptyRow>
                   ) : (
                     dailyReport.records.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell primary>{r.student_id}</TableCell>
+                        <TableCell primary>{r.student_name}</TableCell>
+                        <TableCell primary>{r.admission_number}</TableCell>
+                        <TableCell primary>{r.roll_number}</TableCell>
                         <TableCell>
                           <Badge variant={ATTENDANCE_STATUS_BADGE[r.status]}>
                             {r.status}
                           </Badge>
                         </TableCell>
+                        <TableCell primary>
+                          {r.is_late ? "Yes" : "No"}
+                        </TableCell>
+
                         <TableCell>{r.remarks ?? "—"}</TableCell>
+                        <TableCell>{r.marked_by_username}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -222,9 +297,13 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setMonthlySectionId(e.target.value)}
               disabled={isLoadingSections}
             >
-              <option value="">{ATTENDANCE_REPORT_PAGE.monthly.selectSection}</option>
+              <option value="">
+                {ATTENDANCE_REPORT_PAGE.monthly.selectSection}
+              </option>
               {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </Select>
             <Select
@@ -233,7 +312,9 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setMonthlyMonth(Number(e.target.value))}
             >
               {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>{m.label}</option>
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
               ))}
             </Select>
             <Select
@@ -242,7 +323,9 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setMonthlyYear(Number(e.target.value))}
             >
               {YEARS.map((y) => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
             </Select>
             <Button onClick={fetchMonthlyReport} loading={isLoadingMonthly}>
@@ -253,29 +336,49 @@ export default function StudentAttendanceReportPage() {
           <Table>
             <TableHead>
               <TableHeadRow>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.monthly.table.student}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.monthly.table.totalDays}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.monthly.table.present}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.monthly.table.absent}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.monthly.table.late}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.monthly.table.percentage}</TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.student}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.totalDays}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.present}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.absent}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.late}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.monthly.table.percentage}
+                </TableHeaderCell>
               </TableHeadRow>
             </TableHead>
             <TableBody>
               {isLoadingMonthly ? (
-                <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
+                <TableEmptyRow colSpan={6}>
+                  <Spinner />
+                </TableEmptyRow>
               ) : monthlyReport.length === 0 ? (
-                <TableEmptyRow colSpan={6}>{ATTENDANCE_REPORT_PAGE.monthly.empty}</TableEmptyRow>
+                <TableEmptyRow colSpan={6}>
+                  {ATTENDANCE_REPORT_PAGE.monthly.empty}
+                </TableEmptyRow>
               ) : (
                 monthlyReport.map((r, i) => (
                   <TableRow key={r.student_id ?? i}>
-                    <TableCell primary>{r.student_name ?? r.student_id}</TableCell>
+                    <TableCell primary>
+                      {r.student_name ?? r.student_id}
+                    </TableCell>
                     <TableCell>{r.total_days}</TableCell>
                     <TableCell>{r.present}</TableCell>
                     <TableCell>{r.absent}</TableCell>
                     <TableCell>{r.late}</TableCell>
                     <TableCell>
-                      <Badge variant={r.percentage >= 75 ? "success" : "danger"}>
+                      <Badge
+                        variant={r.percentage >= 75 ? "success" : "danger"}
+                      >
                         {Math.round(r.percentage)}%
                       </Badge>
                     </TableCell>
@@ -297,9 +400,13 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setDefaulterSectionId(e.target.value)}
               disabled={isLoadingSections}
             >
-              <option value="">{ATTENDANCE_REPORT_PAGE.defaulters.selectSection}</option>
+              <option value="">
+                {ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
+              </option>
               {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </Select>
             <Div type="row" align="center" gap="sm">
@@ -322,31 +429,52 @@ export default function StudentAttendanceReportPage() {
           <Table>
             <TableHead>
               <TableHeadRow>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.defaulters.table.student}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.defaulters.table.admissionNo}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.defaulters.table.class}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.defaulters.table.present}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.defaulters.table.absent}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.defaulters.table.percentage}</TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.student}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.admissionNo}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.class}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.present}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.absent}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.table.percentage}
+                </TableHeaderCell>
               </TableHeadRow>
             </TableHead>
             <TableBody>
               {isLoadingDefaulters ? (
-                <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
+                <TableEmptyRow colSpan={6}>
+                  <Spinner />
+                </TableEmptyRow>
               ) : defaulters.length === 0 ? (
-                <TableEmptyRow colSpan={6}>{ATTENDANCE_REPORT_PAGE.defaulters.empty}</TableEmptyRow>
+                <TableEmptyRow colSpan={6}>
+                  {ATTENDANCE_REPORT_PAGE.defaulters.empty}
+                </TableEmptyRow>
               ) : (
                 defaulters.map((d, i) => (
                   <TableRow key={d.student_id ?? i}>
-                    <TableCell primary>{d.student_name ?? d.student_id}</TableCell>
+                    <TableCell primary>
+                      {d.student_name ?? d.student_id}
+                    </TableCell>
                     <TableCell>{d.admission_number ?? "—"}</TableCell>
                     <TableCell>
-                      {d.class_name ?? "—"}{d.section_name ? ` / ${d.section_name}` : ""}
+                      {d.class_name ?? "—"}
+                      {d.section_name ? ` / ${d.section_name}` : ""}
                     </TableCell>
                     <TableCell>{d.present}</TableCell>
                     <TableCell>{d.absent}</TableCell>
                     <TableCell>
-                      <Badge variant="danger">{Math.round(d.percentage)}%</Badge>
+                      <Badge variant="danger">
+                        {Math.round(d.percentage)}%
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))
@@ -366,7 +494,10 @@ export default function StudentAttendanceReportPage() {
               value={historyStudentId}
               onChange={(e) => setHistoryStudentId(e.target.value)}
             />
-            <Button onClick={() => fetchStudentHistory(1)} loading={isLoadingHistory}>
+            <Button
+              onClick={() => fetchStudentHistory(1)}
+              loading={isLoadingHistory}
+            >
               {ATTENDANCE_REPORT_PAGE.studentHistory.fetch}
             </Button>
           </Div>
@@ -374,16 +505,26 @@ export default function StudentAttendanceReportPage() {
           <Table>
             <TableHead>
               <TableHeadRow>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.studentHistory.table.date}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.studentHistory.table.status}</TableHeaderCell>
-                <TableHeaderCell>{ATTENDANCE_REPORT_PAGE.studentHistory.table.remarks}</TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.studentHistory.table.date}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.studentHistory.table.status}
+                </TableHeaderCell>
+                <TableHeaderCell>
+                  {ATTENDANCE_REPORT_PAGE.studentHistory.table.remarks}
+                </TableHeaderCell>
               </TableHeadRow>
             </TableHead>
             <TableBody>
               {isLoadingHistory ? (
-                <TableEmptyRow colSpan={3}><Spinner /></TableEmptyRow>
+                <TableEmptyRow colSpan={3}>
+                  <Spinner />
+                </TableEmptyRow>
               ) : historyRecords.length === 0 ? (
-                <TableEmptyRow colSpan={3}>{ATTENDANCE_REPORT_PAGE.studentHistory.empty}</TableEmptyRow>
+                <TableEmptyRow colSpan={3}>
+                  {ATTENDANCE_REPORT_PAGE.studentHistory.empty}
+                </TableEmptyRow>
               ) : (
                 historyRecords.map((r) => (
                   <TableRow key={r.id}>
