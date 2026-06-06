@@ -81,7 +81,7 @@ export function useStaff(initialFilters: StaffFilters = {}) {
         ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
       };
       const staff = await StaffService.create(payload);
-      toast.success(`${staff.first_name} added`);
+      toast.success(`Staff added successfully`);
       await fetchStaff();
       setShowModal(false);
       form.reset();

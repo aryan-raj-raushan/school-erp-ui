@@ -196,6 +196,7 @@ export interface Staff {
   designation?: string | null;
   department?: string | null;
   staff_role?: StaffRole | null;
+  role?: StaffRole | null; // adding for fallback for staff_role
   date_of_joining?: string | null;
   date_of_birth?: string | null;
   gender?: Gender | null;

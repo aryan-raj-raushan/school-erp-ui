@@ -120,7 +120,6 @@ export default function StaffsPage() {
             <TableHeaderCell>{STAFF_PAGE.table.role}</TableHeaderCell>
             <TableHeaderCell>{STAFF_PAGE.table.email}</TableHeaderCell>
             <TableHeaderCell>{STAFF_PAGE.table.phone}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.status}</TableHeaderCell>
             <TableHeaderCell>{STAFF_PAGE.table.actions}</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
@@ -137,14 +136,10 @@ export default function StaffsPage() {
                 <TableCell primary>
                   {staff.first_name} {staff.last_name ?? ""}
                 </TableCell>
-                <TableCell>{staff.staff_role ?? "—"}</TableCell>
+                <TableCell>{staff.staff_role ?? staff.role ?? "—"}</TableCell>
                 <TableCell>{staff.email ?? "—"}</TableCell>
                 <TableCell>{staff.phone_number ?? "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={STAFF_STATUS_BADGE[staff.status]}>
-                    {staff.status}
-                  </Badge>
-                </TableCell>
+               
                 <TableCell>
                   <Div type="row" gap="sm">
                     <Button
