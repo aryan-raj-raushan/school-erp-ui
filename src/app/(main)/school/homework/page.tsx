@@ -46,6 +46,7 @@ export default function HomeworkPage() {
     setSelectedClassSectionId,
     setSelectedClassSubjectId,
     handleClassChange,
+    handleSectionChange,
     homeworkList,
     students,
     submissionMap,
@@ -68,7 +69,7 @@ export default function HomeworkPage() {
     saveSubmissions,
   } = useHomework();
 
-  console.log("classSubjects: ", classSubjects);
+  const masterSubjects = useMasterSubjects();
 
   const {
     register,
@@ -122,11 +123,11 @@ export default function HomeworkPage() {
               ))}
             </Select>
           </Div>
-          {/* <Div type="col" gap="xs">
+          <Div type="col" gap="xs">
             <FilterLabel>Section</FilterLabel>
             <Select
-              value={selectedSectionId}
-              onChange={(e) => setSelectedSectionId(e.target.value)}
+              value={selectedClassSectionId}
+              onChange={(e) => handleSectionChange(e.target.value)}
               disabled={!selectedClassId}
             >
               <option value="">Select section</option>
@@ -136,7 +137,7 @@ export default function HomeworkPage() {
                 </option>
               ))}
             </Select>
-          </Div> */}
+          </Div>
           <Div type="col" gap="xs">
             <FilterLabel>Subject</FilterLabel>
             <Select
@@ -145,11 +146,18 @@ export default function HomeworkPage() {
               disabled={!selectedClassSectionId}
             >
               <option value="">All subjects</option>
-              {classSubjects?.data?.items?.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.subject_name}
-                </option>
-              ))}
+              {(classSubjects?.data?.items?.length
+                ? classSubjects.data.items.map((s) => (
+                    <option key={s.id} value={s.subject_id}>
+                      {s.subject_name}
+                    </option>
+                  ))
+                : masterSubjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.subject_name}
+                    </option>
+                  ))
+              )}
             </Select>
           </Div>
         </Div>

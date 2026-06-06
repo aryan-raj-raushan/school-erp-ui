@@ -40,6 +40,7 @@ export function useHomework() {
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState("");
 
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
 
   // class subjects
@@ -85,6 +86,7 @@ export function useHomework() {
         academic_year_id: selectedAcademicYearId,
       });
       setClasses(res.items);
+      setAllSections(res.sections);
     } catch {
       /* ignore */
     }
@@ -133,21 +135,23 @@ export function useHomework() {
 
   async function handleClassChange(classId: string) {
     setSelectedClassId(classId);
-    setSelectedClassSectionId(classId);
+    setSelectedClassSectionId("");
     setSelectedClassSubjectId("");
-    setSections([]);
+    setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
     setClassSubjects(undefined);
     setHomeworkList([]);
-    if (!classId) return;
+  }
+
+  async function handleSectionChange(sectionId: string) {
+    setSelectedClassSectionId(sectionId);
+    setSelectedClassSubjectId("");
+    setClassSubjects(undefined);
+    setHomeworkList([]);
+    if (!sectionId) return;
     try {
-      const [secRes] = await Promise.all([
-        SectionsService.list({ class_id: classId }),
-        ClassesService.listSubjects(classId),
-      ]);
-      setSections(secRes.items);
-    } catch {
-      /* ignore */
-    }
+      const result = await ClassSubjectsService.list({ class_section_id: sectionId, limit: 100 });
+      setClassSubjects(result);
+    } catch { /* ignore */ }
   }
 
   const fetchHomework = useCallback(async () => {
@@ -337,6 +341,7 @@ export function useHomework() {
     setSelectedClassSectionId,
     setSelectedClassSubjectId,
     handleClassChange,
+    handleSectionChange,
     homeworkList,
     selectedHomework,
     students,

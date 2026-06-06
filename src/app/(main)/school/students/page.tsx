@@ -26,6 +26,11 @@ export default function StudentsPage() {
     updateFilters,
   } = useStudents();
 
+  const watchedClassId = form.watch('class_id');
+  const filteredSections = watchedClassId
+    ? sections.filter((s) => s.class_id === watchedClassId)
+    : sections;
+
   return (
     <Div type="col" gap="lg">
       <Div type="row" justify="between" align="center">
@@ -153,9 +158,9 @@ export default function StudentsPage() {
                     </Select>
                   </FormField>
                   <FormField label={STUDENTS_PAGE.form.section} error={form.formState.errors.section_id?.message}>
-                    <Select {...form.register('section_id')}>
+                    <Select {...form.register('section_id')} disabled={!watchedClassId}>
                       <option value="">Select section</option>
-                      {sections.map((s) => (
+                      {filteredSections.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </Select>

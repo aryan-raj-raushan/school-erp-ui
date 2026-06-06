@@ -12,13 +12,23 @@ export class GatewayError extends Error {
   }
 }
 
+function extractMessage(body: { message?: string; error?: string; errors?: Record<string, string> } | null | undefined, status: number): string {
+  if (body?.errors && typeof body.errors === 'object') {
+    const details = Object.entries(body.errors)
+      .map(([field, msg]) => `${field}: ${msg}`)
+      .join(', ');
+    return details;
+  }
+  return body?.message ?? body?.error ?? `Request failed with status ${status}`;
+}
+
 export function applyErrorInterceptor(axiosInstance: AxiosInstance): void {
   axiosInstance.interceptors.response.use(
     (response) => response,
-    (error: AxiosError<{ message?: string; error?: string }>) => {
+    (error: AxiosError<{ message?: string; error?: string; errors?: Record<string, string> }>) => {
       if (error.response) {
         const { status, data: body } = error.response;
-        const message = body?.message ?? body?.error ?? `Request failed with status ${status}`;
+        const message = extractMessage(body, status);
         return Promise.reject(new GatewayError(message, status, body));
       }
 

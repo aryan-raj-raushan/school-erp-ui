@@ -105,6 +105,7 @@ export function useFeeGenerate() {
   const { years, currentYear } = useAcademicYears();
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSectionId, setSelectedSectionId] = useState('');
@@ -137,6 +138,7 @@ export function useFeeGenerate() {
         FeeMasterTypesService.list(),
       ]);
       setClasses(classRes.items);
+      setAllSections(classRes.sections);
       setFeeTypes(feeTypeRes);
     } catch { /* ignore */ }
   }, [selectedAcademicYearId]);
@@ -148,12 +150,7 @@ export function useFeeGenerate() {
     setSelectedSectionId('');
     setStudents([]);
     setReceipts([]);
-    setSections([]);
-    if (!classId) return;
-    try {
-      const res = await SectionsService.list({ class_id: classId });
-      setSections(res.items);
-    } catch { /* ignore */ }
+    setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
   }
 
   const fetchSectionData = useCallback(async () => {

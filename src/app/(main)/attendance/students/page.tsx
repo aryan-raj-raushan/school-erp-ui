@@ -29,15 +29,15 @@ export default function StudentAttendancePage() {
   const {
     years,
     classes,
-    // sections,
+    sections,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     selectedClassId,
+    selectedSectionId,
     selectedClassSectionId,
     selectedClass,
-    // selectedSection,
     handleClassChange,
-    // handleSectionChange,
+    handleSectionChange,
     date,
     setDate,
     students,
@@ -121,12 +121,12 @@ export default function StudentAttendancePage() {
             </Select>
           </Div>
 
-          {/* <Div type="col" gap="xs">
+          <Div type="col" gap="xs">
             <FilterLabel>Section</FilterLabel>
             <Select
               value={selectedSectionId}
               onChange={(e) => handleSectionChange(e.target.value)}
-              disabled={!selectedClassId || isLoadingSections}
+              disabled={!selectedClassId}
             >
               <option value="">Select section</option>
               {sections.map((s) => (
@@ -135,7 +135,7 @@ export default function StudentAttendancePage() {
                 </option>
               ))}
             </Select>
-          </Div> */}
+          </Div>
 
           <Div type="col" gap="xs">
             <FilterLabel>Date</FilterLabel>

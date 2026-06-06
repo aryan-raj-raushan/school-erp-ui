@@ -30,6 +30,8 @@ export function useClasses(academicYearId?: string) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showClassModal, setShowClassModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingClass, setEditingClass] = useState<Class | null>(null);
 
   const classForm = useForm<ClassFormValues>({
     resolver: zodResolver(classSchema) as any,
@@ -46,11 +48,8 @@ export function useClasses(academicYearId?: string) {
         academicYearId ? { academic_year_id: academicYearId } : {},
       );
       setClasses(result.items);
+      setSections(result.sections);
       setPagination(result.pagination);
-      if (result.items.length > 0) {
-        const sectionRes = await SectionsService.list({});
-        setSections(sectionRes.items);
-      }
     } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : "Failed to load classes",
@@ -61,6 +60,31 @@ export function useClasses(academicYearId?: string) {
   }, [academicYearId]);
 
   async function createClass(values: ClassFormValues) {
+    if (isEditing && editingClass) {
+      try {
+        await ClassesService.update(editingClass.id, {
+          name: values.name,
+          description: values.description,
+        });
+        const existingSections = sectionsForClass(editingClass.id);
+        const existingNames = existingSections.map((s) => s.name);
+        const toAdd = values.sections.filter((n) => !existingNames.includes(n));
+        const toRemove = existingSections.filter((s) => !values.sections.includes(s.name));
+        await Promise.all([
+          ...toAdd.map((n) => SectionsService.create({ name: n, class_id: editingClass.id } as CreateSectionPayload)),
+          ...toRemove.map((s) => SectionsService.remove(s.id)),
+        ]);
+        toast.success("Class updated");
+        await fetchClasses();
+        setShowClassModal(false);
+        setIsEditing(false);
+        setEditingClass(null);
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : "Failed to update class");
+      }
+      return;
+    }
+
     try {
       const payload: CreateClassPayload = {
         name: values.name,
@@ -69,7 +93,6 @@ export function useClasses(academicYearId?: string) {
       };
       const cls = await ClassesService.create(payload);
 
-      // Auto-create selected sections
       await Promise.all(
         values.sections.map((sectionName) =>
           SectionsService.create({
@@ -112,24 +135,44 @@ export function useClasses(academicYearId?: string) {
     }
   }
 
-  useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
-
-  // Sections for a specific class
   function sectionsForClass(classId: string) {
     return sections.filter((s) => s.class_id === classId);
   }
+
+  function openEditClassModal(cls: Class) {
+    setEditingClass(cls);
+    setIsEditing(true);
+    const existing = sectionsForClass(cls.id).map((s) => s.name);
+    classForm.reset({
+      name: cls.name,
+      academic_year_id: cls.academic_year_id ?? academicYearId ?? "",
+      description: cls.description ?? "",
+      sections: existing.length > 0 ? existing : ["A"],
+    });
+    setShowClassModal(true);
+  }
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   return {
     classes,
     sections,
     pagination,
     isLoading,
+    isEditing,
     showClassModal,
-    openClassModal: () => setShowClassModal(true),
+    openClassModal: (defaultYearId?: string) => {
+      setIsEditing(false);
+      setEditingClass(null);
+      classForm.reset({ academic_year_id: defaultYearId ?? academicYearId ?? "", sections: ["A"] });
+      setShowClassModal(true);
+    },
     closeClassModal: () => {
       setShowClassModal(false);
+      setIsEditing(false);
+      setEditingClass(null);
       classForm.reset({ sections: ["A"] });
     },
     classForm,
@@ -138,6 +181,8 @@ export function useClasses(academicYearId?: string) {
     removeClass,
     removeSection,
     sectionsForClass,
+    editingClass,
+    openEditClassModal,
     refetch: fetchClasses,
   };
 }

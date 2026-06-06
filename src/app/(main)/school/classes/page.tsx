@@ -27,7 +27,7 @@ import {
   CheckboxLabel,
   Icon,
 } from "@/components/ui";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 
 export default function ClassesPage() {
   const { years, currentYear } = useAcademicYears();
@@ -35,6 +35,7 @@ export default function ClassesPage() {
     classes,
     sections,
     isLoading,
+    isEditing,
     showClassModal,
     openClassModal,
     closeClassModal,
@@ -43,6 +44,7 @@ export default function ClassesPage() {
     isClassSubmitting,
     removeClass,
     sectionsForClass,
+    openEditClassModal,
   } = useClasses();
 
   const watchedSections = classForm.watch("sections") ?? [];
@@ -73,7 +75,7 @@ export default function ClassesPage() {
         }
         illustration="/illustrations/graduation.svg"
         actions={
-          <Button onClick={openClassModal}>
+          <Button onClick={() => openClassModal(currentYear?.id)}>
             {CLASSES_PAGE.addClassButton}
           </Button>
         }
@@ -83,11 +85,7 @@ export default function ClassesPage() {
         <TableHead>
           <TableHeadRow>
             <TableHeaderCell>{CLASSES_PAGE.classTable.name}</TableHeaderCell>
-            <TableHeaderCell>
-              {CLASSES_PAGE.classTable.academicYear}
-            </TableHeaderCell>
-            <TableHeaderCell>Class Id</TableHeaderCell>
-            <TableHeaderCell>Section Id</TableHeaderCell>
+            <TableHeaderCell>{CLASSES_PAGE.classTable.academicYear}</TableHeaderCell>
             <TableHeaderCell>Sections</TableHeaderCell>
             <TableHeaderCell>{CLASSES_PAGE.classTable.actions}</TableHeaderCell>
           </TableHeadRow>
@@ -107,8 +105,6 @@ export default function ClassesPage() {
                 <TableRow key={cls.id}>
                   <TableCell primary>{cls.display_name}</TableCell>
                   <TableCell>{year?.name ?? "—"}</TableCell>
-                  <TableCell>{cls?.class_id}</TableCell>
-                  <TableCell>{cls?.id}</TableCell>
                   <TableCell>
                     <Div type="row" gap="xs" wrap>
                       {clsSections.length === 0 ? (
@@ -123,13 +119,22 @@ export default function ClassesPage() {
                     </Div>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeClass(cls.id)}
-                    >
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
+                    <Div type="row" gap="xs">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEditClassModal(cls)}
+                      >
+                        <Icon icon={Pencil} type="sm" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeClass(cls.id)}
+                      >
+                        <Icon icon={Trash2} type="sm-danger" />
+                      </Button>
+                    </Div>
                   </TableCell>
                 </TableRow>
               );
@@ -141,7 +146,7 @@ export default function ClassesPage() {
       {showClassModal && (
         <Modal
           onClose={closeClassModal}
-          title={CLASSES_PAGE.classForm.title}
+          title={isEditing ? "Edit Class" : CLASSES_PAGE.classForm.title}
           size="md"
         >
           <form onSubmit={handleClassSubmit}>
@@ -156,19 +161,21 @@ export default function ClassesPage() {
                     {...classForm.register("name")}
                   />
                 </FormField>
-                <FormField
-                  label={CLASSES_PAGE.classForm.academicYear}
-                  error={classForm.formState.errors.academic_year_id?.message}
-                >
-                  <Select {...classForm.register("academic_year_id")}>
-                    <option value="">Select academic year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
+                {!isEditing && (
+                  <FormField
+                    label={CLASSES_PAGE.classForm.academicYear}
+                    error={classForm.formState.errors.academic_year_id?.message}
+                  >
+                    <Select {...classForm.register("academic_year_id")}>
+                      <option value="">Select academic year</option>
+                      {years.map((y) => (
+                        <option key={y.id} value={y.id}>
+                          {y.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                )}
                 <FormField label={CLASSES_PAGE.classForm.description}>
                   <Input
                     placeholder="Optional description"
@@ -203,7 +210,7 @@ export default function ClassesPage() {
                 {CLASSES_PAGE.classForm.cancel}
               </Button>
               <Button type="submit" loading={isClassSubmitting}>
-                {CLASSES_PAGE.classForm.submit}
+                {isEditing ? "Save Changes" : CLASSES_PAGE.classForm.submit}
               </Button>
             </ModalFooter>
           </form>

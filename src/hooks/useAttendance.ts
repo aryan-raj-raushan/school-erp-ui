@@ -25,10 +25,12 @@ function todayISO() {
 export function useAttendance() {
   const { years, currentYear } = useAcademicYears();
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classSections, setClassSections] = useState<Section[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [selectedAcademicYearId, setSelectedAcademicYearId] =
     useState<string>("");
   const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [selectedClassSectionId, setSelectedClassSectionId] =
     useState<string>("");
   const [date, setDate] = useState<string>(todayISO());
@@ -55,6 +57,7 @@ export function useAttendance() {
         academic_year_id: selectedAcademicYearId,
       });
       setClasses(res.items);
+      setAllSections(res.sections);
     } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : "Failed to load classes",
@@ -146,14 +149,19 @@ export function useAttendance() {
 
   function handleClassChange(classId: string) {
     setSelectedClassId(classId);
-    setSelectedClassSectionId(classId);
+    setSelectedSectionId("");
+    setSelectedClassSectionId("");
+    setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
     setStudents([]);
     setAttendanceMap({});
   }
 
-  // function handleSectionChange(sectionId: string) {
-  //   setSelectedSectionId(sectionId);
-  // }
+  function handleSectionChange(sectionId: string) {
+    setSelectedSectionId(sectionId);
+    setSelectedClassSectionId(sectionId);
+    setStudents([]);
+    setAttendanceMap({});
+  }
 
   function setStudentStatus(studentId: string, status: AttendanceStatus) {
     setAttendanceMap((prev) => ({
@@ -228,29 +236,24 @@ export function useAttendance() {
     fetchClasses();
   }, [fetchClasses]);
 
-  // useEffect(() => {
-  //   fetchSections();
-  // }, [fetchSections]);
-
   useEffect(() => {
     if (selectedClassSectionId) fetchStudentsAndAttendance();
   }, [selectedClassSectionId, date, fetchStudentsAndAttendance]);
 
   const selectedClass = classes.find((c) => c.id === selectedClassId);
-  // const selectedSection = sections.find((s) => s.id === selectedSectionId);
 
   return {
     years,
     classes,
-    // sections,
+    sections,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     selectedClassId,
+    selectedSectionId,
     selectedClassSectionId,
     selectedClass,
-    // selectedSection,
     handleClassChange,
-    // handleSectionChange,
+    handleSectionChange,
     date,
     setDate,
     students,

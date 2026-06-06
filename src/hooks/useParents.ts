@@ -6,7 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ParentService, type CreateParentPayload, type UpdateParentPayload, type ParentFilters } from '@/services/parent.service';
-import type { SchoolParent, PaginationMeta, BulkImportJob } from '@/types';
+import { StudentsService } from '@/services/students.service';
+import { ClassesService } from '@/services/classes.service';
+import type { SchoolParent, Student, Class, Section, PaginationMeta, BulkImportJob } from '@/types';
 
 const parentSchema = z.object({
   first_name: z.string().min(1, 'First name required'),
@@ -34,6 +36,9 @@ export function useParents(initialFilters: ParentFilters = {}) {
   const [editingParent, setEditingParent] = useState<SchoolParent | null>(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkingParent, setLinkingParent] = useState<SchoolParent | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [linkClasses, setLinkClasses] = useState<Class[]>([]);
+  const [linkSections, setLinkSections] = useState<Section[]>([]);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkJob, setBulkJob] = useState<BulkImportJob | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -133,10 +138,21 @@ export function useParents(initialFilters: ParentFilters = {}) {
     setShowEditModal(true);
   }
 
-  function openLinkModal(parent: SchoolParent) {
+  async function openLinkModal(parent: SchoolParent) {
     setLinkingParent(parent);
     linkForm.reset();
     setShowLinkModal(true);
+    try {
+      const [studentsRes, classesRes] = await Promise.all([
+        StudentsService.list({ limit: 100 }),
+        ClassesService.list(),
+      ]);
+      setStudents(studentsRes.items);
+      setLinkClasses(classesRes.items);
+      setLinkSections(classesRes.sections);
+    } catch {
+      // non-critical; dropdown may be empty
+    }
   }
 
   async function downloadTemplate() {
@@ -211,6 +227,9 @@ export function useParents(initialFilters: ParentFilters = {}) {
     handleEditSubmit: editForm.handleSubmit(updateParent),
     isEditSubmitting: editForm.formState.isSubmitting,
     deleteParent,
+    students,
+    linkClasses,
+    linkSections,
     showLinkModal,
     linkingParent,
     openLinkModal,

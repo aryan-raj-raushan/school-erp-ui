@@ -6,8 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { StudyMaterialsService, type CreateStudyMaterialPayload } from '@/services/study-materials.service';
-import { ClassesService, SectionsService } from '@/services/classes.service';
+import { ClassesService } from '@/services/classes.service';
+import { ClassSubjectsService } from '@/services/class-subject.service';
 import { UploadsService } from '@/services/uploads.service';
+import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
+import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
 import { useAcademicYears } from './useAcademicYears';
 import type { StudyMaterial, Class, Section } from '@/types';
 
@@ -24,6 +27,7 @@ export function useStudyMaterials() {
   const { years, currentYear } = useAcademicYears();
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -48,6 +52,7 @@ export function useStudyMaterials() {
     try {
       const res = await ClassesService.list({ academic_year_id: selectedAcademicYearId });
       setClasses(res.items);
+      setAllSections(res.sections);
     } catch { /* ignore */ }
   }, [selectedAcademicYearId]);
 
@@ -57,17 +62,26 @@ export function useStudyMaterials() {
     setSelectedClassId(classId);
     setSelectedSectionId('');
     setSelectedSubjectId('');
-    setSections([]);
+    setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
     setSubjects([]);
     setMaterials([]);
-    if (!classId) return;
+  }
+
+  async function handleSectionChange(sectionId: string) {
+    setSelectedSectionId(sectionId);
+    setSelectedSubjectId('');
+    setSubjects([]);
+    setMaterials([]);
+    if (!sectionId) return;
     try {
-      const [secRes, subRes] = await Promise.all([
-        SectionsService.list({ class_id: classId }),
-        ClassesService.listSubjects(classId),
-      ]);
-      setSections(secRes.items);
-      setSubjects(subRes);
+      const res = await ClassSubjectsService.list({ class_section_id: sectionId, limit: 100 });
+      const items: any[] = res.data?.items ?? [];
+      if (items.length > 0) {
+        setSubjects(items.map((cs) => ({ id: cs.subject_id, name: cs.subject_name })));
+      } else {
+        const masterRes = await apiGateway.get<any[]>(ENDPOINTS.masterData.subjects, { params: { limit: 200 } });
+        setSubjects((masterRes.data ?? []).map((s: any) => ({ id: s.id, name: s.subject_name })));
+      }
     } catch { /* ignore */ }
   }
 
@@ -166,8 +180,9 @@ export function useStudyMaterials() {
     selectedAcademicYearId, setSelectedAcademicYearId,
     classes, sections, subjects,
     selectedClassId, selectedSectionId, selectedSubjectId,
-    setSelectedSectionId, setSelectedSubjectId,
+    setSelectedSubjectId,
     handleClassChange,
+    handleSectionChange,
     materials,
     isLoading, isSaving, isUploading,
     showModal, setShowModal,

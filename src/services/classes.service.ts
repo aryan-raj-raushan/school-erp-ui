@@ -33,10 +33,61 @@ export interface CreateSectionPayload {
 
 export interface UpdateSectionPayload extends Partial<CreateSectionPayload> {}
 
+// Raw shape returned by backend /classes (section-class JOIN)
+type RawClassSection = {
+  id: string; class_id: string; class_name: string; section_name: string;
+  school_id: string; academic_year_id: string; numeric_value?: number | null;
+  class_teacher_id?: string | null; room_number?: string | null;
+  student_capacity?: number | null; created_at: string; updated_at?: string | null;
+};
+
 export const ClassesService = {
-  async list(filters: ClassFilters = {}): Promise<{ items: Class[]; pagination: PaginationMeta }> {
-    const res = await apiGateway.get<Class[]>(ENDPOINTS.classes.list, { params: filters });
-    return { items: res.data, pagination: res.pagination! };
+  async list(filters: ClassFilters = {}): Promise<{ items: Class[]; sections: Section[]; pagination: PaginationMeta }> {
+    const res = await apiGateway.get<RawClassSection[]>(ENDPOINTS.classes.list, { params: filters });
+    const raw = res.data;
+
+    // Deduplicate classes by class_id; use class_id as id so student lookups match
+    const seen = new Set<string>();
+    const items: Class[] = [];
+    for (const r of raw) {
+      if (!seen.has(r.class_id)) {
+        seen.add(r.class_id);
+        items.push({
+          id: r.class_id,
+          class_id: r.class_id,
+          name: r.class_name,
+          display_name: r.class_name,
+          school_id: r.school_id,
+          academic_year_id: r.academic_year_id,
+          numeric_value: r.numeric_value ?? null,
+          description: null,
+          created_at: r.created_at,
+          updated_at: r.updated_at ?? null,
+        });
+      }
+    }
+
+    // Extract sections from the same JOIN response — deduplicate by section id
+    const sectionSeen = new Set<string>();
+    const sections: Section[] = [];
+    for (const r of raw) {
+      if (!sectionSeen.has(r.id)) {
+        sectionSeen.add(r.id);
+        sections.push({
+          id: r.id,
+          class_id: r.class_id,
+          name: r.section_name,
+          school_id: r.school_id,
+          room_number: r.room_number ?? null,
+          max_strength: r.student_capacity ?? null,
+          class_teacher_id: r.class_teacher_id ?? null,
+          created_at: r.created_at,
+          updated_at: r.updated_at ?? null,
+        });
+      }
+    }
+
+    return { items, sections, pagination: res.pagination! };
   },
 
   async getById(id: string): Promise<Class> {

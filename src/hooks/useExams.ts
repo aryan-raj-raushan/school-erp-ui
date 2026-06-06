@@ -18,7 +18,7 @@ import {
   type CreateExamPolicyPayload,
   type CreateTimetablePayload,
 } from '@/services/exams.service';
-import { ClassesService, SectionsService } from '@/services/classes.service';
+import { ClassesService } from '@/services/classes.service';
 import { StudentsService } from '@/services/students.service';
 import { useAcademicYears } from './useAcademicYears';
 import type {
@@ -297,6 +297,7 @@ export function useExamTimetable() {
   const [selectedExamId, setSelectedExamId] = useState('');
   const [timetable, setTimetable] = useState<ExamTimetableEntry[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -321,6 +322,7 @@ export function useExamTimetable() {
       ]);
       setExams(examList);
       setClasses(classList.items);
+      setAllSections(classList.sections);
     } catch {
       // ignore
     }
@@ -346,12 +348,9 @@ export function useExamTimetable() {
     setSections([]);
     setSubjects([]);
     if (!classId) return;
+    setSections(allSections.filter((s) => s.class_id === classId));
     try {
-      const [secRes, subRes] = await Promise.all([
-        SectionsService.list({ class_id: classId }),
-        (await import('@/services/classes.service')).ClassesService.listSubjects(classId),
-      ]);
-      setSections(secRes.items);
+      const subRes = await ClassesService.listSubjects(classId);
       setSubjects(subRes);
     } catch {
       // ignore
@@ -440,6 +439,7 @@ export function useAdmitCards() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [selectedExamId, setSelectedExamId] = useState('');
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSectionId, setSelectedSectionId] = useState('');
@@ -466,6 +466,7 @@ export function useAdmitCards() {
       ]);
       setExams(examList);
       setClasses(classList.items);
+      setAllSections(classList.sections);
     } catch {
       // ignore
     }
@@ -477,14 +478,7 @@ export function useAdmitCards() {
     setSelectedClassId(classId);
     setSelectedSectionId('');
     setAdmitCards([]);
-    setSections([]);
-    if (!classId) return;
-    try {
-      const res = await SectionsService.list({ class_id: classId });
-      setSections(res.items);
-    } catch {
-      // ignore
-    }
+    setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
   }
 
   async function handleSectionChange(sectionId: string) {
@@ -575,6 +569,7 @@ export function useExamMarks() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [selectedExamId, setSelectedExamId] = useState('');
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -600,6 +595,7 @@ export function useExamMarks() {
       ]);
       setExams(el);
       setClasses(cl.items);
+      setAllSections(cl.sections);
     } catch {
       // ignore
     }
@@ -611,15 +607,11 @@ export function useExamMarks() {
     setSelectedClassId(classId);
     setSelectedSectionId('');
     setSelectedSubjectId('');
-    setSections([]);
+    setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
     setSubjects([]);
     if (!classId) return;
     try {
-      const [secRes, subRes] = await Promise.all([
-        SectionsService.list({ class_id: classId }),
-        (await import('@/services/classes.service')).ClassesService.listSubjects(classId),
-      ]);
-      setSections(secRes.items);
+      const subRes = await ClassesService.listSubjects(classId);
       setSubjects(subRes);
     } catch {
       // ignore

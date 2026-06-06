@@ -26,8 +26,6 @@ export class ApiGateway {
       },
     });
 
-    applyErrorInterceptor(this.http);
-
     const refreshFn: RefreshTokenFn = async () => {
       const refreshToken = TokenStorage.getRefreshToken();
       if (!refreshToken) throw new Error('No refresh token available');
@@ -41,6 +39,7 @@ export class ApiGateway {
     };
 
     applyAuthInterceptors(this.http, refreshFn, onAuthFailure);
+    applyErrorInterceptor(this.http);
   }
 
   private async request<T>(options: RequestOptions): Promise<GatewayResponse<T>> {

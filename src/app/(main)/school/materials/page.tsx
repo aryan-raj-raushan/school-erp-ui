@@ -14,8 +14,9 @@ export default function StudyMaterialsPage() {
     years, selectedAcademicYearId, setSelectedAcademicYearId,
     classes, sections, subjects,
     selectedClassId, selectedSectionId, selectedSubjectId,
-    setSelectedSectionId, setSelectedSubjectId,
+    setSelectedSubjectId,
     handleClassChange,
+    handleSectionChange,
     materials,
     isLoading, isSaving, isUploading,
     showModal, setShowModal,
@@ -55,7 +56,7 @@ export default function StudyMaterialsPage() {
           </Div>
           <Div type="col" gap="xs">
             <FilterLabel>Section</FilterLabel>
-            <Select value={selectedSectionId} onChange={(e) => setSelectedSectionId(e.target.value)} disabled={!selectedClassId}>
+            <Select value={selectedSectionId} onChange={(e) => handleSectionChange(e.target.value)} disabled={!selectedClassId}>
               <option value="">Select section</option>
               {sections.map((s) => <option key={s.id} value={s.id}>Section {s.name}</option>)}
             </Select>

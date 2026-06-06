@@ -8,6 +8,7 @@ import {
   P,
   Button,
   Input,
+  Select,
   Table,
   TableHead,
   TableHeadRow,
@@ -45,6 +46,9 @@ export default function ParentsPage() {
     handleEditSubmit,
     isEditSubmitting,
     deleteParent,
+    students,
+    linkClasses,
+    linkSections,
     showLinkModal,
     linkingParent,
     openLinkModal,
@@ -342,10 +346,22 @@ export default function ParentsPage() {
                   label={PARENTS_PAGE.linkStudentForm.studentId}
                   error={linkForm.formState.errors.student_id?.message}
                 >
-                  <Input
-                    placeholder={PARENTS_PAGE.placeholders.studentId}
-                    {...linkForm.register("student_id")}
-                  />
+                  <Select {...linkForm.register("student_id")}>
+                    <option value="">Select student</option>
+                    {students.map((s) => {
+                      const cls = linkClasses.find((c) => c.id === s.class_id);
+                      const sec = linkSections.find((sec) => sec.id === s.section_id);
+                      const label = [
+                        `${s.first_name} ${s.last_name ?? ""}`.trim(),
+                        s.admission_number,
+                        cls?.name,
+                        sec?.name,
+                      ].filter(Boolean).join(" · ");
+                      return (
+                        <option key={s.id} value={s.id}>{label}</option>
+                      );
+                    })}
+                  </Select>
                 </FormField>
               </Div>
             </ModalBody>

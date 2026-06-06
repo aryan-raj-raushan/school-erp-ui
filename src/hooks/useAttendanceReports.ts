@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { AttendanceService } from "@/services/attendance.service";
-import { ClassesService, SectionsService } from "@/services/classes.service";
+import { ClassesService } from "@/services/classes.service";
 import type {
   DailyAttendanceReport,
   MonthlyAttendanceSummary,
@@ -73,31 +73,21 @@ export function useAttendanceReports() {
   const [isExporting, setIsExporting] = useState(false);
 
   const fetchClasses = useCallback(async () => {
-      setIsLoadingClassSection(true);
-      try {
-        const res = await ClassesService.list();
-        setClassSection(res.items);
-      } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load classes",
-        );
-      } finally {
-        setIsLoadingClassSection(false);
-      }
-    }, []);
-
-  const fetchSections = useCallback(async () => {
-    setIsLoadingSections(true);
+    setIsLoadingClassSection(true);
     try {
-      const res = await SectionsService.list({});
-      setSections(res.items);
+      const res = await ClassesService.list();
+      setClassSection(res.items);
+      setSections(res.sections);
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to load sections",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to load classes");
     } finally {
-      setIsLoadingSections(false);
+      setIsLoadingClassSection(false);
     }
+  }, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const fetchSections = useCallback(async () => {
+    // sections now loaded in fetchClasses via ClassesService.list()
   }, []);
 
   async function fetchDailyReport() {

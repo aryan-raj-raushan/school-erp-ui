@@ -10,9 +10,10 @@ import {
   ClassSubjectsService,
   type CreateClassSubjectPayload,
 } from "@/services/class-subject.service";
-import { SectionsService } from "@/services/classes.service";
+import { ClassesService } from "@/services/classes.service";
 import type { Section, Subject, PaginationMeta } from "@/types";
 import type { ClassSectionSubject, ClassSectionSubjectsResponse } from "@/types/setting/class-subject.types";
+import type { UpdateClassSubjectPayload } from "@/services/class-subject.service";
 
 const classSubjectSchema = z.object({
   class_section_id: z.string().min(1, "Section is required"),
@@ -34,6 +35,7 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ClassSectionSubject | null>(null);
 
   const form = useForm<ClassSubjectFormValues>({
     resolver: zodResolver(classSubjectSchema) as any,
@@ -66,8 +68,8 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
 
   const fetchSections = useCallback(async () => {
     try {
-      const result = await SectionsService.list({});
-      setSections(result.items);
+      const result = await ClassesService.list();
+      setSections(result.sections);
     } catch {
       // silently fail — sections are supplementary
     }
@@ -81,10 +83,16 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
         academic_year_id: values.academic_year_id,
         is_teaching_subject: values.is_teaching_subject ?? true,
       };
-      await ClassSubjectsService.create(payload);
-      toast.success("Subject assigned to class successfully");
+      if (editingRecord) {
+        await ClassSubjectsService.update(editingRecord.id, payload as UpdateClassSubjectPayload);
+        toast.success("Subject assignment updated");
+      } else {
+        await ClassSubjectsService.create(payload);
+        toast.success("Subject assigned to class successfully");
+      }
       await fetchClassSubjects();
       setShowModal(false);
+      setEditingRecord(null);
       form.reset({
         class_section_id: defaultFilters.class_section_id ?? "",
         academic_year_id: defaultFilters.academic_year_id ?? "",
@@ -93,9 +101,20 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
       });
     } catch (err: unknown) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to assign subject",
+        err instanceof Error ? err.message : "Failed to save subject assignment",
       );
     }
+  }
+
+  function openEditModal(cs: ClassSectionSubject) {
+    setEditingRecord(cs);
+    form.reset({
+      class_section_id: cs.class_section_id,
+      subject_id: cs.subject_id,
+      academic_year_id: cs.academic_year_id,
+      is_teaching_subject: cs.is_teaching_subject,
+    });
+    setShowModal(true);
   }
 
   async function removeClassSubject(id: string) {
@@ -121,9 +140,12 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
     pagination,
     isLoading,
     showModal,
-    openModal: () => setShowModal(true),
+    editingRecord,
+    openModal: () => { setEditingRecord(null); setShowModal(true); },
+    openEditModal,
     closeModal: () => {
       setShowModal(false);
+      setEditingRecord(null);
       form.reset({
         class_section_id: defaultFilters.class_section_id ?? "",
         academic_year_id: defaultFilters.academic_year_id ?? "",

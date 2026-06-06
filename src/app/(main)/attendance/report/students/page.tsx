@@ -95,6 +95,11 @@ export default function StudentAttendanceReportPage() {
     exportAttendance,
   } = useAttendanceReports();
 
+  const sectionOptions = sections.map((s) => ({
+    id: s.id,
+    label: `${classSection.find((c) => c.id === s.class_id)?.name ?? ''} - Section ${s.name}`,
+  }));
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "daily", label: ATTENDANCE_REPORT_PAGE.tabs.daily },
     { key: "monthly", label: ATTENDANCE_REPORT_PAGE.tabs.monthly },
@@ -114,12 +119,12 @@ export default function StudentAttendanceReportPage() {
             width="sm"
             value={exportSectionId}
             onChange={(e) => setExportSectionId(e.target.value)}
-            disabled={isLoadingSections}
+            disabled={isLoadingClassSection}
           >
-            <option value="">All Class/Sections</option>
-            {classSection.map((s) => (
+            <option value="">All Sections</option>
+            {sectionOptions.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.display_name}
+                {s.label}
               </option>
             ))}
           </Select>
@@ -172,12 +177,9 @@ export default function StudentAttendanceReportPage() {
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.daily.selectSection}
               </option>
-              {/* {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))} */}
-              {classSection.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.display_name}
+              {sectionOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
                 </option>
               ))}
             </Select>
@@ -300,9 +302,9 @@ export default function StudentAttendanceReportPage() {
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.monthly.selectSection}
               </option>
-              {classSection.map((s) => (
+              {sectionOptions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.display_name}
+                  {s.label}
                 </option>
               ))}
             </Select>
@@ -407,9 +409,9 @@ export default function StudentAttendanceReportPage() {
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
               </option>
-              {classSection.map((s) => (
+              {sectionOptions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.display_name}
+                  {s.label}
                 </option>
               ))}
             </Select>

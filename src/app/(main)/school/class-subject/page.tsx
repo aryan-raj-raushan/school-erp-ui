@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { useClassSubjects } from "@/hooks/useClassSubject";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useClasses } from "@/hooks/useClasses";
@@ -26,10 +26,11 @@ import {
   Badge,
   Spinner,
   Icon,
+  FilterLabel,
 } from "@/components/ui";
 import { useMasterSubjects } from "@/hooks/useMasterSubject";
+import type { ClassSectionSubject } from "@/types/setting/class-subject.types";
 
-// ─── Page constants ────────────────────────────────────────────────────────────
 const PAGE = {
   title: "Class Subjects",
   subtitle: "Assign subjects to class sections",
@@ -44,87 +45,28 @@ const PAGE = {
   empty: "No subjects assigned yet.",
   form: {
     title: "Assign Subject to Section",
-    section: "Class Section",
+    editTitle: "Edit Subject Assignment",
+    class: "Class",
+    section: "Section",
     subject: "Subject",
     academicYear: "Academic Year",
     type: "Subject Type",
     cancel: "Cancel",
     submit: "Assign Subject",
-  },
-  placeholders: {
-    section: "Select section",
-    subject: "Select subject",
-    academicYear: "Select academic year",
+    save: "Save Changes",
   },
 } as const;
 
-// ─── Filter bar ────────────────────────────────────────────────────────────────
-interface FilterBarProps {
-  academicYearId: string;
-  classSectionId: string;
-  onAcademicYearChange: (id: string) => void;
-  onClassSectionChange: (id: string) => void;
-  years: { id: string; name: string }[];
-  sections: { id: string; name: string; class_id: string }[];
-  classes: { id: string; display_name: string }[];
-}
-
-function FilterBar({
-  academicYearId,
-  classSectionId,
-  onAcademicYearChange,
-  onClassSectionChange,
-  years,
-  sections,
-  classes,
-}: FilterBarProps) {
-  return (
-    <Div type="row" gap="md" align="center" wrap>
-      <Div type="col" gap="xs">
-        <P color="muted">Academic Year</P>
-        <select
-          value={academicYearId}
-          onChange={(e) => onAcademicYearChange(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring w-48"
-        >
-          <option value="">All years</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </select>
-      </Div>
-
-      <Div type="col" gap="xs">
-        <P color="muted">Section</P>
-        <select
-          value={classSectionId}
-          onChange={(e) => onClassSectionChange(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring w-48"
-        >
-          <option value="">All ClassSections</option>
-          {classes.map((cls) => {
-            return (
-              <option key={cls.id} value={cls.id}>
-                {cls.display_name}
-              </option>
-            );
-          })}
-        </select>
-      </Div>
-    </Div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ClassSubjectsPage() {
   const [filterAcademicYearId, setFilterAcademicYearId] = useState("");
+  const [filterClassId, setFilterClassId] = useState("");
   const [filterClassSectionId, setFilterClassSectionId] = useState("");
+
+  // local state for modal class selection
+  const [modalClassId, setModalClassId] = useState("");
 
   const { years, currentYear } = useAcademicYears();
   const { classes, sections: allSections } = useClasses();
-
   const subjects = useMasterSubjects();
 
   const {
@@ -132,40 +74,54 @@ export default function ClassSubjectsPage() {
     isLoading,
     showModal,
     openModal,
+    openEditModal,
     closeModal,
     form,
     handleSubmit,
     isSubmitting,
     removeClassSubject,
+    editingRecord,
     refetch,
   } = useClassSubjects({
     class_section_id: filterClassSectionId || undefined,
     academic_year_id: filterAcademicYearId || undefined,
   });
 
+  // sections filtered by selected class (for filter bar and modal)
+  const filterSections = filterClassId
+    ? allSections.filter((s) => s.class_id === filterClassId)
+    : allSections;
 
-  // Re-fetch when filters change
-  const handleAcademicYearChange = (id: string) => {
-    setFilterAcademicYearId(id);
-  };
+  const modalSections = modalClassId
+    ? allSections.filter((s) => s.class_id === modalClassId)
+    : allSections;
 
-  const handleClassSectionChange = (id: string) => {
-    setFilterClassSectionId(id);
-  };
-
-  // Helper: resolve display names from ids
   function getSectionLabel(sectionId: string) {
-    const cls = classes.find((c) => c.id === sectionId);
-    return cls ? `${cls.display_name}` : "--"
-  }
-
-  function getSubjectLabel(subjectId: string) {
-    const sub = subjects.find((s: any) => s.id === subjectId);
-    return sub?.name ?? subjectId;
+    const sec = allSections.find((s) => s.id === sectionId);
+    if (!sec) return sectionId;
+    const cls = classes.find((c) => c.id === sec.class_id);
+    return cls ? `${cls.name} — Section ${sec.name}` : `Section ${sec.name}`;
   }
 
   function getYearLabel(yearId: string) {
     return years.find((y) => y.id === yearId)?.name ?? "—";
+  }
+
+  function handleOpenModal() {
+    setModalClassId("");
+    openModal();
+  }
+
+  function handleOpenEditModal(cs: ClassSectionSubject) {
+    const sectionClassId =
+      allSections.find((s) => s.id === cs.class_section_id)?.class_id ?? "";
+    setModalClassId(sectionClassId);
+    openEditModal(cs);
+  }
+
+  function handleFilterClassChange(classId: string) {
+    setFilterClassId(classId);
+    setFilterClassSectionId("");
   }
 
   return (
@@ -176,19 +132,55 @@ export default function ClassSubjectsPage() {
           currentYear ? `Academic Year: ${currentYear.name}` : PAGE.subtitle
         }
         illustration="/illustrations/subjects.svg"
-        actions={<Button onClick={openModal}>{PAGE.addButton}</Button>}
+        actions={<Button onClick={handleOpenModal}>{PAGE.addButton}</Button>}
       />
 
       {/* Filters */}
-      <FilterBar
-        academicYearId={filterAcademicYearId}
-        classSectionId={filterClassSectionId}
-        onAcademicYearChange={handleAcademicYearChange}
-        onClassSectionChange={handleClassSectionChange}
-        years={years}
-        sections={allSections}
-        classes={classes}
-      />
+      <Div type="row" gap="md" align="center" wrap>
+        <Div type="col" gap="xs">
+          <FilterLabel>Academic Year</FilterLabel>
+          <Select
+            value={filterAcademicYearId}
+            onChange={(e) => setFilterAcademicYearId(e.target.value)}
+          >
+            <option value="">All years</option>
+            {years.map((y) => (
+              <option key={y.id} value={y.id}>
+                {y.name}
+              </option>
+            ))}
+          </Select>
+        </Div>
+        <Div type="col" gap="xs">
+          <FilterLabel>Class</FilterLabel>
+          <Select
+            value={filterClassId}
+            onChange={(e) => handleFilterClassChange(e.target.value)}
+          >
+            <option value="">All classes</option>
+            {classes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.display_name}
+              </option>
+            ))}
+          </Select>
+        </Div>
+        <Div type="col" gap="xs">
+          <FilterLabel>Section</FilterLabel>
+          <Select
+            value={filterClassSectionId}
+            onChange={(e) => setFilterClassSectionId(e.target.value)}
+            disabled={!filterClassId}
+          >
+            <option value="">All sections</option>
+            {filterSections.map((s) => (
+              <option key={s.id} value={s.id}>
+                Section {s.name}
+              </option>
+            ))}
+          </Select>
+        </Div>
+      </Div>
 
       {/* Table */}
       <Table>
@@ -206,15 +198,13 @@ export default function ClassSubjectsPage() {
             <TableEmptyRow colSpan={5}>
               <Spinner />
             </TableEmptyRow>
-          ) : classSubjects?.data?.items?.length === 0 ? (
+          ) : !classSubjects?.data?.items?.length ? (
             <TableEmptyRow colSpan={5}>{PAGE.empty}</TableEmptyRow>
           ) : (
-            classSubjects?.data?.items.map((cs) => (
+            classSubjects.data.items.map((cs) => (
               <TableRow key={cs.id}>
-                <TableCell primary>
-                  {getSectionLabel(cs.class_section_id)}
-                </TableCell>
-                <TableCell>{getSubjectLabel(cs.subject_name)}</TableCell>
+                <TableCell primary>{getSectionLabel(cs.class_section_id)}</TableCell>
+                <TableCell>{cs.subject_name}</TableCell>
                 <TableCell>{getYearLabel(cs.academic_year_id)}</TableCell>
                 <TableCell>
                   <Badge variant={cs.is_teaching_subject ? "success" : "info"}>
@@ -222,13 +212,22 @@ export default function ClassSubjectsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeClassSubject(cs.id)}
-                  >
-                    <Icon icon={Trash2} type="sm-danger" />
-                  </Button>
+                  <Div type="row" gap="xs">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleOpenEditModal(cs)}
+                    >
+                      <Icon icon={Pencil} type="sm" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeClassSubject(cs.id)}
+                    >
+                      <Icon icon={Trash2} type="sm-danger" />
+                    </Button>
+                  </Div>
                 </TableCell>
               </TableRow>
             ))
@@ -236,9 +235,13 @@ export default function ClassSubjectsPage() {
         </TableBody>
       </Table>
 
-      {/* Assign Modal */}
+      {/* Assign / Edit Modal */}
       {showModal && (
-        <Modal onClose={closeModal} title={PAGE.form.title} size="md">
+        <Modal
+          onClose={closeModal}
+          title={editingRecord ? PAGE.form.editTitle : PAGE.form.title}
+          size="md"
+        >
           <form onSubmit={handleSubmit}>
             <ModalBody>
               <Div type="col" gap="md">
@@ -246,13 +249,9 @@ export default function ClassSubjectsPage() {
                 <FormField
                   label={PAGE.form.academicYear}
                   error={form.formState.errors.academic_year_id?.message}
-                  htmlFor="academic_year_id"
                 >
-                  <Select
-                    id="academic_year_id"
-                    {...form.register("academic_year_id")}
-                  >
-                    <option value="">{PAGE.placeholders.academicYear}</option>
+                  <Select {...form.register("academic_year_id")}>
+                    <option value="">Select academic year</option>
                     {years.map((y) => (
                       <option key={y.id} value={y.id}>
                         {y.name}
@@ -261,28 +260,39 @@ export default function ClassSubjectsPage() {
                   </Select>
                 </FormField>
 
-                {/* Section (grouped by class) */}
+                {/* Class (local state — not in form, used to filter sections) */}
+                <FormField label={PAGE.form.class}>
+                  <Select
+                    value={modalClassId}
+                    onChange={(e) => {
+                      setModalClassId(e.target.value);
+                      form.setValue("class_section_id", "");
+                    }}
+                  >
+                    <option value="">Select class</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.display_name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+
+                {/* Section (filtered by class) */}
                 <FormField
                   label={PAGE.form.section}
                   error={form.formState.errors.class_section_id?.message}
-                  htmlFor="class_section_id"
                 >
                   <Select
-                    id="id"
                     {...form.register("class_section_id")}
+                    disabled={!modalClassId}
                   >
-                    <option value="">{PAGE.placeholders.section}</option>
-                    {classes?.map((cls) => {
-                      // const clsSections = allSections.filter(
-                      //   (s) => s.class_id === cls.id,
-                      // );
-                      // if (clsSections.length === 0) return null;
-                      return (
-                        <option key={cls.id} value={cls.id}>
-                          {cls.display_name}
-                        </option>
-                      );
-                    })}
+                    <option value="">Select section</option>
+                    {modalSections.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        Section {s.name}
+                      </option>
+                    ))}
                   </Select>
                 </FormField>
 
@@ -290,10 +300,9 @@ export default function ClassSubjectsPage() {
                 <FormField
                   label={PAGE.form.subject}
                   error={form.formState.errors.subject_id?.message}
-                  htmlFor="subject_id"
                 >
-                  <Select id="subject_id" {...form.register("subject_id")}>
-                    <option value="">{PAGE.placeholders.subject}</option>
+                  <Select {...form.register("subject_id")}>
+                    <option value="">Select subject</option>
                     {subjects.map((sub: any) => (
                       <option key={sub.id} value={sub.id}>
                         {sub.subject_name}
@@ -302,8 +311,8 @@ export default function ClassSubjectsPage() {
                   </Select>
                 </FormField>
 
-                {/* Subject type toggle */}
-                <FormField label={PAGE.form.type} htmlFor="is_teaching_subject">
+                {/* Subject type */}
+                <FormField label={PAGE.form.type}>
                   <Div type="row" gap="md" align="center">
                     <input
                       type="checkbox"
@@ -325,7 +334,7 @@ export default function ClassSubjectsPage() {
                 {PAGE.form.cancel}
               </Button>
               <Button type="submit" loading={isSubmitting}>
-                {PAGE.form.submit}
+                {editingRecord ? PAGE.form.save : PAGE.form.submit}
               </Button>
             </ModalFooter>
           </form>
