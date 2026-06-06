@@ -20,3 +20,6 @@ export const createSchoolSchema = z.object({
 });
 
 export type CreateSchoolFormValues = z.infer<typeof createSchoolSchema>;
+
+export const updateSchoolSchema = createSchoolSchema.partial();
+export type UpdateSchoolFormValues = z.infer<typeof updateSchoolSchema>;

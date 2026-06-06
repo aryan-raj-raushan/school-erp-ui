@@ -1,7 +1,6 @@
 export * from './useAuth';
 export * from './useSchools';
 export * from './useLoginPage';
-export * from './useCreateSchoolForm';
 export * from './useDashboardLayout';
 export * from './useAcademicYears';
 export * from './useClasses';

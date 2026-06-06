@@ -49,6 +49,23 @@ export function useAuth() {
     }
   }
 
+  async function switchSchool(schoolId: string) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await AuthService.switchSchool(schoolId);
+      const profile = await AuthService.getMe();
+      setAuth(profile, AuthContext.SCHOOL);
+      router.replace(ROUTES.schoolDashboard);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to switch school';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function logout() {
     setIsLoading(true);
     try {
@@ -60,5 +77,5 @@ export function useAuth() {
     }
   }
 
-  return { loginCompany, loginSchool, logout, isLoading, error };
+  return { loginCompany, loginSchool, switchSchool, logout, isLoading, error };
 }

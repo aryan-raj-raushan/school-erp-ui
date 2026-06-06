@@ -69,4 +69,10 @@ export const AuthService = {
     const res = await apiGateway.get<UserProfile>(ENDPOINTS.auth.me);
     return res.data;
   },
+
+  async switchSchool(schoolId: string): Promise<LoginResult> {
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.switchSchool(schoolId), {});
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+    return res.data;
+  },
 };
