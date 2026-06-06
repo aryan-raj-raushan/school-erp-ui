@@ -130,7 +130,10 @@ export default function ClassesPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => removeClass(cls.id)}
+                        onClick={() => {
+                          const sec = sectionsForClass(cls.class_id)[0];
+                          removeClass(sec?.id ?? cls.class_id);
+                        }}
                       >
                         <Icon icon={Trash2} type="sm-danger" />
                       </Button>
