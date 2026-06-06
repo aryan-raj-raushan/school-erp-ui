@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { AttendanceService } from "@/services/attendance.service";
 import { ClassesService } from "@/services/classes.service";
+import { StudentsService } from "@/services/students.service";
+import type { Student } from "@/types";
 import type {
   DailyAttendanceReport,
   MonthlyAttendanceSummary,
@@ -60,6 +62,9 @@ export function useAttendanceReports() {
   const [isLoadingDefaulters, setIsLoadingDefaulters] = useState(false);
 
   // Student history
+  const [historySectionId, setHistorySectionId] = useState("");
+  const [historyStudents, setHistoryStudents] = useState<Student[]>([]);
+  const [isLoadingHistoryStudents, setIsLoadingHistoryStudents] = useState(false);
   const [historyStudentId, setHistoryStudentId] = useState("");
   const [historyRecords, setHistoryRecords] = useState<AttendanceRecord[]>([]);
   const [historyPagination, setHistoryPagination] =
@@ -150,6 +155,24 @@ export function useAttendanceReports() {
     }
   }
 
+  const fetchHistoryStudents = useCallback(async (sectionId: string) => {
+    if (!sectionId) {
+      setHistoryStudents([]);
+      setHistoryStudentId("");
+      return;
+    }
+    setIsLoadingHistoryStudents(true);
+    try {
+      const result = await StudentsService.list({ section_id: sectionId, limit: 100 });
+      setHistoryStudents(result.items);
+      setHistoryStudentId("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to load students");
+    } finally {
+      setIsLoadingHistoryStudents(false);
+    }
+  }, []);
+
   async function fetchStudentHistory(page = 1) {
     if (!historyStudentId) {
       toast.error("Enter a student ID");
@@ -195,9 +218,13 @@ export function useAttendanceReports() {
     fetchSections();
   }, [fetchSections]);
 
-    useEffect(() => {
+  useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
+
+  useEffect(() => {
+    fetchHistoryStudents(historySectionId);
+  }, [historySectionId, fetchHistoryStudents]);
 
   return {
     activeTab,
@@ -237,6 +264,10 @@ export function useAttendanceReports() {
     fetchDefaulters,
 
     // Student history
+    historySectionId,
+    setHistorySectionId,
+    historyStudents,
+    isLoadingHistoryStudents,
     historyStudentId,
     setHistoryStudentId,
     historyRecords,

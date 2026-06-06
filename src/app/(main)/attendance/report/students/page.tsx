@@ -78,6 +78,10 @@ export default function StudentAttendanceReportPage() {
     isLoadingDefaulters,
     fetchDefaulters,
 
+    historySectionId,
+    setHistorySectionId,
+    historyStudents,
+    isLoadingHistoryStudents,
     historyStudentId,
     setHistoryStudentId,
     historyRecords,
@@ -502,12 +506,34 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "studentHistory" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Input
+            <Select
               width="md"
-              placeholder={ATTENDANCE_REPORT_PAGE.studentHistory.studentId}
+              value={historySectionId}
+              onChange={(e) => setHistorySectionId(e.target.value)}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Section</option>
+              {sectionOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
               value={historyStudentId}
               onChange={(e) => setHistoryStudentId(e.target.value)}
-            />
+              disabled={!historySectionId || isLoadingHistoryStudents}
+            >
+              <option value="">
+                {isLoadingHistoryStudents ? "Loading students…" : "Select Student"}
+              </option>
+              {historyStudents.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.first_name} {s.last_name ?? ""} {s.admission_number ? `(${s.admission_number})` : ""}
+                </option>
+              ))}
+            </Select>
             <Button
               onClick={() => fetchStudentHistory(1)}
               loading={isLoadingHistory}

@@ -98,11 +98,11 @@ export const AttendanceService = {
     studentId: string,
     params: { page?: number; limit?: number; start_date?: string; end_date?: string } = {},
   ): Promise<{ items: AttendanceRecord[]; pagination: PaginationMeta }> {
-    const res = await apiGateway.get<AttendanceRecord[]>(
+    const res = await apiGateway.get<{ records: AttendanceRecord[]; stats: unknown }>(
       ENDPOINTS.attendance.studentHistory(studentId),
       { params },
     );
-    return { items: res.data, pagination: res.pagination! };
+    return { items: res.data.records ?? [], pagination: res.pagination! };
   },
 
   async getStudentSummary(studentId: string): Promise<AttendanceSummary> {
