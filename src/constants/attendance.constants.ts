@@ -13,10 +13,10 @@ export const ATTENDANCE_STATUS_BADGE: Record<AttendanceStatus, BadgeVariant> = {
 export const ATTENDANCE_STATUS_OPTIONS = [
   { value: 'PRESENT', label: 'Present' },
   { value: 'ABSENT', label: 'Absent' },
-  { value: 'LATE', label: 'Late' },
-  { value: 'HALF_DAY', label: 'Half Day' },
-  { value: 'EXCUSED', label: 'Excused' },
-  { value: 'HOLIDAY', label: 'Holiday' },
+  // { value: 'LATE', label: 'Late' },
+  // { value: 'HALF_DAY', label: 'Half Day' },
+  // { value: 'EXCUSED', label: 'Excused' },
+  // { value: 'HOLIDAY', label: 'Holiday' },
 ] as const;
 
 export const ATTENDANCE_STATUS_FILTER_OPTIONS = [
@@ -37,6 +37,7 @@ export const STUDENT_ATTENDANCE_PAGE = {
     admissionNo: 'Admission No.',
     rollNo: 'Roll No.',
     status: 'Status',
+    isLate: 'Is Late',
     remarks: 'Remarks',
   },
   empty: 'Select a class section to load students.',
@@ -64,9 +65,13 @@ export const ATTENDANCE_REPORT_PAGE = {
       percentage: 'Attendance %',
     },
     table: {
-      student: 'Student',
+      studentName: 'Student Name',
+      admissionNumber: "Admission No.",
+      rollNumber: "Roll No.",
       status: 'Status',
+      isLate: 'Is Late',
       remarks: 'Remarks',
+      markedBy: "Marked By",
     },
     empty: 'No attendance data for selected date.',
   },
@@ -77,6 +82,8 @@ export const ATTENDANCE_REPORT_PAGE = {
     fetch: 'Fetch Summary',
     table: {
       student: 'Student',
+      admissionNumber: "Admission No.",
+      rollNumber: "Roll No.",
       totalDays: 'Total Days',
       present: 'Present',
       absent: 'Absent',
@@ -92,8 +99,10 @@ export const ATTENDANCE_REPORT_PAGE = {
     table: {
       student: 'Student',
       admissionNo: 'Admission No.',
+      rollNo: "Roll No.",
       class: 'Class / Section',
       percentage: 'Attendance %',
+      totalDays: "Total Days",
       present: 'Present',
       absent: 'Absent',
     },

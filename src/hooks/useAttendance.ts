@@ -1,26 +1,36 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
-import { AttendanceService } from '@/services/attendance.service';
-import { ClassesService, SectionsService } from '@/services/classes.service';
-import { StudentsService } from '@/services/students.service';
-import { useAcademicYears } from './useAcademicYears';
-import type { AttendanceStatus, Student, Section, Class } from '@/types';
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import { AttendanceService } from "@/services/attendance.service";
+import { ClassesService, SectionsService } from "@/services/classes.service";
+import { StudentsService } from "@/services/students.service";
+import { useAcademicYears } from "./useAcademicYears";
+import type { AttendanceStatus, Student, Section, Class } from "@/types";
 
-type AttendanceMap = Record<string, { status: AttendanceStatus; remarks: string; existingId?: string }>;
+type AttendanceMap = Record<
+  string,
+  {
+    status?: AttendanceStatus;
+    remarks: string;
+    isLate: boolean;
+    existingId?: string;
+  }
+>;
 
 function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 export function useAttendance() {
   const { years, currentYear } = useAcademicYears();
   const [classes, setClasses] = useState<Class[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>('');
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+  const [classSections, setClassSections] = useState<Section[]>([]);
+  const [selectedAcademicYearId, setSelectedAcademicYearId] =
+    useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [selectedClassSectionId, setSelectedClassSectionId] =
+    useState<string>("");
   const [date, setDate] = useState<string>(todayISO());
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<AttendanceMap>({});
@@ -41,68 +51,109 @@ export function useAttendance() {
     if (!selectedAcademicYearId) return;
     setIsLoadingClasses(true);
     try {
-      const res = await ClassesService.list({ academic_year_id: selectedAcademicYearId });
+      const res = await ClassesService.list({
+        academic_year_id: selectedAcademicYearId,
+      });
       setClasses(res.items);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load classes');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load classes",
+      );
     } finally {
       setIsLoadingClasses(false);
     }
   }, [selectedAcademicYearId]);
 
   // Load sections when class selected
-  const fetchSections = useCallback(async () => {
-    if (!selectedClassId) { setSections([]); return; }
-    setIsLoadingSections(true);
-    try {
-      const res = await SectionsService.list({ class_id: selectedClassId });
-      setSections(res.items);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load sections');
-    } finally {
-      setIsLoadingSections(false);
-    }
-  }, [selectedClassId]);
+  // const fetchSections = useCallback(async () => {
+  //   if (!selectedClassId) {
+  //     setSections([]);
+  //     return;
+  //   }
+  //   setIsLoadingSections(true);
+  //   try {
+  //     const res = await SectionsService.list({ class_id: selectedClassId });
+  //     setSections(res.items);
+  //   } catch (err: unknown) {
+  //     toast.error(
+  //       err instanceof Error ? err.message : "Failed to load sections",
+  //     );
+  //   } finally {
+  //     setIsLoadingSections(false);
+  //   }
+  // }, [selectedClassId]);
 
   // Load students + existing attendance when section + date selected
   const fetchStudentsAndAttendance = useCallback(async () => {
-    if (!selectedSectionId) return;
+    if (!selectedClassSectionId) return;
     setIsLoadingStudents(true);
     try {
       const [studentsRes, existingRecords] = await Promise.all([
-        StudentsService.list({ section_id: selectedSectionId, limit: 100 }),
-        AttendanceService.getSectionDateAttendance(selectedSectionId, date),
+        StudentsService.list({
+          section_id: selectedClassSectionId,
+          limit: 100,
+        }),
+        AttendanceService.getSectionDateAttendance(
+          selectedClassSectionId,
+          date,
+        ),
       ]);
 
       setStudents(studentsRes.items);
 
       const map: AttendanceMap = {};
       studentsRes.items.forEach((s) => {
-        map[s.id] = { status: 'PRESENT', remarks: '' };
+        map[s.id] = {
+          // status: "PRESENT",
+          remarks: "",
+          isLate: false,
+        };
       });
       existingRecords.forEach((r) => {
         if (map[r.student_id]) {
-          map[r.student_id] = { status: r.status, remarks: r.remarks ?? '', existingId: r.id };
+          map[r.student_id] = {
+            status: r.status,
+            remarks: r.remarks ?? "",
+            isLate: r.is_late,
+            existingId: r.id,
+          };
         }
       });
       setAttendanceMap(map);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load attendance');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load attendance",
+      );
     } finally {
       setIsLoadingStudents(false);
     }
-  }, [selectedSectionId, date]);
+  }, [selectedClassSectionId, date]);
+
+  function setStudentLate(studentId: string, isLate: boolean) {
+    setAttendanceMap((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        isLate,
+        remarks: isLate
+          ? "Student has arrived late"
+          : prev[studentId]?.remarks === "Student has arrived late"
+            ? ""
+            : prev[studentId]?.remarks,
+      },
+    }));
+  }
 
   function handleClassChange(classId: string) {
     setSelectedClassId(classId);
-    setSelectedSectionId('');
+    setSelectedClassSectionId(classId);
     setStudents([]);
     setAttendanceMap({});
   }
 
-  function handleSectionChange(sectionId: string) {
-    setSelectedSectionId(sectionId);
-  }
+  // function handleSectionChange(sectionId: string) {
+  //   setSelectedSectionId(sectionId);
+  // }
 
   function setStudentStatus(studentId: string, status: AttendanceStatus) {
     setAttendanceMap((prev) => ({
@@ -129,52 +180,77 @@ export function useAttendance() {
   }
 
   async function saveAttendance() {
-    if (!selectedSectionId || !selectedAcademicYearId || students.length === 0) return;
+    if (
+      !selectedClassSectionId ||
+      !selectedAcademicYearId ||
+      students.length === 0
+    )
+      return;
+
+    const unmarkedStudents = students.filter(
+      (s) => !attendanceMap[s.id]?.status,
+    );
+
+    if (unmarkedStudents.length > 0) {
+      toast.error(`${unmarkedStudents.length} students have not been marked`);
+      return;
+    }
     setIsSaving(true);
     try {
       const entries = students.map((s) => ({
         student_id: s.id,
-        status: attendanceMap[s.id]?.status ?? 'PRESENT',
-        ...(attendanceMap[s.id]?.remarks && { remarks: attendanceMap[s.id].remarks }),
+        status: attendanceMap[s.id].status!,
+        is_late: attendanceMap[s.id].isLate ?? false,
+        ...(attendanceMap[s.id].remarks && {
+          remarks: attendanceMap[s.id].remarks,
+        }),
       }));
 
       await AttendanceService.mark({
         date,
         academic_year_id: selectedAcademicYearId,
-        class_section_id: selectedSectionId,
+        class_section_id: selectedClassSectionId,
         entries,
       });
 
-      toast.success('Attendance saved');
+      toast.success("Attendance saved");
       await fetchStudentsAndAttendance();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save attendance');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save attendance",
+      );
     } finally {
       setIsSaving(false);
     }
   }
 
-  useEffect(() => { fetchClasses(); }, [fetchClasses]);
-  useEffect(() => { fetchSections(); }, [fetchSections]);
   useEffect(() => {
-    if (selectedSectionId) fetchStudentsAndAttendance();
-  }, [selectedSectionId, date, fetchStudentsAndAttendance]);
+    fetchClasses();
+  }, [fetchClasses]);
+
+  // useEffect(() => {
+  //   fetchSections();
+  // }, [fetchSections]);
+
+  useEffect(() => {
+    if (selectedClassSectionId) fetchStudentsAndAttendance();
+  }, [selectedClassSectionId, date, fetchStudentsAndAttendance]);
 
   const selectedClass = classes.find((c) => c.id === selectedClassId);
-  const selectedSection = sections.find((s) => s.id === selectedSectionId);
+  // const selectedSection = sections.find((s) => s.id === selectedSectionId);
 
   return {
     years,
     classes,
-    sections,
+    // sections,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     selectedClassId,
-    selectedSectionId,
+    selectedClassSectionId,
     selectedClass,
-    selectedSection,
+    // selectedSection,
     handleClassChange,
-    handleSectionChange,
+    // handleSectionChange,
     date,
     setDate,
     students,
@@ -187,5 +263,6 @@ export function useAttendance() {
     setStudentRemarks,
     markAll,
     saveAttendance,
+    setStudentLate,
   };
 }

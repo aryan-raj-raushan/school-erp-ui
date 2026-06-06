@@ -130,6 +130,8 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     items: [
       { title: "Academic Years", url: "/school/academic-years" },
       { title: "Classes & Sections", url: "/school/classes" },
+      { title: "Classes & Subjects", url: "/school/class-subject" },
+
     ],
   },
 

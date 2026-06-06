@@ -29,15 +29,15 @@ export default function StudentAttendancePage() {
   const {
     years,
     classes,
-    sections,
+    // sections,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     selectedClassId,
-    selectedSectionId,
+    selectedClassSectionId,
     selectedClass,
-    selectedSection,
+    // selectedSection,
     handleClassChange,
-    handleSectionChange,
+    // handleSectionChange,
     date,
     setDate,
     students,
@@ -50,13 +50,22 @@ export default function StudentAttendancePage() {
     setStudentRemarks,
     markAll,
     saveAttendance,
+    setStudentLate,
   } = useAttendance();
 
   const hasStudents = students.length > 0;
-  const presentCount = Object.values(attendanceMap).filter((v) => v.status === "PRESENT").length;
-  const absentCount = Object.values(attendanceMap).filter((v) => v.status === "ABSENT").length;
-  const lateCount = Object.values(attendanceMap).filter((v) => v.status === "LATE").length;
-  const attendancePct = hasStudents ? Math.round((presentCount / students.length) * 100) : 0;
+  const presentCount = Object.values(attendanceMap).filter(
+    (v) => v.status === "PRESENT",
+  ).length;
+  const absentCount = Object.values(attendanceMap).filter(
+    (v) => v.status === "ABSENT",
+  ).length;
+  const lateCount = Object.values(attendanceMap).filter(
+    (v) => v.status === "LATE",
+  ).length;
+  const attendancePct = hasStudents
+    ? Math.round((presentCount / students.length) * 100)
+    : 0;
 
   return (
     <Div type="col" gap="lg">
@@ -64,9 +73,9 @@ export default function StudentAttendancePage() {
       <Div type="row" justify="between" align="center">
         <Div type="col" gap="xs">
           <H1>{STUDENT_ATTENDANCE_PAGE.title}</H1>
-          {selectedClass && selectedSection && (
+          {selectedClass && (
             <P>
-              {selectedClass.name} — Section {selectedSection.name} &nbsp;·&nbsp; {date}
+              {selectedClass.display_name} &nbsp;·&nbsp; {date}
             </P>
           )}
         </Div>
@@ -89,7 +98,8 @@ export default function StudentAttendancePage() {
               <option value="">Select year</option>
               {years.map((y) => (
                 <option key={y.id} value={y.id}>
-                  {y.name}{y.is_current ? " (Current)" : ""}
+                  {y.name}
+                  {y.is_current ? " (Current)" : ""}
                 </option>
               ))}
             </Select>
@@ -104,12 +114,14 @@ export default function StudentAttendancePage() {
             >
               <option value="">Select class</option>
               {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.display_name}
+                </option>
               ))}
             </Select>
           </Div>
 
-          <Div type="col" gap="xs">
+          {/* <Div type="col" gap="xs">
             <FilterLabel>Section</FilterLabel>
             <Select
               value={selectedSectionId}
@@ -118,10 +130,12 @@ export default function StudentAttendancePage() {
             >
               <option value="">Select section</option>
               {sections.map((s) => (
-                <option key={s.id} value={s.id}>Section {s.name}</option>
+                <option key={s.id} value={s.id}>
+                  Section {s.name}
+                </option>
               ))}
             </Select>
-          </Div>
+          </Div> */}
 
           <Div type="col" gap="xs">
             <FilterLabel>Date</FilterLabel>
@@ -149,10 +163,18 @@ export default function StudentAttendancePage() {
             />
           </Div>
           <Div type="row" gap="sm">
-            <Button size="sm" variant="outline" onClick={() => markAll("PRESENT")}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => markAll("PRESENT")}
+            >
               {STUDENT_ATTENDANCE_PAGE.markAllPresent}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => markAll("ABSENT")}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => markAll("ABSENT")}
+            >
               {STUDENT_ATTENDANCE_PAGE.markAllAbsent}
             </Button>
           </Div>
@@ -164,47 +186,114 @@ export default function StudentAttendancePage() {
         <TableHead>
           <TableHeadRow>
             <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_ATTENDANCE_PAGE.table.student}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_ATTENDANCE_PAGE.table.admissionNo}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_ATTENDANCE_PAGE.table.rollNo}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_ATTENDANCE_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_ATTENDANCE_PAGE.table.remarks}</TableHeaderCell>
+            <TableHeaderCell>
+              {STUDENT_ATTENDANCE_PAGE.table.student}
+            </TableHeaderCell>
+            <TableHeaderCell>
+              {STUDENT_ATTENDANCE_PAGE.table.admissionNo}
+            </TableHeaderCell>
+            <TableHeaderCell>
+              {STUDENT_ATTENDANCE_PAGE.table.rollNo}
+            </TableHeaderCell>
+            <TableHeaderCell>
+              {STUDENT_ATTENDANCE_PAGE.table.status}
+            </TableHeaderCell>
+            <TableHeaderCell>
+              {STUDENT_ATTENDANCE_PAGE.table.isLate}
+            </TableHeaderCell>
+
+            <TableHeaderCell>
+              {STUDENT_ATTENDANCE_PAGE.table.remarks}
+            </TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
           {isLoadingStudents ? (
-            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
-          ) : !selectedSectionId ? (
-            <TableEmptyRow colSpan={6}>{STUDENT_ATTENDANCE_PAGE.empty}</TableEmptyRow>
+            <TableEmptyRow colSpan={7}>
+              <Spinner />
+            </TableEmptyRow>
+          ) : !selectedClassSectionId ? (
+            <TableEmptyRow colSpan={7}>
+              {STUDENT_ATTENDANCE_PAGE.empty}
+            </TableEmptyRow>
           ) : students.length === 0 ? (
-            <TableEmptyRow colSpan={6}>{STUDENT_ATTENDANCE_PAGE.noStudents}</TableEmptyRow>
+            <TableEmptyRow colSpan={7}>
+              {STUDENT_ATTENDANCE_PAGE.noStudents}
+            </TableEmptyRow>
           ) : (
             students.map((student, i) => {
-              const entry = attendanceMap[student.id] ?? { status: "PRESENT", remarks: "" };
+              const entry = attendanceMap[student.id] ?? {
+                // status: "PRESENT",
+                remarks: "",
+                isLate: false,
+              };
               const isAbsent = entry.status === "ABSENT";
               return (
-                <TableRow key={student.id} variant={isAbsent ? "danger" : undefined}>
+                <TableRow
+                  key={student.id}
+                  variant={isAbsent ? "danger" : undefined}
+                >
                   <TableCell>{i + 1}</TableCell>
                   <TableCell primary>
                     {student.first_name} {student.last_name ?? ""}
                   </TableCell>
                   <TableCell>{student.admission_number}</TableCell>
                   <TableCell>{student.roll_number ?? "—"}</TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <Select
                       value={entry.status}
-                      onChange={(e) => setStudentStatus(student.id, e.target.value as any)}
+                      onChange={(e) =>
+                        setStudentStatus(student.id, e.target.value as any)
+                      }
                     >
                       {ATTENDANCE_STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
                       ))}
                     </Select>
+                  </TableCell> */}
+                  <TableCell>
+                    <Div type="row" gap="xs">
+                      <Button
+                        size="sm"
+                        variant={
+                          entry.status === "PRESENT" ? "success" : "outline"
+                        }
+                        onClick={() => setStudentStatus(student.id, "PRESENT")}
+                      >
+                        P
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant={
+                          entry.status === "ABSENT" ? "destructive" : "outline"
+                        }
+                        onClick={() => setStudentStatus(student.id, "ABSENT")}
+                      >
+                        A
+                      </Button>
+                    </Div>
+                  </TableCell>
+                  <TableCell>
+                    <TableCell>
+                      <Input
+                        type="checkbox"
+                        checked={entry.isLate}
+                        onChange={(e) =>
+                          setStudentLate(student.id, e.target.checked)
+                        }
+                      />
+                    </TableCell>
                   </TableCell>
                   <TableCell>
                     <Input
                       placeholder="Optional remarks"
                       value={entry.remarks}
-                      onChange={(e) => setStudentRemarks(student.id, e.target.value)}
+                      onChange={(e) =>
+                        setStudentRemarks(student.id, e.target.value)
+                      }
                     />
                   </TableCell>
                 </TableRow>

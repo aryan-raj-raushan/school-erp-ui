@@ -30,6 +30,13 @@ export const ENDPOINTS = {
     list: '/subjects',
     byId: (id: string) => `/subjects/${id}`,
   },
+  classSubjects: {
+    list: '/class-subjects',
+    byId: (id: string) => `/class-subjects/${id}`,
+  },
+  masterData: {
+    subjects: '/master-data/subjects'
+  },
   students: {
     list: '/students',
     byId: (id: string) => `/students/${id}`,

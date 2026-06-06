@@ -90,6 +90,8 @@ export interface Class {
   school_id: string;
   academic_year_id: string;
   name: string;
+  display_name: string;
+  class_id: string;
   numeric_value?: number | null;
   description?: string | null;
   created_at: string;
@@ -240,12 +242,17 @@ export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXC
 export interface AttendanceRecord {
   id: string;
   student_id: string;
+  student_name: string;
+  admission_number: string;
+  roll_number: string;
   school_id: string;
   class_section_id?: string | null;
   date: string;
   status: AttendanceStatus;
+  is_late: boolean;
   remarks?: string | null;
   marked_by?: string | null;
+  marked_by_username?: string | null;
   created_at: string;
   updated_at?: string | null;
 }
@@ -263,15 +270,16 @@ export interface MarkAttendancePayload {
   entries: MarkAttendanceEntry[];
 }
 
+
 export interface DailyAttendanceReport {
   date: string;
   class_section_id?: string;
-  total: number;
-  present: number;
-  absent: number;
-  late: number;
-  half_day?: number;
-  excused?: number;
+  stats: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+  }
   records: AttendanceRecord[];
 }
 
@@ -284,6 +292,37 @@ export interface MonthlyAttendanceSummary {
   late: number;
   half_day?: number;
   percentage: number;
+  student_summaries: MonthlyStudentSummary[];
+  records: AttendanceRecord[];
+}
+
+export interface MonthlyStudentSummary {
+  student_id: string;
+  student_name: string;
+  roll_number: string;
+  admission_number: string;
+  present: number;
+  absent: number;
+  total: number;
+  total_days: number;
+  percentage: number;
+}
+
+export interface MonthlyAttendanceStats {
+  total_students: number;
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+}
+
+export interface MonthlyAttendanceReport {
+  class_section_id: string;
+  class_section_name: string;
+  year: number;
+  month: number;
+  stats: MonthlyAttendanceStats;
+  student_summaries: MonthlyStudentSummary[];
 }
 
 export interface AttendanceSummary {
@@ -315,6 +354,12 @@ export interface AttendanceDefaulter {
   total_days: number;
   present: number;
   absent: number;
+  studentName?: string;
+  admissionNo?: string;
+  rollNo?: string;
+  roll_number?:string;
+  total_present?: string;
+  total_absent?: string;
 }
 
 export interface AttendanceExportJob {
@@ -461,6 +506,7 @@ export interface Homework {
   academic_year_id: string;
   class_section_id: string;
   subject_id: string;
+  subject_name: string;
   title: string;
   description?: string | null;
   due_date: string;
@@ -469,6 +515,7 @@ export interface Homework {
   deleted: boolean;
   created_at: string;
   updated_at?: string | null;
+  created_by_name?: string;
 }
 
 export interface HomeworkSubmission {
