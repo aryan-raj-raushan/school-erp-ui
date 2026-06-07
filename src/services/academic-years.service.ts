@@ -11,7 +11,11 @@ export interface CreateAcademicYearPayload {
   name: string;
   start_date: string;
   end_date: string;
+  session_code?: string;
+  description?: string;
   is_current?: boolean;
+  is_enabled?: boolean;
+  timetable_session_id?: string;
 }
 
 export interface UpdateAcademicYearPayload extends Partial<CreateAcademicYearPayload> {}

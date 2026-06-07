@@ -13,8 +13,8 @@ const widthMap: Record<InputWidth, string> = {
 };
 
 /* ring-ring and border-primary both resolve to CSS vars that update per theme */
-const inputBase =
-  'h-11 rounded-[18px] border border-border bg-white/70 dark:bg-white/5 backdrop-blur-sm px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:opacity-50 transition-all duration-200';
+export const inputBase =
+  'h-11 rounded-[8px] border border-border bg-white/70 dark:bg-white/5 backdrop-blur-sm px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:opacity-50 transition-all duration-200';
 
 export const Input = React.forwardRef<
   HTMLInputElement,

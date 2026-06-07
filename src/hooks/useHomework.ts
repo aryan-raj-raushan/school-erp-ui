@@ -10,9 +10,10 @@ import {
   type CreateHomeworkPayload,
   type SubmissionEntry,
 } from "@/services/homework.service";
-import { ClassesService, SectionsService } from "@/services/classes.service";
+import { ClassesService } from "@/services/classes.service";
 import { StudentsService } from "@/services/students.service";
 import { UploadsService } from "@/services/uploads.service";
+import { SubjectsService, type Subject } from "@/services/subjects.service";
 import { useAcademicYears } from "./useAcademicYears";
 import type {
   Homework,
@@ -22,9 +23,6 @@ import type {
   Section,
   PaginationMeta,
 } from "@/types";
-import { ClassSectionSubject, ClassSectionSubjectsResponse } from "@/types/setting/class-subject.types";
-import { ClassSubjectsService } from "@/services/class-subject.service";
-import { ClassSubjectFilters } from "./useClassSubject";
 
 const hwSchema = z.object({
   title: z.string().min(1, "Title required"),
@@ -42,116 +40,61 @@ export function useHomework() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
-
-  // class subjects
-  const [classSubjects, setClassSubjects] = useState<ClassSectionSubjectsResponse>();
-  const [selectedClassSubjectId, setSelectedClassSubjectId] = useState("");
-
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
   const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedClassSectionId, setSelectedClassSectionId] = useState("");
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
 
-  // Homework
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
-  const [selectedHomework, setSelectedHomework] = useState<Homework | null>(
-    null,
-  );
+  const [selectedHomework, setSelectedHomework] = useState<Homework | null>(null);
   const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [submissionMap, setSubmissionMap] = useState<
-    Record<string, { status: string; remarks: string }>
-  >({});
+  const [submissionMap, setSubmissionMap] = useState<Record<string, { status: string; remarks: string }>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
-
   const form = useForm<HomeworkFormValues>({ resolver: zodResolver(hwSchema) });
 
   useEffect(() => {
-    if (currentYear && !selectedAcademicYearId)
-      setSelectedAcademicYearId(currentYear.id);
+    if (currentYear && !selectedAcademicYearId) setSelectedAcademicYearId(currentYear.id);
   }, [currentYear, selectedAcademicYearId]);
 
   const fetchClasses = useCallback(async () => {
     if (!selectedAcademicYearId) return;
     try {
-      const res = await ClassesService.list({
-        academic_year_id: selectedAcademicYearId,
-      });
+      const res = await ClassesService.list({ academic_year_id: selectedAcademicYearId });
       setClasses(res.items);
       setAllSections(res.sections);
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }, [selectedAcademicYearId]);
 
-  // default filters:
-
-  const [defaultSubjectsFilters, setDefaultSubjectsFilters] = useState({
-    class_section_id: selectedClassSectionId || undefined,
-    academic_year_id: selectedAcademicYearId || undefined,
-  });
-
-  useEffect(() => {
-    setDefaultSubjectsFilters({
-      class_section_id: selectedClassSectionId,
-      academic_year_id: selectedAcademicYearId,
-    });
-  }, [selectedClassSectionId, selectedAcademicYearId]);
-
-  const fetchClassSubjects = useCallback(
-    async (filters: ClassSubjectFilters = defaultSubjectsFilters) => {
-      if(!defaultSubjectsFilters.academic_year_id || !defaultSubjectsFilters.class_section_id) return 
-      setIsLoading(true);
-      try {
-        const result = await ClassSubjectsService.list(filters);
-        setClassSubjects(result);
-        setPagination(result.pagination);
-      } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load class subjects",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      defaultSubjectsFilters.class_section_id,
-      defaultSubjectsFilters.academic_year_id,
-    ],
-  );
-
-  useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
+  useEffect(() => { fetchClasses(); }, [fetchClasses]);
 
   async function handleClassChange(classId: string) {
     setSelectedClassId(classId);
     setSelectedClassSectionId("");
-    setSelectedClassSubjectId("");
+    setSelectedSubjectId("");
     setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
-    setClassSubjects(undefined);
+    setSubjects([]);
     setHomeworkList([]);
+    if (!classId) return;
+    try {
+      const res = await SubjectsService.list({ class_id: classId, limit: 100 });
+      setSubjects(res.items);
+    } catch { /* ignore */ }
   }
 
-  async function handleSectionChange(sectionId: string) {
+  function handleSectionChange(sectionId: string) {
     setSelectedClassSectionId(sectionId);
-    setSelectedClassSubjectId("");
-    setClassSubjects(undefined);
+    setSelectedSubjectId("");
     setHomeworkList([]);
-    if (!sectionId) return;
-    try {
-      const result = await ClassSubjectsService.list({ class_section_id: sectionId, limit: 100 });
-      setClassSubjects(result);
-    } catch { /* ignore */ }
   }
 
   const fetchHomework = useCallback(async () => {
@@ -160,36 +103,22 @@ export function useHomework() {
     try {
       const data = await HomeworkService.list({
         class_section_id: selectedClassSectionId,
-        subject_id: selectedClassSubjectId || undefined,
+        subject_id: selectedSubjectId || undefined,
         academic_year_id: selectedAcademicYearId,
       });
       setHomeworkList(data);
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to load homework",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to load homework");
     } finally {
       setIsLoading(false);
     }
-  }, [selectedClassSectionId, selectedClassSubjectId, selectedAcademicYearId]);
+  }, [selectedClassSectionId, selectedSubjectId, selectedAcademicYearId]);
 
-  useEffect(() => {
-    fetchHomework();
-  }, [fetchHomework]);
-
-   useEffect(() => {
-    fetchClassSubjects();
-    fetchClasses();
-  }, [fetchClassSubjects, fetchClasses]);
+  useEffect(() => { fetchHomework(); }, [fetchHomework]);
 
   function openAddModal() {
     setEditingId(null);
-    form.reset({
-      title: "",
-      description: "",
-      due_date: "",
-      attachment_url: "",
-    });
+    form.reset({ title: "", description: "", due_date: "", attachment_url: "" });
     setShowModal(true);
   }
 
@@ -220,24 +149,18 @@ export function useHomework() {
   }
 
   async function handleSubmit(values: HomeworkFormValues) {
-    if (
-      !selectedClassSectionId ||
-      !selectedAcademicYearId ||
-      !setSelectedClassSubjectId
-    ) {
-      toast.error("Select section and subject first");
+    if (!selectedClassSectionId || !selectedAcademicYearId) {
+      toast.error("Select section first");
       return;
     }
     setIsSaving(true);
     try {
       let attachmentUrl = values.attachment_url;
-      if (fileRef.current?.files?.length) {
-        attachmentUrl = await uploadAttachment();
-      }
+      if (fileRef.current?.files?.length) attachmentUrl = await uploadAttachment();
       const payload: CreateHomeworkPayload = {
         academic_year_id: selectedAcademicYearId,
         class_section_id: selectedClassSectionId,
-        subject_id: selectedClassSubjectId,
+        subject_id: selectedSubjectId || undefined,
         title: values.title,
         description: values.description,
         due_date: values.due_date,
@@ -283,28 +206,16 @@ export function useHomework() {
       const map: typeof submissionMap = {};
       studs.items.forEach((s) => {
         const existing = subs.find((sub) => sub.student_id === s.id);
-        map[s.id] = {
-          status: existing?.status ?? "PENDING",
-          remarks: existing?.remarks ?? "",
-        };
+        map[s.id] = { status: existing?.status ?? "PENDING", remarks: existing?.remarks ?? "" };
       });
       setSubmissionMap(map);
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to load submissions",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to load submissions");
     }
   }
 
-  function setSubmission(
-    studentId: string,
-    field: "status" | "remarks",
-    value: string,
-  ) {
-    setSubmissionMap((prev) => ({
-      ...prev,
-      [studentId]: { ...prev[studentId], [field]: value },
-    }));
+  function setSubmission(studentId: string, field: "status" | "remarks", value: string) {
+    setSubmissionMap((prev) => ({ ...prev, [studentId]: { ...prev[studentId], [field]: value } }));
   }
 
   async function saveSubmissions() {
@@ -320,9 +231,7 @@ export function useHomework() {
       toast.success("Submissions saved");
       setShowSubmissionsModal(false);
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to save submissions",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to save submissions");
     } finally {
       setIsSaving(false);
     }
@@ -334,12 +243,11 @@ export function useHomework() {
     setSelectedAcademicYearId,
     classes,
     sections,
-    classSubjects,
+    subjects,
     selectedClassId,
     selectedClassSectionId,
-    selectedClassSubjectId,
-    setSelectedClassSectionId,
-    setSelectedClassSubjectId,
+    selectedSubjectId,
+    setSelectedSubjectId,
     handleClassChange,
     handleSectionChange,
     homeworkList,
@@ -364,5 +272,6 @@ export function useHomework() {
     openSubmissions,
     setSubmission,
     saveSubmissions,
+    pagination,
   };
 }

@@ -1,223 +1,161 @@
-"use client";
+'use client';
 
-import { useClasses, DEFAULT_SECTION_NAMES } from "@/hooks/useClasses";
-import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { CLASSES_PAGE } from "@/constants";
-import { PageHeader } from "@/components/ui/page-header";
+import { useClasses } from '@/hooks/useClasses';
+import { useClassDetails } from '@/hooks/useClassDetails';
+import { useAcademicYears } from '@/hooks/useAcademicYears';
+import { useTimetableSessions } from '@/hooks/useTimetableSessions';
+import { useClassesPageTabs, CLASSES_TAB_OPTIONS } from '@/hooks/useClassesPageTabs';
+import { CLASSES_PAGE, CLASS_DETAILS_PAGE } from '@/constants';
+import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div,
-  P,
-  Button,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  FormField,
-  Input,
-  Select,
-  Badge,
-  Spinner,
-  CheckboxLabel,
-  Icon,
-} from "@/components/ui";
-import { Trash2, Pencil } from "lucide-react";
+  Div, P, Button, Tabs,
+  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
+  Badge, Spinner, Icon,
+} from '@/components/ui';
+import { Trash2, Pencil } from 'lucide-react';
 
 export default function ClassesPage() {
-  const { years, currentYear } = useAcademicYears();
+  const { activeTab, setActiveTab } = useClassesPageTabs();
+  const { years } = useAcademicYears();
   const {
-    classes,
-    sections,
-    isLoading,
-    isEditing,
-    showClassModal,
-    openClassModal,
-    closeClassModal,
-    classForm,
-    handleClassSubmit,
-    isClassSubmitting,
-    removeClass,
-    sectionsForClass,
-    openEditClassModal,
+    classes, isLoading,
+    sectionsForClass, removeClass,
+    navigateToNew, navigateToEdit,
   } = useClasses();
-
-  const watchedSections = classForm.watch("sections") ?? [];
-
-  function toggleSection(name: string) {
-    const current = classForm.getValues("sections") ?? [];
-    if (current.includes(name)) {
-      classForm.setValue(
-        "sections",
-        current.filter((s) => s !== name),
-        { shouldValidate: true },
-      );
-    } else {
-      classForm.setValue("sections", [...current, name], {
-        shouldValidate: true,
-      });
-    }
-  }
+  const { classDetails, isLoading: isLoadingDetails, removeClassDetail, navigateToNew: navigateToNewDetail, navigateToEdit: navigateToEditDetail } = useClassDetails();
+  const { sessions } = useTimetableSessions();
 
   return (
     <Div type="col" gap="lg">
       <PageHeader
         title={CLASSES_PAGE.title}
-        subtitle={
-          currentYear
-            ? `Academic Year: ${currentYear.name}`
-            : "No current academic year set"
-        }
         illustration="/illustrations/graduation.svg"
         actions={
-          <Button onClick={() => openClassModal(currentYear?.id)}>
-            {CLASSES_PAGE.addClassButton}
-          </Button>
+          activeTab === 'classes'
+            ? <Button onClick={navigateToNew}>{CLASSES_PAGE.addClassButton}</Button>
+            : <Button onClick={navigateToNewDetail}>{CLASS_DETAILS_PAGE.addButton}</Button>
         }
       />
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{CLASSES_PAGE.classTable.name}</TableHeaderCell>
-            <TableHeaderCell>{CLASSES_PAGE.classTable.academicYear}</TableHeaderCell>
-            <TableHeaderCell>Sections</TableHeaderCell>
-            <TableHeaderCell>{CLASSES_PAGE.classTable.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={4}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : classes.length === 0 ? (
-            <TableEmptyRow colSpan={4}>{CLASSES_PAGE.classEmpty}</TableEmptyRow>
-          ) : (
-            classes.map((cls) => {
-              const clsSections = sectionsForClass(cls.id);
-              const year = years.find((y) => y.id === cls.academic_year_id);
-              return (
-                <TableRow key={cls.id}>
-                  <TableCell primary>{cls.display_name}</TableCell>
-                  <TableCell>{year?.name ?? "—"}</TableCell>
-                  <TableCell>
-                    <Div type="row" gap="xs" wrap>
-                      {clsSections.length === 0 ? (
-                        <P size="xs">—</P>
-                      ) : (
-                        clsSections.map((s) => (
-                          <Badge key={s.id} variant="info">
-                            {cls.name} — {s.name}
-                          </Badge>
-                        ))
-                      )}
-                    </Div>
-                  </TableCell>
-                  <TableCell>
-                    <Div type="row" gap="xs">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openEditClassModal(cls)}
-                      >
-                        <Icon icon={Pencil} type="sm" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          const sec = sectionsForClass(cls.class_id)[0];
-                          removeClass(sec?.id ?? cls.class_id);
-                        }}
-                      >
-                        <Icon icon={Trash2} type="sm-danger" />
-                      </Button>
-                    </Div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      <Tabs
+        options={CLASSES_TAB_OPTIONS}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-w-xs"
+      />
 
-      {showClassModal && (
-        <Modal
-          onClose={closeClassModal}
-          title={isEditing ? "Edit Class" : CLASSES_PAGE.classForm.title}
-          size="md"
-        >
-          <form onSubmit={handleClassSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <FormField
-                  label={CLASSES_PAGE.classForm.name}
-                  error={classForm.formState.errors.name?.message}
-                >
-                  <Input
-                    placeholder={CLASSES_PAGE.placeholders.className}
-                    {...classForm.register("name")}
-                  />
-                </FormField>
-                {!isEditing && (
-                  <FormField
-                    label={CLASSES_PAGE.classForm.academicYear}
-                    error={classForm.formState.errors.academic_year_id?.message}
-                  >
-                    <Select {...classForm.register("academic_year_id")}>
-                      <option value="">Select academic year</option>
-                      {years.map((y) => (
-                        <option key={y.id} value={y.id}>
-                          {y.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                )}
-                <FormField label={CLASSES_PAGE.classForm.description}>
-                  <Input
-                    placeholder="Optional description"
-                    {...classForm.register("description")}
-                  />
-                </FormField>
-                {/* Section checkboxes */}
-                <FormField
-                  label="Sections (select which to create)"
-                  error={classForm.formState.errors.sections?.message}
-                >
-                  <Div type="row" gap="md" wrap>
-                    {DEFAULT_SECTION_NAMES.map((name) => (
-                      <Div key={name} type="row" align="center" gap="xs">
-                        <input
-                          type="checkbox"
-                          id={`sec-${name}`}
-                          checked={watchedSections.includes(name)}
-                          onChange={() => toggleSection(name)}
-                        />
-                        <CheckboxLabel htmlFor={`sec-${name}`}>
-                          {name}
-                        </CheckboxLabel>
+      {activeTab === 'classes' && (
+        <Table>
+          <TableHead>
+            <TableHeadRow>
+              <TableHeaderCell>{CLASSES_PAGE.classTable.name}</TableHeaderCell>
+              <TableHeaderCell>{CLASSES_PAGE.classTable.academicYear}</TableHeaderCell>
+              <TableHeaderCell>{CLASSES_PAGE.classTable.department}</TableHeaderCell>
+              <TableHeaderCell>{CLASSES_PAGE.classTable.classType}</TableHeaderCell>
+              <TableHeaderCell>{CLASSES_PAGE.classTable.sections}</TableHeaderCell>
+              <TableHeaderCell>{CLASSES_PAGE.classTable.actions}</TableHeaderCell>
+            </TableHeadRow>
+          </TableHead>
+          <TableBody>
+            {isLoading ? (
+              <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
+            ) : classes.length === 0 ? (
+              <TableEmptyRow colSpan={6}>{CLASSES_PAGE.classEmpty}</TableEmptyRow>
+            ) : (
+              classes.map((cls) => {
+                const clsSections = sectionsForClass(cls.id);
+                const year = years.find((y) => y.id === cls.academic_year_id);
+                return (
+                  <TableRow key={cls.id}>
+                    <TableCell primary>{cls.name}</TableCell>
+                    <TableCell>{year?.name ?? '—'}</TableCell>
+                    <TableCell>{cls.department ?? '—'}</TableCell>
+                    <TableCell>{cls.class_type ?? '—'}</TableCell>
+                    <TableCell>
+                      <Div type="row" gap="xs" wrap>
+                        {clsSections.length === 0 ? (
+                          <P size="xs">—</P>
+                        ) : (
+                          clsSections.map((s) => (
+                            <Badge key={s.id} variant="info">{cls.name} — {s.name}</Badge>
+                          ))
+                        )}
                       </Div>
-                    ))}
-                  </Div>
-                </FormField>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeClassModal}>
-                {CLASSES_PAGE.classForm.cancel}
-              </Button>
-              <Button type="submit" loading={isClassSubmitting}>
-                {isEditing ? "Save Changes" : CLASSES_PAGE.classForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
+                    </TableCell>
+                    <TableCell>
+                      <Div type="row" gap="xs">
+                        <Button size="sm" variant="ghost" onClick={() => navigateToEdit(cls.id)}>
+                          <Icon icon={Pencil} type="sm" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => removeClass(cls.id)}>
+                          <Icon icon={Trash2} type="sm-danger" />
+                        </Button>
+                      </Div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      )}
+
+      {activeTab === 'class-details' && (
+        <Table>
+          <TableHead>
+            <TableHeadRow>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.class}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.name}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.session}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.year}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.classCode}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.maxExams}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.bestExams}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.electives}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.enabled}</TableHeaderCell>
+              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.actions}</TableHeaderCell>
+            </TableHeadRow>
+          </TableHead>
+          <TableBody>
+            {isLoadingDetails ? (
+              <TableEmptyRow colSpan={10}><Spinner /></TableEmptyRow>
+            ) : classDetails.length === 0 ? (
+              <TableEmptyRow colSpan={10}>{CLASS_DETAILS_PAGE.empty}</TableEmptyRow>
+            ) : (
+              classDetails.map((detail) => {
+                const cls = classes.find((c) => c.id === detail.class_id);
+                const session = sessions.find((s) => s.id === detail.timetable_session_id);
+                return (
+                  <TableRow key={detail.id}>
+                    <TableCell primary>{cls?.name ?? '—'}</TableCell>
+                    <TableCell>{detail.name}</TableCell>
+                    <TableCell>{session?.name ?? '—'}</TableCell>
+                    <TableCell>{detail.year ?? '—'}</TableCell>
+                    <TableCell>{detail.class_code ?? '—'}</TableCell>
+                    <TableCell>{detail.max_internal_exam}</TableCell>
+                    <TableCell>{detail.best_internal_exam_count}</TableCell>
+                    <TableCell>{detail.no_of_elective_subjects}</TableCell>
+                    <TableCell>
+                      <Badge variant={detail.is_enabled ? 'success' : 'default'}>
+                        {detail.is_enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Div type="row" gap="xs">
+                        <Button size="sm" variant="ghost" onClick={() => navigateToEditDetail(detail.id)}>
+                          <Icon icon={Pencil} type="sm" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => removeClassDetail(detail.id)}>
+                          <Icon icon={Trash2} type="sm-danger" />
+                        </Button>
+                      </Div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       )}
     </Div>
   );

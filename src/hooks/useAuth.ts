@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants';
 import { AuthContext } from '@/types';
-import { AuthService, type LoginCompanyPayload, type LoginSchoolPayload } from '@/services/auth.service';
+import { AuthService, type LoginCompanyPayload, type LoginSchoolPayload, type SchoolSignupPayload } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 
 export function useAuth() {
@@ -77,5 +77,22 @@ export function useAuth() {
     }
   }
 
-  return { loginCompany, loginSchool, switchSchool, logout, isLoading, error };
+  async function signup(payload: SchoolSignupPayload) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await AuthService.schoolSignup(payload);
+      const profile = await AuthService.getMe();
+      setAuth(profile, AuthContext.SCHOOL);
+      router.replace(ROUTES.schoolDashboard);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Signup failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return { loginCompany, loginSchool, switchSchool, logout, signup, isLoading, error };
 }

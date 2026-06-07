@@ -11,8 +11,16 @@ export interface ClassFilters {
 export interface CreateClassPayload {
   name: string;
   academic_year_id: string;
+  timetable_session_id?: string;
+  department?: string;
+  class_type?: string;
+  class_sequence?: number;
+  no_of_sessions?: number;
+  class_code?: string;
+  default_sections?: string;
   numeric_value?: number;
   description?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateClassPayload extends Partial<CreateClassPayload> {}
@@ -36,7 +44,10 @@ export interface UpdateSectionPayload extends Partial<CreateSectionPayload> {}
 // Raw shape returned by backend /classes (section-class JOIN)
 type RawClassSection = {
   id: string; class_id: string; class_name: string; section_name: string;
-  school_id: string; academic_year_id: string; numeric_value?: number | null;
+  school_id: string; academic_year_id: string; timetable_session_id?: string | null;
+  department?: string | null; class_type?: string | null; class_sequence?: number | null;
+  no_of_sessions?: number | null; class_code?: string | null; default_sections?: string | null;
+  numeric_value?: number | null; is_active: boolean;
   class_teacher_id?: string | null; room_number?: string | null;
   student_capacity?: number | null; created_at: string; updated_at?: string | null;
 };
@@ -59,8 +70,16 @@ export const ClassesService = {
           display_name: r.class_name,
           school_id: r.school_id,
           academic_year_id: r.academic_year_id,
+          timetable_session_id: r.timetable_session_id ?? null,
+          department: r.department ?? null,
+          class_type: r.class_type ?? null,
+          class_sequence: r.class_sequence ?? null,
+          no_of_sessions: r.no_of_sessions ?? null,
+          class_code: r.class_code ?? null,
+          default_sections: r.default_sections ?? null,
           numeric_value: r.numeric_value ?? null,
           description: null,
+          is_active: r.is_active,
           created_at: r.created_at,
           updated_at: r.updated_at ?? null,
         });

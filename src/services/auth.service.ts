@@ -37,6 +37,24 @@ export interface LoginResult {
   user: AuthUser;
 }
 
+export interface SchoolSignupPayload {
+  school_name: string;
+  school_code?: string;
+  board_type?: string;
+  first_name: string;
+  last_name?: string;
+  dial_code?: string;
+  phone_number: string;
+  email?: string;
+  password: string;
+}
+
+export interface SetupPasswordPayload {
+  setup_token: string;
+  password: string;
+  confirm_password: string;
+}
+
 export type { UserProfile };
 
 export const AuthService = {
@@ -72,6 +90,18 @@ export const AuthService = {
 
   async switchSchool(schoolId: string): Promise<LoginResult> {
     const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.switchSchool(schoolId), {});
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+    return res.data;
+  },
+
+  async schoolSignup(payload: SchoolSignupPayload): Promise<LoginResult> {
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolSignup, payload, { skipAuth: true });
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+    return res.data;
+  },
+
+  async setupPassword(payload: SetupPasswordPayload): Promise<LoginResult> {
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.setupPassword, payload, { skipAuth: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
     return res.data;
   },

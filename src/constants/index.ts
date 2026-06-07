@@ -14,3 +14,4 @@ export * from './attendance.constants';
 export * from './exams.constants';
 export * from './leave.constants';
 export * from './academics.constants';
+export * from './subjects.constants';

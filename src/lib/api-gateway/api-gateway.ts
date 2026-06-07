@@ -30,10 +30,15 @@ export class ApiGateway {
       const refreshToken = TokenStorage.getRefreshToken();
       if (!refreshToken) throw new Error('No refresh token available');
 
+      // Backend JwtRefreshStrategy requires: Bearer <refreshToken> header + body { refreshToken }
       const response = await this.post<{ accessToken: string; refreshToken: string }>(
         ENDPOINTS.auth.refresh,
         { refreshToken },
-        { skipRefresh: true, skipAuth: true },
+        {
+          skipRefresh: true,
+          skipAuth: true,
+          headers: { Authorization: `Bearer ${refreshToken}` },
+        },
       );
       return response.data;
     };

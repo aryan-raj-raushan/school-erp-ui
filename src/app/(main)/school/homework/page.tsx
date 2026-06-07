@@ -30,7 +30,6 @@ import {
   Icon,
 } from "@/components/ui";
 import { Plus, Pencil, Trash2, ListChecks } from "lucide-react";
-import { useMasterSubjects } from "@/hooks/useMasterSubject";
 
 export default function HomeworkPage() {
   const {
@@ -39,12 +38,11 @@ export default function HomeworkPage() {
     setSelectedAcademicYearId,
     classes,
     sections,
-    classSubjects,
+    subjects,
     selectedClassId,
     selectedClassSectionId,
-    selectedClassSubjectId,
-    setSelectedClassSectionId,
-    setSelectedClassSubjectId,
+    selectedSubjectId,
+    setSelectedSubjectId,
     handleClassChange,
     handleSectionChange,
     homeworkList,
@@ -69,8 +67,6 @@ export default function HomeworkPage() {
     saveSubmissions,
   } = useHomework();
 
-  const masterSubjects = useMasterSubjects();
-
   const {
     register,
     handleSubmit: onSubmit,
@@ -83,7 +79,7 @@ export default function HomeworkPage() {
         <H1>{HOMEWORK_PAGE.title}</H1>
         <Button
           onClick={openAddModal}
-          disabled={!selectedClassSectionId || !selectedClassSubjectId}
+          disabled={!selectedClassSectionId}
         >
           <Icon icon={Plus} type="btn-icon" />
           {HOMEWORK_PAGE.addButton}
@@ -141,23 +137,14 @@ export default function HomeworkPage() {
           <Div type="col" gap="xs">
             <FilterLabel>Subject</FilterLabel>
             <Select
-              value={selectedClassSubjectId}
-              onChange={(e) => setSelectedClassSubjectId(e.target.value)}
-              disabled={!selectedClassSectionId}
+              value={selectedSubjectId}
+              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              disabled={!selectedClassId}
             >
               <option value="">All subjects</option>
-              {(classSubjects?.data?.items?.length
-                ? classSubjects.data.items.map((s) => (
-                    <option key={s.id} value={s.subject_id}>
-                      {s.subject_name}
-                    </option>
-                  ))
-                : masterSubjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.subject_name}
-                    </option>
-                  ))
-              )}
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
             </Select>
           </Div>
         </Div>

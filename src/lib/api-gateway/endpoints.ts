@@ -3,6 +3,9 @@ export const ENDPOINTS = {
     companyRegister: '/auth/company/register',
     companyLogin: '/auth/company/login',
     schoolLogin: '/auth/school/login',
+    schoolSignup: '/auth/school/signup',
+    login: '/auth/login',
+    setupPassword: '/auth/school/setup-password',
     refresh: '/auth/refresh',
     logout: '/auth/logout',
     me: '/auth/me',
@@ -163,5 +166,27 @@ export const ENDPOINTS = {
     studentDetail: (id: string) => `/parent/student-detail/${id}`,
     byId: (id: string) => `/parent/${id}`,
     linkStudent: (id: string, studentId: string) => `/parent/${id}/link-student/${studentId}`,
+  },
+  timetableSessions: {
+    list: '/timetable-sessions',
+    byId: (id: string) => `/timetable-sessions/${id}`,
+    active: '/timetable-sessions/active',
+    setActive: (id: string) => `/timetable-sessions/${id}/set-active`,
+  },
+  classDetails: {
+    list: '/class-details',
+    byId: (id: string) => `/class-details/${id}`,
+  },
+  syllabi: {
+    list: '/syllabi',
+    byId: (id: string) => `/syllabi/${id}`,
+  },
+  departments: {
+    list: '/departments',
+    byId: (id: string) => `/departments/${id}`,
+  },
+  classTypes: {
+    list: '/class-types',
+    byId: (id: string) => `/class-types/${id}`,
   },
 };

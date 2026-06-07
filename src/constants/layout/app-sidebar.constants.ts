@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   Palette,
   LayoutDashboard,
+
 } from "lucide-react";
 import { Role } from "@/types";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -81,6 +82,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     items: [
       { title: "Homework", url: "/school/homework" },
       { title: "Study Materials", url: "/school/materials" },
+      { title: "Syllabi", url: "/school/syllabi" },
     ],
   },
   {
@@ -130,8 +132,8 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     items: [
       { title: "Academic Years", url: "/school/academic-years" },
       { title: "Classes & Sections", url: "/school/classes" },
-      { title: "Classes & Subjects", url: "/school/class-subject" },
-
+      { title: "Subjects", url: "/school/subjects" },
+      { title: "Timetable Sessions", url: "/school/timetable-sessions" },
     ],
   },
 

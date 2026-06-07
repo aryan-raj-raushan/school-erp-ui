@@ -14,6 +14,8 @@ export const STORAGE_KEYS = {
 export const ROUTES = {
   root: '/',
   login: '/login',
+  signup: '/signup',
+  setupPassword: '/setup-password',
   // Super admin routes
   dashboard: '/dashboard',
   schools: '/schools',
@@ -21,7 +23,19 @@ export const ROUTES = {
   // School admin routes
   schoolDashboard: '/school',
   academicYears: '/school/academic-years',
+  academicYearNew: '/school/academic-years/new',
+  academicYearEdit: (id: string) => `/school/academic-years/${id}/edit`,
   classes: '/school/classes',
+  classNew: '/school/classes/new',
+  classEdit: (id: string) => `/school/classes/${id}/edit`,
+  classDetailNew: '/school/class-details/new',
+  classDetailEdit: (id: string) => `/school/class-details/${id}/edit`,
+  departments: '/school/departments',
+  departmentNew: '/school/departments/new',
+  departmentEdit: (id: string) => `/school/departments/${id}/edit`,
+  subjects: '/school/subjects',
+  subjectNew: '/school/subjects/new',
+  subjectEdit: (id: string) => `/school/subjects/${id}/edit`,
   students: '/students',
   studentDetail: (id: string) => `/students/${id}`,
   staffs: '/staffs',

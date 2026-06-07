@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useLoginPage } from '@/hooks/useLoginPage';
+import { ROUTES } from '@/constants';
 import { Div, Label, ErrorText, Button, Input, FormField } from '@/components/ui';
 
 export default function LoginPage() {
@@ -56,6 +58,12 @@ export default function LoginPage() {
         <Button type="submit" loading={isLoading} fullWidth>
           Sign in
         </Button>
+
+        <Div type="row" justify="center">
+          <Link href={ROUTES.signup} className="text-sm text-muted-foreground hover:underline">
+            Don&apos;t have an account? Sign up
+          </Link>
+        </Div>
       </Div>
     </form>
   );

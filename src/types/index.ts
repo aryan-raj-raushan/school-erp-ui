@@ -76,11 +76,17 @@ export interface AcademicYear {
   id: string;
   school_id: string;
   name: string;
+  session_code?: string | null;
+  description?: string | null;
   start_date: string;
   end_date: string;
   is_current: boolean;
+  is_active: boolean;
+  is_enabled: boolean;
+  timetable_session_id?: string | null;
   created_at: string;
   updated_at?: string | null;
+  created_by?: string | null;
 }
 
 // ─── Class ────────────────────────────────────────────────────────────────────
@@ -89,11 +95,19 @@ export interface Class {
   id: string;
   school_id: string;
   academic_year_id: string;
+  timetable_session_id?: string | null;
   name: string;
   display_name: string;
   class_id: string;
+  department?: string | null;
+  class_type?: string | null;
+  class_sequence?: number | null;
+  no_of_sessions?: number | null;
+  class_code?: string | null;
+  default_sections?: string | null;
   numeric_value?: number | null;
   description?: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at?: string | null;
 }
