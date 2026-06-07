@@ -1,5 +1,5 @@
 import type { BadgeVariant } from '@/components/ui/badge';
-import type { SubmissionStatus, FeeStatus } from '@/types';
+import type { SubmissionStatus, HomeworkStatus, FeeStatus } from '@/types';
 
 export const SUBMISSION_STATUS_BADGE: Record<SubmissionStatus, BadgeVariant> = {
   PENDING: 'default',
@@ -32,29 +32,66 @@ export const PAYMENT_MODE_OPTIONS = [
   { value: 'DD', label: 'Demand Draft' },
 ] as const;
 
+export const HOMEWORK_STATUS_OPTIONS = [
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'CLOSED', label: 'Closed' },
+] as const;
+
+export const HOMEWORK_STATUS_BADGE: Record<HomeworkStatus, BadgeVariant> = {
+  DRAFT: 'default',
+  ACTIVE: 'success',
+  CLOSED: 'warning',
+};
+
 export const HOMEWORK_PAGE = {
   title: 'Homework',
   addButton: 'Assign Homework',
   table: {
     title: 'Title',
     subject: 'Subject',
-    section: 'Section',
+    homeworkDate: 'Homework Date',
     dueDate: 'Due Date',
-    submissions: 'Submissions',
-    createdBy: "Created By",
+    status: 'Status',
+    createdBy: 'Created By',
     actions: 'Actions',
   },
-  empty: 'No homework assigned. Select a section and subject to view.',
+  empty: 'Select class to view homework.',
   form: {
-    title: 'Assign Homework',
+    createTitle: 'Create Homework',
     editTitle: 'Edit Homework',
-    hwTitle: 'Title *',
-    description: 'Description',
-    dueDate: 'Due Date *',
-    attachmentUrl: 'Attachment URL',
-    submit: 'Assign',
-    save: 'Save Changes',
+    session: 'Session',
+    class: 'Class *',
+    classDetail: 'Class (Year / Semester)',
+    subject: 'Subject *',
+    title: 'Title *',
+    homeworkDate: 'Date of Homework',
+    dueDate: 'Date of Submission *',
+    status: 'Homework Status *',
+    sendNotification: 'Send Notification',
+    studentUploadAllowed: 'Student Upload Allowed',
+    description: 'Homework Description',
+    attachments: 'Homework File Attachment',
+    attachmentsHint: 'jpg, png, pdf file accepted and Max 2MB each',
+    submit: 'Create Homework',
+    update: 'Save Changes',
     cancel: 'Cancel',
+  },
+  placeholders: {
+    selectSession: 'Select Session',
+    selectClass: 'Select Class',
+    selectClassDetail: 'Select Year / Semester',
+    selectSubject: 'Select Subject',
+    selectStatus: 'Select Status',
+    title: 'Enter Title',
+    description: 'Type something',
+  },
+  attachmentTable: {
+    fileName: 'File Name',
+    status: 'Status',
+    preview: 'Preview',
+    view: 'Download / View',
+    remove: 'Remove',
   },
   submissions: {
     title: 'Submissions',

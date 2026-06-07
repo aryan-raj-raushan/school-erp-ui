@@ -514,23 +514,43 @@ export interface TeacherRemark {
 // ─── Homework ─────────────────────────────────────────────────────────────────
 
 export type SubmissionStatus = 'PENDING' | 'SUBMITTED' | 'GRADED' | 'LATE';
+export type HomeworkStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED';
+
+export interface HomeworkAttachment {
+  id: string;
+  homework_id: string;
+  school_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size?: string | null;
+  created_at: string;
+}
 
 export interface Homework {
   id: string;
   school_id: string;
   academic_year_id: string;
-  class_section_id: string;
-  subject_id: string;
-  subject_name: string;
+  timetable_session_id?: string | null;
+  class_id?: string | null;
+  class_detail_id?: string | null;
+  subject_id?: string | null;
   title: string;
   description?: string | null;
+  homework_date?: string | null;
   due_date: string;
-  attachment_url?: string | null;
-  created_by?: string | null;
+  status: HomeworkStatus;
+  send_notification: boolean;
+  student_upload_allowed: boolean;
+  assigned_by?: string | null;
   deleted: boolean;
   created_at: string;
   updated_at?: string | null;
-  created_by_name?: string;
+  class_name?: string | null;
+  class_detail_name?: string | null;
+  subject_name?: string | null;
+  session_name?: string | null;
+  created_by_name?: string | null;
 }
 
 export interface HomeworkSubmission {

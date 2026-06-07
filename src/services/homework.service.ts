@@ -1,21 +1,36 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { Homework, HomeworkSubmission, SubmissionStatus } from '@/types';
+import type { Homework, HomeworkAttachment, HomeworkSubmission, SubmissionStatus } from '@/types';
+
+export interface AttachmentPayload {
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size?: string;
+}
 
 export interface CreateHomeworkPayload {
   academic_year_id: string;
-  class_section_id: string;
+  timetable_session_id?: string;
+  class_id: string;
+  class_detail_id?: string;
   subject_id?: string;
   title: string;
   description?: string;
+  homework_date?: string;
   due_date: string;
-  attachment_url?: string;
+  status?: string;
+  send_notification?: boolean;
+  student_upload_allowed?: boolean;
+  attachments?: AttachmentPayload[];
 }
 
 export interface HomeworkFilters {
-  class_section_id?: string;
+  class_id?: string;
+  class_detail_id?: string;
   subject_id?: string;
   academic_year_id?: string;
+  timetable_session_id?: string;
 }
 
 export interface SubmissionEntry {
@@ -24,24 +39,29 @@ export interface SubmissionEntry {
   remarks?: string;
 }
 
+export interface HomeworkWithAttachments {
+  homework: Homework;
+  attachments: HomeworkAttachment[];
+}
+
 export const HomeworkService = {
   async list(filters: HomeworkFilters = {}): Promise<Homework[]> {
     const res = await apiGateway.get<Homework[]>(ENDPOINTS.homework.list, { params: filters });
     return res.data;
   },
 
-  async getById(id: string): Promise<Homework> {
-    const res = await apiGateway.get<Homework>(ENDPOINTS.homework.byId(id));
+  async getById(id: string): Promise<HomeworkWithAttachments> {
+    const res = await apiGateway.get<HomeworkWithAttachments>(ENDPOINTS.homework.byId(id));
     return res.data;
   },
 
-  async create(payload: CreateHomeworkPayload): Promise<Homework> {
-    const res = await apiGateway.post<Homework>(ENDPOINTS.homework.list, payload);
+  async create(payload: CreateHomeworkPayload): Promise<HomeworkWithAttachments> {
+    const res = await apiGateway.post<HomeworkWithAttachments>(ENDPOINTS.homework.list, payload);
     return res.data;
   },
 
-  async update(id: string, payload: Partial<CreateHomeworkPayload>): Promise<Homework> {
-    const res = await apiGateway.put<Homework>(ENDPOINTS.homework.byId(id), payload);
+  async update(id: string, payload: Partial<CreateHomeworkPayload>): Promise<HomeworkWithAttachments> {
+    const res = await apiGateway.put<HomeworkWithAttachments>(ENDPOINTS.homework.byId(id), payload);
     return res.data;
   },
 
@@ -66,13 +86,6 @@ export const HomeworkService = {
 
   async updateStudentSubmission(hwId: string, studentId: string, payload: Partial<SubmissionEntry> & { submission_url?: string }): Promise<HomeworkSubmission> {
     const res = await apiGateway.put<HomeworkSubmission>(ENDPOINTS.homework.studentSubmission(hwId, studentId), payload);
-    return res.data;
-  },
-
-  async parentList(class_section_id?: string): Promise<Homework[]> {
-    const res = await apiGateway.get<Homework[]>(ENDPOINTS.homework.parentList, {
-      params: class_section_id ? { class_section_id } : {},
-    });
     return res.data;
   },
 };
