@@ -177,7 +177,7 @@ export const ENDPOINTS = {
     list: '/class-details',
     byId: (id: string) => `/class-details/${id}`,
   },
-  syllabi: {
+  syllabus: {
     list: '/syllabi',
     byId: (id: string) => `/syllabi/${id}`,
   },

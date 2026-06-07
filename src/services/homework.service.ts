@@ -5,7 +5,7 @@ import type { Homework, HomeworkSubmission, SubmissionStatus } from '@/types';
 export interface CreateHomeworkPayload {
   academic_year_id: string;
   class_section_id: string;
-  subject_id: string;
+  subject_id?: string;
   title: string;
   description?: string;
   due_date: string;

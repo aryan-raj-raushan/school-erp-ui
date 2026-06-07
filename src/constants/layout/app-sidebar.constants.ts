@@ -82,7 +82,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     items: [
       { title: "Homework", url: "/school/homework" },
       { title: "Study Materials", url: "/school/materials" },
-      { title: "Syllabi", url: "/school/syllabi" },
+      { title: "Syllabus", url: "/school/syllabus" },
     ],
   },
   {

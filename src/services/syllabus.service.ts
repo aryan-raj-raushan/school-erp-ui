@@ -7,7 +7,7 @@ export interface SyllabusAttachment {
   file_name: string;
   file_url: string;
   file_type: string;
-  file_size?: number | null;
+  file_size?: string | null;
 }
 
 export interface Syllabus {
@@ -23,11 +23,19 @@ export interface Syllabus {
   attachments?: SyllabusAttachment[];
 }
 
-export interface SyllabiFilters {
+export interface SyllabusFilters {
   page?: number;
   limit?: number;
   class_id?: string;
   timetable_session_id?: string;
+  class_detail_id?: string;
+}
+
+export interface SyllabusAttachmentPayload {
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size?: string;
 }
 
 export interface CreateSyllabusPayload {
@@ -37,33 +45,33 @@ export interface CreateSyllabusPayload {
   title: string;
   content?: string;
   is_enabled?: boolean;
-  attachments?: { file_name: string; file_url: string; file_type: string; file_size?: number }[];
+  attachments?: SyllabusAttachmentPayload[];
 }
 
 export interface UpdateSyllabusPayload extends Partial<CreateSyllabusPayload> {}
 
-export const SyllabiService = {
-  async list(filters: SyllabiFilters = {}): Promise<{ items: Syllabus[]; pagination: PaginationMeta }> {
-    const res = await apiGateway.get<Syllabus[]>(ENDPOINTS.syllabi.list, { params: filters });
+export const SyllabusService = {
+  async list(filters: SyllabusFilters = {}): Promise<{ items: Syllabus[]; pagination: PaginationMeta }> {
+    const res = await apiGateway.get<Syllabus[]>(ENDPOINTS.syllabus.list, { params: filters });
     return { items: res.data, pagination: res.pagination! };
   },
 
   async getById(id: string): Promise<Syllabus> {
-    const res = await apiGateway.get<Syllabus>(ENDPOINTS.syllabi.byId(id));
+    const res = await apiGateway.get<Syllabus>(ENDPOINTS.syllabus.byId(id));
     return res.data;
   },
 
   async create(payload: CreateSyllabusPayload): Promise<Syllabus> {
-    const res = await apiGateway.post<Syllabus>(ENDPOINTS.syllabi.list, payload);
+    const res = await apiGateway.post<Syllabus>(ENDPOINTS.syllabus.list, payload);
     return res.data;
   },
 
   async update(id: string, payload: UpdateSyllabusPayload): Promise<Syllabus> {
-    const res = await apiGateway.patch<Syllabus>(ENDPOINTS.syllabi.byId(id), payload);
+    const res = await apiGateway.patch<Syllabus>(ENDPOINTS.syllabus.byId(id), payload);
     return res.data;
   },
 
   async remove(id: string): Promise<void> {
-    await apiGateway.delete(ENDPOINTS.syllabi.byId(id));
+    await apiGateway.delete(ENDPOINTS.syllabus.byId(id));
   },
 };
