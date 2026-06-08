@@ -12,12 +12,11 @@ import { Pencil, Trash2 } from 'lucide-react';
 
 export default function SyllabusPage() {
   const {
-    syllabi, sessions, classes, classDetails, isLoading,
-    filterSessionId, setFilterSessionId,
+    syllabi, classes, classDetails, isLoading,
     filterClassId, setFilterClassId,
     filterClassDetailId, setFilterClassDetailId,
     removeSyllabus, navigateToNew, navigateToEdit,
-    getClassName, getSessionName,
+    getClassName,
   } = useSyllabusPage();
 
   return (
@@ -29,13 +28,6 @@ export default function SyllabusPage() {
 
       <Div type="row" gap="md" align="end" wrap>
         <Div type="col" gap="xs">
-          <FilterLabel>Session</FilterLabel>
-          <Select value={filterSessionId} onChange={(e) => setFilterSessionId(e.target.value)} width="md">
-            <option value="">All Sessions</option>
-            {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </Select>
-        </Div>
-        <Div type="col" gap="xs">
           <FilterLabel>Class</FilterLabel>
           <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)} width="md">
             <option value="">All Classes</option>
@@ -43,7 +35,7 @@ export default function SyllabusPage() {
           </Select>
         </Div>
         <Div type="col" gap="xs">
-          <FilterLabel>Class (Year / Semester)</FilterLabel>
+          <FilterLabel>Class Detail</FilterLabel>
           <Select value={filterClassDetailId} onChange={(e) => setFilterClassDetailId(e.target.value)} width="md" disabled={!filterClassId}>
             <option value="">All</option>
             {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
@@ -56,22 +48,20 @@ export default function SyllabusPage() {
           <TableHeadRow>
             <TableHeaderCell>{SYLLABUS_PAGE.table.title}</TableHeaderCell>
             <TableHeaderCell>{SYLLABUS_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{SYLLABUS_PAGE.table.session}</TableHeaderCell>
             <TableHeaderCell>{SYLLABUS_PAGE.table.enabled}</TableHeaderCell>
             <TableHeaderCell>{SYLLABUS_PAGE.table.actions}</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
+            <TableEmptyRow colSpan={4}><Spinner /></TableEmptyRow>
           ) : syllabi.length === 0 ? (
-            <TableEmptyRow colSpan={5}>{SYLLABUS_PAGE.empty}</TableEmptyRow>
+            <TableEmptyRow colSpan={4}>{SYLLABUS_PAGE.empty}</TableEmptyRow>
           ) : (
             syllabi.map((s) => (
               <TableRow key={s.id}>
                 <TableCell primary>{s.title}</TableCell>
                 <TableCell>{getClassName(s.class_id)}</TableCell>
-                <TableCell>{getSessionName(s.timetable_session_id)}</TableCell>
                 <TableCell>
                   <Badge variant={s.is_enabled ? 'success' : 'default'}>
                     {s.is_enabled ? 'Enabled' : 'Disabled'}

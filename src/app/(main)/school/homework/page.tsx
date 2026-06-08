@@ -17,9 +17,8 @@ import { Plus, Pencil, Trash2, ListChecks } from 'lucide-react';
 
 export default function HomeworkPage() {
   const {
-    years, sessions, classes, classDetails, subjects,
+    years, classes, classDetails, subjects,
     selectedAcademicYearId, setSelectedAcademicYearId,
-    selectedSessionId, setSelectedSessionId,
     selectedClassId,
     selectedClassDetailId, setSelectedClassDetailId,
     selectedSubjectId, setSelectedSubjectId,
@@ -55,15 +54,6 @@ export default function HomeworkPage() {
               <option value="">Select year</option>
               {years.map((y) => (
                 <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>
-              ))}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Session</FilterLabel>
-            <Select value={selectedSessionId} onChange={(e) => setSelectedSessionId(e.target.value)}>
-              <option value="">All sessions</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </Select>
           </Div>

@@ -10,10 +10,8 @@ import { SyllabusService } from '@/services/syllabus.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
 import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
-import { TimetableSessionsService } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
-import type { TimetableSession } from '@/services/timetable-sessions.service';
 
 export interface PendingAttachment {
   id: string;
@@ -34,7 +32,6 @@ const ALLOWED_EXT_MAP: Record<string, string> = {
 };
 
 const schema = z.object({
-  timetable_session_id: z.string().optional(),
   class_id: z.string().min(1, 'Class is required'),
   class_detail_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
@@ -46,7 +43,6 @@ export type CreateSyllabusFormValues = z.infer<typeof schema>;
 
 export function useCreateSyllabus() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -63,11 +59,7 @@ export function useCreateSyllabus() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [sessRes, clsRes] = await Promise.all([
-        TimetableSessionsService.list({ limit: 100 }),
-        ClassesService.list({ limit: 100 }),
-      ]);
-      setSessions(sessRes.items);
+      const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
     } catch { toast.error('Failed to load form data'); }
     finally { setIsLoadingData(false); }
@@ -133,7 +125,6 @@ export function useCreateSyllabus() {
     try {
       await SyllabusService.create({
         class_id: values.class_id,
-        timetable_session_id: values.timetable_session_id || undefined,
         class_detail_id: values.class_detail_id || undefined,
         title: values.title,
         content: values.content || undefined,
@@ -157,7 +148,7 @@ export function useCreateSyllabus() {
   function handleBack() { router.push(ROUTES.syllabus); }
 
   return {
-    form, sessions, classes, classDetails, isLoadingData,
+    form, classes, classDetails, isLoadingData,
     attachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(createSyllabus),

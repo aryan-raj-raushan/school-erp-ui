@@ -10,10 +10,8 @@ import { SyllabusService } from '@/services/syllabus.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
 import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
-import { TimetableSessionsService } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
-import type { TimetableSession } from '@/services/timetable-sessions.service';
 import type { PendingAttachment } from './useCreateSyllabus';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -33,7 +31,6 @@ export interface SavedAttachment {
 }
 
 const schema = z.object({
-  timetable_session_id: z.string().optional(),
   class_id: z.string().min(1, 'Class is required'),
   class_detail_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
@@ -45,7 +42,6 @@ export type EditSyllabusFormValues = z.infer<typeof schema>;
 
 export function useEditSyllabus(id: string) {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -71,17 +67,14 @@ export function useEditSyllabus(id: string) {
   const loadData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [syllabus, sessRes, clsRes] = await Promise.all([
+      const [syllabus, clsRes] = await Promise.all([
         SyllabusService.getById(id),
-        TimetableSessionsService.list({ limit: 100 }),
         ClassesService.list({ limit: 100 }),
       ]);
-      setSessions(sessRes.items);
       setClasses(clsRes.items);
       if (syllabus.class_id) await fetchClassDetails(syllabus.class_id);
       setSavedAttachments(syllabus.attachments ?? []);
       form.reset({
-        timetable_session_id: syllabus.timetable_session_id ?? '',
         class_id: syllabus.class_id,
         class_detail_id: syllabus.class_detail_id ?? '',
         title: syllabus.title,
@@ -147,7 +140,6 @@ export function useEditSyllabus(id: string) {
       ];
       await SyllabusService.update(id, {
         class_id: values.class_id,
-        timetable_session_id: values.timetable_session_id || undefined,
         class_detail_id: values.class_detail_id || undefined,
         title: values.title,
         content: values.content || undefined,
@@ -164,7 +156,7 @@ export function useEditSyllabus(id: string) {
   function handleBack() { router.push(ROUTES.syllabus); }
 
   return {
-    form, sessions, classes, classDetails, isLoadingData,
+    form, classes, classDetails, isLoadingData,
     savedAttachments, newAttachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateSyllabus),

@@ -7,7 +7,7 @@ import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { ROUTES } from '@/constants';
 import type { PaginationMeta } from '@/types';
 
-export function useSubjects(filters: { timetable_session_id?: string; class_id?: string; class_detail_id?: string } = {}) {
+export function useSubjects(filters?: Record<string, unknown>) {
   const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -25,7 +25,7 @@ export function useSubjects(filters: { timetable_session_id?: string; class_id?:
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.timetable_session_id, filters.class_id, filters.class_detail_id]);
+  }, []);
 
   async function removeSubject(id: string) {
     try {

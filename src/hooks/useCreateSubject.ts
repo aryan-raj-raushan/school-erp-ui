@@ -9,15 +9,12 @@ import { toast } from 'sonner';
 import { SubjectsService } from '@/services/subjects.service';
 import { ClassesService } from '@/services/classes.service';
 import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
-import { TimetableSessionsService } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
-import type { TimetableSession } from '@/services/timetable-sessions.service';
 
 const createSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().max(20).optional(),
-  timetable_session_id: z.string().optional(),
   class_id: z.string().optional(),
   class_detail_id: z.string().optional(),
   display_order: z.coerce.number().int().min(0),
@@ -31,7 +28,6 @@ export type CreateSubjectFormValues = z.infer<typeof createSubjectSchema>;
 
 export function useCreateSubject() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -46,11 +42,7 @@ export function useCreateSubject() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [sessRes, clsRes] = await Promise.all([
-        TimetableSessionsService.list({ limit: 100 }),
-        ClassesService.list({ limit: 100 }),
-      ]);
-      setSessions(sessRes.items);
+      const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
     } catch { toast.error('Failed to load form data'); }
     finally { setIsLoadingData(false); }
@@ -79,7 +71,6 @@ export function useCreateSubject() {
       const subject = await SubjectsService.create({
         name: values.name,
         code: values.code || undefined,
-        timetable_session_id: values.timetable_session_id || undefined,
         class_id: values.class_id || undefined,
         class_detail_id: values.class_detail_id || undefined,
         display_order: values.display_order,
@@ -98,7 +89,7 @@ export function useCreateSubject() {
   function handleBack() { router.push(ROUTES.subjects); }
 
   return {
-    form, sessions, classes, classDetails, isLoadingData,
+    form, classes, classDetails, isLoadingData,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(createSubject),
     toggleIsElective, toggleIsActive, handleBack,

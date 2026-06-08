@@ -15,7 +15,7 @@ import { Paperclip, ExternalLink, X } from 'lucide-react';
 
 export default function NewHomeworkPage() {
   const {
-    form, years, sessions, classes, classDetails, subjects,
+    form, years, classes, classDetails, subjects,
     isLoadingData, attachments, fileInputRef,
     isSubmitting,
     handleSubmit, handleFileChange, removeAttachment,
@@ -41,13 +41,6 @@ export default function NewHomeworkPage() {
 
       <form onSubmit={handleSubmit}>
         <Div type="col" gap="md" className="max-w-3xl">
-
-          <FormField label={HOMEWORK_PAGE.form.session}>
-            <Select {...register('timetable_session_id')} defaultValue="">
-              <option value="">{HOMEWORK_PAGE.placeholders.selectSession}</option>
-              {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
-          </FormField>
 
           <FormField label={HOMEWORK_PAGE.form.class} error={errors.class_id?.message}>
             <Select {...register('class_id')} defaultValue="">

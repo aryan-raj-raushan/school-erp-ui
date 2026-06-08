@@ -13,7 +13,7 @@ import { Pencil } from 'lucide-react';
 export default function AcademicYearsPage() {
   const {
     years, isLoading,
-    getSessionName, setCurrent,
+    setCurrent,
     navigateToNew, navigateToEdit,
   } = useAcademicYears();
 
@@ -35,7 +35,6 @@ export default function AcademicYearsPage() {
           <TableHeadRow>
             <TableHeaderCell>{ACADEMIC_YEARS_PAGE.table.name}</TableHeaderCell>
             <TableHeaderCell>{ACADEMIC_YEARS_PAGE.table.sessionCode}</TableHeaderCell>
-            <TableHeaderCell>{ACADEMIC_YEARS_PAGE.table.timetableSession}</TableHeaderCell>
             <TableHeaderCell>{ACADEMIC_YEARS_PAGE.table.startDate}</TableHeaderCell>
             <TableHeaderCell>{ACADEMIC_YEARS_PAGE.table.endDate}</TableHeaderCell>
             <TableHeaderCell>{ACADEMIC_YEARS_PAGE.table.status}</TableHeaderCell>
@@ -52,7 +51,6 @@ export default function AcademicYearsPage() {
               <TableRow key={year.id}>
                 <TableCell primary>{year.name}</TableCell>
                 <TableCell>{year.session_code ?? '—'}</TableCell>
-                <TableCell>{getSessionName(year.timetable_session_id)}</TableCell>
                 <TableCell>{new Date(year.start_date).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(year.end_date).toLocaleDateString()}</TableCell>
                 <TableCell>

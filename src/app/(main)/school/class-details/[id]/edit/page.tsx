@@ -13,7 +13,7 @@ import {
 export default function EditClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const {
-    form, sessions, classes, isLoadingData, isSubmitting,
+    form, classes, isLoadingData, isSubmitting,
     handleSubmit, handleBack, toggleIsEnabled,
   } = useEditClassDetail(id);
 
@@ -35,15 +35,6 @@ export default function EditClassDetailPage({ params }: { params: Promise<{ id: 
 
       <form onSubmit={handleSubmit}>
         <Div type="col" gap="md" className="max-w-2xl">
-          <FormField label={CLASS_DETAILS_PAGE.form.session} error={form.formState.errors.timetable_session_id?.message}>
-            <Select {...form.register('timetable_session_id')}>
-              <option value="">{CLASS_DETAILS_PAGE.placeholders.session}</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
-          </FormField>
-
           <FormField label={CLASS_DETAILS_PAGE.form.class} error={form.formState.errors.class_id?.message}>
             <Select {...form.register('class_id')}>
               <option value="">{CLASS_DETAILS_PAGE.placeholders.class}</option>

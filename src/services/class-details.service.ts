@@ -6,7 +6,6 @@ export interface ClassDetail {
   id: string;
   school_id: string;
   class_id: string;
-  timetable_session_id?: string | null;
   name: string;
   class_code?: string | null;
   year?: string | null;
@@ -21,12 +20,10 @@ export interface ClassDetailFilters {
   page?: number;
   limit?: number;
   class_id?: string;
-  timetable_session_id?: string;
 }
 
 export interface CreateClassDetailPayload {
   class_id: string;
-  timetable_session_id?: string;
   name: string;
   class_code?: string;
   year?: string;

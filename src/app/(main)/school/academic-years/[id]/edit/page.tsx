@@ -13,7 +13,7 @@ import {
 export default function EditAcademicYearPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const {
-    form, sessions, isLoadingData, isSubmitting,
+    form, isLoadingData, isSubmitting,
     handleSubmit, handleBack, toggleIsEnabled, toggleIsCurrent,
   } = useEditAcademicYear(id);
 
@@ -45,15 +45,6 @@ export default function EditAcademicYearPage({ params }: { params: Promise<{ id:
 
           <FormField label={ACADEMIC_YEARS_PAGE.form.sessionCode} error={form.formState.errors.session_code?.message}>
             <Input placeholder={ACADEMIC_YEARS_PAGE.placeholders.sessionCode} {...form.register('session_code')} />
-          </FormField>
-
-          <FormField label={ACADEMIC_YEARS_PAGE.form.timetableSession} error={form.formState.errors.timetable_session_id?.message}>
-            <Select {...form.register('timetable_session_id')}>
-              <option value="" disabled>{ACADEMIC_YEARS_PAGE.placeholders.timetableSession}</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
           </FormField>
 
           <Div type="grid" cols={2} gap="md">
