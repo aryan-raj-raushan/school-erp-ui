@@ -100,6 +100,9 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Time Table", url: "/school/timetable" },
       { title: "Employee Schedule", url: "/school/timetable/employee" },
       { title: "Day Schedule", url: "/school/timetable/session" },
+      { title: "Time Table", url: "/school/timetable" },
+      { title: "Employee Schedule", url: "/school/timetable/employee" },
+      { title: "Day Schedule", url: "/school/timetable/session" },
     ],
   },
   {
@@ -150,7 +153,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Academic Years", url: "/school/academic-years" },
       { title: "Classes & Sections", url: "/school/classes" },
       { title: "Subjects", url: "/school/subjects" },
-      { title: "Timetable Sessions", url: "/school/timetable-sessions" },
+
       { title: "Holidays & Events", url: "/school/holidays-events" },
     ],
   },
