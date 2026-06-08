@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { StudyMaterialsService, type CreateStudyMaterialPayload } from '@/services/study-materials.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassSubjectsService } from '@/services/class-subject.service';
 import { UploadsService } from '@/services/uploads.service';
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
@@ -74,10 +73,9 @@ export function useStudyMaterials() {
     setMaterials([]);
     if (!sectionId) return;
     try {
-      const res = await ClassSubjectsService.list({ class_section_id: sectionId, limit: 100 });
-      const items: any[] = res.data?.items ?? [];
+      const items = await ClassesService.listSubjects(selectedClassId);
       if (items.length > 0) {
-        setSubjects(items.map((cs) => ({ id: cs.subject_id, name: cs.subject_name })));
+        setSubjects(items.map((s) => ({ id: s.id, name: s.name })));
       } else {
         const masterRes = await apiGateway.get<any[]>(ENDPOINTS.masterData.subjects, { params: { limit: 200 } });
         setSubjects((masterRes.data ?? []).map((s: any) => ({ id: s.id, name: s.subject_name })));
