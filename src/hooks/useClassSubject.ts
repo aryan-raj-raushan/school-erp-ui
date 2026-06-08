@@ -8,42 +8,43 @@ import { toast } from "sonner";
 
 import {
   ClassSubjectsService,
-  type CreateClassSubjectPayload,
+  type CreateSubjectPayload,
+  type UpdateSubjectPayload,
 } from "@/services/class-subject.service";
-import { ClassesService } from "@/services/classes.service";
-import type { Section, Subject, PaginationMeta } from "@/types";
-import type { ClassSectionSubject, ClassSectionSubjectsResponse } from "@/types/setting/class-subject.types";
-import type { UpdateClassSubjectPayload } from "@/services/class-subject.service";
+import type { Subject, PaginationMeta } from "@/types";
 
 const classSubjectSchema = z.object({
-  class_section_id: z.string().min(1, "Section is required"),
-  subject_id: z.string().min(1, "Subject is required"),
-  academic_year_id: z.string().min(1, "Academic year is required"),
-  is_teaching_subject: z.boolean().optional(),
+  name: z.string().min(1, "Name is required"),
+  class_id: z.string().min(1, "Class is required"),
+  code: z.string().optional(),
+  description: z.string().optional(),
+  is_elective: z.boolean().optional(),
+  is_active: z.boolean().optional(),
 });
 
 export type ClassSubjectFormValues = z.infer<typeof classSubjectSchema>;
 
 export interface ClassSubjectFilters {
-  class_section_id?: string;
+  class_id?: string;
   academic_year_id?: string;
 }
 
 export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
-  const [classSubjects, setClassSubjects] = useState<ClassSectionSubjectsResponse>();
-  const [sections, setSections] = useState<Section[]>([]);
+  const [classSubjects, setClassSubjects] = useState<Subject[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<ClassSectionSubject | null>(null);
+  const [editingRecord, setEditingRecord] = useState<Subject | null>(null);
 
   const form = useForm<ClassSubjectFormValues>({
     resolver: zodResolver(classSubjectSchema) as any,
     defaultValues: {
-      class_section_id: defaultFilters.class_section_id ?? "",
-      academic_year_id: defaultFilters.academic_year_id ?? "",
-      subject_id: "",
-      is_teaching_subject: true,
+      class_id: defaultFilters.class_id ?? "",
+      name: "",
+      code: "",
+      description: "",
+      is_elective: false,
+      is_active: true,
     },
   });
 
@@ -52,91 +53,63 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
       setIsLoading(true);
       try {
         const result = await ClassSubjectsService.list(filters);
-        setClassSubjects(result);
+        setClassSubjects(result.items);
         setPagination(result.pagination);
       } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load class subjects",
-        );
+        toast.error(err instanceof Error ? err.message : "Failed to load subjects");
       } finally {
         setIsLoading(false);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [defaultFilters.class_section_id, defaultFilters.academic_year_id],
+    [defaultFilters.class_id],
   );
 
-  const fetchSections = useCallback(async () => {
+  async function saveSubject(values: ClassSubjectFormValues) {
     try {
-      const result = await ClassesService.list();
-      setSections(result.sections);
-    } catch {
-      // silently fail — sections are supplementary
-    }
-  }, []);
-
-  async function assignSubject(values: ClassSubjectFormValues) {
-    try {
-      const payload: CreateClassSubjectPayload = {
-        class_section_id: values.class_section_id,
-        subject_id: values.subject_id,
-        academic_year_id: values.academic_year_id,
-        is_teaching_subject: values.is_teaching_subject ?? true,
-      };
       if (editingRecord) {
-        await ClassSubjectsService.update(editingRecord.id, payload as UpdateClassSubjectPayload);
-        toast.success("Subject assignment updated");
+        await ClassSubjectsService.update(editingRecord.id, values as UpdateSubjectPayload);
+        toast.success("Subject updated");
       } else {
-        await ClassSubjectsService.create(payload);
-        toast.success("Subject assigned to class successfully");
+        await ClassSubjectsService.create(values as CreateSubjectPayload);
+        toast.success("Subject created");
       }
       await fetchClassSubjects();
       setShowModal(false);
       setEditingRecord(null);
-      form.reset({
-        class_section_id: defaultFilters.class_section_id ?? "",
-        academic_year_id: defaultFilters.academic_year_id ?? "",
-        subject_id: "",
-        is_teaching_subject: true,
-      });
+      form.reset({ class_id: defaultFilters.class_id ?? "", name: "", code: "", description: "", is_elective: false, is_active: true });
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to save subject assignment",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to save subject");
     }
   }
 
-  function openEditModal(cs: ClassSectionSubject) {
-    setEditingRecord(cs);
+  function openEditModal(subject: Subject) {
+    setEditingRecord(subject);
     form.reset({
-      class_section_id: cs.class_section_id,
-      subject_id: cs.subject_id,
-      academic_year_id: cs.academic_year_id,
-      is_teaching_subject: cs.is_teaching_subject,
+      class_id: subject.class_id ?? "",
+      name: subject.name,
+      code: subject.code ?? "",
+      description: subject.description ?? "",
     });
     setShowModal(true);
   }
 
-  async function removeClassSubject(id: string) {
+  async function removeSubject(id: string) {
     try {
       await ClassSubjectsService.remove(id);
-      toast.success("Subject removed from class");
+      toast.success("Subject removed");
       await fetchClassSubjects();
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to remove subject",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to remove subject");
     }
   }
 
   useEffect(() => {
     fetchClassSubjects();
-    fetchSections();
-  }, [fetchClassSubjects, fetchSections]);
+  }, [fetchClassSubjects]);
 
   return {
     classSubjects,
-    sections,
     pagination,
     isLoading,
     showModal,
@@ -146,17 +119,12 @@ export function useClassSubjects(defaultFilters: ClassSubjectFilters = {}) {
     closeModal: () => {
       setShowModal(false);
       setEditingRecord(null);
-      form.reset({
-        class_section_id: defaultFilters.class_section_id ?? "",
-        academic_year_id: defaultFilters.academic_year_id ?? "",
-        subject_id: "",
-        is_teaching_subject: true,
-      });
+      form.reset({ class_id: defaultFilters.class_id ?? "", name: "", code: "", description: "", is_elective: false, is_active: true });
     },
     form,
-    handleSubmit: form.handleSubmit(assignSubject),
+    handleSubmit: form.handleSubmit(saveSubject),
     isSubmitting: form.formState.isSubmitting,
-    removeClassSubject,
+    removeSubject,
     refetch: fetchClassSubjects,
   };
 }
