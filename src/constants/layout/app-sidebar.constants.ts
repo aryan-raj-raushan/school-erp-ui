@@ -100,6 +100,9 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Time Table", url: "/school/timetable" },
       { title: "Employee Schedule", url: "/school/timetable/employee" },
       { title: "Day Schedule", url: "/school/timetable/session" },
+      { title: "Time Table", url: "/school/timetable" },
+      { title: "Employee Schedule", url: "/school/timetable/employee" },
+      { title: "Day Schedule", url: "/school/timetable/session" },
     ],
   },
   {
