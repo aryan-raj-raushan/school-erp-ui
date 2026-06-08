@@ -40,7 +40,6 @@ export default function SchoolEventDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  console.log("Params: ", params);
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();

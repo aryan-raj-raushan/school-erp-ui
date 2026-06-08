@@ -203,4 +203,15 @@ export const ENDPOINTS = {
     list: "/class-types",
     byId: (id: string) => `/class-types/${id}`,
   },
+
+  // Add inside your ENDPOINTS object:
+  admissionSources: {
+    list: "/admission-sources",
+    byId: (id: string) => `/admission-sources/${id}`,
+  },
+  admissionEnquiries: {
+    list: "/admission-enquiries",
+    byId: (id: string) => `/admission-enquiries/${id}`,
+    history: (id: string) => `/admission-enquiries/${id}/history`,
+  },
 };
