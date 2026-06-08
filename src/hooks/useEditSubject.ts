@@ -9,15 +9,12 @@ import { toast } from 'sonner';
 import { SubjectsService } from '@/services/subjects.service';
 import { ClassesService } from '@/services/classes.service';
 import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
-import { TimetableSessionsService } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
-import type { TimetableSession } from '@/services/timetable-sessions.service';
 
 const editSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().max(20).optional(),
-  timetable_session_id: z.string().optional(),
   class_id: z.string().optional(),
   class_detail_id: z.string().optional(),
   display_order: z.coerce.number().int().min(0),
@@ -31,7 +28,6 @@ export type EditSubjectFormValues = z.infer<typeof editSubjectSchema>;
 
 export function useEditSubject(id: string) {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -54,17 +50,14 @@ export function useEditSubject(id: string) {
   const loadData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [subject, sessRes, clsRes] = await Promise.all([
+      const [subject, clsRes] = await Promise.all([
         SubjectsService.getById(id),
-        TimetableSessionsService.list({ limit: 100 }),
         ClassesService.list({ limit: 100 }),
       ]);
-      setSessions(sessRes.items);
       setClasses(clsRes.items);
       form.reset({
         name: subject.name,
         code: subject.code ?? '',
-        timetable_session_id: subject.timetable_session_id ?? '',
         class_id: subject.class_id ?? '',
         class_detail_id: subject.class_detail_id ?? '',
         display_order: subject.display_order,
@@ -94,7 +87,6 @@ export function useEditSubject(id: string) {
       await SubjectsService.update(id, {
         name: values.name,
         code: values.code || undefined,
-        timetable_session_id: values.timetable_session_id || undefined,
         class_id: values.class_id || undefined,
         class_detail_id: values.class_detail_id || undefined,
         display_order: values.display_order,
@@ -113,7 +105,7 @@ export function useEditSubject(id: string) {
   function handleBack() { router.push(ROUTES.subjects); }
 
   return {
-    form, sessions, classes, classDetails, isLoadingData,
+    form, classes, classDetails, isLoadingData,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateSubject),
     toggleIsElective, toggleIsActive, handleBack,

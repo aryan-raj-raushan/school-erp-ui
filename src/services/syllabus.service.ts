@@ -14,7 +14,6 @@ export interface Syllabus {
   id: string;
   school_id: string;
   class_id: string;
-  timetable_session_id?: string | null;
   class_detail_id?: string | null;
   title: string;
   content?: string | null;
@@ -27,7 +26,6 @@ export interface SyllabusFilters {
   page?: number;
   limit?: number;
   class_id?: string;
-  timetable_session_id?: string;
   class_detail_id?: string;
 }
 
@@ -40,7 +38,6 @@ export interface SyllabusAttachmentPayload {
 
 export interface CreateSyllabusPayload {
   class_id: string;
-  timetable_session_id?: string;
   class_detail_id?: string;
   title: string;
   content?: string;

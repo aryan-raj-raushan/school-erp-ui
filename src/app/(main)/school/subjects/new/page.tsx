@@ -11,7 +11,7 @@ import {
 
 export default function NewSubjectPage() {
   const {
-    form, sessions, classes, classDetails, isLoadingData, isSubmitting,
+    form, classes, classDetails, isLoadingData, isSubmitting,
     handleSubmit, handleBack, toggleIsElective, toggleIsActive,
   } = useCreateSubject();
 
@@ -38,13 +38,6 @@ export default function NewSubjectPage() {
 
           <FormField label={SUBJECTS_PAGE.form.code} error={form.formState.errors.code?.message}>
             <Input placeholder={SUBJECTS_PAGE.placeholders.code} {...form.register('code')} />
-          </FormField>
-
-          <FormField label="Session" error={form.formState.errors.timetable_session_id?.message}>
-            <Select {...form.register('timetable_session_id')} defaultValue="">
-              <option value="">Select Session</option>
-              {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
           </FormField>
 
           <FormField label="Class" error={form.formState.errors.class_id?.message}>

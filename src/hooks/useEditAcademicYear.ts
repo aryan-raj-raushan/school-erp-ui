@@ -7,13 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { AcademicYearsService } from '@/services/academic-years.service';
-import { TimetableSessionsService, type TimetableSession } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 
 const editAcademicYearSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
   session_code: z.string().max(50).optional(),
-  timetable_session_id: z.string().min(1, 'Timetable session is required'),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
   description: z.string().optional(),
@@ -25,7 +23,6 @@ export type EditAcademicYearFormValues = z.infer<typeof editAcademicYearSchema>;
 
 export function useEditAcademicYear(id: string) {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<EditAcademicYearFormValues>({
@@ -36,15 +33,10 @@ export function useEditAcademicYear(id: string) {
   const loadData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [year, sessionsRes] = await Promise.all([
-        AcademicYearsService.getById(id),
-        TimetableSessionsService.list({ limit: 100 }),
-      ]);
-      setSessions(sessionsRes.items);
+      const year = await AcademicYearsService.getById(id);
       form.reset({
         name: year.name,
         session_code: year.session_code ?? '',
-        timetable_session_id: year.timetable_session_id ?? '',
         start_date: year.start_date,
         end_date: year.end_date,
         description: year.description ?? '',
@@ -66,7 +58,6 @@ export function useEditAcademicYear(id: string) {
       await AcademicYearsService.update(id, {
         name: values.name,
         session_code: values.session_code || undefined,
-        timetable_session_id: values.timetable_session_id,
         start_date: values.start_date,
         end_date: values.end_date,
         description: values.description || undefined,
@@ -94,7 +85,6 @@ export function useEditAcademicYear(id: string) {
 
   return {
     form,
-    sessions,
     isLoadingData,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateAcademicYear),

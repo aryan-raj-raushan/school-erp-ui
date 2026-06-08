@@ -11,7 +11,7 @@ import {
 
 export default function NewAcademicYearPage() {
   const {
-    form, sessions, isLoadingSessions, isSubmitting,
+    form, isSubmitting,
     handleSubmit, handleBack, toggleIsEnabled, toggleIsCurrent,
   } = useCreateAcademicYear();
 
@@ -35,19 +35,6 @@ export default function NewAcademicYearPage() {
 
           <FormField label={ACADEMIC_YEARS_PAGE.form.sessionCode} error={form.formState.errors.session_code?.message}>
             <Input placeholder={ACADEMIC_YEARS_PAGE.placeholders.sessionCode} {...form.register('session_code')} />
-          </FormField>
-
-          <FormField label={ACADEMIC_YEARS_PAGE.form.timetableSession} error={form.formState.errors.timetable_session_id?.message}>
-            {isLoadingSessions ? (
-              <Spinner />
-            ) : (
-              <Select {...form.register('timetable_session_id')} defaultValue="">
-                <option value="" disabled>{ACADEMIC_YEARS_PAGE.placeholders.timetableSession}</option>
-                {sessions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </Select>
-            )}
           </FormField>
 
           <Div type="grid" cols={2} gap="md">

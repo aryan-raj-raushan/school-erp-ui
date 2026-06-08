@@ -16,3 +16,4 @@ export * from './leave.constants';
 export * from './academics.constants';
 export * from './subjects.constants';
 export * from './syllabus.constants';
+export * from './timetable.constants';

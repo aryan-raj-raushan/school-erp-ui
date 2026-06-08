@@ -8,12 +8,10 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { ClassDetailsService } from '@/services/class-details.service';
 import { ClassesService } from '@/services/classes.service';
-import { TimetableSessionsService, type TimetableSession } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
 
 const editClassDetailSchema = z.object({
-  timetable_session_id: z.string().optional(),
   class_id: z.string().min(1, 'Class is required'),
   year: z.string().optional(),
   name: z.string().min(1, 'Name is required').max(100),
@@ -28,7 +26,6 @@ export type EditClassDetailFormValues = z.infer<typeof editClassDetailSchema>;
 
 export function useEditClassDetail(id: string) {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
@@ -45,15 +42,12 @@ export function useEditClassDetail(id: string) {
   const loadData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [detail, sessionsRes, classesRes] = await Promise.all([
+      const [detail, classesRes] = await Promise.all([
         ClassDetailsService.getById(id),
-        TimetableSessionsService.list({ limit: 100 }),
         ClassesService.list({ limit: 100 }),
       ]);
-      setSessions(sessionsRes.items);
       setClasses(classesRes.items);
       form.reset({
-        timetable_session_id: detail.timetable_session_id ?? '',
         class_id: detail.class_id,
         year: detail.year ?? '',
         name: detail.name,
@@ -80,7 +74,6 @@ export function useEditClassDetail(id: string) {
   async function updateClassDetail(values: EditClassDetailFormValues) {
     try {
       await ClassDetailsService.update(id, {
-        timetable_session_id: values.timetable_session_id || undefined,
         class_id: values.class_id,
         year: values.year || undefined,
         name: values.name,
@@ -103,7 +96,6 @@ export function useEditClassDetail(id: string) {
 
   return {
     form,
-    sessions,
     classes,
     isLoadingData,
     isSubmitting: form.formState.isSubmitting,

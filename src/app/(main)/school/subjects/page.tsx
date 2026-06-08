@@ -12,8 +12,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 
 export default function SubjectsPage() {
   const {
-    subjects, sessions, classes, classDetails, isLoading,
-    filterSessionId, setFilterSessionId,
+    subjects, classes, classDetails, isLoading,
     filterClassId, setFilterClassId,
     filterClassDetailId, setFilterClassDetailId,
     removeSubject, navigateToNew, navigateToEdit, getClassName,
@@ -27,13 +26,6 @@ export default function SubjectsPage() {
       />
 
       <Div type="row" gap="md" align="end" wrap>
-        <Div type="col" gap="xs">
-          <FilterLabel>Session</FilterLabel>
-          <Select value={filterSessionId} onChange={(e) => setFilterSessionId(e.target.value)} width="md">
-            <option value="">All Sessions</option>
-            {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </Select>
-        </Div>
         <Div type="col" gap="xs">
           <FilterLabel>Class</FilterLabel>
           <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)} width="md">

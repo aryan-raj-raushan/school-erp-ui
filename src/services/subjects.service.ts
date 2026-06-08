@@ -6,7 +6,6 @@ export interface Subject {
   id: string;
   school_id: string;
   class_id?: string | null;
-  timetable_session_id?: string | null;
   class_detail_id?: string | null;
   name: string;
   code?: string | null;
@@ -23,7 +22,6 @@ export interface SubjectFilters {
   page?: number;
   limit?: number;
   class_id?: string;
-  timetable_session_id?: string;
   class_detail_id?: string;
   search?: string;
 }
@@ -32,7 +30,6 @@ export interface CreateSubjectPayload {
   name: string;
   code?: string;
   class_id?: string;
-  timetable_session_id?: string;
   class_detail_id?: string;
   display_order?: number;
   total_marks?: number;

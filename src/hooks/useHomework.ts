@@ -6,25 +6,21 @@ import { toast } from 'sonner';
 import { HomeworkService, type SubmissionEntry } from '@/services/homework.service';
 import { ClassesService } from '@/services/classes.service';
 import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
-import { TimetableSessionsService } from '@/services/timetable-sessions.service';
 import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { StudentsService } from '@/services/students.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Homework, HomeworkSubmission, Student, Class } from '@/types';
-import type { TimetableSession } from '@/services/timetable-sessions.service';
 
 export function useHomework() {
   const router = useRouter();
   const { years, currentYear } = useAcademicYears();
 
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
-  const [selectedSessionId, setSelectedSessionId] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedClassDetailId, setSelectedClassDetailId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
@@ -44,11 +40,7 @@ export function useHomework() {
 
   const loadInitialData = useCallback(async () => {
     try {
-      const [sessRes, clsRes] = await Promise.all([
-        TimetableSessionsService.list({ limit: 100 }),
-        ClassesService.list({ limit: 100 }),
-      ]);
-      setSessions(sessRes.items);
+      const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
     } catch { /* ignore */ }
   }, []);
@@ -82,7 +74,6 @@ export function useHomework() {
         class_detail_id: selectedClassDetailId || undefined,
         subject_id: selectedSubjectId || undefined,
         academic_year_id: selectedAcademicYearId,
-        timetable_session_id: selectedSessionId || undefined,
       });
       setHomeworkList(data);
     } catch (err: unknown) {
@@ -90,7 +81,7 @@ export function useHomework() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedClassId, selectedClassDetailId, selectedSubjectId, selectedAcademicYearId, selectedSessionId]);
+  }, [selectedClassId, selectedClassDetailId, selectedSubjectId, selectedAcademicYearId]);
 
   useEffect(() => { fetchHomework(); }, [fetchHomework]);
 
@@ -154,9 +145,8 @@ export function useHomework() {
 
   return {
     years, currentYear,
-    sessions, classes, classDetails, subjects,
+    classes, classDetails, subjects,
     selectedAcademicYearId, setSelectedAcademicYearId,
-    selectedSessionId, setSelectedSessionId,
     selectedClassId,
     selectedClassDetailId, setSelectedClassDetailId,
     selectedSubjectId, setSelectedSubjectId,

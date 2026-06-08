@@ -7,13 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { ClassesService, SectionsService } from '@/services/classes.service';
-import { TimetableSessionsService, type TimetableSession } from '@/services/timetable-sessions.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ALL_SECTION_NAMES, ROUTES } from '@/constants';
 import type { AcademicYear } from '@/types';
 
 const createClassSchema = z.object({
-  timetable_session_id: z.string().optional(),
   academic_year_id: z.string().min(1, 'Academic year is required'),
   name: z.string().min(1, 'Name is required').max(50),
   department: z.string().min(1, 'Department is required').max(100),
@@ -30,7 +28,6 @@ export type CreateClassFormValues = z.infer<typeof createClassSchema>;
 
 export function useCreateClass() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -45,11 +42,7 @@ export function useCreateClass() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [sessionsRes, yearsRes] = await Promise.all([
-        TimetableSessionsService.list({ limit: 100 }),
-        AcademicYearsService.list({ limit: 100 }),
-      ]);
-      setSessions(sessionsRes.items);
+      const yearsRes = await AcademicYearsService.list({ limit: 100 });
       setYears(yearsRes.items);
     } catch {
       toast.error('Failed to load form data');
@@ -79,7 +72,6 @@ export function useCreateClass() {
       const cls = await ClassesService.create({
         name: values.name,
         academic_year_id: values.academic_year_id,
-        timetable_session_id: values.timetable_session_id || undefined,
         department: values.department,
         class_type: values.class_type || undefined,
         class_sequence: values.class_sequence,
@@ -109,7 +101,6 @@ export function useCreateClass() {
 
   return {
     form,
-    sessions,
     years,
     isLoadingData,
     isSubmitting: form.formState.isSubmitting,

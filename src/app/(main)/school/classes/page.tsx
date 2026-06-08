@@ -3,7 +3,6 @@
 import { useClasses } from '@/hooks/useClasses';
 import { useClassDetails } from '@/hooks/useClassDetails';
 import { useAcademicYears } from '@/hooks/useAcademicYears';
-import { useTimetableSessions } from '@/hooks/useTimetableSessions';
 import { useClassesPageTabs, CLASSES_TAB_OPTIONS } from '@/hooks/useClassesPageTabs';
 import { CLASSES_PAGE, CLASS_DETAILS_PAGE } from '@/constants';
 import { PageHeader } from '@/components/ui/page-header';
@@ -23,7 +22,6 @@ export default function ClassesPage() {
     navigateToNew, navigateToEdit,
   } = useClasses();
   const { classDetails, isLoading: isLoadingDetails, removeClassDetail, navigateToNew: navigateToNewDetail, navigateToEdit: navigateToEditDetail } = useClassDetails();
-  const { sessions } = useTimetableSessions();
 
   return (
     <Div type="col" gap="lg">
@@ -106,7 +104,6 @@ export default function ClassesPage() {
             <TableHeadRow>
               <TableHeaderCell>{CLASS_DETAILS_PAGE.table.class}</TableHeaderCell>
               <TableHeaderCell>{CLASS_DETAILS_PAGE.table.name}</TableHeaderCell>
-              <TableHeaderCell>{CLASS_DETAILS_PAGE.table.session}</TableHeaderCell>
               <TableHeaderCell>{CLASS_DETAILS_PAGE.table.year}</TableHeaderCell>
               <TableHeaderCell>{CLASS_DETAILS_PAGE.table.classCode}</TableHeaderCell>
               <TableHeaderCell>{CLASS_DETAILS_PAGE.table.maxExams}</TableHeaderCell>
@@ -124,12 +121,10 @@ export default function ClassesPage() {
             ) : (
               classDetails.map((detail) => {
                 const cls = classes.find((c) => c.id === detail.class_id);
-                const session = sessions.find((s) => s.id === detail.timetable_session_id);
                 return (
                   <TableRow key={detail.id}>
                     <TableCell primary>{cls?.name ?? '—'}</TableCell>
                     <TableCell>{detail.name}</TableCell>
-                    <TableCell>{session?.name ?? '—'}</TableCell>
                     <TableCell>{detail.year ?? '—'}</TableCell>
                     <TableCell>{detail.class_code ?? '—'}</TableCell>
                     <TableCell>{detail.max_internal_exam}</TableCell>

@@ -15,7 +15,7 @@ import { Paperclip, ExternalLink, X } from 'lucide-react';
 
 export default function NewSyllabusPage() {
   const {
-    form, sessions, classes, classDetails, isLoadingData,
+    form, classes, classDetails, isLoadingData,
     attachments, fileInputRef,
     isSubmitting,
     handleSubmit, handleFileChange, removeAttachment,
@@ -39,13 +39,6 @@ export default function NewSyllabusPage() {
 
       <form onSubmit={handleSubmit}>
         <Div type="col" gap="md" className="max-w-3xl">
-
-          <FormField label={SYLLABUS_PAGE.form.session} error={form.formState.errors.timetable_session_id?.message}>
-            <Select {...form.register('timetable_session_id')} defaultValue="">
-              <option value="">{SYLLABUS_PAGE.placeholders.selectSession}</option>
-              {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
-          </FormField>
 
           <FormField label={SYLLABUS_PAGE.form.class} error={form.formState.errors.class_id?.message}>
             <Select {...form.register('class_id')} defaultValue="">

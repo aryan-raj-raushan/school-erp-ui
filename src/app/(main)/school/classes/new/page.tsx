@@ -14,7 +14,7 @@ import {
 
 export default function NewClassPage() {
   const {
-    form, sessions, years, isLoadingData, isSubmitting,
+    form, years, isLoadingData, isSubmitting,
     allSectionNames, watchedSections,
     handleSubmit, handleBack, toggleSection, toggleIsActive,
   } = useCreateClass();
@@ -39,15 +39,6 @@ export default function NewClassPage() {
 
       <form onSubmit={handleSubmit}>
         <Div type="col" gap="md" className="max-w-2xl">
-          <FormField label={CLASSES_PAGE.form.session} error={form.formState.errors.timetable_session_id?.message}>
-            <Select {...form.register('timetable_session_id')} defaultValue="">
-              <option value="">{CLASSES_PAGE.placeholders.session}</option>
-              {sessions.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
-          </FormField>
-
           <FormField label="Academic Year *" error={form.formState.errors.academic_year_id?.message}>
             <Select {...form.register('academic_year_id')} defaultValue="">
               <option value="">Select Academic Year</option>

@@ -83,7 +83,6 @@ export interface AcademicYear {
   is_current: boolean;
   is_active: boolean;
   is_enabled: boolean;
-  timetable_session_id?: string | null;
   created_at: string;
   updated_at?: string | null;
   created_by?: string | null;
@@ -95,7 +94,6 @@ export interface Class {
   id: string;
   school_id: string;
   academic_year_id: string;
-  timetable_session_id?: string | null;
   name: string;
   display_name: string;
   class_id: string;
@@ -531,7 +529,6 @@ export interface Homework {
   id: string;
   school_id: string;
   academic_year_id: string;
-  timetable_session_id?: string | null;
   class_id?: string | null;
   class_detail_id?: string | null;
   subject_id?: string | null;

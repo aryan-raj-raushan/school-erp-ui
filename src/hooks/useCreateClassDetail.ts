@@ -8,12 +8,10 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { ClassDetailsService } from '@/services/class-details.service';
 import { ClassesService } from '@/services/classes.service';
-import { TimetableSessionsService, type TimetableSession } from '@/services/timetable-sessions.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
 
 const createClassDetailSchema = z.object({
-  timetable_session_id: z.string().optional(),
   class_id: z.string().min(1, 'Class is required'),
   year: z.string().optional(),
   name: z.string().min(1, 'Name is required').max(100),
@@ -28,7 +26,6 @@ export type CreateClassDetailFormValues = z.infer<typeof createClassDetailSchema
 
 export function useCreateClassDetail() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -45,11 +42,7 @@ export function useCreateClassDetail() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [sessionsRes, classesRes] = await Promise.all([
-        TimetableSessionsService.list({ limit: 100 }),
-        ClassesService.list({ limit: 100 }),
-      ]);
-      setSessions(sessionsRes.items);
+      const classesRes = await ClassesService.list({ limit: 100 });
       setClasses(classesRes.items);
     } catch {
       toast.error('Failed to load form data');
@@ -67,7 +60,6 @@ export function useCreateClassDetail() {
   async function createClassDetail(values: CreateClassDetailFormValues) {
     try {
       const detail = await ClassDetailsService.create({
-        timetable_session_id: values.timetable_session_id || undefined,
         class_id: values.class_id,
         year: values.year || undefined,
         name: values.name,
@@ -90,7 +82,6 @@ export function useCreateClassDetail() {
 
   return {
     form,
-    sessions,
     classes,
     isLoadingData,
     isSubmitting: form.formState.isSubmitting,

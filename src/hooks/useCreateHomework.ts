@@ -10,12 +10,10 @@ import { HomeworkService } from '@/services/homework.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
 import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
-import { TimetableSessionsService } from '@/services/timetable-sessions.service';
 import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
-import type { TimetableSession } from '@/services/timetable-sessions.service';
 
 export interface PendingAttachment {
   id: string;
@@ -36,7 +34,6 @@ const ALLOWED_EXT_MAP: Record<string, string> = {
 
 const schema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
-  timetable_session_id: z.string().optional(),
   class_id: z.string().min(1, 'Class is required'),
   class_detail_id: z.string().optional(),
   subject_id: z.string().optional(),
@@ -55,7 +52,6 @@ export function useCreateHomework() {
   const router = useRouter();
   const { years, currentYear } = useAcademicYears();
 
-  const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -83,11 +79,7 @@ export function useCreateHomework() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [sessRes, clsRes] = await Promise.all([
-        TimetableSessionsService.list({ limit: 100 }),
-        ClassesService.list({ limit: 100 }),
-      ]);
-      setSessions(sessRes.items);
+      const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
     } catch { toast.error('Failed to load form data'); }
     finally { setIsLoadingData(false); }
@@ -159,7 +151,6 @@ export function useCreateHomework() {
     try {
       await HomeworkService.create({
         academic_year_id: values.academic_year_id,
-        timetable_session_id: values.timetable_session_id || undefined,
         class_id: values.class_id,
         class_detail_id: values.class_detail_id || undefined,
         subject_id: values.subject_id || undefined,
@@ -189,7 +180,7 @@ export function useCreateHomework() {
   function handleBack() { router.push(ROUTES.homework); }
 
   return {
-    form, years, sessions, classes, classDetails, subjects,
+    form, years, classes, classDetails, subjects,
     isLoadingData, attachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(createHomework),
