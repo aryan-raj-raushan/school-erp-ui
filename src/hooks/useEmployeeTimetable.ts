@@ -37,9 +37,12 @@ export function useEmployeeTimetable() {
 
   useEffect(() => { fetchEntries(); }, [fetchEntries]);
 
-  function getEntries(day: DayOfWeek) {
-    return entries.filter((e) => e.day_of_week === day).sort((a, b) => a.period_number - b.period_number);
+  function getCell(day: DayOfWeek, period: number): EmployeeTimetableEntry | null {
+    return entries.find((e) => e.day_of_week === day && e.period_number === period) ?? null;
   }
+
+  const maxPeriod = entries.length > 0 ? Math.max(...entries.map((e) => e.period_number)) : 0;
+  const periods = maxPeriod > 0 ? Array.from({ length: maxPeriod }, (_, i) => i + 1) : [];
 
   return {
     teacherId, setTeacherId,
@@ -47,6 +50,7 @@ export function useEmployeeTimetable() {
     entries, isLoading,
     days: DAYS_OF_WEEK,
     dayLabels: DAY_LABELS,
-    getEntries,
+    periods,
+    getCell,
   };
 }

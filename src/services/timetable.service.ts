@@ -81,6 +81,8 @@ export interface SessionViewEntry {
   period_number: number;
   subject_name?: string | null;
   teacher_name?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
 }
 
 export const TimetableService = {
@@ -122,8 +124,8 @@ export const TimetableService = {
     return res.data;
   },
 
-  async getSessionView(day: DayOfWeek): Promise<SessionViewEntry[]> {
-    const res = await apiGateway.get<SessionViewEntry[]>(ENDPOINTS.timetable.sessionView, { params: { day } });
+  async getSessionView(day: DayOfWeek, filters: { academic_year_id?: string; timetable_name?: string } = {}): Promise<SessionViewEntry[]> {
+    const res = await apiGateway.get<SessionViewEntry[]>(ENDPOINTS.timetable.sessionView, { params: { day, ...filters } });
     return res.data;
   },
 };

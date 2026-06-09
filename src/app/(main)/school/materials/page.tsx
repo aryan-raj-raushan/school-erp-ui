@@ -1,37 +1,43 @@
 "use client";
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStudyMaterials } from "@/hooks/useStudyMaterials";
-import { MATERIALS_PAGE } from "@/constants";
+import { MATERIALS_PAGE, ROUTES } from "@/constants";
 import {
-  Div, H1, P, Button, Select, Input,
+  Div, H1, Button, Select,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Spinner, Modal, FormField, FilterLabel, FileInput, Icon,
+  Spinner, FilterLabel, Icon, Modal,
 } from "@/components/ui";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, FileText, PlayCircle } from "lucide-react";
+import type { StudyMaterial } from '@/types';
+
+function getYoutubeEmbedUrl(url: string): string {
+  const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : url;
+}
 
 export default function StudyMaterialsPage() {
+  const router = useRouter();
+  const [viewingMaterial, setViewingMaterial] = useState<StudyMaterial | null>(null);
+
   const {
     years, selectedAcademicYearId, setSelectedAcademicYearId,
-    classes, sections, subjects,
-    selectedClassId, selectedSectionId, selectedSubjectId,
+    classes, classDetails, subjects,
+    selectedClassId, selectedClassDetailId, selectedSubjectId,
+    setSelectedClassDetailId,
     setSelectedSubjectId,
     handleClassChange,
-    handleSectionChange,
     materials,
-    isLoading, isSaving, isUploading,
-    showModal, setShowModal,
-    editingId, form, fileRef,
-    openAddModal, openEditModal,
-    handleSubmit, handleDelete,
+    isLoading,
+    handleDelete,
   } = useStudyMaterials();
-
-  const { register, handleSubmit: onSubmit, formState: { errors } } = form;
 
   return (
     <Div type="col" gap="lg">
       <Div type="row" justify="between" align="center">
         <H1>{MATERIALS_PAGE.title}</H1>
-        <Button onClick={openAddModal} disabled={!selectedSectionId || !selectedSubjectId}>
+        <Button onClick={() => router.push(ROUTES.materialsNew)}>
           <Icon icon={Plus} type="btn-icon" />
           {MATERIALS_PAGE.addButton}
         </Button>
@@ -55,15 +61,15 @@ export default function StudyMaterialsPage() {
             </Select>
           </Div>
           <Div type="col" gap="xs">
-            <FilterLabel>Section</FilterLabel>
-            <Select value={selectedSectionId} onChange={(e) => handleSectionChange(e.target.value)} disabled={!selectedClassId}>
-              <option value="">Select section</option>
-              {sections.map((s) => <option key={s.id} value={s.id}>Section {s.name}</option>)}
+            <FilterLabel>Year / Semester</FilterLabel>
+            <Select value={selectedClassDetailId} onChange={(e) => setSelectedClassDetailId(e.target.value)} disabled={!selectedClassId}>
+              <option value="">All</option>
+              {classDetails.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </Select>
           </Div>
           <Div type="col" gap="xs">
             <FilterLabel>Subject</FilterLabel>
-            <Select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} disabled={!selectedSectionId}>
+            <Select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} disabled={!selectedClassId}>
               <option value="">All subjects</option>
               {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
@@ -84,27 +90,30 @@ export default function StudyMaterialsPage() {
         <TableBody>
           {isLoading ? (
             <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
-          ) : !selectedSectionId ? (
-            <TableEmptyRow colSpan={5}>Select a section to view materials.</TableEmptyRow>
+          ) : !selectedClassId ? (
+            <TableEmptyRow colSpan={5}>Select a class to view materials.</TableEmptyRow>
           ) : materials.length === 0 ? (
             <TableEmptyRow colSpan={5}>{MATERIALS_PAGE.empty}</TableEmptyRow>
           ) : (
             materials.map((mat, i) => {
               const sub = subjects.find((s) => s.id === mat.subject_id);
+              const contentType = mat.content_type ?? 'file';
               return (
                 <TableRow key={mat.id}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell primary>{mat.title}</TableCell>
                   <TableCell>{sub?.name ?? '—'}</TableCell>
-                  <TableCell>{mat.file_type ?? '—'}</TableCell>
+                  <TableCell>
+                    {contentType === 'text' && <Icon icon={FileText} type="sm" />}
+                    {contentType === 'youtube' && <Icon icon={PlayCircle} type="sm" />}
+                    {contentType === 'file' && (mat.file_type?.includes('pdf') ? 'PDF' : 'Image')}
+                  </TableCell>
                   <TableCell>
                     <Div type="row" gap="xs">
-                      <a href={mat.file_url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="ghost">
-                          <Icon icon={ExternalLink} type="sm" />
-                        </Button>
-                      </a>
-                      <Button size="sm" variant="ghost" onClick={() => openEditModal(mat)}>
+                      <Button size="sm" variant="ghost" onClick={() => setViewingMaterial(mat)}>
+                        <Icon icon={Eye} type="sm" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => router.push(ROUTES.materialsEdit(mat.id))}>
                         <Icon icon={Pencil} type="sm" />
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleDelete(mat.id)}>
@@ -119,40 +128,50 @@ export default function StudyMaterialsPage() {
         </TableBody>
       </Table>
 
-      {/* Add / Edit Modal */}
-      {showModal && (
+      {/* View Modal */}
+      {viewingMaterial && (
         <Modal
-          title={editingId ? MATERIALS_PAGE.form.editTitle : MATERIALS_PAGE.form.title}
-          onClose={() => setShowModal(false)}
+          title={viewingMaterial.title}
+          size="lg"
+          onClose={() => setViewingMaterial(null)}
         >
-          <form onSubmit={onSubmit(handleSubmit)}>
-            <Div type="col" gap="md" padding="px-6 py-5">
-              <FormField label={MATERIALS_PAGE.form.matTitle} error={errors.title?.message}>
-                <Input {...register("title")} placeholder="Chapter 5 Notes" />
-              </FormField>
-              <FormField label={MATERIALS_PAGE.form.description}>
-                <Input {...register("description")} placeholder="Optional description" />
-              </FormField>
-              <FormField label={MATERIALS_PAGE.form.upload}>
-                <Div type="col" gap="xs">
-                  <FileInput ref={fileRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png" />
-                  <P size="xs">Or enter URL directly:</P>
-                  <Input {...register("file_url")} placeholder="https://..." />
-                </Div>
-              </FormField>
-              <FormField label={MATERIALS_PAGE.form.fileType}>
-                <Input {...register("file_type")} placeholder="PDF, Video, Slides…" />
-              </FormField>
-              <Div type="row" justify="end" gap="sm">
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-                  {MATERIALS_PAGE.form.cancel}
-                </Button>
-                <Button type="submit" loading={isSaving || isUploading}>
-                  {MATERIALS_PAGE.form.submit}
-                </Button>
-              </Div>
-            </Div>
-          </form>
+          <Div type="col" gap="md" padding="px-6 py-5">
+            {viewingMaterial.content_type === 'text' && (
+              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
+                {viewingMaterial.content_text || '—'}
+              </div>
+            )}
+
+            {viewingMaterial.content_type === 'file' && viewingMaterial.file_url && (
+              viewingMaterial.file_type?.includes('pdf') || viewingMaterial.file_url.endsWith('.pdf') ? (
+                <iframe
+                  src={viewingMaterial.file_url}
+                  className="w-full rounded"
+                  style={{ height: '60vh' }}
+                  title={viewingMaterial.title}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={viewingMaterial.file_url}
+                  alt={viewingMaterial.title}
+                  className="w-full rounded object-contain max-h-[60vh]"
+                />
+              )
+            )}
+
+            {viewingMaterial.content_type === 'youtube' && viewingMaterial.youtube_url && (
+              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                <iframe
+                  src={getYoutubeEmbedUrl(viewingMaterial.youtube_url)}
+                  className="absolute inset-0 w-full h-full rounded"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={viewingMaterial.title}
+                />
+              </div>
+            )}
+          </Div>
         </Modal>
       )}
     </Div>
