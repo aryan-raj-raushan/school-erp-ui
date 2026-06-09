@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, Pencil, Trash2, UserCheck } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { useAdmissionEnquiries } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -18,8 +18,6 @@ import {
   Div,
   P,
   Button,
-  Input,
-  Select,
   Table,
   TableHead,
   TableHeadRow,
@@ -33,11 +31,9 @@ import {
   Spinner,
 } from "@/components/ui";
 import { StaffService } from "@/services/staff.service";
-import {
-  ADMISSION_PAGE,
-  STATUS_BADGE,
-  STATUS_OPTIONS,
-} from "@/constants/admission.constants";
+import { getTodayDate } from "@/lib/time.utils";
+import { STATUS_BADGE } from "@/constants/admission.constants";
+
 
 function AdmissionsContent() {
   const router = useRouter();
@@ -56,17 +52,13 @@ function AdmissionsContent() {
   const [urlFilters, setUrlFilters] = useFilterParams<
     Record<string, string | undefined>
   >({
-    academic_year_id: undefined,
-    applying_class_id: undefined,
-    status: undefined,
+    next_followup_date: undefined,
     search: undefined,
     page: undefined,
   });
 
   const initialFilters: AdmissionEnquiryFilters = {
-    academic_year_id: urlFilters.academic_year_id || undefined,
-    applying_class_id: urlFilters.applying_class_id || undefined,
-    status: (urlFilters.status as EnquiryStatus) || undefined,
+    next_followup_date: getTodayDate(),
     search: urlFilters.search || undefined,
     page: urlFilters.page ? Number(urlFilters.page) : 1,
   };
@@ -74,135 +66,39 @@ function AdmissionsContent() {
   const {
     enquiries,
     pagination,
-    filters,
     isLoading,
-    updateFilters,
     deleteEnquiry,
   } = useAdmissionEnquiries(initialFilters);
 
-  function handleFilterChange(next: Partial<AdmissionEnquiryFilters>) {
-    updateFilters(next);
-    const urlNext: Record<string, string | undefined> = {};
-    if ("academic_year_id" in next)
-      urlNext.academic_year_id = next.academic_year_id || undefined;
-    if ("applying_class_id" in next)
-      urlNext.applying_class_id = next.applying_class_id || undefined;
-    if ("status" in next) urlNext.status = next.status || undefined;
-    if ("search" in next) urlNext.search = next.search || undefined;
-    if ("page" in next)
-      urlNext.page = next.page ? String(next.page) : undefined;
-    setUrlFilters(urlNext);
-  }
 
   return (
     <Div type="col" gap="lg">
       <PageHeader
-        title={ADMISSION_PAGE.pageHeading.title}
-        subtitle={pagination ? `${pagination.total} enquiries` : ""}
-        actions={
-          <Div type="row" gap="sm">
-            <Button
-              variant="outline"
-              onClick={() => router.push("/admissions/source")}
-            >
-              {ADMISSION_PAGE.buttons.manage}
-            </Button>
-            <Button onClick={() => router.push("/admissions/create-new")}>
-              <Plus size={16} /> {ADMISSION_PAGE.buttons.addEnquiry}
-            </Button>
-          </Div>
+        title="Today's Followup Admission Enquiry"
+        subtitle={
+          pagination
+            ? `${pagination.total} followup schedule today`
+            : ""
         }
       />
-
-      {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
-        <Input
-          width="md"
-          placeholder="Search student name or phone…"
-          value={filters.search ?? ""}
-          onChange={(e) =>
-            handleFilterChange({ search: e.target.value || undefined })
-          }
-        />
-        <Select
-          width="sm"
-          value={filters.academic_year_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              academic_year_id: e.target.value || undefined,
-            })
-          }
-        >
-          <option value="">All Years</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.applying_class_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              applying_class_id: e.target.value || undefined,
-            })
-          }
-        >
-          <option value="">All Classes</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.status ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              status: (e.target.value as EnquiryStatus) || undefined,
-            })
-          }
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      </Div>
 
       {/* Table */}
       <Table>
         <TableHead>
           <TableHeadRow>
-            <TableHeaderCell>{ADMISSION_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.studentName}
-            </TableHeaderCell>
-            <TableHeaderCell>{ADMISSION_PAGE.table.fatherName}</TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.motherName}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>{ADMISSION_PAGE.table.phone} </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.applyingAcadYear}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {" "}
-              {ADMISSION_PAGE.table.applyingClass}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.createdDate}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.followUpDate}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.teacherAssigned}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>{ADMISSION_PAGE.table.actions}</TableHeaderCell>
+            <TableHeaderCell>S.No.</TableHeaderCell>
+            <TableHeaderCell>Student Name</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell>Father Name</TableHeaderCell>
+            <TableHeaderCell>Mother Name</TableHeaderCell>
+            <TableHeaderCell>Phone</TableHeaderCell>
+            <TableHeaderCell>Applying Academic Year</TableHeaderCell>
+
+            <TableHeaderCell>Applying Class</TableHeaderCell>
+            <TableHeaderCell>Created Date</TableHeaderCell>
+            <TableHeaderCell>Follow-up Date</TableHeaderCell>
+            <TableHeaderCell>Teacher Assigned</TableHeaderCell>
+            <TableHeaderCell>Actions</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
@@ -211,9 +107,7 @@ function AdmissionsContent() {
               <Spinner />
             </TableEmptyRow>
           ) : enquiries.length === 0 ? (
-            <TableEmptyRow colSpan={6}>
-              {ADMISSION_PAGE.table.noEntry}
-            </TableEmptyRow>
+            <TableEmptyRow colSpan={6}>No enquiries found</TableEmptyRow>
           ) : (
             enquiries.map((enq, i) => (
               <TableRow key={enq.id}>

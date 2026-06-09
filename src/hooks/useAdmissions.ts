@@ -323,11 +323,17 @@ export function useAdmissionEnquiryDetail(id?: string) {
   async function addHistory(values: EnquiryHistoryFormValues) {
     if (!id || isNew) return;
     try {
-      const entry = await AdmissionEnquiriesService.addHistory(id, {
+      const payload: any = {
         action: values.action,
         details: values.details || undefined,
         remarks: values.remarks,
-      });
+      };
+      if (values.next_followup_date?.trim())
+        payload.next_followup_date = values.next_followup_date;
+      if (values.next_followup_time?.trim())
+        payload.next_followup_time = values.next_followup_time;
+
+      const entry = await AdmissionEnquiriesService.addHistory(id, payload);
       setHistory((prev) => [...prev, entry]);
       toast.success("History entry added");
       setShowHistoryModal(false);

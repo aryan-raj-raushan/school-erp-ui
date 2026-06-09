@@ -60,10 +60,10 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     icon: MessageSquareMore,
     roles: SCHOOL_ROLES,
     items: [
-      { title: "Add Enquiry Source", url: "/admissions/source/create-new" },
-      { title: "Manage Enquiry Source", url: "/admissions/source" },
+      { title: "Enquiry Source", url: "/admissions/source" },
       { title: "Add Enquiry", url: "/admissions/create-new" },
       { title: "Enquiry List", url: "/admissions" },
+      { title: "Today Followup Admissions", url: "/admissions/follow-up" },
     ],
   },
   

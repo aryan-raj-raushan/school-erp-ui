@@ -50,22 +50,9 @@ import {
   TableCell,
   TableEmptyRow,
 } from "@/components/ui";
-
-const STATUS_BADGE: Record<
-  EnquiryStatus,
-  "default" | "info" | "warning" | "success" | "danger"
-> = {
-  NEW: "info",
-  FOLLOW_UP: "warning",
-  ADMISSION_CONFIRMED: "success",
-  REJECTED: "danger",
-};
-
-const ACTION_OPTIONS: { value: EnquiryAction; label: string }[] = [
-  { value: "NEXT_FOLLOW_UP_UPDATE", label: "Next Follow Up Update" },
-  { value: "ADMISSION_CONFIRMED", label: "Admission Confirmed" },
-  { value: "ENQUIRY_REJECTED", label: "Enquiry Rejected" },
-];
+import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
+import { GENDER_OPTIONS } from "@/constants";
+import { CATEGORY_OPTIONS, RELIGION_OPTIONS } from "@/constants/shared/index.constant";
 
 const ACTION_ICON: Record<EnquiryAction, React.ReactNode> = {
   NEW_ENQUIRY: <Plus size={14} />,
@@ -73,40 +60,6 @@ const ACTION_ICON: Record<EnquiryAction, React.ReactNode> = {
   ADMISSION_CONFIRMED: <CheckCircle2 size={14} className="text-emerald-500" />,
   ENQUIRY_REJECTED: <XCircle size={14} className="text-red-500" />,
 };
-
-const GENDER_OPTIONS = [
-  { value: "", label: "Select gender" },
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
-  { value: "OTHER", label: "Other" },
-];
-
-const RELIGION_OPTIONS = [
-  { value: "", label: "Select religion" },
-  { value: "HINDU", label: "Hindu" },
-  { value: "MUSLIM", label: "Muslim" },
-  { value: "CHRISTIAN", label: "Christian" },
-  { value: "SIKH", label: "Sikh" },
-  { value: "JAIN", label: "Jain" },
-  { value: "BUDDHIST", label: "Buddhist" },
-  { value: "OTHER", label: "Other" },
-];
-
-const CATEGORY_OPTIONS = [
-  { value: "", label: "Select category" },
-  { value: "GENERAL", label: "General" },
-  { value: "OBC", label: "OBC" },
-  { value: "SC", label: "SC" },
-  { value: "ST", label: "ST" },
-  { value: "OTHER", label: "Other" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "NEW", label: "New" },
-  { value: "FOLLOW_UP", label: "Follow Up" },
-  { value: "ADMISSION_CONFIRMED", label: "Admission Confirmed" },
-  { value: "REJECTED", label: "Rejected" },
-];
 
 export default function AdmissionEnquiryDetailPage({
   params,
@@ -127,6 +80,7 @@ export default function AdmissionEnquiryDetailPage({
   const [classes, setClasses] = useState<Class[]>([]);
   const [sources, setSources] = useState<AdmissionSource[]>([]);
   const [teachers, setTeachers] = useState<Staff[]>([]);
+  const [lockedAction, setLockedAction] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -181,9 +135,34 @@ export default function AdmissionEnquiryDetailPage({
   }
 
   const canAddHistory = !isNew && !isTerminal;
+  const showActionButtons =
+    enquiry && (enquiry.status === "NEW" || enquiry.status === "FOLLOW_UP");
+
+  const openHistoryModalWithAction = (action: EnquiryAction) => {
+    setLockedAction(true);
+
+    historyForm.setValue("action", action);
+
+    if (action !== "NEXT_FOLLOW_UP_UPDATE") {
+      historyForm.setValue("next_followup_date", "");
+      historyForm.setValue("next_followup_time", "");
+    }
+
+    console.log("action", action);
+
+    openHistoryModal();
+  };
+
+  const handleAddEntryClick = () => {
+    setLockedAction(false);
+
+    historyForm.setValue("action", "NEXT_FOLLOW_UP_UPDATE");
+
+    openHistoryModal();
+  };
 
   return (
-    <Div type="col" gap="lg" className="max-w-4xl">
+    <Div type="col" gap="lg" className="max-w-7xl">
       {/* Header */}
       <Div type="row" align="center" gap="md">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
@@ -215,19 +194,41 @@ export default function AdmissionEnquiryDetailPage({
         </Div>
         {!isNew && (
           <Div type="row" gap="sm">
-            {isTerminal ? (
-              <Badge
-                variant={
-                  enquiry?.status === "ADMISSION_CONFIRMED"
-                    ? "success"
-                    : "danger"
-                }
-              >
-                {enquiry?.status === "ADMISSION_CONFIRMED"
-                  ? "Admission Confirmed"
-                  : "Rejected"}
-              </Badge>
-            ) : isEditing ? (
+            {showActionButtons && !isEditing && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    openHistoryModalWithAction("NEXT_FOLLOW_UP_UPDATE")
+                  }
+                >
+                  <RefreshCw size={14} />
+                  Update Next Follow Up
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    openHistoryModalWithAction("ADMISSION_CONFIRMED")
+                  }
+                >
+                  <CheckCircle2 size={14} />
+                  Confirm Admission
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => openHistoryModalWithAction("ENQUIRY_REJECTED")}
+                >
+                  <XCircle size={14} />
+                  Reject Enquiry
+                </Button>
+              </>
+            )}
+
+            {isEditing ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -382,7 +383,12 @@ export default function AdmissionEnquiryDetailPage({
                 label="Assigned Teacher"
                 value={
                   teachers.find((t) => t.id === enquiry.assigned_teacher_id)
-                    ?.first_name ?? "—"
+                    ? `${teachers.find((t) => t.id === enquiry.assigned_teacher_id)?.first_name ?? ""} ${
+                        teachers.find(
+                          (t) => t.id === enquiry.assigned_teacher_id,
+                        )?.last_name ?? ""
+                      }`.trim()
+                    : "—"
                 }
               />
               <InfoRow
@@ -750,7 +756,10 @@ export default function AdmissionEnquiryDetailPage({
               )}
             </Div>
             {canAddHistory && (
-              <Button size="sm" onClick={openHistoryModal}>
+              // <Button size="sm" onClick={openHistoryModal}>
+              //   <Plus size={14} /> Add Entry
+              // </Button>
+              <Button size="sm" onClick={() => handleAddEntryClick()}>
                 <Plus size={14} /> Add Entry
               </Button>
             )}
@@ -760,9 +769,9 @@ export default function AdmissionEnquiryDetailPage({
             <TableHead>
               <TableHeadRow>
                 <TableHeaderCell>Action</TableHeaderCell>
+                <TableHeaderCell>Teacher Assigned</TableHeaderCell>
+                <TableHeaderCell>Created Date</TableHeaderCell>
                 <TableHeaderCell>Details</TableHeaderCell>
-                <TableHeaderCell>Remarks</TableHeaderCell>
-                <TableHeaderCell>Date</TableHeaderCell>
               </TableHeadRow>
             </TableHead>
             <TableBody>
@@ -777,8 +786,15 @@ export default function AdmissionEnquiryDetailPage({
                         <span>{entry.action.replace(/_/g, " ")}</span>
                       </Div>
                     </TableCell>
-                    <TableCell>{entry.details ?? "—"}</TableCell>
-                    <TableCell>{entry.remarks ?? "—"}</TableCell>
+                    <TableCell>
+                      {teachers.find((t) => t.id === entry.assigned_teacher_id)
+                        ? `${teachers.find((t) => t.id === entry.assigned_teacher_id)?.first_name ?? ""} ${
+                            teachers.find(
+                              (t) => t.id === entry.assigned_teacher_id,
+                            )?.last_name ?? ""
+                          }`.trim()
+                        : "—"}
+                    </TableCell>
                     <TableCell>
                       {new Date(entry.created_at).toLocaleDateString("en-IN", {
                         day: "2-digit",
@@ -791,6 +807,45 @@ export default function AdmissionEnquiryDetailPage({
                           { hour: "2-digit", minute: "2-digit" },
                         )}
                       </P>
+                    </TableCell>
+                    <TableCell>
+                      <Div type="col" gap="xs">
+                        <span className="font-semibold">{entry.action}</span>
+
+                        {entry.action === "NEXT_FOLLOW_UP_UPDATE" && (
+                          <>
+                            {entry.next_followup_date && (
+                              <P className="text-sm">
+                                <span className="font-medium">
+                                  Next Followup:
+                                </span>{" "}
+                                {new Date(
+                                  entry.next_followup_date,
+                                ).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                                {entry.next_followup_time &&
+                                  ` ${entry.next_followup_time}`}
+                              </P>
+                            )}
+                          </>
+                        )}
+
+                        {entry.details && (
+                          <P className="text-sm whitespace-pre-wrap">
+                            Details: {entry.details}
+                          </P>
+                        )}
+
+                        {entry.remarks && (
+                          <P className="text-sm">
+                            <span className="font-medium">Remarks:</span>{" "}
+                            {entry.remarks}
+                          </P>
+                        )}
+                      </Div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -810,7 +865,10 @@ export default function AdmissionEnquiryDetailPage({
                   label="Action *"
                   error={historyForm.formState.errors.action?.message}
                 >
-                  <Select {...historyForm.register("action")}>
+                  <Select
+                    {...historyForm.register("action")}
+                    disabled={lockedAction}
+                  >
                     {ACTION_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
