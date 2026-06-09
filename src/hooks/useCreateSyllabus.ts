@@ -104,7 +104,11 @@ export function useCreateSyllabus() {
       };
       setAttachments((prev) => [...prev, pending]);
       try {
-        const result = await UploadsService.uploadDocument(file);
+        const result = await UploadsService.uploadDocument(file, {
+          reference_id: crypto.randomUUID(),
+          reference_type: 'syllabus',
+          document_type: 'attachment',
+        });
         setAttachments((prev) =>
           prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url, s3Key: result.s3Key } : a),
         );

@@ -2,18 +2,25 @@ import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
 import type { StudyMaterial } from '@/types';
 
+export type StudyMaterialContentType = 'text' | 'file' | 'youtube';
+
 export interface CreateStudyMaterialPayload {
   academic_year_id: string;
-  class_section_id: string;
-  subject_id: string;
+  class_id?: string;
+  class_detail_id?: string;
+  subject_id?: string;
   title: string;
   description?: string;
-  file_url: string;
+  content_type: StudyMaterialContentType;
+  content_text?: string;
+  file_url?: string;
   file_type?: string;
+  youtube_url?: string;
 }
 
 export interface StudyMaterialFilters {
-  class_section_id?: string;
+  class_id?: string;
+  class_detail_id?: string;
   subject_id?: string;
   academic_year_id?: string;
 }

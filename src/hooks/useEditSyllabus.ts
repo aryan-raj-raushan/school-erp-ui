@@ -109,7 +109,11 @@ export function useEditSyllabus(id: string) {
       };
       setNewAttachments((prev) => [...prev, pending]);
       try {
-        const result = await UploadsService.uploadDocument(file);
+        const result = await UploadsService.uploadDocument(file, {
+          reference_id: id,
+          reference_type: 'syllabus',
+          document_type: 'attachment',
+        });
         setNewAttachments((prev) =>
           prev.map((a) => a.id === pendingId ? { ...a, status: 'done', url: result.url, s3Key: result.s3Key } : a),
         );
