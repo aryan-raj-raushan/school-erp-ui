@@ -161,7 +161,11 @@ export function useEditHomework(homeworkId: string) {
       };
       setNewAttachments((prev) => [...prev, pending]);
       try {
-        const result = await UploadsService.uploadDocument(file);
+        const result = await UploadsService.uploadDocument(file, {
+          reference_id: homeworkId,
+          reference_type: 'homework',
+          document_type: 'attachment',
+        });
         setNewAttachments((prev) =>
           prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url } : a),
         );
