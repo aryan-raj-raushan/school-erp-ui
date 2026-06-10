@@ -148,3 +148,10 @@ export function CheckboxLabel({ className, ...props }: React.LabelHTMLAttributes
     <label className={cn('text-sm text-foreground/80 cursor-pointer', className)} {...props} />
   );
 }
+
+/** Auth left-panel headline — 26 px bold, centered, inherits panel CSS var override */
+export function PanelHeading({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h2 className={cn('auth-panel-headline', className)} {...props} />
+  );
+}

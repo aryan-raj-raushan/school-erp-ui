@@ -3,68 +3,74 @@
 import Link from 'next/link';
 import { useLoginPage } from '@/hooks/useLoginPage';
 import { ROUTES } from '@/constants';
-import { Div, Label, ErrorText, Button, Input, FormField } from '@/components/ui';
+import { Div, Button, Input, FormField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
 
 export default function LoginPage() {
   const { form, onSubmit, isLoading, isPhone } = useLoginPage();
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Div type="col" gap="md">
-        <FormField
-          label="Email or Phone Number"
-          htmlFor="identifier"
-          error={form.formState.errors.identifier?.message}
-        >
-          <Input
-            id="identifier"
-            type="text"
-            placeholder="you@company.com or 9876543210"
-            autoComplete="username"
-            {...form.register('identifier')}
-          />
-        </FormField>
+    <AuthCard title="Welcome back" subtitle="Sign in to your school account">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Div type="col" gap="md">
+          <SocialButtonGroup />
 
-        {isPhone && (
+          <AuthOrSeparator />
+
           <FormField
-            label="Dial Code"
-            htmlFor="dial_code"
-            error={form.formState.errors.dial_code?.message}
+            label="Email or Phone Number"
+            htmlFor="identifier"
+            error={form.formState.errors.identifier?.message}
           >
             <Input
-              id="dial_code"
+              id="identifier"
               type="text"
-              placeholder="+91"
-              width="xs"
-              {...form.register('dial_code')}
+              placeholder="you@school.com or 9876543210"
+              autoComplete="username"
+              {...form.register('identifier')}
             />
           </FormField>
-        )}
 
-        <FormField
-          label="Password"
-          htmlFor="password"
-          error={form.formState.errors.password?.message}
-        >
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            autoComplete="current-password"
-            {...form.register('password')}
-          />
-        </FormField>
+          {isPhone && (
+            <FormField
+              label="Dial Code"
+              htmlFor="dial_code"
+              error={form.formState.errors.dial_code?.message}
+            >
+              <Input
+                id="dial_code"
+                type="text"
+                placeholder="+91"
+                width="xs"
+                {...form.register('dial_code')}
+              />
+            </FormField>
+          )}
 
-        <Button type="submit" loading={isLoading} fullWidth>
-          Sign in
-        </Button>
+          <FormField
+            label="Password"
+            htmlFor="password"
+            error={form.formState.errors.password?.message}
+          >
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              {...form.register('password')}
+            />
+          </FormField>
 
-        <Div type="row" justify="center">
-          <Link href={ROUTES.signup} className="text-sm text-muted-foreground hover:underline">
-            Don&apos;t have an account? Sign up
-          </Link>
+          <Button type="submit" loading={isLoading} fullWidth>
+            Sign in
+          </Button>
+
+          <Div type="row" justify="center">
+            <Link href={ROUTES.signup} className="text-sm text-muted-foreground hover:underline">
+              Don&apos;t have an account? Sign up
+            </Link>
+          </Div>
         </Div>
-      </Div>
-    </form>
+      </form>
+    </AuthCard>
   );
 }

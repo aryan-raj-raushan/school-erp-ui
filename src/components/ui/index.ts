@@ -19,3 +19,5 @@ export * from './empty-state';
 export * from './page-header';
 export * from './theme-selector';
 export * from './crud-dropdown';
+export * from './auth-panel';
+export * from './social-button';

@@ -10,7 +10,14 @@ type DivVariant =
   | 'glass' | 'glass-sm' | 'glass-flat'
   | 'theme-icon' | 'theme-icon-lg' | 'theme-icon-sm'
   | 'icon-muted'
-  | 'gradient-bar';
+  | 'gradient-bar'
+  /* Auth split layout */
+  | 'auth-force-light'
+  | 'auth-left-panel'
+  | 'auth-blob-tl'
+  | 'auth-blob-br'
+  | 'auth-panel-logo-box'
+  | 'auth-panel-section';
 type DivColor = 'default' | 'green' | 'red' | 'yellow';
 
 const justifyMap: Record<JustifyValue, string> = {
@@ -64,6 +71,13 @@ const variantMap: Record<DivVariant, string> = {
   'icon-muted':    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground',
   /* Thin gradient accent bar */
   'gradient-bar': 'h-[3px] w-full theme-gradient-bg rounded-full',
+  /* Auth split layout */
+  'auth-force-light':     'auth-force-light',
+  'auth-left-panel':      'auth-left-panel hidden lg:flex flex-col justify-between',
+  'auth-blob-tl':         'auth-blob-tl',
+  'auth-blob-br':         'auth-blob-br',
+  'auth-panel-logo-box':  'auth-panel-logo-box',
+  'auth-panel-section':   'auth-panel-section',
 };
 
 const colorMap: Record<DivColor, string> = {
