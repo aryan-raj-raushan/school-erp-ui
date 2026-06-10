@@ -1,0 +1,2 @@
+echo "▶ arch: enforcing architecture rules..."
+node scripts/arch.js

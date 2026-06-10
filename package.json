@@ -6,7 +6,9 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "eslint"
+    "lint": "eslint",
+    "arch": "node scripts/arch.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -36,8 +38,13 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
     "next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "eslint --fix --max-warnings=0"
   }
 }
