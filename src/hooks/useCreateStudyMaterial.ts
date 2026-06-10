@@ -21,7 +21,7 @@ const schema = z.object({
   class_detail_id: z.string().optional(),
   subject_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
-  content_type: z.enum(['text', 'file', 'youtube']).default('file'),
+  content_type: z.enum(['text', 'file', 'youtube']),
   content_text: z.string().optional(),
   youtube_url: z.string().optional(),
 });
