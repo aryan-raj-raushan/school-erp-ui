@@ -17,7 +17,7 @@ import type { StudyMaterial, Class, Section } from '@/types';
 const matSchema = z.object({
   title: z.string().min(1, 'Title required'),
   description: z.string().optional(),
-  content_type: z.enum(['text', 'file', 'youtube']).default('file'),
+  content_type: z.enum(['text', 'file', 'youtube']),
   content_text: z.string().optional(),
   file_url: z.string().optional(),
   file_type: z.string().optional(),
