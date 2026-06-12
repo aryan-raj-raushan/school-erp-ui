@@ -1,16 +1,27 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { useStudents } from "@/hooks/useStudents";
-import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useClasses } from "@/hooks/useClasses";
 import {
-  ROUTES,
-  STUDENTS_PAGE,
-  STUDENT_STATUS_BADGE,
-  STUDENT_STATUS_OPTIONS,
-  GENDER_OPTIONS,
-} from "@/constants";
+  Plus,
+  Eye,
+  Pencil,
+  Trash2,
+  CreditCard,
+  ToggleLeft,
+  ToggleRight,
+} from "lucide-react";
+import { useStudents } from "@/hooks/useStudentV2";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
+// import { useFilterParams } from "@/hooks/useFilterParams";
+import { useState, useEffect } from "react";
+import { ClassesService, SectionsService } from "@/services/classes.service";
+import type { Class, Section } from "@/types";
+import type {
+  StudentFilters,
+  StudentStatus,
+  Gender,
+} from "@/types/students.types";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
@@ -27,73 +38,149 @@ import {
   TableCell,
   TableEmptyRow,
   TablePagination,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  FormField,
   Badge,
   Spinner,
 } from "@/components/ui";
+import {
+  STUDENT_PAGE,
+  STUDENT_ROUTES,
+  STATUS_BADGE,
+  STUDENT_STATUS_OPTIONS,
+  GENDER_OPTIONS,
+} from "@/constants/students-v2.constants";
+import { useFilterParams } from "@/hooks/useFilterParams";
 
-export default function StudentsPage() {
+function StudentsContent() {
   const router = useRouter();
-  const { years, currentYear } = useAcademicYears();
-  const { classes, sections } = useClasses();
+  const { years } = useAcademicYears();
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+
+  // Persistent URL filters
+  const [urlFilters, setUrlFilters] = useFilterParams<
+    Record<string, string | undefined>
+  >({
+    academic_year_id: undefined,
+    class_id: undefined,
+    section_id: undefined,
+    status: undefined,
+    gender: undefined,
+    search: undefined,
+    page: undefined,
+  });
+
+  const initialFilters: StudentFilters = {
+    academic_year_id: urlFilters.academic_year_id,
+    class_id: urlFilters.class_id,
+    section_id: urlFilters.section_id,
+    status: urlFilters.status as StudentStatus | undefined,
+    gender: urlFilters.gender as Gender | undefined,
+    search: urlFilters.search,
+    page: urlFilters.page ? Number(urlFilters.page) : 1,
+  };
+
   const {
     students,
     pagination,
     filters,
-    searchInput,
     isLoading,
-    showModal,
-    openModal,
-    closeModal,
-    form,
-    handleSubmit,
-    isSubmitting,
-    showEditModal,
-    openEditModal,
-    closeEditModal,
-    editForm,
-    handleEditSubmit,
-    isEditSubmitting,
-    deleteStudent,
     updateFilters,
-  } = useStudents();
+    deleteStudent,
+    toggleEnabled,
+  } = useStudents(initialFilters);
 
-  // Cascade: section filtered by selected class in add/edit form
-  const watchedAddClassId = form.watch("class_id");
-  const watchedEditClassId = editForm.watch("class_id");
-  const addSections = sections.filter((s) => s.class_id === watchedAddClassId);
-  const editSections = sections.filter((s) => s.class_id === watchedEditClassId);
+  // Load classes when academic year changes
+  useEffect(() => {
+    if (!filters.academic_year_id) {
+      setClasses([]);
+      setSections([]);
+      return;
+    }
+    ClassesService.list({
+      academic_year_id: filters.academic_year_id,
+      limit: 100,
+    })
+      .then((r) => setClasses(r.items))
+      .catch(() => {});
+  }, [filters.academic_year_id]);
+
+  // Load sections when class changes
+  useEffect(() => {
+    if (!filters.class_id) {
+      setSections([]);
+      return;
+    }
+    SectionsService.list({ class_id: filters.class_id, limit: 100 })
+      .then((r) => setSections(r.items))
+      .catch(() => {});
+  }, [filters.class_id]);
+
+  function handleFilterChange(next: Partial<StudentFilters>) {
+    updateFilters(next);
+    const urlNext: Record<string, string | undefined> = {};
+    if ("academic_year_id" in next)
+      urlNext.academic_year_id = next.academic_year_id;
+    if ("class_id" in next) {
+      urlNext.class_id = next.class_id;
+      urlNext.section_id = undefined;
+    }
+    if ("section_id" in next) urlNext.section_id = next.section_id;
+    if ("status" in next) urlNext.status = next.status;
+    if ("gender" in next) urlNext.gender = next.gender;
+    if ("search" in next) urlNext.search = next.search;
+    if ("page" in next)
+      urlNext.page = next.page ? String(next.page) : undefined;
+    setUrlFilters(urlNext);
+  }
 
   return (
     <Div type="col" gap="lg">
       <PageHeader
-        title={STUDENTS_PAGE.title}
-        subtitle={pagination ? `${pagination.total} students` : "Loading..."}
-        illustration="/illustrations/students.svg"
-        actions={<Button onClick={openModal}>{STUDENTS_PAGE.addButton}</Button>}
+        title={STUDENT_PAGE.pageHeading.title}
+        subtitle={pagination ? `${pagination.total} students` : ""}
+        actions={
+          <Div type="row" gap="sm">
+            <Button
+              variant="outline"
+              onClick={() => router.push(STUDENT_ROUTES.generate)}
+            >
+              <CreditCard size={16} />
+              {STUDENT_PAGE.buttons.generateCards}
+            </Button>
+            <Button onClick={() => router.push(STUDENT_ROUTES.createNew)}>
+              <Plus size={16} />
+              {STUDENT_PAGE.buttons.addStudent}
+            </Button>
+          </Div>
+        }
       />
 
+      {/* Filters */}
       <Div type="row" gap="md" align="center" wrap>
         <Input
           width="md"
-          placeholder="Search by name or admission no."
-          value={searchInput}
-          onChange={(e) => updateFilters({ search: e.target.value })}
+          placeholder={STUDENT_PAGE.filters.search}
+          value={filters.search ?? ""}
+          onChange={(e) =>
+            handleFilterChange({ search: e.target.value || undefined })
+          }
         />
         <Select
           width="sm"
           value={filters.academic_year_id ?? ""}
           onChange={(e) =>
-            updateFilters({ academic_year_id: e.target.value || undefined })
+            handleFilterChange({
+              academic_year_id: e.target.value || undefined,
+              class_id: undefined,
+              section_id: undefined,
+            })
           }
         >
-          <option value="">All Years</option>
+          <option value="">{STUDENT_PAGE.filters.allYears}</option>
           {years.map((y) => (
             <option key={y.id} value={y.id}>
               {y.name}
+              {y.is_current ? " (Current)" : ""}
             </option>
           ))}
         </Select>
@@ -101,10 +188,14 @@ export default function StudentsPage() {
           width="sm"
           value={filters.class_id ?? ""}
           onChange={(e) =>
-            updateFilters({ class_id: e.target.value || undefined })
+            handleFilterChange({
+              class_id: e.target.value || undefined,
+              section_id: undefined,
+            })
           }
+          disabled={!filters.academic_year_id}
         >
-          <option value="">All Classes</option>
+          <option value="">{STUDENT_PAGE.filters.allClasses}</option>
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -113,81 +204,179 @@ export default function StudentsPage() {
         </Select>
         <Select
           width="sm"
+          value={filters.section_id ?? ""}
+          onChange={(e) =>
+            handleFilterChange({ section_id: e.target.value || undefined })
+          }
+          disabled={!filters.class_id}
+        >
+          <option value="">{STUDENT_PAGE.filters.allSections}</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
           value={filters.status ?? ""}
           onChange={(e) =>
-            updateFilters({ status: (e.target.value as any) || undefined })
+            handleFilterChange({
+              status: (e.target.value as StudentStatus) || undefined,
+            })
           }
         >
-          {STUDENT_STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
+          <option value="">{STUDENT_PAGE.filters.allStatus}</option>
+          {STUDENT_STATUS_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
+          value={filters.gender ?? ""}
+          onChange={(e) =>
+            handleFilterChange({
+              gender: (e.target.value as Gender) || undefined,
+            })
+          }
+        >
+          <option value="">{STUDENT_PAGE.filters.allGender}</option>
+          {GENDER_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </Select>
       </Div>
 
+      {/* Table */}
       <Table>
         <TableHead>
           <TableHeadRow>
-            <TableHeaderCell>{STUDENTS_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{STUDENTS_PAGE.table.admissionNo}</TableHeaderCell>
-            <TableHeaderCell>{STUDENTS_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{STUDENTS_PAGE.table.section}</TableHeaderCell>
-            <TableHeaderCell>{STUDENTS_PAGE.table.gender}</TableHeaderCell>
-            <TableHeaderCell>{STUDENTS_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{STUDENTS_PAGE.table.actions}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.sno}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.systemNo}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.studentName}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.class}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.section}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.admissionNo}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.rollNo}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.gender}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.phone}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.status}</TableHeaderCell>
+            <TableHeaderCell>{STUDENT_PAGE.table.actions}</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={7}>
+            <TableEmptyRow colSpan={11}>
               <Spinner />
             </TableEmptyRow>
           ) : students.length === 0 ? (
-            <TableEmptyRow colSpan={7}>{STUDENTS_PAGE.empty}</TableEmptyRow>
+            <TableEmptyRow colSpan={11}>
+              {STUDENT_PAGE.table.noEntry}
+            </TableEmptyRow>
           ) : (
-            students.map((student) => {
-              const cls = classes.find((c) => c.id === student.class_id);
-              const sec = sections.find((s) => s.id === student.section_id);
-              return (
-                <TableRow key={student.id}>
-                  <TableCell
-                    primary
-                    onClick={() => router.push(ROUTES.studentDetail(student.id))}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {student.first_name} {student.last_name ?? ""}
-                  </TableCell>
-                  <TableCell>{student.admission_number}</TableCell>
-                  <TableCell>{cls?.name ?? "—"}</TableCell>
-                  <TableCell>{sec?.name ?? "—"}</TableCell>
-                  <TableCell>{student.gender ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={STUDENT_STATUS_BADGE[student.status]}>
-                      {student.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Div type="row" gap="sm">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditModal(student)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deleteStudent(student.id)}
-                      >
-                        Delete
-                      </Button>
-                    </Div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
+            students.map((s, i) => (
+              <TableRow key={s.id}>
+                <TableCell>{i + 1}</TableCell>
+                <TableCell>
+                  <P color="muted" className="font-mono text-xs">
+                    #{s.system_number}
+                  </P>
+                </TableCell>
+                <TableCell primary>
+                  <Div type="row" align="center" gap="sm">
+                    {s.profile_image ? (
+                      <img
+                        src={s.profile_image}
+                        alt={s.first_name}
+                        className="h-7 w-7 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <Div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <P color="muted" className="text-xs font-semibold">
+                          {s.first_name[0]}
+                          {s.last_name?.[0] ?? ""}
+                        </P>
+                      </Div>
+                    )}
+                    <span>
+                      {s.first_name} {s.last_name ?? ""}
+                    </span>
+                  </Div>
+                </TableCell>
+                <TableCell>{s.class_name ?? "—"}</TableCell>
+                <TableCell>{s.section_name ?? "—"}</TableCell>
+                <TableCell>{s.admission_number ?? "—"}</TableCell>
+                <TableCell>{s.roll_number ?? "—"}</TableCell>
+                <TableCell>
+                  {s.gender
+                    ? s.gender.charAt(0) + s.gender.slice(1).toLowerCase()
+                    : "—"}
+                </TableCell>
+                <TableCell>{s.phone_number ?? "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={STATUS_BADGE[s.status]}>{s.status}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Div type="row" gap="xs">
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      title="View"
+                      onClick={() => router.push(STUDENT_ROUTES.view(s.id))}
+                    >
+                      <Eye size={14} />
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      title="Edit"
+                      onClick={() => router.push(STUDENT_ROUTES.edit(s.id))}
+                    >
+                      <Pencil size={14} />
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      title={s.is_enabled ? "Disable" : "Enable"}
+                      onClick={() => toggleEnabled(s.id, !s.is_enabled)}
+                    >
+                      {s.is_enabled ? (
+                        <ToggleRight size={14} className="text-emerald-500" />
+                      ) : (
+                        <ToggleLeft
+                          size={14}
+                          className="text-muted-foreground"
+                        />
+                      )}
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      title="Generate ID Card"
+                      onClick={() =>
+                        router.push(
+                          `${STUDENT_ROUTES.generate}?studentId=${s.id}`,
+                        )
+                      }
+                    >
+                      <CreditCard size={14} />
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="destructive"
+                      title="Delete"
+                      onClick={() => deleteStudent(s.id)}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </Div>
+                </TableCell>
+              </TableRow>
+            ))
           )}
         </TableBody>
       </Table>
@@ -199,343 +388,20 @@ export default function StudentsPage() {
           totalPages={pagination.totalPages}
         />
       )}
-
-      {/* Add Student Modal */}
-      {showModal && (
-        <Modal onClose={closeModal} title={STUDENTS_PAGE.form.title}>
-          <form onSubmit={handleSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.firstName}
-                    error={form.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENTS_PAGE.placeholders.firstName}
-                      {...form.register("first_name")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.lastName}
-                    error={form.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENTS_PAGE.placeholders.lastName}
-                      {...form.register("last_name")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={STUDENTS_PAGE.form.admissionNumber}
-                  error={form.formState.errors.admission_number?.message}
-                >
-                  <Input
-                    placeholder={STUDENTS_PAGE.placeholders.admissionNumber}
-                    {...form.register("admission_number")}
-                  />
-                </FormField>
-                <FormField
-                  label={STUDENTS_PAGE.form.academicYear}
-                  error={form.formState.errors.academic_year_id?.message}
-                >
-                  <Select
-                    {...form.register("academic_year_id")}
-                    defaultValue={currentYear?.id ?? ""}
-                  >
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.class}
-                    error={form.formState.errors.class_id?.message}
-                  >
-                    <Select {...form.register("class_id")}>
-                      <option value="">Select class</option>
-                      {classes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.section}
-                    error={form.formState.errors.section_id?.message}
-                  >
-                    <Select {...form.register("section_id")}>
-                      <option value="">Select section</option>
-                      {addSections.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.gender}
-                    error={form.formState.errors.gender?.message}
-                  >
-                    <Select {...form.register("gender")}>
-                      {GENDER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.dateOfBirth}
-                    error={form.formState.errors.date_of_birth?.message}
-                  >
-                    <Input type="date" {...form.register("date_of_birth")} />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.rollNumber}
-                    error={form.formState.errors.roll_number?.message}
-                  >
-                    <Input
-                      placeholder={STUDENTS_PAGE.placeholders.rollNumber}
-                      {...form.register("roll_number")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.admissionDate}
-                    error={form.formState.errors.admission_date?.message}
-                  >
-                    <Input type="date" {...form.register("admission_date")} />
-                  </FormField>
-                </Div>
-                <FormField label="Status">
-                  <Select {...form.register("status")}>
-                    {STUDENT_STATUS_OPTIONS.filter((o) => o.value !== "").map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </Select>
-                </FormField>
-                <FormField
-                  label={STUDENTS_PAGE.form.email}
-                  error={form.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={STUDENTS_PAGE.placeholders.email}
-                    {...form.register("email")}
-                  />
-                </FormField>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={STUDENTS_PAGE.form.dialCode}
-                    error={form.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={STUDENTS_PAGE.placeholders.dialCode}
-                      {...form.register("dial_code")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.phone}
-                    error={form.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={STUDENTS_PAGE.placeholders.phone}
-                      {...form.register("phone_number")}
-                    />
-                  </FormField>
-                </Div>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeModal}>
-                {STUDENTS_PAGE.form.cancel}
-              </Button>
-              <Button type="submit" loading={isSubmitting}>
-                {STUDENTS_PAGE.form.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Edit Student Modal */}
-      {showEditModal && (
-        <Modal onClose={closeEditModal} title={STUDENTS_PAGE.editForm.title}>
-          <form onSubmit={handleEditSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.firstName}
-                    error={editForm.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENTS_PAGE.placeholders.firstName}
-                      {...editForm.register("first_name")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.lastName}
-                    error={editForm.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENTS_PAGE.placeholders.lastName}
-                      {...editForm.register("last_name")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={STUDENTS_PAGE.form.admissionNumber}
-                  error={editForm.formState.errors.admission_number?.message}
-                >
-                  <Input
-                    placeholder={STUDENTS_PAGE.placeholders.admissionNumber}
-                    {...editForm.register("admission_number")}
-                  />
-                </FormField>
-                <FormField
-                  label={STUDENTS_PAGE.form.academicYear}
-                  error={editForm.formState.errors.academic_year_id?.message}
-                >
-                  <Select {...editForm.register("academic_year_id")}>
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.class}
-                    error={editForm.formState.errors.class_id?.message}
-                  >
-                    <Select {...editForm.register("class_id")}>
-                      <option value="">Select class</option>
-                      {classes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.section}
-                    error={editForm.formState.errors.section_id?.message}
-                  >
-                    <Select {...editForm.register("section_id")}>
-                      <option value="">Select section</option>
-                      {editSections.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.gender}
-                    error={editForm.formState.errors.gender?.message}
-                  >
-                    <Select {...editForm.register("gender")}>
-                      {GENDER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.dateOfBirth}
-                    error={editForm.formState.errors.date_of_birth?.message}
-                  >
-                    <Input type="date" {...editForm.register("date_of_birth")} />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENTS_PAGE.form.rollNumber}
-                    error={editForm.formState.errors.roll_number?.message}
-                  >
-                    <Input
-                      placeholder={STUDENTS_PAGE.placeholders.rollNumber}
-                      {...editForm.register("roll_number")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.admissionDate}
-                    error={editForm.formState.errors.admission_date?.message}
-                  >
-                    <Input type="date" {...editForm.register("admission_date")} />
-                  </FormField>
-                </Div>
-                <FormField label="Status" error={editForm.formState.errors.status?.message}>
-                  <Select {...editForm.register("status")}>
-                    {STUDENT_STATUS_OPTIONS.filter((o) => o.value !== '').map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-                <FormField
-                  label={STUDENTS_PAGE.form.email}
-                  error={editForm.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={STUDENTS_PAGE.placeholders.email}
-                    {...editForm.register("email")}
-                  />
-                </FormField>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={STUDENTS_PAGE.form.dialCode}
-                    error={editForm.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={STUDENTS_PAGE.placeholders.dialCode}
-                      {...editForm.register("dial_code")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENTS_PAGE.form.phone}
-                    error={editForm.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={STUDENTS_PAGE.placeholders.phone}
-                      {...editForm.register("phone_number")}
-                    />
-                  </FormField>
-                </Div>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeEditModal}>
-                {STUDENTS_PAGE.editForm.cancel}
-              </Button>
-              <Button type="submit" loading={isEditSubmitting}>
-                {STUDENTS_PAGE.editForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
     </Div>
+  );
+}
+
+export default function StudentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <StudentsContent />
+    </Suspense>
   );
 }

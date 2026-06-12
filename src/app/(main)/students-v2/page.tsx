@@ -1,0 +1,560 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useStudents } from "@/hooks/useStudents";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
+import { useClasses } from "@/hooks/useClasses";
+import {
+  ROUTES,
+  STUDENTS_PAGE,
+  STUDENT_STATUS_BADGE,
+  STUDENT_STATUS_OPTIONS,
+  GENDER_OPTIONS,
+} from "@/constants";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  Div,
+  P,
+  Button,
+  Input,
+  Select,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyRow,
+  TablePagination,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  FormField,
+  Badge,
+  Spinner,
+} from "@/components/ui";
+
+export default function StudentsPage() {
+  const router = useRouter();
+  const { years, currentYear } = useAcademicYears();
+  const { classes, sections } = useClasses();
+  const {
+    students,
+    pagination,
+    filters,
+    searchInput,
+    isLoading,
+    showModal,
+    openModal,
+    closeModal,
+    form,
+    handleSubmit,
+    isSubmitting,
+    showEditModal,
+    openEditModal,
+    closeEditModal,
+    editForm,
+    handleEditSubmit,
+    isEditSubmitting,
+    deleteStudent,
+    updateFilters,
+  } = useStudents();
+
+  // Cascade: section filtered by selected class in add/edit form
+  const watchedAddClassId = form.watch("class_id");
+  const watchedEditClassId = editForm.watch("class_id");
+  const addSections = sections.filter((s) => s.class_id === watchedAddClassId);
+  const editSections = sections.filter(
+    (s) => s.class_id === watchedEditClassId,
+  );
+
+  return (
+    <Div type="col" gap="lg">
+      <PageHeader
+        title={STUDENTS_PAGE.title}
+        subtitle={pagination ? `${pagination.total} students` : "Loading..."}
+        illustration="/illustrations/students.svg"
+        actions={<Button onClick={openModal}>{STUDENTS_PAGE.addButton}</Button>}
+      />
+
+      <Div type="row" gap="md" align="center" wrap>
+        <Input
+          width="md"
+          placeholder="Search by name or admission no."
+          value={searchInput}
+          onChange={(e) => updateFilters({ search: e.target.value })}
+        />
+        <Select
+          width="sm"
+          value={filters.academic_year_id ?? ""}
+          onChange={(e) =>
+            updateFilters({ academic_year_id: e.target.value || undefined })
+          }
+        >
+          <option value="">All Years</option>
+          {years.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
+          value={filters.class_id ?? ""}
+          onChange={(e) =>
+            updateFilters({ class_id: e.target.value || undefined })
+          }
+        >
+          <option value="">All Classes</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
+          value={filters.status ?? ""}
+          onChange={(e) =>
+            updateFilters({ status: (e.target.value as any) || undefined })
+          }
+        >
+          {STUDENT_STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+      </Div>
+
+      <Table>
+        <TableHead>
+          <TableHeadRow>
+            <TableHeaderCell>{STUDENTS_PAGE.table.name}</TableHeaderCell>
+            <TableHeaderCell>{STUDENTS_PAGE.table.admissionNo}</TableHeaderCell>
+            <TableHeaderCell>{STUDENTS_PAGE.table.class}</TableHeaderCell>
+            <TableHeaderCell>{STUDENTS_PAGE.table.section}</TableHeaderCell>
+            <TableHeaderCell>{STUDENTS_PAGE.table.gender}</TableHeaderCell>
+            <TableHeaderCell>{STUDENTS_PAGE.table.status}</TableHeaderCell>
+            <TableHeaderCell>{STUDENTS_PAGE.table.actions}</TableHeaderCell>
+          </TableHeadRow>
+        </TableHead>
+        <TableBody>
+          {isLoading ? (
+            <TableEmptyRow colSpan={7}>
+              <Spinner />
+            </TableEmptyRow>
+          ) : students.length === 0 ? (
+            <TableEmptyRow colSpan={7}>{STUDENTS_PAGE.empty}</TableEmptyRow>
+          ) : (
+            students.map((student) => {
+              const cls = classes.find((c) => c.id === student.class_id);
+              const sec = sections.find((s) => s.id === student.section_id);
+              return (
+                <TableRow key={student.id}>
+                  <TableCell
+                    primary
+                    onClick={() =>
+                      router.push(ROUTES.studentDetail(student.id))
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
+                    {student.first_name} {student.last_name ?? ""}
+                  </TableCell>
+                  <TableCell>{student.admission_number}</TableCell>
+                  <TableCell>{cls?.name ?? "—"}</TableCell>
+                  <TableCell>{sec?.name ?? "—"}</TableCell>
+                  <TableCell>{student.gender ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant={STUDENT_STATUS_BADGE[student.status]}>
+                      {student.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Div type="row" gap="sm">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditModal(student)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteStudent(student.id)}
+                      >
+                        Delete
+                      </Button>
+                    </Div>
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
+
+      {pagination && pagination.totalPages > 1 && (
+        <TablePagination
+          total={pagination.total}
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+        />
+      )}
+
+      {/* Add Student Modal */}
+      {showModal && (
+        <Modal onClose={closeModal} title={STUDENTS_PAGE.form.title}>
+          <form onSubmit={handleSubmit}>
+            <ModalBody>
+              <Div type="col" gap="md">
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.firstName}
+                    error={form.formState.errors.first_name?.message}
+                  >
+                    <Input
+                      placeholder={STUDENTS_PAGE.placeholders.firstName}
+                      {...form.register("first_name")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.lastName}
+                    error={form.formState.errors.last_name?.message}
+                  >
+                    <Input
+                      placeholder={STUDENTS_PAGE.placeholders.lastName}
+                      {...form.register("last_name")}
+                    />
+                  </FormField>
+                </Div>
+                <FormField
+                  label={STUDENTS_PAGE.form.admissionNumber}
+                  error={form.formState.errors.admission_number?.message}
+                >
+                  <Input
+                    placeholder={STUDENTS_PAGE.placeholders.admissionNumber}
+                    {...form.register("admission_number")}
+                  />
+                </FormField>
+                <FormField
+                  label={STUDENTS_PAGE.form.academicYear}
+                  error={form.formState.errors.academic_year_id?.message}
+                >
+                  <Select
+                    {...form.register("academic_year_id")}
+                    defaultValue={currentYear?.id ?? ""}
+                  >
+                    <option value="">Select year</option>
+                    {years.map((y) => (
+                      <option key={y.id} value={y.id}>
+                        {y.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.class}
+                    error={form.formState.errors.class_id?.message}
+                  >
+                    <Select {...form.register("class_id")}>
+                      <option value="">Select class</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.section}
+                    error={form.formState.errors.section_id?.message}
+                  >
+                    <Select {...form.register("section_id")}>
+                      <option value="">Select section</option>
+                      {addSections.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                </Div>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.gender}
+                    error={form.formState.errors.gender?.message}
+                  >
+                    <Select {...form.register("gender")}>
+                      {GENDER_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.dateOfBirth}
+                    error={form.formState.errors.date_of_birth?.message}
+                  >
+                    <Input type="date" {...form.register("date_of_birth")} />
+                  </FormField>
+                </Div>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.rollNumber}
+                    error={form.formState.errors.roll_number?.message}
+                  >
+                    <Input
+                      placeholder={STUDENTS_PAGE.placeholders.rollNumber}
+                      {...form.register("roll_number")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.admissionDate}
+                    error={form.formState.errors.admission_date?.message}
+                  >
+                    <Input type="date" {...form.register("admission_date")} />
+                  </FormField>
+                </Div>
+                <FormField label="Status">
+                  <Select {...form.register("status")}>
+                    {STUDENT_STATUS_OPTIONS.filter((o) => o.value !== "").map(
+                      (opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ),
+                    )}
+                  </Select>
+                </FormField>
+                <FormField
+                  label={STUDENTS_PAGE.form.email}
+                  error={form.formState.errors.email?.message}
+                >
+                  <Input
+                    type="email"
+                    placeholder={STUDENTS_PAGE.placeholders.email}
+                    {...form.register("email")}
+                  />
+                </FormField>
+                <Div type="row" gap="sm">
+                  <FormField
+                    label={STUDENTS_PAGE.form.dialCode}
+                    error={form.formState.errors.dial_code?.message}
+                  >
+                    <Input
+                      width="xs"
+                      placeholder={STUDENTS_PAGE.placeholders.dialCode}
+                      {...form.register("dial_code")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.phone}
+                    error={form.formState.errors.phone_number?.message}
+                  >
+                    <Input
+                      type="tel"
+                      placeholder={STUDENTS_PAGE.placeholders.phone}
+                      {...form.register("phone_number")}
+                    />
+                  </FormField>
+                </Div>
+              </Div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="outline" onClick={closeModal}>
+                {STUDENTS_PAGE.form.cancel}
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                {STUDENTS_PAGE.form.submit}
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Student Modal */}
+      {showEditModal && (
+        <Modal onClose={closeEditModal} title={STUDENTS_PAGE.editForm.title}>
+          <form onSubmit={handleEditSubmit}>
+            <ModalBody>
+              <Div type="col" gap="md">
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.firstName}
+                    error={editForm.formState.errors.first_name?.message}
+                  >
+                    <Input
+                      placeholder={STUDENTS_PAGE.placeholders.firstName}
+                      {...editForm.register("first_name")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.lastName}
+                    error={editForm.formState.errors.last_name?.message}
+                  >
+                    <Input
+                      placeholder={STUDENTS_PAGE.placeholders.lastName}
+                      {...editForm.register("last_name")}
+                    />
+                  </FormField>
+                </Div>
+                <FormField
+                  label={STUDENTS_PAGE.form.admissionNumber}
+                  error={editForm.formState.errors.admission_number?.message}
+                >
+                  <Input
+                    placeholder={STUDENTS_PAGE.placeholders.admissionNumber}
+                    {...editForm.register("admission_number")}
+                  />
+                </FormField>
+                <FormField
+                  label={STUDENTS_PAGE.form.academicYear}
+                  error={editForm.formState.errors.academic_year_id?.message}
+                >
+                  <Select {...editForm.register("academic_year_id")}>
+                    <option value="">Select year</option>
+                    {years.map((y) => (
+                      <option key={y.id} value={y.id}>
+                        {y.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.class}
+                    error={editForm.formState.errors.class_id?.message}
+                  >
+                    <Select {...editForm.register("class_id")}>
+                      <option value="">Select class</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.section}
+                    error={editForm.formState.errors.section_id?.message}
+                  >
+                    <Select {...editForm.register("section_id")}>
+                      <option value="">Select section</option>
+                      {editSections.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                </Div>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.gender}
+                    error={editForm.formState.errors.gender?.message}
+                  >
+                    <Select {...editForm.register("gender")}>
+                      {GENDER_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.dateOfBirth}
+                    error={editForm.formState.errors.date_of_birth?.message}
+                  >
+                    <Input
+                      type="date"
+                      {...editForm.register("date_of_birth")}
+                    />
+                  </FormField>
+                </Div>
+                <Div type="grid" cols={2} gap="md">
+                  <FormField
+                    label={STUDENTS_PAGE.form.rollNumber}
+                    error={editForm.formState.errors.roll_number?.message}
+                  >
+                    <Input
+                      placeholder={STUDENTS_PAGE.placeholders.rollNumber}
+                      {...editForm.register("roll_number")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.admissionDate}
+                    error={editForm.formState.errors.admission_date?.message}
+                  >
+                    <Input
+                      type="date"
+                      {...editForm.register("admission_date")}
+                    />
+                  </FormField>
+                </Div>
+                <FormField
+                  label="Status"
+                  error={editForm.formState.errors.status?.message}
+                >
+                  <Select {...editForm.register("status")}>
+                    {STUDENT_STATUS_OPTIONS.filter((o) => o.value !== "").map(
+                      (opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ),
+                    )}
+                  </Select>
+                </FormField>
+                <FormField
+                  label={STUDENTS_PAGE.form.email}
+                  error={editForm.formState.errors.email?.message}
+                >
+                  <Input
+                    type="email"
+                    placeholder={STUDENTS_PAGE.placeholders.email}
+                    {...editForm.register("email")}
+                  />
+                </FormField>
+                <Div type="row" gap="sm">
+                  <FormField
+                    label={STUDENTS_PAGE.form.dialCode}
+                    error={editForm.formState.errors.dial_code?.message}
+                  >
+                    <Input
+                      width="xs"
+                      placeholder={STUDENTS_PAGE.placeholders.dialCode}
+                      {...editForm.register("dial_code")}
+                    />
+                  </FormField>
+                  <FormField
+                    label={STUDENTS_PAGE.form.phone}
+                    error={editForm.formState.errors.phone_number?.message}
+                  >
+                    <Input
+                      type="tel"
+                      placeholder={STUDENTS_PAGE.placeholders.phone}
+                      {...editForm.register("phone_number")}
+                    />
+                  </FormField>
+                </Div>
+              </Div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="outline" onClick={closeEditModal}>
+                {STUDENTS_PAGE.editForm.cancel}
+              </Button>
+              <Button type="submit" loading={isEditSubmitting}>
+                {STUDENTS_PAGE.editForm.submit}
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
+    </Div>
+  );
+}

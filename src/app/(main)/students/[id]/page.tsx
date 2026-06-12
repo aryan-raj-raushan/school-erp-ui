@@ -1,637 +1,1024 @@
 "use client";
 
-import { use, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { useStudentDetail } from "@/hooks/useStudents";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useClasses } from "@/hooks/useClasses";
+import { ClassesService, SectionsService } from "@/services/classes.service";
+import type { Class, Section } from "@/types";
 import {
-  ROUTES,
-  STUDENT_STATUS_BADGE,
-  STUDENT_DETAIL_PAGE,
-  PARENT_RELATION_OPTIONS,
-  DOCUMENT_TYPE_OPTIONS,
-} from "@/constants";
+  Pencil,
+  Plus,
+  Trash2,
+  ArrowLeft,
+  User,
+  BookOpen,
+  History,
+  MapPin,
+  Home,
+  Users,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H1,
-  H2,
+  H3,
   P,
   Button,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  Modal,
-  ModalBody,
-  ModalFooter,
   FormField,
   Input,
   Select,
-  Badge,
+  Textarea,
   Spinner,
-  InfoRow,
-  CheckboxLabel,
-  FileInput,
+  Badge,
 } from "@/components/ui";
+import {
+  STUDENT_PAGE,
+  STUDENT_ROUTES,
+  STATUS_BADGE,
+  GENDER_OPTIONS,
+  BLOOD_GROUP_OPTIONS,
+  RELIGION_OPTIONS,
+  CATEGORY_OPTIONS,
+  STUDENT_STATUS_OPTIONS,
+  PARENT_RELATION_OPTIONS,
+  QUALIFICATION_OPTIONS,
+  DOCUMENT_TYPE_OPTIONS,
+  DOCUMENT_FILE_TYPE_OPTIONS,
+} from "@/constants/students-v2.constants";
+import { useStudentDetail } from "@/hooks/useStudentDetail";
 
-export default function StudentDetailPage({
-  params,
+// ─── Section Wrapper ───────────────────────────────────────────────────────────
+
+interface SectionCardProps {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+function SectionCard({
+  icon,
+  title,
+  children,
+  defaultOpen = true,
+}: SectionCardProps) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Div variant="card" className="overflow-hidden">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <Div type="row" align="center" gap="sm">
+          <Div className="text-muted-foreground">{icon}</Div>
+          <H3 color="default" className="text-sm font-semibold">
+            {title}
+          </H3>
+        </Div>
+        {open ? (
+          <ChevronUp size={16} className="text-muted-foreground" />
+        ) : (
+          <ChevronDown size={16} className="text-muted-foreground" />
+        )}
+      </button>
+      {open && <Div className="px-6 pb-6">{children}</Div>}
+    </Div>
+  );
+}
+
+// ─── Grid Row Helper ───────────────────────────────────────────────────────────
+
+function FieldGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {children}
+    </div>
+  );
+}
+
+// ─── Main Form Component ───────────────────────────────────────────────────────
+
+function StudentFormContent({
+  id,
+  isEditMode,
 }: {
-  params: Promise<{ id: string }>;
+  id: string;
+  isEditMode: boolean;
 }) {
-  const { id } = use(params);
   const router = useRouter();
-  const { years } = useAcademicYears();
-  const { classes, sections } = useClasses();
   const {
     student,
-    parents,
-    documents,
     isLoading,
-    showParentModal,
-    openParentModal,
-    closeParentModal,
-    parentForm,
-    handleParentSubmit,
-    isParentSubmitting,
-    showEditParentModal,
-    openEditParentModal,
-    closeEditParentModal,
-    editParentForm,
-    handleEditParentSubmit,
-    isEditParentSubmitting,
-    removeParent,
-    showDocumentModal,
-    openDocumentModal,
-    closeDocumentModal,
-    isUploadingDocument,
-    uploadDocument,
-    deleteDocument,
+    isEditing,
+    setIsEditing,
+    isNew,
+    form,
+    parentsArray,
+    documentsArray,
+    isUploading,
+    handleSubmit,
+    isSubmitting,
+    handleDocumentUpload,
   } = useStudentDetail(id);
 
-  const [selectedDocType, setSelectedDocType] = useState<string>(DOCUMENT_TYPE_OPTIONS[0].value);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { years, currentYear } = useAcademicYears();
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
 
-  async function handleDocumentUpload(e: React.FormEvent) {
-    e.preventDefault();
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) return;
-    await uploadDocument(file, selectedDocType);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setSelectedDocType(DOCUMENT_TYPE_OPTIONS[0].value);
-  }
+  const {
+    register,
+    formState: { errors },
+    watch,
+    setValue,
+  } = form;
+  const watchedAcademicYearId = watch("academic_info.academic_year_id");
+  const watchedClassId = watch("academic_info.class_id");
+  const watchedHostelRequired = watch("hostel_info.hostel_required");
+
+  // Set edit mode from URL param
+  useEffect(() => {
+    if (isEditMode) setIsEditing(true);
+  }, [isEditMode, setIsEditing]);
+
+  // Set current year default on new
+  useEffect(() => {
+    if (isNew && currentYear && !watchedAcademicYearId) {
+      setValue("academic_info.academic_year_id", currentYear.id);
+    }
+  }, [isNew, currentYear, watchedAcademicYearId, setValue]);
+
+  // Load classes when academic year changes
+  useEffect(() => {
+    if (!watchedAcademicYearId) {
+      setClasses([]);
+      return;
+    }
+    ClassesService.list({ academic_year_id: watchedAcademicYearId, limit: 100 })
+      .then((r) => setClasses(r.items))
+      .catch(() => {});
+  }, [watchedAcademicYearId]);
+
+  // Load sections when class changes
+  useEffect(() => {
+    if (!watchedClassId) {
+      setSections([]);
+      return;
+    }
+    SectionsService.list({ class_id: watchedClassId, limit: 100 })
+      .then((r) => setSections(r.items))
+      .catch(() => {});
+  }, [watchedClassId]);
 
   if (isLoading) {
     return (
-      <Div type="row" justify="center" align="center" full padding="py-32">
+      <Div type="row" justify="center" className="py-20">
         <Spinner size="lg" />
       </Div>
     );
   }
 
-  if (!student) return null;
+  const isReadOnly = !isEditing;
 
   return (
-    <Div type="col" gap="lg">
-      <Div type="row" align="center" gap="md">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push(ROUTES.students)}
-        >
-          <ArrowLeft size={16} />
-          {STUDENT_DETAIL_PAGE.back}
-        </Button>
-        <Div type="col" gap="xs">
-          <H1>
-            {student.first_name} {student.last_name ?? ""}
-          </H1>
-          <P>Admission No: {student.admission_number}</P>
-        </Div>
-        <Badge variant={STUDENT_STATUS_BADGE[student.status]}>
-          {student.status}
-        </Badge>
-      </Div>
-
-      <Div type="grid" cols={2} gap="lg">
-        <Div type="col" gap="md">
-          <H2>{STUDENT_DETAIL_PAGE.sections.personal}</H2>
-          <Div
-            type="col"
-            gap="sm"
-            variant="card" padding="p-4"
-          >
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.fullName}
-              value={`${student.first_name} ${student.last_name ?? ""}`}
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.gender}
-              value={student.gender ?? "—"}
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.dob}
-              value={
-                student.date_of_birth
-                  ? new Date(student.date_of_birth).toLocaleDateString()
-                  : "—"
-              }
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.bloodGroup}
-              value={student.blood_group ?? "—"}
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.nationality}
-              value={student.nationality ?? "—"}
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.aadhaar}
-              value={student.aadhaar_number ?? "—"}
-            />
+    <Div type="col" gap="lg" className="max-w-7xl">
+      <PageHeader
+        title={
+          isNew
+            ? "Add New Student"
+            : `${student?.student.first_name ?? ""} ${student?.student.last_name ?? ""}`
+        }
+        subtitle={
+          !isNew && student
+            ? `System No: #${student.student.system_number}`
+            : ""
+        }
+        actions={
+          <Div type="row" gap="sm" align="center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(STUDENT_ROUTES.list)}
+            >
+              <ArrowLeft size={14} /> {STUDENT_PAGE.buttons.back}
+            </Button>
+            {!isNew && !isEditing && (
+              <>
+                <Badge
+                  variant={STATUS_BADGE[student?.student.status ?? "ACTIVE"]}
+                >
+                  {student?.student.status}
+                </Badge>
+                <Button size="sm" onClick={() => setIsEditing(true)}>
+                  <Pencil size={14} /> {STUDENT_PAGE.buttons.edit}
+                </Button>
+              </>
+            )}
+            {isEditing && !isNew && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+              >
+                {STUDENT_PAGE.buttons.cancel}
+              </Button>
+            )}
           </Div>
-        </Div>
+        }
+      />
 
+      <form onSubmit={handleSubmit} className="max-w-5xl">
         <Div type="col" gap="md">
-          <H2>{STUDENT_DETAIL_PAGE.sections.academic}</H2>
-          <Div
-            type="col"
-            gap="sm"
-            variant="card" padding="p-4"
+          {/* ── Basic Information ───────────────────────────────────────── */}
+          <SectionCard
+            icon={<User size={16} />}
+            title={STUDENT_PAGE.sections.basicInfo}
           >
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.academicYear}
-              value={
-                years.find((y) => y.id === student.academic_year_id)?.name ??
-                "—"
-              }
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.class}
-              value={
-                classes.find((c) => c.id === student.class_id)?.name ?? "—"
-              }
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.section}
-              value={
-                sections.find((s) => s.id === student.section_id)?.name ?? "—"
-              }
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.rollNumber}
-              value={student.roll_number ?? "—"}
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.admissionDate}
-              value={
-                student.admission_date
-                  ? new Date(student.admission_date).toLocaleDateString()
-                  : "—"
-              }
-            />
-          </Div>
-        </Div>
+            <FieldGrid>
+              <FormField
+                label={STUDENT_PAGE.labels.firstName + " *"}
+                error={errors.first_name?.message}
+              >
+                <Input
+                  {...register("first_name")}
+                  placeholder="Enter first name"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField
+                label={STUDENT_PAGE.labels.lastName}
+                error={errors.last_name?.message}
+              >
+                <Input
+                  {...register("last_name")}
+                  placeholder="Enter last name"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.dob}>
+                <Input
+                  {...register("date_of_birth")}
+                  type="date"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField
+                label={STUDENT_PAGE.labels.gender}
+                error={errors.gender?.message}
+              >
+                <Select
+                  {...register("gender")}
+                  disabled={isReadOnly}
+                  defaultValue=""
+                >
+                  <option value="">Select gender</option>
+                  {GENDER_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.bloodGroup}>
+                <Select
+                  {...register("blood_group")}
+                  disabled={isReadOnly}
+                  defaultValue=""
+                >
+                  <option value="">Select blood group</option>
+                  {BLOOD_GROUP_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.religion}>
+                <Select
+                  {...register("religion")}
+                  disabled={isReadOnly}
+                  defaultValue=""
+                >
+                  <option value="">Select religion</option>
+                  {RELIGION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.category}>
+                <Select
+                  {...register("category")}
+                  disabled={isReadOnly}
+                  defaultValue=""
+                >
+                  <option value="">Select category</option>
+                  {CATEGORY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.caste}>
+                <Input
+                  {...register("caste")}
+                  placeholder="Enter caste"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.nationality}>
+                <Input
+                  {...register("nationality")}
+                  placeholder="Indian"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField
+                label={STUDENT_PAGE.labels.aadhaar}
+                error={errors.aadhaar_number?.message}
+              >
+                <Input
+                  {...register("aadhaar_number")}
+                  placeholder="12-digit aadhaar"
+                  maxLength={12}
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.idCardNumber}>
+                <Input
+                  {...register("id_card_number")}
+                  placeholder="ID card number"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.height}>
+                <Input
+                  {...register("height_cm")}
+                  type="number"
+                  placeholder="e.g. 160"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.weight}>
+                <Input
+                  {...register("weight_kg")}
+                  type="number"
+                  placeholder="e.g. 55"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.phone}>
+                <Div type="row" gap="sm">
+                  <Input
+                    {...register("dial_code")}
+                    width="xs"
+                    placeholder="+91"
+                    disabled={isReadOnly}
+                  />
+                  <Input
+                    {...register("phone_number")}
+                    placeholder="Phone number"
+                    disabled={isReadOnly}
+                  />
+                </Div>
+              </FormField>
+              <FormField
+                label={STUDENT_PAGE.labels.email}
+                error={errors.email?.message}
+              >
+                <Input
+                  {...register("email")}
+                  type="email"
+                  placeholder="Email address"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.status}>
+                <Select {...register("status")} disabled={isReadOnly}>
+                  {STUDENT_STATUS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.isEnabled}>
+                <Div type="row" align="center" gap="sm" className="pt-2">
+                  <input
+                    type="checkbox"
+                    {...register("is_enabled")}
+                    id="is_enabled"
+                    className="h-4 w-4 rounded border-border"
+                    disabled={isReadOnly}
+                  />
+                  <label
+                    htmlFor="is_enabled"
+                    className="text-sm text-foreground"
+                  >
+                    Student is active and visible
+                  </label>
+                </Div>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.profile_image}>
+                <Input
+                  {...register("profile_image")}
+                  placeholder="https://..."
+                  disabled={isReadOnly}
+                />
+              </FormField>
+            </FieldGrid>
+          </SectionCard>
 
-        <Div type="col" gap="md">
-          <H2>{STUDENT_DETAIL_PAGE.sections.contact}</H2>
-          <Div
-            type="col"
-            gap="sm"
-            variant="card" padding="p-4"
+          {/* ── Academic Information ────────────────────────────────────── */}
+          <SectionCard
+            icon={<BookOpen size={16} />}
+            title={STUDENT_PAGE.sections.academicInfo}
           >
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.email}
-              value={student.email ?? "—"}
-            />
-            <InfoRow
-              label={STUDENT_DETAIL_PAGE.labels.phone}
-              value={
-                student.phone_number
-                  ? `${student.dial_code ?? ""} ${student.phone_number}`
-                  : "—"
-              }
-            />
-          </Div>
-        </Div>
-      </Div>
+            <FieldGrid>
+              <FormField
+                label={STUDENT_PAGE.labels.academicYear + " *"}
+                error={errors.academic_info?.academic_year_id?.message}
+              >
+                <Select
+                  {...register("academic_info.academic_year_id")}
+                  disabled={isReadOnly}
+                  defaultValue=""
+                >
+                  <option value="">Select academic year</option>
+                  {years.map((y) => (
+                    <option key={y.id} value={y.id}>
+                      {y.name}
+                      {y.is_current ? " (Current)" : ""}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField
+                label={STUDENT_PAGE.labels.class + " *"}
+                error={errors.academic_info?.class_id?.message}
+              >
+                <Select
+                  {...register("academic_info.class_id")}
+                  disabled={isReadOnly || !watchedAcademicYearId}
+                  defaultValue=""
+                >
+                  <option value="">Select class</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.section}>
+                <Select
+                  {...register("academic_info.section_id")}
+                  disabled={isReadOnly || !watchedClassId}
+                  defaultValue=""
+                >
+                  <option value="">Select section</option>
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField
+                label={STUDENT_PAGE.labels.admissionNumber + " *"}
+                error={errors.academic_info?.admission_number?.message}
+              >
+                <Input
+                  {...register("academic_info.admission_number")}
+                  placeholder="Admission number"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.registrationNumber}>
+                <Input
+                  {...register("academic_info.registration_number")}
+                  placeholder="Registration number"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.rollNumber}>
+                <Input
+                  {...register("academic_info.roll_number")}
+                  placeholder="Roll number"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.joiningDate}>
+                <Input
+                  {...register("academic_info.joining_date")}
+                  type="date"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+            </FieldGrid>
+          </SectionCard>
 
-      {/* Parents Section */}
-      <Div type="col" gap="md">
-        <Div type="row" justify="between" align="center">
-          <H2>{STUDENT_DETAIL_PAGE.sections.parents}</H2>
-          <Button onClick={openParentModal}>
-            {STUDENT_DETAIL_PAGE.addParent}
-          </Button>
-        </Div>
+          {/* ── Previous Academic Details ───────────────────────────────── */}
+          <SectionCard
+            icon={<History size={16} />}
+            title={STUDENT_PAGE.sections.previousAcademics}
+            defaultOpen={false}
+          >
+            <FieldGrid>
+              <FormField label={STUDENT_PAGE.labels.previousSchool}>
+                <Input
+                  {...register("previous_academics.previous_school_name")}
+                  placeholder="Previous school name"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.previousClass}>
+                <Input
+                  {...register("previous_academics.previous_class")}
+                  placeholder="e.g. Class 9"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.passingYear}>
+                <Input
+                  {...register("previous_academics.passing_year")}
+                  placeholder="e.g. 2023"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.totalMarks}>
+                <Input
+                  {...register("previous_academics.total_marks")}
+                  placeholder="e.g. 480/500 or A+"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.board}>
+                <Input
+                  {...register("previous_academics.board")}
+                  placeholder="e.g. CBSE"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.tcNumber}>
+                <Input
+                  {...register("previous_academics.tc_number")}
+                  placeholder="TC certificate number"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+            </FieldGrid>
+          </SectionCard>
 
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.name}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.relation}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.phone}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.email}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.primary}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.canPickup}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.table.actions}</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {parents.length === 0 ? (
-              <TableEmptyRow colSpan={7}>
-                {STUDENT_DETAIL_PAGE.empty}
-              </TableEmptyRow>
-            ) : (
-              parents.map((parent) => (
-                <TableRow key={parent.id}>
-                  <TableCell primary>
-                    {parent.first_name} {parent.last_name ?? ""}
-                  </TableCell>
-                  <TableCell>{parent.relation}</TableCell>
-                  <TableCell>
-                    {parent.dial_code} {parent.phone_number}
-                  </TableCell>
-                  <TableCell>{parent.email ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={parent.is_primary ? "success" : "default"}>
-                      {parent.is_primary ? "Yes" : "No"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={parent.can_pickup ? "success" : "default"}>
-                      {parent.can_pickup ? "Yes" : "No"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Div type="row" gap="sm">
+          {/* ── Address ─────────────────────────────────────────────────── */}
+          <SectionCard
+            icon={<MapPin size={16} />}
+            title={STUDENT_PAGE.sections.address}
+            defaultOpen={false}
+          >
+            <Div type="col" gap="md">
+              <FormField label={STUDENT_PAGE.labels.address}>
+                <Textarea
+                  {...register("address.address")}
+                  placeholder="Full address"
+                  rows={3}
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FieldGrid>
+                <FormField label={STUDENT_PAGE.labels.city}>
+                  <Input
+                    {...register("address.city")}
+                    placeholder="City"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.state}>
+                  <Input
+                    {...register("address.state")}
+                    placeholder="State"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.pincode}>
+                  <Input
+                    {...register("address.pincode")}
+                    placeholder="Pincode"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.country}>
+                  <Input
+                    {...register("address.country")}
+                    placeholder="India"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+              </FieldGrid>
+            </Div>
+          </SectionCard>
+
+          {/* ── Hostel Information ──────────────────────────────────────── */}
+          <SectionCard
+            icon={<Home size={16} />}
+            title={STUDENT_PAGE.sections.hostelInfo}
+            defaultOpen={false}
+          >
+            <Div type="col" gap="md">
+              <Div type="row" align="center" gap="sm">
+                <input
+                  type="checkbox"
+                  {...register("hostel_info.hostel_required")}
+                  id="hostel_required"
+                  className="h-4 w-4 rounded border-border"
+                  disabled={isReadOnly}
+                />
+                <label
+                  htmlFor="hostel_required"
+                  className="text-sm text-foreground"
+                >
+                  {STUDENT_PAGE.labels.hostelRequired}
+                </label>
+              </Div>
+              {watchedHostelRequired && (
+                <FieldGrid>
+                  <FormField label={STUDENT_PAGE.labels.hostelName}>
+                    <Input
+                      {...register("hostel_info.hostel_name")}
+                      placeholder="Hostel name"
+                      disabled={isReadOnly}
+                    />
+                  </FormField>
+                  <FormField label={STUDENT_PAGE.labels.roomNumber}>
+                    <Input
+                      {...register("hostel_info.room_number")}
+                      placeholder="Room number"
+                      disabled={isReadOnly}
+                    />
+                  </FormField>
+                </FieldGrid>
+              )}
+            </Div>
+          </SectionCard>
+
+          {/* ── Parent / Guardian Details ───────────────────────────────── */}
+          <SectionCard
+            icon={<Users size={16} />}
+            title={STUDENT_PAGE.sections.parents}
+          >
+            <Div type="col" gap="md">
+              {parentsArray.fields.map((field, index) => (
+                <Div key={field.id} variant="glass-sm" className="p-4">
+                  <Div
+                    type="row"
+                    justify="between"
+                    align="center"
+                    className="mb-4"
+                  >
+                    <H3 color="default">
+                      {PARENT_RELATION_OPTIONS.find(
+                        (r) => r.value === watch(`parents.${index}.relation`),
+                      )?.label ?? `Parent ${index + 1}`}
+                    </H3>
+                    {isEditing && (
                       <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditParentModal(parent)}
+                        size="icon-sm"
+                        variant="destructive"
+                        type="button"
+                        onClick={() => parentsArray.remove(index)}
                       >
-                        {STUDENT_DETAIL_PAGE.editParent}
+                        <Trash2 size={14} />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeParent(parent.id)}
+                    )}
+                  </Div>
+                  <FieldGrid>
+                    <FormField
+                      label={STUDENT_PAGE.labels.relation}
+                      error={errors.parents?.[index]?.relation?.message}
+                    >
+                      <Select
+                        {...register(`parents.${index}.relation`)}
+                        disabled={isReadOnly}
+                        defaultValue=""
                       >
-                        {STUDENT_DETAIL_PAGE.removeParent}
-                      </Button>
+                        <option value="">Select relation</option>
+                        {PARENT_RELATION_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                    <FormField
+                      label={STUDENT_PAGE.labels.parentFirstName + " *"}
+                      error={errors.parents?.[index]?.first_name?.message}
+                    >
+                      <Input
+                        {...register(`parents.${index}.first_name`)}
+                        placeholder="First name"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.parentLastName}>
+                      <Input
+                        {...register(`parents.${index}.last_name`)}
+                        placeholder="Last name"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField
+                      label={STUDENT_PAGE.labels.parentPhone + " *"}
+                      error={errors.parents?.[index]?.phone_number?.message}
+                    >
+                      <Div type="row" gap="sm">
+                        <Input
+                          {...register(`parents.${index}.dial_code`)}
+                          width="xs"
+                          placeholder="+91"
+                          disabled={isReadOnly}
+                        />
+                        <Input
+                          {...register(`parents.${index}.phone_number`)}
+                          placeholder="Phone"
+                          disabled={isReadOnly}
+                        />
+                      </Div>
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.alternatePhone}>
+                      <Input
+                        {...register(`parents.${index}.alternate_phone`)}
+                        placeholder="Alternate phone"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.parentEmail}>
+                      <Input
+                        {...register(`parents.${index}.email`)}
+                        type="email"
+                        placeholder="Email"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.occupation}>
+                      <Input
+                        {...register(`parents.${index}.occupation`)}
+                        placeholder="Occupation"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.qualification}>
+                      <Select
+                        {...register(`parents.${index}.qualification`)}
+                        disabled={isReadOnly}
+                        defaultValue=""
+                      >
+                        <option value="">Select qualification</option>
+                        {QUALIFICATION_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.annualIncome}>
+                      <Input
+                        {...register(`parents.${index}.annual_income`)}
+                        placeholder="Annual income"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.parentAadhaar}>
+                      <Input
+                        {...register(`parents.${index}.aadhaar_number`)}
+                        placeholder="12-digit aadhaar"
+                        maxLength={12}
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <Div className="flex gap-6 pt-2">
+                      <Div type="row" align="center" gap="sm">
+                        <input
+                          type="checkbox"
+                          {...register(`parents.${index}.is_primary`)}
+                          id={`primary-${index}`}
+                          disabled={isReadOnly}
+                          className="h-4 w-4 rounded border-border"
+                        />
+                        <label htmlFor={`primary-${index}`} className="text-sm">
+                          {STUDENT_PAGE.labels.isPrimary}
+                        </label>
+                      </Div>
+                      <Div type="row" align="center" gap="sm">
+                        <input
+                          type="checkbox"
+                          {...register(`parents.${index}.can_pickup`)}
+                          id={`pickup-${index}`}
+                          disabled={isReadOnly}
+                          className="h-4 w-4 rounded border-border"
+                        />
+                        <label htmlFor={`pickup-${index}`} className="text-sm">
+                          {STUDENT_PAGE.labels.canPickup}
+                        </label>
+                      </Div>
                     </Div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Div>
+                  </FieldGrid>
+                </Div>
+              ))}
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
+                  onClick={() =>
+                    parentsArray.append({
+                      relation: "FATHER",
+                      first_name: "",
+                      phone_number: "",
+                      dial_code: "+91",
+                      is_primary: false,
+                      can_pickup: true,
+                    })
+                  }
+                >
+                  <Plus size={14} /> Add Parent / Guardian
+                </Button>
+              )}
+              {parentsArray.fields.length === 0 && (
+                <P color="muted" className="text-center py-4">
+                  No parent details added yet
+                </P>
+              )}
+            </Div>
+          </SectionCard>
 
-      {/* Documents Section */}
-      <Div type="col" gap="md">
-        <Div type="row" justify="between" align="center">
-          <H2>{STUDENT_DETAIL_PAGE.sections.documents}</H2>
-          <Button onClick={openDocumentModal}>
-            {STUDENT_DETAIL_PAGE.addDocument}
-          </Button>
+          {/* ── Documents ───────────────────────────────────────────────── */}
+          <SectionCard
+            icon={<FileText size={16} />}
+            title={STUDENT_PAGE.sections.documents}
+            defaultOpen={false}
+          >
+            <Div type="col" gap="md">
+              {documentsArray.fields.map((field, index) => (
+                <Div key={field.id} variant="glass-sm" className="p-4">
+                  <Div
+                    type="row"
+                    justify="between"
+                    align="center"
+                    className="mb-4"
+                  >
+                    <H3 color="default">Document {index + 1}</H3>
+                    {isEditing && (
+                      <Button
+                        size="icon-sm"
+                        variant="destructive"
+                        type="button"
+                        onClick={() => documentsArray.remove(index)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    )}
+                  </Div>
+                  <FieldGrid>
+                    <FormField
+                      label={STUDENT_PAGE.labels.documentName + " *"}
+                      error={errors.documents?.[index]?.document_name?.message}
+                    >
+                      <Select
+                        {...register(`documents.${index}.document_name`)}
+                        disabled={isReadOnly}
+                        defaultValue=""
+                      >
+                        <option value="">Select document type</option>
+                        {DOCUMENT_TYPE_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                    <FormField
+                      label={STUDENT_PAGE.labels.fileType + " *"}
+                      error={errors.documents?.[index]?.file_type?.message}
+                    >
+                      <Select
+                        {...register(`documents.${index}.file_type`)}
+                        disabled={isReadOnly}
+                        defaultValue=""
+                      >
+                        <option value="">Select type</option>
+                        {DOCUMENT_FILE_TYPE_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                    <FormField label="Upload File">
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        disabled={isReadOnly || isUploading}
+                        className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 disabled:opacity-50"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleDocumentUpload(file, index);
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label={STUDENT_PAGE.labels.documentLink + " *"}
+                      error={errors.documents?.[index]?.document_link?.message}
+                    >
+                      <Input
+                        {...register(`documents.${index}.document_link`)}
+                        placeholder="https://..."
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                    <FormField label={STUDENT_PAGE.labels.remarks}>
+                      <Input
+                        {...register(`documents.${index}.remarks`)}
+                        placeholder="Optional notes"
+                        disabled={isReadOnly}
+                      />
+                    </FormField>
+                  </FieldGrid>
+                </Div>
+              ))}
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
+                  onClick={() =>
+                    documentsArray.append({
+                      document_name: "BIRTH_CERTIFICATE",
+                      file_type: "PDF",
+                      document_link: "",
+                    })
+                  }
+                >
+                  <Plus size={14} /> {STUDENT_PAGE.buttons.addDocument}
+                </Button>
+              )}
+              {documentsArray.fields.length === 0 && (
+                <P color="muted" className="text-center py-4">
+                  No documents uploaded yet
+                </P>
+              )}
+            </Div>
+          </SectionCard>
+
+          {/* ── Submit ──────────────────────────────────────────────────── */}
+          {isEditing && (
+            <Div type="row" gap="md">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (isNew) router.push(STUDENT_ROUTES.list);
+                  else setIsEditing(false);
+                }}
+              >
+                {STUDENT_PAGE.buttons.cancel}
+              </Button>
+              <Button type="submit" loading={isSubmitting || isUploading}>
+                {STUDENT_PAGE.buttons.save}
+              </Button>
+            </Div>
+          )}
         </Div>
-
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.documentsTable.fileName}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.documentsTable.type}</TableHeaderCell>
-              <TableHeaderCell>{STUDENT_DETAIL_PAGE.documentsTable.actions}</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {documents.length === 0 ? (
-              <TableEmptyRow colSpan={3}>
-                {STUDENT_DETAIL_PAGE.documentsEmpty}
-              </TableEmptyRow>
-            ) : (
-              documents.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell primary>
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {doc.file_name}
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    {DOCUMENT_TYPE_OPTIONS.find((o) => o.value === doc.document_type)?.label ?? doc.document_type}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteDocument(doc.id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Div>
-
-      {/* Add Parent Modal */}
-      {showParentModal && (
-        <Modal
-          onClose={closeParentModal}
-          title={STUDENT_DETAIL_PAGE.parentForm.title}
-        >
-          <form onSubmit={handleParentSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.firstName}
-                    error={parentForm.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.firstName}
-                      {...parentForm.register("first_name")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.lastName}
-                    error={parentForm.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.lastName}
-                      {...parentForm.register("last_name")}
-                    />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.relation}
-                    error={parentForm.formState.errors.relation?.message}
-                  >
-                    <Select {...parentForm.register("relation")}>
-                      {PARENT_RELATION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.occupation}
-                    error={parentForm.formState.errors.occupation?.message}
-                  >
-                    <Input
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.occupation}
-                      {...parentForm.register("occupation")}
-                    />
-                  </FormField>
-                </Div>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.dialCode}
-                    error={parentForm.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.dialCode}
-                      {...parentForm.register("dial_code")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.phone}
-                    error={parentForm.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.phone}
-                      {...parentForm.register("phone_number")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={STUDENT_DETAIL_PAGE.parentForm.email}
-                  error={parentForm.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={STUDENT_DETAIL_PAGE.placeholders.email}
-                    {...parentForm.register("email")}
-                  />
-                </FormField>
-                <Div type="row" gap="lg">
-                  <Div type="row" align="center" gap="sm">
-                    <input
-                      type="checkbox"
-                      id="is_primary"
-                      {...parentForm.register("is_primary")}
-                    />
-                    <CheckboxLabel htmlFor="is_primary">
-                      {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
-                    </CheckboxLabel>
-                  </Div>
-                  <Div type="row" align="center" gap="sm">
-                    <input
-                      type="checkbox"
-                      id="can_pickup"
-                      {...parentForm.register("can_pickup")}
-                    />
-                    <CheckboxLabel htmlFor="can_pickup">
-                      {STUDENT_DETAIL_PAGE.parentForm.canPickup}
-                    </CheckboxLabel>
-                  </Div>
-                </Div>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeParentModal}>
-                {STUDENT_DETAIL_PAGE.parentForm.cancel}
-              </Button>
-              <Button type="submit" loading={isParentSubmitting}>
-                {STUDENT_DETAIL_PAGE.parentForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Edit Parent Modal */}
-      {showEditParentModal && (
-        <Modal
-          onClose={closeEditParentModal}
-          title={STUDENT_DETAIL_PAGE.editParentForm.title}
-        >
-          <form onSubmit={handleEditParentSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.firstName}
-                    error={editParentForm.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.firstName}
-                      {...editParentForm.register("first_name")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.lastName}
-                    error={editParentForm.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.lastName}
-                      {...editParentForm.register("last_name")}
-                    />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.relation}
-                    error={editParentForm.formState.errors.relation?.message}
-                  >
-                    <Select {...editParentForm.register("relation")}>
-                      {PARENT_RELATION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.occupation}
-                    error={editParentForm.formState.errors.occupation?.message}
-                  >
-                    <Input
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.occupation}
-                      {...editParentForm.register("occupation")}
-                    />
-                  </FormField>
-                </Div>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.dialCode}
-                    error={editParentForm.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.dialCode}
-                      {...editParentForm.register("dial_code")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={STUDENT_DETAIL_PAGE.parentForm.phone}
-                    error={editParentForm.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={STUDENT_DETAIL_PAGE.placeholders.phone}
-                      {...editParentForm.register("phone_number")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={STUDENT_DETAIL_PAGE.parentForm.email}
-                  error={editParentForm.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={STUDENT_DETAIL_PAGE.placeholders.email}
-                    {...editParentForm.register("email")}
-                  />
-                </FormField>
-                <Div type="row" gap="lg">
-                  <Div type="row" align="center" gap="sm">
-                    <input
-                      type="checkbox"
-                      id="edit_is_primary"
-                      {...editParentForm.register("is_primary")}
-                    />
-                    <label
-                      htmlFor="edit_is_primary"
-                    >
-                      {STUDENT_DETAIL_PAGE.parentForm.isPrimary}
-                    </label>
-                  </Div>
-                  <Div type="row" align="center" gap="sm">
-                    <input
-                      type="checkbox"
-                      id="edit_can_pickup"
-                      {...editParentForm.register("can_pickup")}
-                    />
-                    <label
-                      htmlFor="edit_can_pickup"
-                    >
-                      {STUDENT_DETAIL_PAGE.parentForm.canPickup}
-                    </label>
-                  </Div>
-                </Div>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeEditParentModal}>
-                {STUDENT_DETAIL_PAGE.editParentForm.cancel}
-              </Button>
-              <Button type="submit" loading={isEditParentSubmitting}>
-                {STUDENT_DETAIL_PAGE.editParentForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Upload Document Modal */}
-      {showDocumentModal && (
-        <Modal
-          onClose={closeDocumentModal}
-          title={STUDENT_DETAIL_PAGE.documentForm.title}
-        >
-          <form onSubmit={handleDocumentUpload}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <FormField label={STUDENT_DETAIL_PAGE.documentForm.type}>
-                  <Select
-                    value={selectedDocType}
-                    onChange={(e) => setSelectedDocType(e.target.value)}
-                  >
-                    {DOCUMENT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-                <FormField label={STUDENT_DETAIL_PAGE.documentForm.file}>
-                  <FileInput
-                    ref={fileInputRef}
-                    type="file"
-                    required
-                  />
-                </FormField>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeDocumentModal}>
-                {STUDENT_DETAIL_PAGE.documentForm.cancel}
-              </Button>
-              <Button type="submit" loading={isUploadingDocument}>
-                {STUDENT_DETAIL_PAGE.documentForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
+      </form>
     </Div>
+  );
+}
+
+// ─── Route Handler ─────────────────────────────────────────────────────────────
+
+function StudentViewContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "create-new";
+  const isEditMode = searchParams.get("edit") === "true";
+
+  return <StudentFormContent id={id} isEditMode={isEditMode} />;
+}
+
+export default function StudentPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <StudentViewContent />
+    </Suspense>
   );
 }
