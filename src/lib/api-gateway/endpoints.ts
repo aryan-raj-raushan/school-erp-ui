@@ -181,11 +181,11 @@ export const ENDPOINTS = {
     linkStudent: (id: string, studentId: string) =>
       `/parent/${id}/link-student/${studentId}`,
   },
-  timetableSessions: {
-    list: "/timetable-sessions",
-    byId: (id: string) => `/timetable-sessions/${id}`,
-    active: "/timetable-sessions/active",
-    setActive: (id: string) => `/timetable-sessions/${id}/set-active`,
+  timetable: {
+    list: "/timetable",
+    byId: (id: string) => `/timetable/${id}`,
+    employeeView: (teacherId: string) => `/timetable/employee/${teacherId}`,
+    sessionView: "/timetable/session-view",
   },
   classDetails: {
     list: "/class-details",
