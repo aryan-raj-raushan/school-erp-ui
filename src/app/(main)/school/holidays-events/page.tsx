@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Calendar, PartyPopper, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Calendar, PartyPopper, Pencil, Trash2, Eye, CalendarDays } from "lucide-react";
 import { useSchoolEvents } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -27,6 +27,7 @@ import {
   Spinner,
   Tabs,
 } from "@/components/ui";
+import { CalendarViewModal } from "@/components/holiday-events/CalendarViewModal";
 
 const TYPE_TABS = [
   { value: "", label: "All" },
@@ -37,6 +38,8 @@ const TYPE_TABS = [
 function SchoolEventsContent() {
   const router = useRouter();
   const { years } = useAcademicYears();
+
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Persistent filters via URL query params
   const [urlFilters, setUrlFilters] = useFilterParams<
@@ -65,6 +68,10 @@ function SchoolEventsContent() {
     deleteEvent,
   } = useSchoolEvents(initialFilters);
 
+  // For the calendar, we want ALL events (no pagination). Re-use the same hook
+  // with a high limit and no type filter so the calendar is complete.
+  const { events: allEvents } = useSchoolEvents({ limit: 99, academic_year_id:filters.academic_year_id });
+
   function handleFilterChange(next: Partial<SchoolEventFilters>) {
     updateFilters(next);
     // Sync to URL
@@ -92,10 +99,20 @@ function SchoolEventsContent() {
               : "Manage school events and holidays"}
           </P>
         </Div>
-        <Button onClick={() => router.push("holidays-events/create-new")}>
-          <Plus size={16} />
-          Add New
-        </Button>
+        {/* Action buttons */}
+        <Div type="row" gap="sm" align="center">
+          <Button
+            variant="outline"
+            onClick={() => setCalendarOpen(true)}
+          >
+            <CalendarDays size={16} />
+            Calendar view
+          </Button>
+          <Button onClick={() => router.push("holidays-events/create-new")}>
+            <Plus size={16} />
+            Add New
+          </Button>
+        </Div>
       </Div>
 
       {/* Type Tabs */}
@@ -254,6 +271,14 @@ function SchoolEventsContent() {
           total={pagination.total}
           page={pagination.page}
           totalPages={pagination.totalPages}
+        />
+      )}
+
+      {/* Calendar modal */}
+      {calendarOpen && (
+        <CalendarViewModal
+          events={allEvents}
+          onClose={() => setCalendarOpen(false)}
         />
       )}
     </Div>
