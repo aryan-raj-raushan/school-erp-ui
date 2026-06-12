@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   Palette,
   LayoutDashboard,
+  MessageSquareMore,
 
 } from "lucide-react";
 import { Role } from "@/types";
@@ -50,6 +51,19 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Students", url: "/students" },
       { title: "Staff", url: "/staffs" },
       { title: "Parents", url: "/parents" },
+    ],
+  },
+
+  {
+    title: "Admission Enquiry",
+    url: "#",
+    icon: MessageSquareMore,
+    roles: SCHOOL_ROLES,
+    items: [
+      { title: "Enquiry Source", url: "/admissions/source" },
+      { title: "Add Enquiry", url: "/admissions/create-new" },
+      { title: "Enquiry List", url: "/admissions" },
+      { title: "Today Followup Admissions", url: "/admissions/follow-up" },
     ],
   },
   
@@ -136,6 +150,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Academic Years", url: "/school/academic-years" },
       { title: "Classes & Sections", url: "/school/classes" },
       { title: "Subjects", url: "/school/subjects" },
+      { title: "Holidays & Events", url: "/school/holidays-events" },
     ],
   },
 
