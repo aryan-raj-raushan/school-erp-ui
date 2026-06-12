@@ -214,4 +214,15 @@ export const ENDPOINTS = {
     byId: (id: string) => `/admission-enquiries/${id}`,
     history: (id: string) => `/admission-enquiries/${id}/history`,
   },
+  student: {
+    list: "/students",
+    byId: (id: string) => `/students/${id}`,
+    enable: (id: string) => `/students/${id}/enable`,
+    disable: (id: string) => `/students/${id}/disable`,
+    documents: (id: string) => `/students/${id}/documents`,
+    document: (id: string, docId: string) =>
+      `/students/${id}/documents/${docId}`,
+    idCard: (id: string) => `/students/${id}/id-card`,
+    pickupCard: (id: string) => `/students/${id}/pickup-card`,
+  },
 };
