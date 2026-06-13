@@ -14,6 +14,7 @@ import {
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
 import { useDashboardLayout } from "@/hooks";
+import { useAuthStore } from "@/store/auth.store";
 
 const EXPANDED_W = 272;
 const ICON_W = 76;
@@ -22,11 +23,25 @@ const SPRING = { type: "spring" as const, stiffness: 280, damping: 26, mass: 0.9
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { user, userInfo, logout, isLoading } = useDashboardLayout();
+  const permissions = useAuthStore((s) => s.permissions);
   const isCollapsed = state === "collapsed";
 
-  const visibleMain = APP_NAV_MAIN.filter(
-    (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
-  );
+  const visibleMain = APP_NAV_MAIN
+    .map((item) => {
+      // Filter sub-items by their own permissions
+      if (!item.items?.length) return item;
+      const visibleItems = item.items.filter(
+        (sub) => !sub.permissions || sub.permissions.some((p) => permissions.includes(p)),
+      );
+      return { ...item, items: visibleItems };
+    })
+    .filter((item) => {
+      const roleOk = !item.roles || (user?.role && item.roles.includes(user.role));
+      const permOk = !item.permissions || item.permissions.some((p) => permissions.includes(p));
+      // Hide parent if it has sub-items defined but all were filtered out
+      const hasVisibleChildren = !item.items || item.items.length > 0;
+      return roleOk && permOk && hasVisibleChildren;
+    });
   const visibleSecondary = APP_NAV_SECONDARY.filter(
     (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
   );

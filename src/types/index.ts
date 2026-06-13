@@ -42,6 +42,9 @@ export interface UserProfile {
   role: Role;
   school_id?: string;
   profile_image?: string | null;
+  custom_role_id?: string | null;
+  /** Resolved permission slugs from /auth/me — populated for school users */
+  permissions?: string[];
   created_at: string;
 }
 
@@ -139,7 +142,7 @@ export interface Subject {
 // ─── Student ──────────────────────────────────────────────────────────────────
 
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
-export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
+export type BloodGroup = 'A_POSITIVE' | 'A_NEGATIVE' | 'B_POSITIVE' | 'B_NEGATIVE' | 'AB_POSITIVE' | 'AB_NEGATIVE' | 'O_POSITIVE' | 'O_NEGATIVE';
 export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'TRANSFERRED' | 'GRADUATED' | 'DROPPED';
 
 export interface Student {
@@ -204,16 +207,28 @@ export interface Staff {
   email?: string | null;
   phone_number?: string | null;
   dial_code?: string;
-  employee_id?: string | null;
-  designation?: string | null;
-  department?: string | null;
-  staff_role?: StaffRole | null;
-  role?: StaffRole | null; // adding for fallback for staff_role
-  date_of_joining?: string | null;
-  date_of_birth?: string | null;
+  role: StaffRole;
+  profile_image?: string | null;
   gender?: Gender | null;
-  status: StaffStatus;
+  date_of_birth?: string | null;
+  blood_group?: BloodGroup | null;
+  address?: string | null;
+  permanent_address?: string | null;
+  city?: string | null;
+  joining_date?: string | null;
+  employee_code?: string | null;
+  department_id?: string | null;
+  custom_role_id?: string | null;
+  father_name?: string | null;
+  husband_name?: string | null;
+  reporting_to_id?: string | null;
+  rfid_card_number?: string | null;
+  qualification?: string | null;
+  previous_employer?: string | null;
+  previous_role?: string | null;
+  total_experience?: string | null;
   is_active: boolean;
+  status?: StaffStatus | null;
   created_at: string;
   updated_at?: string | null;
 }

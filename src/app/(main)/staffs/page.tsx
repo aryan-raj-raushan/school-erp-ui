@@ -1,92 +1,41 @@
-"use client";
+'use client';
 
-import { useStaff } from "@/hooks/useStaff";
+import { useStaffsPage } from '@/hooks/useStaffsPage';
+import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS, STAFF_ROLE_OPTIONS } from '@/constants';
+import { PageHeader } from '@/components/ui/page-header';
 import {
-  STAFF_PAGE,
-  STAFF_STATUS_BADGE,
-  STAFF_STATUS_OPTIONS,
-  STAFF_ROLE_OPTIONS,
-  GENDER_OPTIONS,
-} from "@/constants";
-import { PageHeader } from "@/components/ui/page-header";
-import {
-  Div,
-  P,
-  Button,
-  Input,
-  Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  FormField,
-  Badge,
-  Spinner,
-  FileInput,
-} from "@/components/ui";
+  Div, P, Button, Input, Select,
+  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
+  TablePagination, Modal, ModalBody, ModalFooter, FormField, Badge, Spinner, FileInput,
+} from '@/components/ui';
+import { Pencil, Eye, UserX, UserCheck, Mail, Trash2, Plus } from 'lucide-react';
+import { useAuthStore } from '@/store/auth.store';
+import { Role } from '@/types';
 
 export default function StaffsPage() {
   const {
-    staffList,
-    pagination,
-    filters,
-    isLoading,
-    showModal,
-    openModal,
-    closeModal,
-    form,
-    handleSubmit,
-    isSubmitting,
-    showEditModal,
-    openEditModal,
-    closeEditModal,
-    editForm,
-    handleEditSubmit,
-    isEditSubmitting,
-    deleteStaff,
-    showOffboardModal,
-    offboardingStaff,
-    openOffboardModal,
-    closeOffboardModal,
-    offboardForm,
-    handleOffboardSubmit,
-    reonboardStaff,
-    resendInvite,
-    showBulkModal,
-    openBulkModal,
-    closeBulkModal,
-    bulkJob,
-    bulkFileRef,
-    isImporting,
-    bulkImport,
-    checkBulkStatus,
+    staffList, pagination, filters, isLoading,
+    removeStaff, offboardStaff, reonboardStaff, resendInvite,
+    updateFilters, navigateToNew, navigateToView, navigateToEdit,
+    showBulkModal, openBulkModal, closeBulkModal,
+    bulkJob, bulkFileRef, isImporting, bulkImport, checkBulkStatus,
     downloadTemplate,
-    updateFilters,
-  } = useStaff();
+  } = useStaffsPage();
+
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === Role.SCHOOL_ADMIN || user?.role === 'PRINCIPAL' as any;
 
   return (
     <Div type="col" gap="lg">
       <PageHeader
-        title={STAFF_PAGE.title}
-        subtitle={pagination ? `${pagination.total} staff members` : "Loading..."}
+        title="Staff"
+        subtitle={pagination ? `${pagination.total} staff members` : 'Loading...'}
         illustration="/illustrations/staffs.svg"
         actions={
           <>
-            <Button variant="outline" onClick={downloadTemplate}>
-              {STAFF_PAGE.downloadTemplate}
-            </Button>
-            <Button variant="outline" onClick={openBulkModal}>
-              {STAFF_PAGE.bulkImport}
-            </Button>
-            <Button onClick={openModal}>{STAFF_PAGE.addButton}</Button>
+            <Button variant="outline" onClick={downloadTemplate}>Download Template</Button>
+            <Button variant="outline" onClick={openBulkModal}>Bulk Import</Button>
+            {isAdmin && <Button onClick={navigateToNew}><Plus size={16} />Add Staff</Button>}
           </>
         }
       />
@@ -94,21 +43,27 @@ export default function StaffsPage() {
       <Div type="row" gap="md" align="center" wrap>
         <Input
           width="md"
-          placeholder="Search by name or employee ID"
-          value={filters.search ?? ""}
+          placeholder="Search by name or phone"
+          value={filters.search ?? ''}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
         <Select
           width="sm"
-          value={filters.status ?? ""}
-          onChange={(e) =>
-            updateFilters({ status: (e.target.value as any) || undefined })
-          }
+          value={filters.status ?? ''}
+          onChange={(e) => updateFilters({ status: (e.target.value as any) || undefined })}
         >
           {STAFF_STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
+          value={filters.role ?? ''}
+          onChange={(e) => updateFilters({ role: (e.target.value as any) || undefined })}
+        >
+          <option value="">All Roles</option>
+          {STAFF_ROLE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </Select>
       </Div>
@@ -116,72 +71,65 @@ export default function StaffsPage() {
       <Table>
         <TableHead>
           <TableHeadRow>
-            <TableHeaderCell>{STAFF_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.role}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.email}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.phone}</TableHeaderCell>
-            <TableHeaderCell>{STAFF_PAGE.table.actions}</TableHeaderCell>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Role</TableHeaderCell>
+            <TableHeaderCell>Email</TableHeaderCell>
+            <TableHeaderCell>Phone</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell>Actions</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={7}>
-              <Spinner />
-            </TableEmptyRow>
+            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
           ) : staffList.length === 0 ? (
-            <TableEmptyRow colSpan={7}>{STAFF_PAGE.empty}</TableEmptyRow>
+            <TableEmptyRow colSpan={6}>No staff members found.</TableEmptyRow>
           ) : (
-            staffList.map((staff) => (
-              <TableRow key={staff.id}>
+            staffList.map((s) => (
+              <TableRow key={s.id}>
                 <TableCell primary>
-                  {staff.first_name} {staff.last_name ?? ""}
+                  <Div type="row" align="center" gap="sm">
+                    {s.profile_image && (
+                      <img src={s.profile_image} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    )}
+                    {s.first_name} {s.last_name ?? ''}
+                  </Div>
                 </TableCell>
-                <TableCell>{staff.staff_role ?? staff.role ?? "—"}</TableCell>
-                <TableCell>{staff.email ?? "—"}</TableCell>
-                <TableCell>{staff.phone_number ?? "—"}</TableCell>
-               
+                <TableCell>{s.role ?? '—'}</TableCell>
+                <TableCell>{s.email ?? '—'}</TableCell>
+                <TableCell>{s.phone_number ?? '—'}</TableCell>
                 <TableCell>
-                  <Div type="row" gap="sm">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openEditModal(staff)}
-                    >
-                      Edit
+                  <Badge variant={s.is_active ? 'success' : 'default'}>
+                    {s.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Div type="row" gap="xs">
+                    <Button size="sm" variant="ghost" onClick={() => navigateToView(s.id)} title="View">
+                      <Eye size={14} />
                     </Button>
-                    {staff.status === "OFFBOARDED" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => reonboardStaff(staff.id)}
-                      >
-                        Re-onboard
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openOffboardModal(staff)}
-                      >
-                        Offboard
-                      </Button>
+                    {isAdmin && (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => navigateToEdit(s.id)} title="Edit">
+                          <Pencil size={14} />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => resendInvite(s.id)} title="Resend Invite">
+                          <Mail size={14} />
+                        </Button>
+                        {s.is_active ? (
+                          <Button size="sm" variant="ghost" onClick={() => offboardStaff(s.id)} title="Offboard">
+                            <UserX size={14} />
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="ghost" onClick={() => reonboardStaff(s.id)} title="Re-onboard">
+                            <UserCheck size={14} />
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => removeStaff(s.id)} title="Delete">
+                          <Trash2 size={14} className="text-destructive" />
+                        </Button>
+                      </>
                     )}
-                    {staff.user_id && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => resendInvite(staff.user_id!)}
-                      >
-                        Resend Invite
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteStaff(staff.id)}
-                    >
-                      Delete
-                    </Button>
                   </Div>
                 </TableCell>
               </TableRow>
@@ -198,184 +146,28 @@ export default function StaffsPage() {
         />
       )}
 
-      {/* Add Staff Modal */}
-      {showModal && (
-        <Modal onClose={closeModal} title={STAFF_PAGE.form.title}>
-          <form onSubmit={handleSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={STAFF_PAGE.form.firstName} error={form.formState.errors.first_name?.message}>
-                    <Input placeholder={STAFF_PAGE.placeholders.firstName} {...form.register("first_name")} />
-                  </FormField>
-                  <FormField label={STAFF_PAGE.form.lastName}>
-                    <Input placeholder={STAFF_PAGE.placeholders.lastName} {...form.register("last_name")} />
-                  </FormField>
-                </Div>
-                <FormField label={STAFF_PAGE.form.role} error={form.formState.errors.role?.message}>
-                  <Select {...form.register("role")}>
-                    <option value="">Select role</option>
-                    {STAFF_ROLE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </Select>
-                </FormField>
-                <FormField label={STAFF_PAGE.form.email} error={form.formState.errors.email?.message}>
-                  <Input type="email" placeholder={STAFF_PAGE.placeholders.email} {...form.register("email")} />
-                </FormField>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={STAFF_PAGE.form.dialCode} error={form.formState.errors.dial_code?.message}>
-                    <Input width="xs" placeholder={STAFF_PAGE.placeholders.dialCode} {...form.register("dial_code")} />
-                  </FormField>
-                  <FormField label={STAFF_PAGE.form.phone} error={form.formState.errors.phone_number?.message}>
-                    <Input type="tel" placeholder={STAFF_PAGE.placeholders.phone} {...form.register("phone_number")} />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={STAFF_PAGE.form.gender}>
-                    <Select {...form.register("gender")}>
-                      {GENDER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField label={STAFF_PAGE.form.dateOfBirth}>
-                    <Input type="date" {...form.register("date_of_birth")} />
-                  </FormField>
-                </Div>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeModal}>
-                {STAFF_PAGE.form.cancel}
-              </Button>
-              <Button type="submit" loading={isSubmitting}>
-                {STAFF_PAGE.form.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Edit Staff Modal */}
-      {showEditModal && (
-        <Modal onClose={closeEditModal} title={STAFF_PAGE.editForm.title}>
-          <form onSubmit={handleEditSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={STAFF_PAGE.form.firstName} error={editForm.formState.errors.first_name?.message}>
-                    <Input placeholder={STAFF_PAGE.placeholders.firstName} {...editForm.register("first_name")} />
-                  </FormField>
-                  <FormField label={STAFF_PAGE.form.lastName}>
-                    <Input placeholder={STAFF_PAGE.placeholders.lastName} {...editForm.register("last_name")} />
-                  </FormField>
-                </Div>
-                <FormField label={STAFF_PAGE.form.email} error={editForm.formState.errors.email?.message}>
-                  <Input type="email" placeholder={STAFF_PAGE.placeholders.email} {...editForm.register("email")} />
-                </FormField>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={STAFF_PAGE.form.dialCode} error={editForm.formState.errors.dial_code?.message}>
-                    <Input width="xs" placeholder={STAFF_PAGE.placeholders.dialCode} {...editForm.register("dial_code")} />
-                  </FormField>
-                  <FormField label={STAFF_PAGE.form.phone} error={editForm.formState.errors.phone_number?.message}>
-                    <Input type="tel" placeholder={STAFF_PAGE.placeholders.phone} {...editForm.register("phone_number")} />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={STAFF_PAGE.form.gender}>
-                    <Select {...editForm.register("gender")}>
-                      {GENDER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </Select>
-                  </FormField>
-                  <FormField label={STAFF_PAGE.form.dateOfBirth}>
-                    <Input type="date" {...editForm.register("date_of_birth")} />
-                  </FormField>
-                </Div>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeEditModal}>
-                {STAFF_PAGE.editForm.cancel}
-              </Button>
-              <Button type="submit" loading={isEditSubmitting}>
-                {STAFF_PAGE.editForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Offboard Modal */}
-      {showOffboardModal && (
-        <Modal
-          onClose={closeOffboardModal}
-          title={`${STAFF_PAGE.offboardForm.title} — ${offboardingStaff?.first_name}`}
-        >
-          <form onSubmit={handleOffboardSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <FormField label={STAFF_PAGE.offboardForm.reason}>
-                  <Input
-                    placeholder="Resignation, contract end, etc."
-                    {...offboardForm.register("reason")}
-                  />
-                </FormField>
-                <FormField label={STAFF_PAGE.offboardForm.offboardDate}>
-                  <Input type="date" {...offboardForm.register("offboard_date")} />
-                </FormField>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeOffboardModal}>
-                {STAFF_PAGE.offboardForm.cancel}
-              </Button>
-              <Button type="submit">
-                {STAFF_PAGE.offboardForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
       {/* Bulk Import Modal */}
       {showBulkModal && (
-        <Modal onClose={closeBulkModal} title={STAFF_PAGE.bulkImportForm.title}>
+        <Modal onClose={closeBulkModal} title="Bulk Import Staff">
           <ModalBody>
             <Div type="col" gap="md">
-              <FormField label={STAFF_PAGE.bulkImportForm.file}>
-                <FileInput
-                  ref={bulkFileRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                />
+              <FormField label="Excel File *">
+                <FileInput ref={bulkFileRef} type="file" accept=".xlsx,.xls,.csv" />
               </FormField>
               {bulkJob && (
                 <Div type="col" gap="xs">
                   <P>Job ID: {bulkJob.jobId}</P>
                   <P>Status: {bulkJob.status}</P>
                   {bulkJob.processed != null && <P>Processed: {bulkJob.processed} / {bulkJob.total}</P>}
-                  {bulkJob.failed != null && bulkJob.failed > 0 && (
-                    <P>Failed: {bulkJob.failed}</P>
-                  )}
+                  {bulkJob.failed != null && bulkJob.failed > 0 && <P>Failed: {bulkJob.failed}</P>}
                 </Div>
               )}
             </Div>
           </ModalBody>
           <ModalFooter>
-            <Button type="button" variant="outline" onClick={closeBulkModal}>
-              {STAFF_PAGE.bulkImportForm.cancel}
-            </Button>
-            {bulkJob && (
-              <Button type="button" variant="outline" onClick={checkBulkStatus}>
-                Check Status
-              </Button>
-            )}
-            <Button type="button" loading={isImporting} onClick={bulkImport}>
-              {STAFF_PAGE.bulkImportForm.submit}
-            </Button>
+            <Button variant="outline" onClick={closeBulkModal}>Cancel</Button>
+            {bulkJob && <Button variant="outline" onClick={checkBulkStatus}>Check Status</Button>}
+            <Button loading={isImporting} onClick={bulkImport}>Import</Button>
           </ModalFooter>
         </Modal>
       )}

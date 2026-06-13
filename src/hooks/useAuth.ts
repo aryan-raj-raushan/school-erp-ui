@@ -9,9 +9,13 @@ import { useAuthStore } from '@/store/auth.store';
 
 export function useAuth() {
   const router = useRouter();
-  const { setAuth, clearAuth } = useAuthStore();
+  const { setAuth, setPermissions, clearAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function hydratePermissions(profile: { permissions?: string[] }) {
+    setPermissions(profile.permissions ?? []);
+  }
 
   async function loginCompany(payload: LoginCompanyPayload) {
     setIsLoading(true);
@@ -20,6 +24,7 @@ export function useAuth() {
       const result = await AuthService.loginCompany(payload);
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.COMPANY);
+      hydratePermissions(profile);
       router.replace(ROUTES.dashboard);
       return result;
     } catch (err: unknown) {
@@ -38,6 +43,7 @@ export function useAuth() {
       const result = await AuthService.loginSchool(payload);
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.SCHOOL);
+      hydratePermissions(profile);
       router.replace(ROUTES.schoolDashboard);
       return result;
     } catch (err: unknown) {
@@ -56,6 +62,7 @@ export function useAuth() {
       await AuthService.switchSchool(schoolId);
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.SCHOOL);
+      hydratePermissions(profile);
       router.replace(ROUTES.schoolDashboard);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to switch school';
@@ -84,6 +91,7 @@ export function useAuth() {
       await AuthService.schoolSignup(payload);
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.SCHOOL);
+      hydratePermissions(profile);
       router.replace(ROUTES.schoolDashboard);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Signup failed';

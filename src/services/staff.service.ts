@@ -1,17 +1,16 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { Staff, StaffRole, Gender, StaffStatus, PaginationMeta, BulkImportJob } from '@/types';
+import type { Staff, StaffRole, Gender, BloodGroup, StaffStatus, PaginationMeta, BulkImportJob } from '@/types';
 
 export interface StaffFilters {
   page?: number;
   limit?: number;
   search?: string;
   status?: StaffStatus;
-  department?: string;
+  role?: StaffRole;
   [key: string]: unknown;
 }
 
-// Backend CreateStaffDto fields only — no designation/department/employee_id
 export interface CreateStaffPayload {
   first_name: string;
   last_name?: string;
@@ -21,11 +20,27 @@ export interface CreateStaffPayload {
   role: StaffRole;
   gender?: Gender;
   date_of_birth?: string;
-  blood_group?: string;
+  blood_group?: BloodGroup;
   address?: string;
+  permanent_address?: string;
+  city?: string;
+  joining_date?: string;
+  employee_code?: string;
+  department_id?: string;
+  custom_role_id?: string;
+  father_name?: string;
+  husband_name?: string;
+  reporting_to_id?: string;
+  rfid_card_number?: string;
+  qualification?: string;
+  previous_employer?: string;
+  previous_role?: string;
+  total_experience?: string;
+  profile_image?: string;
+  password?: string;
+  is_active?: boolean;
 }
 
-// UpdateStaffDto = PartialType(OmitType(Create, ['role'])) — no role field
 export interface UpdateStaffPayload {
   first_name?: string;
   last_name?: string;
@@ -34,8 +49,23 @@ export interface UpdateStaffPayload {
   email?: string;
   gender?: Gender;
   date_of_birth?: string;
-  blood_group?: string;
+  blood_group?: BloodGroup;
   address?: string;
+  permanent_address?: string;
+  city?: string;
+  joining_date?: string;
+  employee_code?: string;
+  department_id?: string;
+  custom_role_id?: string;
+  father_name?: string;
+  husband_name?: string;
+  reporting_to_id?: string;
+  rfid_card_number?: string;
+  qualification?: string;
+  previous_employer?: string;
+  previous_role?: string;
+  total_experience?: string;
+  profile_image?: string;
 }
 
 export interface OffboardPayload {
@@ -58,8 +88,8 @@ export const StaffService = {
     return res.data;
   },
 
-  async create(payload: CreateStaffPayload): Promise<Staff> {
-    const res = await apiGateway.post<Staff>(ENDPOINTS.staff.list, payload);
+  async create(payload: CreateStaffPayload): Promise<{ staff: Staff; inviteToken: string }> {
+    const res = await apiGateway.post<{ staff: Staff; inviteToken: string }>(ENDPOINTS.staff.list, payload);
     return res.data;
   },
 
@@ -101,5 +131,15 @@ export const StaffService = {
 
   async resendInvite(userId: string): Promise<void> {
     await apiGateway.post(ENDPOINTS.invite.resend(userId), {});
+  },
+
+  async uploadProfileImage(file: File, staffId: string): Promise<{ url: string; s3Key: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('reference_id', staffId);
+    formData.append('reference_type', 'staff');
+    formData.append('document_type', 'profile_image');
+    const res = await apiGateway.upload<{ url: string; s3Key: string }>(ENDPOINTS.uploads.image, formData);
+    return res.data;
   },
 };

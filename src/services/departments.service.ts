@@ -7,6 +7,7 @@ export interface Department {
   school_id: string;
   name: string;
   code?: string | null;
+  address?: string | null;
   description?: string | null;
   is_active: boolean;
   created_at: string;
@@ -21,6 +22,7 @@ export interface DepartmentFilters {
 export interface CreateDepartmentPayload {
   name: string;
   code?: string;
+  address?: string;
   description?: string;
   is_active?: boolean;
 }
