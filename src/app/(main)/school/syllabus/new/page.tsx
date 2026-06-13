@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
 import { useCreateSyllabus } from '@/hooks/useCreateSyllabus';
 import { SYLLABUS_PAGE } from '@/constants';
 import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div, Button,
+  Div, Button, H2,
   FormField, Input, Select, Textarea,
   CheckboxLabel, Spinner,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
@@ -31,52 +30,56 @@ export default function NewSyllabusPage() {
   }
 
   return (
-    <Div type="col" gap="lg">
+    <Div type="col" gap="lg" className="max-w-3xl">
       <PageHeader
         title={SYLLABUS_PAGE.form.createTitle}
         actions={<Button variant="outline" onClick={handleBack}>{SYLLABUS_PAGE.form.cancel}</Button>}
       />
 
       <form onSubmit={handleSubmit}>
-        <Div type="col" gap="md" className="max-w-3xl">
+        <Div type="col" gap="lg">
+          <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5">
+            <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Syllabus Details
+            </H2>
 
-          <FormField label={SYLLABUS_PAGE.form.class} error={form.formState.errors.class_id?.message}>
-            <Select {...form.register('class_id')} defaultValue="">
-              <option value="">{SYLLABUS_PAGE.placeholders.selectClass}</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-          </FormField>
+            <FormField label={SYLLABUS_PAGE.form.class} error={form.formState.errors.class_id?.message}>
+              <Select {...form.register('class_id')} defaultValue="">
+                <option value="">{SYLLABUS_PAGE.placeholders.selectClass}</option>
+                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </FormField>
 
-          <FormField label={SYLLABUS_PAGE.form.classDetail} error={form.formState.errors.class_detail_id?.message}>
-            <Select {...form.register('class_detail_id')} defaultValue="" disabled={!form.watch('class_id')}>
-              <option value="">{SYLLABUS_PAGE.placeholders.selectClassDetail}</option>
-              {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
-            </Select>
-          </FormField>
+            <FormField label={SYLLABUS_PAGE.form.classDetail} error={form.formState.errors.class_detail_id?.message}>
+              <Select {...form.register('class_detail_id')} defaultValue="" disabled={!form.watch('class_id')}>
+                <option value="">{SYLLABUS_PAGE.placeholders.selectClassDetail}</option>
+                {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
+              </Select>
+            </FormField>
 
-          <FormField label={SYLLABUS_PAGE.form.title} error={form.formState.errors.title?.message}>
-            <Input placeholder={SYLLABUS_PAGE.placeholders.title} {...form.register('title')} />
-          </FormField>
+            <FormField label={SYLLABUS_PAGE.form.title} error={form.formState.errors.title?.message}>
+              <Input placeholder={SYLLABUS_PAGE.placeholders.title} {...form.register('title')} />
+            </FormField>
 
-          <Div type="row" align="center" gap="sm">
-            <input type="checkbox" id="is_enabled" checked={form.watch('is_enabled')} onChange={toggleIsEnabled} />
-            <CheckboxLabel htmlFor="is_enabled">{SYLLABUS_PAGE.form.isEnabled}</CheckboxLabel>
+            <Div type="row" align="center" gap="sm">
+              <input type="checkbox" id="is_enabled" checked={form.watch('is_enabled')} onChange={toggleIsEnabled} />
+              <CheckboxLabel htmlFor="is_enabled">{SYLLABUS_PAGE.form.isEnabled}</CheckboxLabel>
+            </Div>
+
+            <FormField label={SYLLABUS_PAGE.form.content} error={form.formState.errors.content?.message}>
+              <Textarea
+                placeholder={SYLLABUS_PAGE.placeholders.content}
+                rows={6}
+                {...form.register('content')}
+              />
+            </FormField>
           </Div>
 
-          <FormField label={SYLLABUS_PAGE.form.content} error={form.formState.errors.content?.message}>
-            <Textarea
-              placeholder={SYLLABUS_PAGE.placeholders.content}
-              rows={6}
-              {...form.register('content')}
-            />
-          </FormField>
-
-          <Div type="col" gap="sm">
+          <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5">
             <Div type="row" align="center" justify="between">
-              <Div type="col" gap="xs">
-                <p className="text-sm font-medium text-foreground">{SYLLABUS_PAGE.form.attachments}</p>
-                <p className="text-xs text-muted-foreground">{SYLLABUS_PAGE.form.attachmentsHint}</p>
-              </Div>
+              <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {SYLLABUS_PAGE.form.attachments}
+              </H2>
               <Button
                 type="button"
                 variant="outline"
@@ -87,6 +90,8 @@ export default function NewSyllabusPage() {
                 Attach File
               </Button>
             </Div>
+
+            <p className="text-xs text-muted-foreground -mt-2">{SYLLABUS_PAGE.form.attachmentsHint}</p>
 
             <input
               ref={fileInputRef}
@@ -150,7 +155,7 @@ export default function NewSyllabusPage() {
             </Table>
           </Div>
 
-          <Div type="row" gap="md">
+          <Div type="row" justify="end" gap="sm">
             <Button type="button" variant="outline" onClick={handleBack}>{SYLLABUS_PAGE.form.cancel}</Button>
             <Button type="submit" loading={isSubmitting}>{SYLLABUS_PAGE.form.submit}</Button>
           </Div>
