@@ -164,6 +164,13 @@ function scanFile(filePath) {
   return violations;
 }
 
+const EXCLUDED_FILES = new Set([
+  'src/app/layout.tsx',               // root layout — needs <html>, <body>
+  'src/components/Particles.jsx',     // third-party animation component
+  'src/components/Particles.css',     // CSS file, not checked anyway
+  'src/components/reactbits/background.tsx', // third-party reactbits wrapper
+]);
+
 // ─── Directory walker ─────────────────────────────────────────────────────────
 
 function walkTsx(dir, results = []) {
@@ -173,11 +180,29 @@ function walkTsx(dir, results = []) {
     if (entry.isDirectory()) {
       if (entry.name === 'node_modules' || entry.name === '.next') continue;
       walkTsx(full, results);
-    } else if (entry.isFile() && entry.name.endsWith('.tsx')) {
+    } else if (entry.isFile() && /\.(tsx|jsx)$/.test(entry.name)) {
       results.push(full);
     }
   }
   return results;
+}
+
+// ─── Staged files resolver ────────────────────────────────────────────────────
+
+function getStagedFiles() {
+  const { execSync } = require('child_process');
+  try {
+    const out = execSync('git diff --cached --name-only --diff-filter=ACM', { encoding: 'utf8' });
+    const cwd = process.cwd();
+    return out
+      .trim()
+      .split('\n')
+      .filter(f => /\.(tsx|jsx)$/.test(f) && f.startsWith('src/'))
+      .map(f => path.join(cwd, f))
+      .filter(f => fs.existsSync(f));
+  } catch {
+    return null; // fallback to full walk if git unavailable
+  }
 }
 
 // ─── Reporter ─────────────────────────────────────────────────────────────────
@@ -259,15 +284,27 @@ function loadBaseline() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 function main() {
-  const srcDir  = path.join(process.cwd(), 'src');
-  const files   = walkTsx(srcDir);
+  const cwd      = process.cwd();
+  const srcDir   = path.join(cwd, 'src');
   const baseline = loadBaseline();
+
+  const staged = getStagedFiles();
+  const files  = staged ?? walkTsx(srcDir);
+
+  if (staged) {
+    console.log(`${DIM}arch: checking ${files.length} staged file${files.length === 1 ? '' : 's'}${RESET}`);
+  }
 
   const skipped = [];
   const allViolations = [];
 
   for (const f of files) {
-    const rel = path.relative(process.cwd(), f).replace(/\\/g, '/');
+    const rel = path.relative(cwd, f).replace(/\\/g, '/');
+
+    if (EXCLUDED_FILES.has(rel)) {
+      console.log(`${DIM}arch: excluded  ${rel}${RESET}`);
+      continue;
+    }
     if (baseline.has(rel)) {
       skipped.push(rel);
       continue;
