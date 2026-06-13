@@ -3,7 +3,7 @@
  * arch.js — Architecture enforcement for school-erp-ui
  *
  * Layer contract:
- *   src/app/**           → only hooks + ui components (no className, no services, no raw HTML)
+ *   src/app/**           → only hooks + ui components (no raw HTML, no services)
  *   src/hooks/**         → only services + stores
  *   src/components/ui/** → styling lives here (cn, className ALLOWED — EXEMPT)
  *   src/components/**    → no services, no className
@@ -19,13 +19,8 @@ const path = require('path');
 // ─── Rules ───────────────────────────────────────────────────────────────────
 
 const RULES = [
-  // R1–R6: styling rules — apply everywhere outside src/components/ui/
-  {
-    id:    'R1',
-    scope: 'non-ui',
-    re:    /className\s*=/,
-    msg:   'className prop forbidden — use ui component props (<Div>, <P>, <H1>, etc.)',
-  },
+  // R2–R6: styling rules — apply everywhere outside src/components/ui/
+  // R1 (className) removed — ui primitives accept className as a pass-through prop
   {
     id:    'R2',
     scope: 'non-ui',
@@ -257,7 +252,6 @@ function report(allViolations, totalFiles) {
   console.log(`${SEP}${RESET}\n`);
 
   console.log(`${DIM}Fix guide:`);
-  console.log(`  R1      → replace className={"..."} with ui component props`);
   console.log(`  R2/R3   → move cn()/clsx() logic into a new or existing ui component`);
   console.log(`  R4      → remove compute() class construction`);
   console.log(`  R5/R6   → remove clsx/cn import; it belongs only in ui/`);

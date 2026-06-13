@@ -199,6 +199,14 @@ export const ENDPOINTS = {
     list: "/departments",
     byId: (id: string) => `/departments/${id}`,
   },
+  roles: {
+    list: "/roles",
+    byId: (id: string) => `/roles/${id}`,
+    permissions: (id: string) => `/roles/${id}/permissions`,
+  },
+  permissions: {
+    list: "/permissions",
+  },
   classTypes: {
     list: "/class-types",
     byId: (id: string) => `/class-types/${id}`,

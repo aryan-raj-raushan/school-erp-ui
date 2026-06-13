@@ -12,7 +12,7 @@ export function useDepartmentCrudSelect() {
   const fetchDepartments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await DepartmentsService.list({ limit: 100 });
+      const result = await DepartmentsService.list({ limit: 100, is_active: true });
       setDepartments(result.items);
     } catch {
       toast.error('Failed to load departments');

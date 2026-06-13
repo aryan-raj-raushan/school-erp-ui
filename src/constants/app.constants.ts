@@ -33,6 +33,7 @@ export const ROUTES = {
   departments: '/school/departments',
   departmentNew: '/school/departments/new',
   departmentEdit: (id: string) => `/school/departments/${id}/edit`,
+  roles: '/school/roles',
   subjects: '/school/subjects',
   subjectNew: '/school/subjects/new',
   subjectEdit: (id: string) => `/school/subjects/${id}/edit`,
@@ -54,5 +55,8 @@ export const ROUTES = {
   students: '/students',
   studentDetail: (id: string) => `/students/${id}`,
   staffs: '/staffs',
+  staffNew: '/staffs/create-new',
+  staffView: (id: string) => `/staffs/${id}`,
+  staffEdit: (id: string) => `/staffs/view?id=${id}&edit=true`,
   parents: '/parents',
 } as const;
