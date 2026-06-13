@@ -13,6 +13,7 @@ import {
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 
+
 export default function EditSyllabusPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const {
