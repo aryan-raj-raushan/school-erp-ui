@@ -10,7 +10,7 @@ export interface NavSubItemConfig {
 }
 
 export interface NavItemConfig {
-  title: string | React.ReactNode;
+  title: string;
   url: string;
   icon: LucideIcon;
   /** Filter by enum role (legacy) */
@@ -19,6 +19,3 @@ export interface NavItemConfig {
   permissions?: AppPermission[];
   items?: NavSubItemConfig[];
 }
-
-// needed for ReactNode in title
-import type React from "react";
