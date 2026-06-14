@@ -204,6 +204,7 @@ export interface StudentFilters {
   is_enabled?: boolean;
   search?: string;
   page?: number;
+  limit?: number;
 }
 
 // ─── ID Card Data ──────────────────────────────────────────────────────────────

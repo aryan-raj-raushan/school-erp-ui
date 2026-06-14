@@ -13,7 +13,7 @@ export const PERMISSIONS = {
   students:       { view: 'students.view',       create: 'students.create',       update: 'students.update',       delete: 'students.delete'       },
   staff:          { view: 'staff.view',           create: 'staff.create',          update: 'staff.update',          delete: 'staff.delete',          offboard: 'staff.offboard' },
   parents:        { view: 'parents.view',         create: 'parents.create',        update: 'parents.update'                                                                      },
-  fees:           { view: 'fees.view',            create: 'fees.create',           update: 'fees.update',           approve: 'fees.approve'                                      },
+  fees:           { view: 'fees.view',            create: 'fees.create',           update: 'fees.update',           delete: 'fees.delete',           approve: 'fees.approve'  },
   exams:          { view: 'exams.view',           create: 'exams.create',          update: 'exams.update',          delete: 'exams.delete'          },
   attendance:     { view: 'attendance.view',      create: 'attendance.create',     update: 'attendance.update'                                                                   },
   leave:          { view: 'leave.view',           approve: 'leave.approve',        reject: 'leave.reject'                                                                        },
@@ -31,6 +31,8 @@ export const PERMISSIONS = {
   holidays:        { view: 'holidays.view',         create: 'holidays.create',        update: 'holidays.update',        delete: 'holidays.delete'       },
   events:          { view: 'events.view',           create: 'events.create',          update: 'events.update',          delete: 'events.delete'         },
   academic_years:  { view: 'academic_years.view',   create: 'academic_years.create',  update: 'academic_years.update'                                   },
+  finance:          { view: 'finance.view',           create: 'finance.create',          update: 'finance.update',          delete: 'finance.delete'          },
+  salary:           { view: 'salary.view',            create: 'salary.create',           update: 'salary.update',           delete: 'salary.delete',           process: 'salary.process' },
   // ← ADD NEW MODULE HERE (keep in sync with backend)
 } as const;
 
@@ -57,6 +59,8 @@ export const RESOURCE_LABELS: Record<string, string> = {
   holidays:        'Holidays',
   events:          'School Events',
   academic_years:  'Academic Years',
+  finance:         'Finance Management',
+  salary:          'Salary & Payroll',
 };
 
 /** Human-readable labels for individual actions */
@@ -69,6 +73,7 @@ export const ACTION_LABELS: Record<string, string> = {
   reject:   'Reject',
   export:   'Export',
   offboard: 'Offboard',
+  process:  'Process',
 };
 
 export type AppPermission = {
