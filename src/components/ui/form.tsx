@@ -93,13 +93,18 @@ interface FormFieldProps {
   label?: string;
   error?: string;
   htmlFor?: string;
+  required?: boolean;
   children: React.ReactNode;
 }
 
-export function FormField({ label, error, htmlFor, children }: FormFieldProps) {
+export function FormField({ label, error, htmlFor, required, children }: FormFieldProps) {
   return (
     <div className="space-y-1.5">
-      {label && <Label htmlFor={htmlFor}>{label}</Label>}
+      {label && (
+        <Label htmlFor={htmlFor}>
+          {label}{required && <span className="text-destructive ml-0.5">*</span>}
+        </Label>
+      )}
       {children}
       {error && <ErrorText>{error}</ErrorText>}
     </div>

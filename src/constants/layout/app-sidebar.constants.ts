@@ -15,6 +15,10 @@ import {
   LayoutDashboard,
   MessageSquareMore,
   ShieldCheck,
+  Landmark,
+  BookMarked,
+  BanknoteArrowUp,
+  Receipt,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { Role } from "@/types";
@@ -109,17 +113,37 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
   },
 
   /* ---------------------------------------------------
-  Finance
+  Fee Management
   --------------------------------------------------- */
   {
-    title: "Finance",
+    title: "Fee Management",
     url: "#",
-    icon: Wallet,
+    icon: Receipt,
     permissions: [PERMISSIONS.fees.view, PERMISSIONS.fees.create, PERMISSIONS.fees.approve],
     items: [
-      { title: "Fee Types",      url: "/finance/types",     permissions: [PERMISSIONS.fees.create] },
-      { title: "Generate Fee",   url: "/finance/generate",  permissions: [PERMISSIONS.fees.create] },
-      { title: "Receipts",       url: "/finance/receipts",  permissions: [PERMISSIONS.fees.view]   },
+      { title: "Fee Setup",    url: "/fees/setup",    permissions: [PERMISSIONS.fees.view] },
+      { title: "Fee Payments", url: "/fees/payments", permissions: [PERMISSIONS.fees.view] },
+    ],
+  },
+
+  {
+    title: "Finance Accounts",
+    url: "#",
+    icon: Landmark,
+    permissions: [PERMISSIONS.finance.view, PERMISSIONS.finance.create],
+    items: [
+      { title: "Setup",  url: "/finance/setup",  permissions: [PERMISSIONS.finance.view] },
+      { title: "Ledger", url: "/finance/ledger", permissions: [PERMISSIONS.finance.view] },
+    ],
+  },
+
+  {
+    title: "Salary & Payroll",
+    url: "#",
+    icon: BanknoteArrowUp,
+    permissions: [PERMISSIONS.salary.view, PERMISSIONS.salary.create, PERMISSIONS.salary.process],
+    items: [
+      { title: "Salary Management", url: "/hr/salary", permissions: [PERMISSIONS.salary.view] },
     ],
   },
 

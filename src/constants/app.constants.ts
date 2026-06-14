@@ -59,4 +59,7 @@ export const ROUTES = {
   staffView: (id: string) => `/staffs/${id}`,
   staffEdit: (id: string) => `/staffs/view?id=${id}&edit=true`,
   parents: '/parents',
+  financeSetup: '/finance/setup',
+  financeLedger: '/finance/ledger',
+  salary: '/hr/salary',
 } as const;

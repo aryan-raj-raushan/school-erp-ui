@@ -21,3 +21,4 @@ export * from './theme-selector';
 export * from './crud-dropdown';
 export * from './auth-panel';
 export * from './social-button';
+export * from './form-card';
