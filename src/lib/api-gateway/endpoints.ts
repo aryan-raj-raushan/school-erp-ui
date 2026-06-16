@@ -288,4 +288,18 @@ export const ENDPOINTS = {
     byId: (id: string) => `/salary/transactions/${id}`,
     process: (id: string) => `/salary/transactions/${id}/process`,
   },
+
+  certificates: {
+    transfer: {
+      list: '/certificates/transfer',
+      byId: (id: string) => `/certificates/transfer/${id}`,
+    },
+    bonafide: {
+      list: '/certificates/bonafide',
+      byId: (id: string) => `/certificates/bonafide/${id}`,
+    },
+  },
+
+
+  
 };

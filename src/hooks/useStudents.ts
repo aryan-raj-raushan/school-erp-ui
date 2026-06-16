@@ -1,38 +1,66 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { StudentsService, type CreateStudentPayload, type UpdateStudentPayload, type CreateParentPayload, type UpdateParentPayload } from '@/services/students.service';
-import type { Student, Parent, StudentDocument, PaginationMeta, StudentStatus } from '@/types';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import {
+  StudentsService,
+  type CreateStudentPayload,
+  type UpdateStudentPayload,
+  type CreateParentPayload,
+  type UpdateParentPayload,
+} from "@/services/students.service";
+import type {
+  Student,
+  Parent,
+  StudentDocument,
+  PaginationMeta,
+  StudentStatus,
+} from "@/types";
 
 const studentSchema = z.object({
-  first_name: z.string().min(1, 'First name required'),
+  first_name: z.string().min(1, "First name required"),
   last_name: z.string().optional(),
-  admission_number: z.string().min(1, 'Admission number required'),
-  academic_year_id: z.string().min(1, 'Academic year required'),
-  class_id: z.string().min(1, 'Class required'),
+  admission_number: z.string().min(1, "Admission number required"),
+  academic_year_id: z.string().min(1, "Academic year required"),
+  class_id: z.string().min(1, "Class required"),
   section_id: z.string().optional(),
   roll_number: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   date_of_birth: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  phone_number: z.string().regex(/^\d{7,15}$/, 'Enter valid phone number').optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal("")),
+  phone_number: z
+    .string()
+    .regex(/^\d{7,15}$/, "Enter valid phone number")
+    .optional()
+    .or(z.literal("")),
   dial_code: z.string().optional(),
   nationality: z.string().optional(),
   admission_date: z.string().optional(),
-  status: z.enum(['ACTIVE', 'INACTIVE', 'TRANSFERRED', 'GRADUATED', 'DROPPED']).optional(),
+  status: z
+    .enum(["ACTIVE", "INACTIVE", "TRANSFERRED", "GRADUATED", "DROPPED"])
+    .optional(),
 });
 
 const parentSchema = z.object({
-  relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER']),
-  first_name: z.string().min(1, 'First name required'),
+  relation: z.enum([
+    "FATHER",
+    "MOTHER",
+    "GUARDIAN",
+    "GRANDPARENT",
+    "SIBLING",
+    "OTHER",
+  ]),
+  first_name: z.string().min(1, "First name required"),
   last_name: z.string().optional(),
-  dial_code: z.string().min(1, 'Dial code required'),
-  phone_number: z.string().min(7, 'Valid phone required').regex(/^\d+$/, 'Numbers only'),
-  email: z.string().email().optional().or(z.literal('')),
+  dial_code: z.string().min(1, "Dial code required"),
+  phone_number: z
+    .string()
+    .min(7, "Valid phone required")
+    .regex(/^\d+$/, "Numbers only"),
+  email: z.string().email().optional().or(z.literal("")),
   occupation: z.string().optional(),
   is_primary: z.boolean().optional(),
   can_pickup: z.boolean().optional(),
@@ -54,7 +82,7 @@ export function useStudents(initialFilters: StudentFilters = {}) {
   const [students, setStudents] = useState<Student[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState(initialFilters);
-  const [searchInput, setSearchInput] = useState(initialFilters.search ?? '');
+  const [searchInput, setSearchInput] = useState(initialFilters.search ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -63,23 +91,34 @@ export function useStudents(initialFilters: StudentFilters = {}) {
 
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
-    defaultValues: { dial_code: '+91', status: 'ACTIVE', nationality: 'Indian' },
+    defaultValues: {
+      dial_code: "+91",
+      status: "ACTIVE",
+      nationality: "Indian",
+    },
   });
 
-  const editForm = useForm<StudentFormValues>({ resolver: zodResolver(studentSchema) });
+  const editForm = useForm<StudentFormValues>({
+    resolver: zodResolver(studentSchema),
+  });
 
-  const fetchStudents = useCallback(async (overrideFilters?: StudentFilters) => {
-    setIsLoading(true);
-    try {
-      const result = await StudentsService.list(overrideFilters ?? filters);
-      setStudents(result.items);
-      setPagination(result.pagination);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load students');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters]);
+  const fetchStudents = useCallback(
+    async (overrideFilters?: StudentFilters) => {
+      setIsLoading(true);
+      try {
+        const result = await StudentsService.list(overrideFilters ?? filters);
+        setStudents(result.items);
+        setPagination(result.pagination);
+      } catch (err: unknown) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load students",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [filters],
+  );
 
   async function createStudent(values: StudentFormValues) {
     try {
@@ -88,14 +127,17 @@ export function useStudents(initialFilters: StudentFilters = {}) {
         admission_number: values.admission_number,
         academic_year_id: values.academic_year_id,
         class_id: values.class_id,
-        status: values.status ?? 'ACTIVE',
+        status: values.status ?? "ACTIVE",
         ...(values.last_name && { last_name: values.last_name }),
         ...(values.section_id && { section_id: values.section_id }),
         ...(values.roll_number && { roll_number: values.roll_number }),
         ...(values.gender && { gender: values.gender }),
         ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
         ...(values.email && { email: values.email }),
-        ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
+        ...(values.phone_number && {
+          phone_number: values.phone_number,
+          dial_code: values.dial_code ?? "+91",
+        }),
         ...(values.nationality && { nationality: values.nationality }),
         ...(values.admission_date && { admission_date: values.admission_date }),
       };
@@ -105,7 +147,7 @@ export function useStudents(initialFilters: StudentFilters = {}) {
       setShowModal(false);
       form.reset();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add student');
+      toast.error(err instanceof Error ? err.message : "Failed to add student");
     }
   }
 
@@ -119,11 +161,16 @@ export function useStudents(initialFilters: StudentFilters = {}) {
         class_id: values.class_id,
         ...(values.last_name !== undefined && { last_name: values.last_name }),
         ...(values.section_id && { section_id: values.section_id }),
-        ...(values.roll_number !== undefined && { roll_number: values.roll_number }),
+        ...(values.roll_number !== undefined && {
+          roll_number: values.roll_number,
+        }),
         ...(values.gender && { gender: values.gender }),
         ...(values.date_of_birth && { date_of_birth: values.date_of_birth }),
         ...(values.email !== undefined && { email: values.email }),
-        ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
+        ...(values.phone_number && {
+          phone_number: values.phone_number,
+          dial_code: values.dial_code ?? "+91",
+        }),
         ...(values.nationality && { nationality: values.nationality }),
         ...(values.admission_date && { admission_date: values.admission_date }),
         ...(values.status && { status: values.status }),
@@ -135,17 +182,21 @@ export function useStudents(initialFilters: StudentFilters = {}) {
       setEditingStudent(null);
       editForm.reset();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update student');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update student",
+      );
     }
   }
 
   async function deleteStudent(id: string) {
     try {
       await StudentsService.remove(id);
-      toast.success('Student deleted');
+      toast.success("Student deleted");
       await fetchStudents();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete student');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete student",
+      );
     }
   }
 
@@ -153,19 +204,19 @@ export function useStudents(initialFilters: StudentFilters = {}) {
     setEditingStudent(student);
     editForm.reset({
       first_name: student.first_name,
-      last_name: student.last_name ?? '',
+      last_name: student.last_name ?? "",
       admission_number: student.admission_number,
       academic_year_id: student.academic_year_id,
       class_id: student.class_id,
-      section_id: student.section_id ?? '',
-      roll_number: student.roll_number ?? '',
+      section_id: student.section_id ?? "",
+      roll_number: student.roll_number ?? "",
       gender: student.gender ?? undefined,
-      date_of_birth: student.date_of_birth ?? '',
-      email: student.email ?? '',
-      phone_number: student.phone_number ?? '',
-      dial_code: student.dial_code ?? '+91',
-      nationality: student.nationality ?? '',
-      admission_date: student.admission_date ?? '',
+      date_of_birth: student.date_of_birth ?? "",
+      email: student.email ?? "",
+      phone_number: student.phone_number ?? "",
+      dial_code: student.dial_code ?? "+91",
+      nationality: student.nationality ?? "",
+      admission_date: student.admission_date ?? "",
       status: student.status,
     });
     setShowEditModal(true);
@@ -173,8 +224,8 @@ export function useStudents(initialFilters: StudentFilters = {}) {
 
   // Debounced search: non-search filters apply immediately, search debounced 400ms
   function updateFilters(next: Partial<StudentFilters>) {
-    if ('search' in next) {
-      const val = next.search ?? '';
+    if ("search" in next) {
+      const val = next.search ?? "";
       setSearchInput(val);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
@@ -185,20 +236,33 @@ export function useStudents(initialFilters: StudentFilters = {}) {
     }
   }
 
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
 
   return {
-    students, pagination, filters, searchInput, isLoading,
+    students,
+    pagination,
+    filters,
+    searchInput,
+    isLoading,
     showModal,
     openModal: () => setShowModal(true),
-    closeModal: () => { setShowModal(false); form.reset(); },
+    closeModal: () => {
+      setShowModal(false);
+      form.reset();
+    },
     form,
     handleSubmit: form.handleSubmit(createStudent),
     isSubmitting: form.formState.isSubmitting,
     showEditModal,
     editingStudent,
     openEditModal,
-    closeEditModal: () => { setShowEditModal(false); setEditingStudent(null); editForm.reset(); },
+    closeEditModal: () => {
+      setShowEditModal(false);
+      setEditingStudent(null);
+      editForm.reset();
+    },
     editForm,
     handleEditSubmit: editForm.handleSubmit(updateStudent),
     isEditSubmitting: editForm.formState.isSubmitting,
@@ -221,10 +285,17 @@ export function useStudentDetail(studentId: string) {
 
   const parentForm = useForm<ParentFormValues>({
     resolver: zodResolver(parentSchema),
-    defaultValues: { dial_code: '+91', is_primary: false, can_pickup: false, relation: 'FATHER' },
+    defaultValues: {
+      dial_code: "+91",
+      is_primary: false,
+      can_pickup: false,
+      relation: "FATHER",
+    },
   });
 
-  const editParentForm = useForm<ParentFormValues>({ resolver: zodResolver(parentSchema) });
+  const editParentForm = useForm<ParentFormValues>({
+    resolver: zodResolver(parentSchema),
+  });
 
   const fetchStudent = useCallback(async () => {
     setIsLoading(true);
@@ -238,7 +309,9 @@ export function useStudentDetail(studentId: string) {
       setParents(p);
       setDocuments(d);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load student');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load student",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -263,7 +336,7 @@ export function useStudentDetail(studentId: string) {
       setShowParentModal(false);
       parentForm.reset();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add parent');
+      toast.error(err instanceof Error ? err.message : "Failed to add parent");
     }
   }
 
@@ -277,28 +350,40 @@ export function useStudentDetail(studentId: string) {
         phone_number: values.phone_number,
         ...(values.last_name !== undefined && { last_name: values.last_name }),
         ...(values.email !== undefined && { email: values.email }),
-        ...(values.occupation !== undefined && { occupation: values.occupation }),
+        ...(values.occupation !== undefined && {
+          occupation: values.occupation,
+        }),
         is_primary: values.is_primary ?? false,
         can_pickup: values.can_pickup ?? false,
       };
-      const updated = await StudentsService.updateParent(studentId, editingParent.id, payload);
+      const updated = await StudentsService.updateParent(
+        studentId,
+        editingParent.id,
+        payload,
+      );
       toast.success(`${updated.first_name} updated`);
-      setParents((prev) => prev.map((p) => (p.id === editingParent.id ? updated : p)));
+      setParents((prev) =>
+        prev.map((p) => (p.id === editingParent.id ? updated : p)),
+      );
       setShowEditParentModal(false);
       setEditingParent(null);
       editParentForm.reset();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update parent');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update parent",
+      );
     }
   }
 
   async function removeParent(parentId: string) {
     try {
       await StudentsService.removeParent(studentId, parentId);
-      toast.success('Parent removed');
+      toast.success("Parent removed");
       setParents((prev) => prev.filter((p) => p.id !== parentId));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove parent');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to remove parent",
+      );
     }
   }
 
@@ -307,11 +392,11 @@ export function useStudentDetail(studentId: string) {
     editParentForm.reset({
       relation: parent.relation,
       first_name: parent.first_name,
-      last_name: parent.last_name ?? '',
+      last_name: parent.last_name ?? "",
       dial_code: parent.dial_code,
       phone_number: parent.phone_number,
-      email: parent.email ?? '',
-      occupation: parent.occupation ?? '',
+      email: parent.email ?? "",
+      occupation: parent.occupation ?? "",
       is_primary: parent.is_primary,
       can_pickup: parent.can_pickup,
     });
@@ -322,14 +407,16 @@ export function useStudentDetail(studentId: string) {
     setIsUploadingDocument(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('document_type', documentType);
+      formData.append("file", file);
+      formData.append("document_type", documentType);
       const doc = await StudentsService.uploadDocument(studentId, formData);
       toast.success(`${doc.file_name} uploaded`);
       setDocuments((prev) => [...prev, doc]);
       setShowDocumentModal(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload document');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to upload document",
+      );
     } finally {
       setIsUploadingDocument(false);
     }
@@ -338,27 +425,41 @@ export function useStudentDetail(studentId: string) {
   async function deleteDocument(docId: string) {
     try {
       await StudentsService.deleteDocument(studentId, docId);
-      toast.success('Document deleted');
+      toast.success("Document deleted");
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete document');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete document",
+      );
     }
   }
 
-  useEffect(() => { fetchStudent(); }, [fetchStudent]);
+  useEffect(() => {
+    fetchStudent();
+  }, [fetchStudent]);
 
   return {
-    student, parents, documents, isLoading,
+    student,
+    parents,
+    documents,
+    isLoading,
     showParentModal,
     openParentModal: () => setShowParentModal(true),
-    closeParentModal: () => { setShowParentModal(false); parentForm.reset(); },
+    closeParentModal: () => {
+      setShowParentModal(false);
+      parentForm.reset();
+    },
     parentForm,
     handleParentSubmit: parentForm.handleSubmit(addParent),
     isParentSubmitting: parentForm.formState.isSubmitting,
     showEditParentModal,
     editingParent,
     openEditParentModal,
-    closeEditParentModal: () => { setShowEditParentModal(false); setEditingParent(null); editParentForm.reset(); },
+    closeEditParentModal: () => {
+      setShowEditParentModal(false);
+      setEditingParent(null);
+      editParentForm.reset();
+    },
     editParentForm,
     handleEditParentSubmit: editParentForm.handleSubmit(updateParent),
     isEditParentSubmitting: editParentForm.formState.isSubmitting,

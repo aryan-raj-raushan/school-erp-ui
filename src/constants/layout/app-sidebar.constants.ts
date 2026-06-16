@@ -20,6 +20,7 @@ import {
   BanknoteArrowUp,
   Receipt,
   Wifi,
+  Award,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { Role } from "@/types";
@@ -199,6 +200,13 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       { title: "Subjects",           url: "/school/subjects",         permissions: [PERMISSIONS.subjects.create,       PERMISSIONS.subjects.update]       },
       { title: "Holidays & Events",  url: "/school/holidays-events",  permissions: [PERMISSIONS.holidays.create,       PERMISSIONS.events.create]         },
     ],
+  },
+
+  {
+    title: "Certificates",
+    url: "/certificates",
+    icon: Award,
+    permissions: [PERMISSIONS.roles.view, PERMISSIONS.roles.create, PERMISSIONS.roles.update],
   },
 
   {
