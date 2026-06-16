@@ -19,6 +19,7 @@ import {
   BookMarked,
   BanknoteArrowUp,
   Receipt,
+  Wifi,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { Role } from "@/types";
@@ -205,6 +206,11 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     url: "/school/roles",
     icon: ShieldCheck,
     permissions: [PERMISSIONS.roles.view, PERMISSIONS.roles.create, PERMISSIONS.roles.update],
+  },
+    {
+    title: "RFID Setup",
+    url: "/rfid-setup",
+    icon: Wifi,
   },
 
   /* ---------------------------------------------------
