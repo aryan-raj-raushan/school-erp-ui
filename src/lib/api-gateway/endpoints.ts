@@ -288,4 +288,8 @@ export const ENDPOINTS = {
     byId: (id: string) => `/salary/transactions/${id}`,
     process: (id: string) => `/salary/transactions/${id}/process`,
   },
+  rfid: {
+    webhook: "/rfid/webhook",
+    events: "/rfid/events",
+  },
 };
