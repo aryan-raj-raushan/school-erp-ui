@@ -1,40 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Div } from "@/components/ui/layout";
 import { H1, H3, P } from "@/components/ui/typography";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FormCard } from "@/components/ui/form-card";
 import { useRfidEvents } from "@/hooks/useRfidEvents";
 
 export default function RfidSetupPage() {
-  const { events, isLoading, webhookUrl, refetch } = useRfidEvents();
-  const [copied, setCopied] = useState(false);
-
-  function copyUrl() {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
+  const { events, isLoading, refetch } = useRfidEvents();
 
   return (
     <Div type="col" gap="lg">
       <H1>RFID Setup</H1>
-
-      <FormCard title="Webhook URL">
-        <Div type="col" gap="sm">
-          <P color="muted">Paste this URL into the RFID reader's admin page under <strong>Https Url</strong>.</P>
-          <Div type="row" gap="sm" align="center">
-            <Input value={webhookUrl} readOnly />
-            <Button size="icon-sm" variant="outline" onClick={copyUrl}>
-              <Copy size={14} />
-            </Button>
-          </Div>
-          {copied && <P size="xs" color="muted">Copied.</P>}
-        </Div>
-      </FormCard>
 
       <FormCard title="Card Taps">
         <Div type="col" gap="sm">
