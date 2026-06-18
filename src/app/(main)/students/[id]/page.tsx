@@ -3,8 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { ClassesService, SectionsService } from "@/services/classes.service";
-import type { Class, Section } from "@/types";
+import { useClassSections } from "@/hooks/useClassSections";
 import {
   Pencil,
   Plus,
@@ -67,9 +66,10 @@ function SectionCard({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <Div variant="card" className="overflow-hidden">
-      <button
+      <Button
         type="button"
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors"
+        variant="ghost"
+        className="w-full h-auto flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors rounded-none"
         onClick={() => setOpen((v) => !v)}
       >
         <Div type="row" align="center" gap="sm">
@@ -83,7 +83,7 @@ function SectionCard({
         ) : (
           <ChevronDown size={16} className="text-muted-foreground" />
         )}
-      </button>
+      </Button>
       {open && <Div className="px-6 pb-6">{children}</Div>}
     </Div>
   );
@@ -93,9 +93,9 @@ function SectionCard({
 
 function FieldGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {children}
-    </div>
+    </Div>
   );
 }
 
@@ -125,8 +125,6 @@ function StudentFormContent({
   } = useStudentDetail(id);
 
   const { years, currentYear } = useAcademicYears();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
 
   const {
     register,
@@ -137,6 +135,7 @@ function StudentFormContent({
   const watchedAcademicYearId = watch("academic_info.academic_year_id");
   const watchedClassId = watch("academic_info.class_id");
   const watchedHostelRequired = watch("hostel_info.hostel_required");
+  const { classes, sections } = useClassSections(watchedAcademicYearId ?? "", watchedClassId ?? "");
 
   // Set edit mode from URL param
   useEffect(() => {
@@ -149,28 +148,6 @@ function StudentFormContent({
       setValue("academic_info.academic_year_id", currentYear.id);
     }
   }, [isNew, currentYear, watchedAcademicYearId, setValue]);
-
-  // Load classes when academic year changes
-  useEffect(() => {
-    if (!watchedAcademicYearId) {
-      setClasses([]);
-      return;
-    }
-    ClassesService.list({ academic_year_id: watchedAcademicYearId, limit: 100 })
-      .then((r) => setClasses(r.items))
-      .catch(() => {});
-  }, [watchedAcademicYearId]);
-
-  // Load sections when class changes
-  useEffect(() => {
-    if (!watchedClassId) {
-      setSections([]);
-      return;
-    }
-    SectionsService.list({ class_id: watchedClassId, limit: 100 })
-      .then((r) => setSections(r.items))
-      .catch(() => {});
-  }, [watchedClassId]);
 
   if (isLoading) {
     return (
@@ -348,11 +325,11 @@ function StudentFormContent({
                   disabled={isReadOnly}
                 />
               </FormField>
-              <FormField label={STUDENT_PAGE.labels.idCardNumber}>
+              <FormField label={STUDENT_PAGE.labels.idCardNumber} hint="Managed from RFID Setup page">
                 <Input
                   {...register("id_card_number")}
-                  placeholder="ID card number"
-                  disabled={isReadOnly}
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
               </FormField>
               <FormField label={STUDENT_PAGE.labels.height}>

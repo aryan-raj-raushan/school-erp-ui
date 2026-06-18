@@ -323,8 +323,8 @@ function StaffDetailContent({ id }: { id: string }) {
               </Div>
 
               <Div type="grid" cols={2} gap="md">
-                <FormField label="RFID Card Number">
-                  <Input placeholder="Enter RFID number" {...form.register('rfid_card_number')} />
+                <FormField label="RFID Card Number" hint="Managed from RFID Setup page">
+                  <Input readOnly {...form.register('rfid_card_number')} className="bg-muted cursor-not-allowed" />
                 </FormField>
                 <FormField label="Qualification">
                   <Input placeholder="M.Ed, B.Sc, etc." {...form.register('qualification')} />

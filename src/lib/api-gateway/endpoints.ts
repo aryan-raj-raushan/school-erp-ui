@@ -75,6 +75,11 @@ export const ENDPOINTS = {
     bySectionDate: (sectionId: string, date: string) =>
       `/attendance/classSection/${sectionId}/date/${date}`,
   },
+  staffAttendance: {
+    base: "/staff-attendance",
+    staff: "/staff-attendance/staff",
+    daily: "/staff-attendance/daily",
+  },
   staff: {
     list: "/staff",
     bulkTemplate: "/staff/bulk/template",
@@ -291,5 +296,8 @@ export const ENDPOINTS = {
   rfid: {
     webhook: "/rfid/webhook",
     events: "/rfid/events",
+    search: "/rfid/search",
+    assign: "/rfid/assign",
+    unassign: "/rfid/unassign",
   },
 };

@@ -92,12 +92,13 @@ FileInput.displayName = 'FileInput';
 interface FormFieldProps {
   label?: string;
   error?: string;
+  hint?: string;
   htmlFor?: string;
   required?: boolean;
   children: React.ReactNode;
 }
 
-export function FormField({ label, error, htmlFor, required, children }: FormFieldProps) {
+export function FormField({ label, error, hint, htmlFor, required, children }: FormFieldProps) {
   return (
     <div className="space-y-1.5">
       {label && (
@@ -106,6 +107,7 @@ export function FormField({ label, error, htmlFor, required, children }: FormFie
         </Label>
       )}
       {children}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
       {error && <ErrorText>{error}</ErrorText>}
     </div>
   );
