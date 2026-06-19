@@ -59,18 +59,18 @@ export type { UserProfile };
 
 export const AuthService = {
   async registerCompany(payload: RegisterCompanyPayload): Promise<AuthUser> {
-    const res = await apiGateway.post<AuthUser>(ENDPOINTS.auth.companyRegister, payload, { skipAuth: true });
+    const res = await apiGateway.post<AuthUser>(ENDPOINTS.auth.companyRegister, payload, { skipAuth: true, skipRefresh: true });
     return res.data;
   },
 
   async loginCompany(payload: LoginCompanyPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.companyLogin, payload, { skipAuth: true });
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.companyLogin, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.COMPANY);
     return res.data;
   },
 
   async loginSchool(payload: LoginSchoolPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolLogin, payload, { skipAuth: true });
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolLogin, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
     return res.data;
   },
@@ -95,13 +95,13 @@ export const AuthService = {
   },
 
   async schoolSignup(payload: SchoolSignupPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolSignup, payload, { skipAuth: true });
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolSignup, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
     return res.data;
   },
 
   async setupPassword(payload: SetupPasswordPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.setupPassword, payload, { skipAuth: true });
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.setupPassword, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
     return res.data;
   },

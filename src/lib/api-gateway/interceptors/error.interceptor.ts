@@ -1,4 +1,5 @@
 import type { AxiosInstance, AxiosError } from 'axios';
+import { decode } from '@msgpack/msgpack';
 
 export class GatewayError extends Error {
   constructor(
@@ -27,8 +28,12 @@ export function applyErrorInterceptor(axiosInstance: AxiosInstance): void {
     (response) => response,
     (error: AxiosError<{ message?: string; error?: string; errors?: Record<string, string> }>) => {
       if (error.response) {
-        const { status, data: body } = error.response;
-        const message = extractMessage(body, status);
+        const { status } = error.response;
+        let body = error.response.data;
+        if (body instanceof ArrayBuffer) {
+          try { body = decode(new Uint8Array(body)) as typeof body; } catch { /* fallback to raw */ }
+        }
+        const message = extractMessage(body as Parameters<typeof extractMessage>[0], status);
         return Promise.reject(new GatewayError(message, status, body));
       }
 

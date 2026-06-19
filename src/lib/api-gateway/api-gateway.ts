@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import { applyAuthInterceptors } from './interceptors/auth.interceptor';
+import { applyMsgpackInterceptors } from './interceptors/msgpack.interceptor';
 import { applyErrorInterceptor } from './interceptors/error.interceptor';
 import { TokenStorage } from './token.storage';
 import { ENDPOINTS } from './endpoints';
@@ -19,6 +20,7 @@ export class ApiGateway {
     this.http = axios.create({
       baseURL: config.baseURL,
       timeout: config.timeout ?? 10_000,
+      responseType: 'arraybuffer',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
@@ -44,6 +46,7 @@ export class ApiGateway {
     };
 
     applyAuthInterceptors(this.http, refreshFn, onAuthFailure);
+    applyMsgpackInterceptors(this.http);
     applyErrorInterceptor(this.http);
   }
 
