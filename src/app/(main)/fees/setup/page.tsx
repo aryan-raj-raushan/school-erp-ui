@@ -1,9 +1,10 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Save, ChevronDown, ChevronRight, Search, GripVertical, X } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import {
-  Div, Button, Badge, Spinner, Icon, P, Span, FormField, Input, Select, FormCard, SectionCard,
+  Div, Button, Badge, Spinner, Icon, P, FormField, Input, Select, FormCard, SectionCard,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
@@ -47,7 +48,7 @@ export default function FeeSetupPage() {
     const types = category === 'Class' ? classFeeTypes : transportFeeTypes;
     return (
       <Div type="col" gap="lg">
-        <Div className="flex justify-end">
+        <Div type="row" justify="end">
           <Button size="sm" onClick={() => openAddFeeType(category)}>
             <Plus className="w-4 h-4 mr-1" /> Add Fee Type
           </Button>
@@ -153,7 +154,7 @@ export default function FeeSetupPage() {
                   onChange={e => setStructureFilter(f => ({ ...f, academic_year_id: e.target.value }))}>
                   <option value="">Select Academic Year</option>
                   {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}</option>
+                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
                   ))}
                 </Select>
               </FormField>
@@ -175,12 +176,12 @@ export default function FeeSetupPage() {
                 </Select>
               </FormField>
             </Div>
-            <Div className="mt-4 flex justify-end">
+            <Div type="row" justify="end" className="mt-4">
               <Button
                 onClick={handleLoadStructure}
                 disabled={!structureFilter.academic_year_id || !structureFilter.fee_plan_id || !structureFilter.class_id || loadingStructure}
               >
-                {loadingStructure ? <Spinner /> : <><Search size={14} className="mr-1" />Load</>}
+                {loadingStructure ? <Spinner /> : <><Search size={14} className="mr-1" />Load Structure</>}
               </Button>
             </Div>
           </FormCard>
@@ -276,103 +277,167 @@ export default function FeeSetupPage() {
                 </Div>
               }
             >
-              <Div className="grid grid-cols-2 divide-x divide-border/50">
-                <Div className="p-4">
-                  <P size="xs" weight="semibold" className="uppercase tracking-wider text-muted-foreground mb-3">
-                    Available Fee Types <Span className="font-normal normal-case">— drag to add →</Span>
-                  </P>
-                  {availableTypes.length === 0 ? (
-                    <P className="py-6 text-center">All fee types added.</P>
-                  ) : (
-                    <Div type="col" gap="sm">
-                      {availableTypes.map(s => (
-                        <Div
-                          key={s.fee_type_id}
-                          draggable
-                          onDragStart={(e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.fee_type_id); }}
-                          onDragEnd={() => setDraggingId(null)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-grab active:cursor-grabbing select-none transition-all ${
-                            draggingId === s.fee_type_id
-                              ? 'opacity-30 scale-95 border-primary/40 bg-primary/5'
-                              : 'border-border/60 bg-background hover:border-primary/50 hover:bg-primary/5 hover:shadow-sm'
-                          }`}
-                        >
-                          <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-                          <Div className="flex-1 min-w-0">
-                            <P color="default" weight="medium" className="truncate">{s.fee_type_name}</P>
-                            <P size="xs">
-                              {s.frequency}
-                              {s.frequency === 'Monthly' && s.applicable_months?.length ? ` · ${s.applicable_months.length} months` : ''}
-                              {!s.fee_type_active && <Span className="ml-1 text-[10px] bg-muted px-1 rounded">inactive</Span>}
-                            </P>
-                          </Div>
-                        </Div>
-                      ))}
-                    </Div>
-                  )}
-                </Div>
+              <div className="flex min-h-[460px]">
 
-                <Div
-                  className={`p-4 min-h-[300px] transition-colors ${dropZoneActive ? 'bg-primary/5' : ''}`}
+                {/* ── Left: palette ─────────────────────────────────── */}
+                <div className="w-60 shrink-0 flex flex-col border-r border-border/50 bg-muted/30">
+                  <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/40">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Palette</span>
+                    {availableTypes.length > 0 && (
+                      <span className="text-[10px] tabular-nums text-muted-foreground/40">{availableTypes.length} available</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5">
+                    {availableTypes.length === 0 ? (
+                      <div className="flex items-center justify-center h-full py-10">
+                        <span className="text-xs text-muted-foreground/40">All types added</span>
+                      </div>
+                    ) : availableTypes.map(s => (
+                      <div
+                        key={s.fee_type_id}
+                        draggable
+                        onDragStart={(e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.fee_type_id); }}
+                        onDragEnd={() => setDraggingId(null)}
+                        className={cn(
+                          'fee-type-source-item flex items-start gap-2 p-2.5 rounded-lg border select-none transition-colors',
+                          draggingId === s.fee_type_id
+                            ? 'opacity-30 cursor-grabbing border-border/20 bg-transparent'
+                            : 'border-border/40 bg-card cursor-grab hover:border-border/70 hover:bg-card hover:shadow-sm'
+                        )}
+                      >
+                        <GripVertical className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                          <div className="flex items-start justify-between gap-1.5 min-w-0">
+                            <span className="text-[0.82rem] font-medium text-foreground truncate leading-snug">{s.fee_type_name}</span>
+                            <span className="text-[0.78rem] font-semibold text-foreground/70 tabular-nums shrink-0">
+                              {s.amount && parseFloat(s.amount) > 0
+                                ? `₹${parseFloat(s.amount).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`
+                                : '—'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn(
+                              'text-[10px] font-medium px-1.5 py-0.5 rounded',
+                              s.frequency === 'Monthly'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                                : 'bg-muted text-muted-foreground'
+                            )}>
+                              {s.frequency}
+                            </span>
+                            {s.frequency === 'Monthly' && s.applicable_months?.length && (
+                              <span className="text-[10px] text-muted-foreground/50">
+                                {s.applicable_months.length} months
+                              </span>
+                            )}
+                            {!s.fee_type_active && (
+                              <span className="text-[10px] text-muted-foreground/40 italic">inactive</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── Right: drop zone / builder ─────────────────────── */}
+                <div
+                  className={cn(
+                    'fee-drop-zone flex-1 flex flex-col min-w-0 transition-colors',
+                    dropZoneActive && 'fee-drop-zone--active bg-primary/[0.02]'
+                  )}
                   onDragOver={(e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropZoneActive(true); }}
                   onDragLeave={(e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropZoneActive(false); }}
                   onDrop={handleDrop}
                 >
-                  <P size="xs" weight="semibold" className="uppercase tracking-wider text-muted-foreground mb-3">
-                    {selectedClassName} Fee Structure
-                    {builderItems.length > 0 && (
-                      <Span className="ml-2 font-normal normal-case text-primary">
-                        · ₹{builderTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </Span>
-                    )}
-                  </P>
-
                   {builderItems.length === 0 ? (
-                    <Div className={`flex flex-col items-center justify-center min-h-[220px] rounded-xl border-2 border-dashed transition-colors ${
-                      dropZoneActive ? 'border-primary bg-primary/5' : 'border-border/40 bg-muted/10'
-                    }`}>
-                      <Div className="text-3xl mb-2 opacity-30">↓</Div>
-                      <P>Drop fee types here</P>
-                      <P size="xs" className="opacity-60 mt-1">Drag from the left panel</P>
-                    </Div>
+                    <div className={cn(
+                      'fee-drop-empty flex flex-col items-center justify-center flex-1 m-5 rounded-xl border-2 border-dashed transition-colors gap-1',
+                      dropZoneActive ? 'border-primary/50 bg-primary/[0.03]' : 'border-border/25'
+                    )}>
+                      <span className={cn('text-sm font-medium transition-colors', dropZoneActive ? 'text-primary' : 'text-muted-foreground/30')}>
+                        {dropZoneActive ? 'Release to add' : 'Drag fee types here'}
+                      </span>
+                      {!dropZoneActive && (
+                        <span className="text-xs text-muted-foreground/25">from the palette on the left</span>
+                      )}
+                    </div>
                   ) : (
-                    <Div type="col" gap="sm">
-                      {builderItems.map(item => (
-                        <Div key={item.fee_type_id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border/60 bg-background">
-                          <Div className="flex-1 min-w-0">
-                            <P color="default" weight="medium" className="truncate">{item.fee_type_name}</P>
-                            <P size="xs">
-                              {item.frequency === 'Monthly' ? item.applicable_months?.join(', ') || '—' : 'One-time payment'}
-                            </P>
-                          </Div>
-                          <Div type="row" align="center" gap="xs" className="shrink-0">
-                            <Span>₹</Span>
+                    <>
+                      {/* column headers */}
+                      <div className="grid grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 pt-4 pb-2.5 border-b border-border/40">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 text-center">#</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Fee Type</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Schedule</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 text-right">Amount (₹)</span>
+                        <span />
+                      </div>
+
+                      {/* rows */}
+                      <div className="flex-1 divide-y divide-border/20 overflow-y-auto">
+                        {builderItems.map((item, idx) => (
+                          <div
+                            key={item.fee_type_id}
+                            className="fee-structure-row group grid grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 py-3"
+                          >
+                            <span className="text-[11px] text-muted-foreground/35 font-medium text-center tabular-nums">{idx + 1}</span>
+                            <div className="min-w-0">
+                              <p className="text-[0.83rem] font-medium text-foreground truncate leading-snug">{item.fee_type_name}</p>
+                              <p className="text-[0.75rem] text-muted-foreground/50 leading-snug">
+                                {item.frequency === 'Monthly'
+                                  ? (item.applicable_months?.length ? item.applicable_months.join(', ') : 'Monthly')
+                                  : 'One-time payment'}
+                              </p>
+                            </div>
+                            <div>
+                              <span className={cn(
+                                'text-[10px] font-medium px-2 py-1 rounded',
+                                item.frequency === 'Monthly'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                                  : 'bg-muted text-muted-foreground'
+                              )}>
+                                {item.frequency === 'Monthly'
+                                  ? `Monthly · ${item.applicable_months?.length ?? 0} mo`
+                                  : 'One-time'}
+                              </span>
+                            </div>
                             <input
                               type="number" min="0" step="0.01"
-                              className="w-24 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring"
+                              className="w-full rounded-md border border-border/40 bg-background px-2.5 py-1.5 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary/40 transition-colors"
                               value={item.amount}
                               onChange={e => updateBuilderAmount(item.fee_type_id, e.target.value)}
                               placeholder="0.00"
                             />
-                            <Button variant="ghost" size="icon-sm" onClick={() => removeFromBuilder(item.fee_type_id)}>
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </Div>
-                        </Div>
-                      ))}
+                            <div className="flex justify-center">
+                              <Button variant="ghost" size="icon-sm"
+                                className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+                                onClick={() => removeFromBuilder(item.fee_type_id)}>
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
                       {dropZoneActive && (
-                        <Div className="flex items-center justify-center h-10 rounded-lg border-2 border-dashed border-primary/60 bg-primary/5">
-                          <P size="xs" className="text-primary">Drop here to add</P>
-                        </Div>
+                        <div className="fee-drop-indicator mx-5 mb-2 flex items-center justify-center h-10 rounded-lg border border-dashed border-primary/40 bg-primary/[0.02]">
+                          <span className="text-xs text-primary/60 font-medium">Release to add</span>
+                        </div>
                       )}
-                      <Div type="row" justify="between" align="center" className="px-3 py-2.5 rounded-lg bg-muted/30 border border-border/40 mt-1">
-                        <P color="default" weight="medium">Total ({builderItems.length} fee{builderItems.length !== 1 ? 's' : ''})</P>
-                        <Span className="text-sm font-bold text-primary">₹{builderTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Span>
-                      </Div>
-                    </Div>
+
+                      {/* total */}
+                      <div className="fee-structure-total flex items-center justify-between px-5 py-3.5 border-t border-border/40 bg-muted/20">
+                        <span className="text-xs text-muted-foreground/50">
+                          {builderItems.length} fee{builderItems.length !== 1 ? 's' : ''} configured
+                        </span>
+                        <span className="text-sm font-semibold text-foreground tabular-nums">
+                          ₹{builderTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </>
                   )}
-                </Div>
-              </Div>
+                </div>
+              </div>
             </SectionCard>
           )}
         </Div>
@@ -381,20 +446,20 @@ export default function FeeSetupPage() {
       {/* ─── Transport Routes ───────────────────────────────────────────────── */}
       {tab === 'routes' && (
         <Div type="col" gap="lg">
+          <Div type="row" justify="end">
+            <Button size="sm" onClick={openAddRoute}>
+              <Plus className="w-4 h-4 mr-1" /> Add Route
+            </Button>
+          </Div>
           <FormCard title="Transport Route Configuration">
-            <Div type="row" justify="between" align="center" className="flex-wrap gap-3">
-              <FormField label="Academic Year for Fees">
-                <Select value={routeFeesAcademicYear} onChange={e => setRouteFeesAcademicYear(e.target.value)}>
-                  <option value="">Select Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}</option>
-                  ))}
-                </Select>
-              </FormField>
-              <Button size="sm" onClick={openAddRoute}>
-                <Plus className="w-4 h-4 mr-1" /> Add Route
-              </Button>
-            </Div>
+            <FormField label="Academic Year for Fees">
+              <Select value={routeFeesAcademicYear} onChange={e => setRouteFeesAcademicYear(e.target.value)}>
+                <option value="">Select Year</option>
+                {(academicYears as any[]).map(y => (
+                  <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
+                ))}
+              </Select>
+            </FormField>
           </FormCard>
           {loadingRoutes ? (
             <Div className="py-8 flex justify-center"><Spinner /></Div>
@@ -456,7 +521,7 @@ export default function FeeSetupPage() {
       {/* ─── Late Payment Rules ─────────────────────────────────────────────── */}
       {tab === 'late-rules' && (
         <Div type="col" gap="lg">
-          <Div className="flex justify-end">
+          <Div type="row" justify="end">
             <Button size="sm" onClick={() => setShowLateRuleModal(true)}>
               <Plus className="w-4 h-4 mr-1" /> Add Rule
             </Button>
@@ -582,7 +647,7 @@ export default function FeeSetupPage() {
                   onChange={e => setLateRuleForm(f => ({ ...f, academic_year_id: e.target.value }))}>
                   <option value="">Select Year</option>
                   {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}</option>
+                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
                   ))}
                 </Select>
               </FormField>
