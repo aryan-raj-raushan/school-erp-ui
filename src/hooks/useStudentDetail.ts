@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -22,6 +22,9 @@ export function useStudentDetail(id?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(isNew);
   const [isUploading, setIsUploading] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentFormSchema),
@@ -51,6 +54,7 @@ export function useStudentDetail(id?: string) {
     try {
       const data: any = await StudentsService.getById(id);
       setStudent(data);
+      setProfileImageUrl(data.student.profile_image ?? null);
       // Reset form with fetched data
       form.reset({
         first_name: data.student.first_name,
@@ -147,6 +151,36 @@ export function useStudentDetail(id?: string) {
     fetchStudent();
   }, [fetchStudent]);
 
+  async function handleImageUpload(file: File, studentId: string) {
+    setIsUploadingImage(true);
+    try {
+      const { url } = await StudentsService.uploadProfileImage(file, studentId);
+      setProfileImageUrl(url);
+      form.setValue('profile_image', url);
+      if (!isNew) {
+        await StudentsService.update(studentId, { profile_image: url });
+        toast.success('Profile photo updated');
+      }
+    } catch {
+      toast.error('Failed to upload photo');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  }
+
+  function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!isNew && id) {
+      handleImageUpload(file, id);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => setProfileImageUrl(ev.target?.result as string);
+      reader.readAsDataURL(file);
+      (imageInputRef as any)._pendingFile = file;
+    }
+  }
+
   async function handleSubmit(values: StudentFormValues) {
     try {
       // Clean up empty strings to undefined
@@ -171,6 +205,10 @@ export function useStudentDetail(id?: string) {
 
       if (isNew) {
         const created = await StudentsService.create(payload as any);
+        const pendingFile = (imageInputRef as any)._pendingFile as File | undefined;
+        if (pendingFile) {
+          await handleImageUpload(pendingFile, created.student.id);
+        }
         toast.success(`Student "${created.student.first_name}" created`);
         router.push(STUDENT_ROUTES.view(created.student.id));
       } else {
@@ -227,6 +265,10 @@ export function useStudentDetail(id?: string) {
     parentsArray,
     documentsArray,
     isUploading,
+    profileImageUrl,
+    isUploadingImage,
+    imageInputRef,
+    onImageChange,
     handleSubmit: form.handleSubmit(handleSubmit),
     isSubmitting: form.formState.isSubmitting,
     handleDocumentUpload,

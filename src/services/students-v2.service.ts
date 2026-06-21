@@ -162,5 +162,15 @@ export const StudentsService = {
     const res = await apiGateway.get<PickupCardData>(ENDPOINTS.student.pickupCard(id));
     return res.data;
   },
+
+  async uploadProfileImage(file: File, studentId: string): Promise<{ url: string; s3Key: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('reference_id', studentId);
+    formData.append('reference_type', 'student');
+    formData.append('document_type', 'profile_image');
+    const res = await apiGateway.upload<{ url: string; s3Key: string }>(ENDPOINTS.uploads.image, formData);
+    return res.data;
+  },
 };
 

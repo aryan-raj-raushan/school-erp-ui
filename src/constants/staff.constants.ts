@@ -1,6 +1,27 @@
 import type { BadgeVariant } from '@/components/ui/badge';
 import type { StaffStatus } from '@/types';
 
+export const BLOOD_GROUP_LABEL: Record<string, string> = {
+  A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
+  AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
+};
+
+export const GENDER_LABEL: Record<string, string> = {
+  MALE: 'Male', FEMALE: 'Female', OTHER: 'Other',
+};
+
+
+export const BLOOD_GROUPS = [
+  { value: 'A_POSITIVE', label: 'A+' },
+  { value: 'A_NEGATIVE', label: 'A-' },
+  { value: 'B_POSITIVE', label: 'B+' },
+  { value: 'B_NEGATIVE', label: 'B-' },
+  { value: 'AB_POSITIVE', label: 'AB+' },
+  { value: 'AB_NEGATIVE', label: 'AB-' },
+  { value: 'O_POSITIVE', label: 'O+' },
+  { value: 'O_NEGATIVE', label: 'O-' },
+] as const;
+
 export const STAFF_STATUS_BADGE: Record<StaffStatus, BadgeVariant> = {
   ACTIVE: 'success',
   INACTIVE: 'default',
@@ -14,16 +35,6 @@ export const STAFF_STATUS_OPTIONS = [
   { value: 'OFFBOARDED', label: 'Offboarded' },
 ] as const;
 
-// Matches backend SchoolRole enum exactly
-export const STAFF_ROLE_OPTIONS = [
-  { value: 'TEACHER', label: 'Teacher' },
-  { value: 'CLASS_TEACHER', label: 'Class Teacher' },
-  { value: 'ACCOUNTANT', label: 'Accountant' },
-  { value: 'LIBRARIAN', label: 'Librarian' },
-  { value: 'PRINCIPAL', label: 'Principal' },
-  { value: 'VICE_PRINCIPAL', label: 'Vice Principal' },
-  { value: 'SCHOOL_ADMIN', label: 'Admin' },
-] as const;
 
 export const STAFF_PAGE = {
   title: 'Staff',

@@ -10,6 +10,7 @@ import {
   Trash2,
   ArrowLeft,
   User,
+  Camera,
   BookOpen,
   History,
   MapPin,
@@ -119,6 +120,10 @@ function StudentFormContent({
     parentsArray,
     documentsArray,
     isUploading,
+    profileImageUrl,
+    isUploadingImage,
+    imageInputRef,
+    onImageChange,
     handleSubmit,
     isSubmitting,
     handleDocumentUpload,
@@ -208,6 +213,48 @@ function StudentFormContent({
 
       <form onSubmit={handleSubmit} className="max-w-5xl">
         <Div type="col" gap="md">
+          {/* ── Profile Photo ───────────────────────────────────────────── */}
+          <SectionCard icon={<Camera size={16} />} title="Profile Photo">
+            <Div type="row" align="center" gap="lg">
+              <Div className="relative">
+                {profileImageUrl ? (
+                  <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover border border-border" />
+                ) : (
+                  <Div type="row" justify="center" align="center" className="w-20 h-20 rounded-full bg-muted border border-border">
+                    <User size={32} className="text-muted-foreground" />
+                  </Div>
+                )}
+                {isUploadingImage && (
+                  <Div type="row" justify="center" align="center" className="absolute inset-0 rounded-full bg-black/40">
+                    <Spinner size="sm" />
+                  </Div>
+                )}
+              </Div>
+              {!isReadOnly && (
+                <Div type="col" gap="xs">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={onImageChange}
+                    id="student-profile-image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                  >
+                    <Camera size={14} /> {profileImageUrl ? 'Change Photo' : 'Upload Photo'}
+                  </Button>
+                  <P color="muted" className="text-xs">JPG, PNG or WebP — max 10 MB</P>
+                </Div>
+              )}
+            </Div>
+          </SectionCard>
+
           {/* ── Basic Information ───────────────────────────────────────── */}
           <SectionCard
             icon={<User size={16} />}
@@ -399,13 +446,6 @@ function StudentFormContent({
                     Student is active and visible
                   </label>
                 </Div>
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.profile_image}>
-                <Input
-                  {...register("profile_image")}
-                  placeholder="https://..."
-                  disabled={isReadOnly}
-                />
               </FormField>
             </FieldGrid>
           </SectionCard>

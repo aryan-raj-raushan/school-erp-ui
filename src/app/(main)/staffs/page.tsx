@@ -1,7 +1,7 @@
 'use client';
 
 import { useStaffsPage } from '@/hooks/useStaffsPage';
-import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS, STAFF_ROLE_OPTIONS } from '@/constants';
+import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS } from '@/constants';
 import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, P, Button, Input, Select,
@@ -9,8 +9,6 @@ import {
   TablePagination, Modal, ModalBody, ModalFooter, FormField, Badge, Spinner, FileInput,
 } from '@/components/ui';
 import { Pencil, Eye, UserX, UserCheck, Mail, Trash2, Plus } from 'lucide-react';
-import { useAuthStore } from '@/store/auth.store';
-import { Role } from '@/types';
 
 export default function StaffsPage() {
   const {
@@ -19,11 +17,8 @@ export default function StaffsPage() {
     updateFilters, navigateToNew, navigateToView, navigateToEdit,
     showBulkModal, openBulkModal, closeBulkModal,
     bulkJob, bulkFileRef, isImporting, bulkImport, checkBulkStatus,
-    downloadTemplate,
+    downloadTemplate, isAdmin, systemRoles,
   } = useStaffsPage();
-
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === Role.SCHOOL_ADMIN || user?.role === 'PRINCIPAL' as any;
 
   return (
     <Div type="col" gap="lg">
@@ -62,8 +57,8 @@ export default function StaffsPage() {
           onChange={(e) => updateFilters({ role: (e.target.value as any) || undefined })}
         >
           <option value="">All Roles</option>
-          {STAFF_ROLE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          {systemRoles.map((r) => (
+            <option key={r.id} value={r.name.toUpperCase().replace(/ /g, '_')}>{r.name}</option>
           ))}
         </Select>
       </Div>
@@ -105,12 +100,12 @@ export default function StaffsPage() {
                 </TableCell>
                 <TableCell>
                   <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => navigateToView(s.id)} title="View">
+                    <Button size="sm" variant="ghost" onClick={() => navigateToView(s.id, `${s.first_name} ${s.last_name ?? ''}`.trim())} title="View">
                       <Eye size={14} />
                     </Button>
                     {isAdmin && (
                       <>
-                        <Button size="sm" variant="ghost" onClick={() => navigateToEdit(s.id)} title="Edit">
+                        <Button size="sm" variant="ghost" onClick={() => navigateToEdit(s.id, `${s.first_name} ${s.last_name ?? ''}`.trim())} title="Edit">
                           <Pencil size={14} />
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => resendInvite(s.id)} title="Resend Invite">

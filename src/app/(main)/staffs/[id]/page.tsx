@@ -1,51 +1,26 @@
 'use client';
 
-import { use, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { use, Suspense } from 'react';
 import { ArrowLeft, Pencil, X, User, Camera } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 import { useStaffDetail } from '@/hooks/useStaffDetail';
+import { BLOOD_GROUP_LABEL, GENDER_LABEL, BLOOD_GROUPS } from '@/constants';
 import {
   Div, H1, H2, P, Button, Input, Select, Textarea, FormField,
   Badge, Spinner,
 } from '@/components/ui';
 
-const BLOOD_GROUP_LABEL: Record<string, string> = {
-  A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-',
-  AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-',
-};
-
-const BLOOD_GROUPS = [
-  { value: 'A_POSITIVE', label: 'A+' },
-  { value: 'A_NEGATIVE', label: 'A-' },
-  { value: 'B_POSITIVE', label: 'B+' },
-  { value: 'B_NEGATIVE', label: 'B-' },
-  { value: 'AB_POSITIVE', label: 'AB+' },
-  { value: 'AB_NEGATIVE', label: 'AB-' },
-  { value: 'O_POSITIVE', label: 'O+' },
-  { value: 'O_NEGATIVE', label: 'O-' },
-];
-
 function StaffDetailContent({ id }: { id: string }) {
-  const searchParams = useSearchParams();
-  const queryId = searchParams.get('id');
-  const startEditing = searchParams.get('edit') === 'true';
-
-  const resolvedId =
-    id === 'view' ? (queryId ?? undefined) :
-    id === 'create-new' ? undefined :
-    id;
+  const resolvedId = id === 'create-new' ? undefined : id;
 
   const {
     staff, isNew, isEditing, setIsEditing,
     form, isLoadingData,
     profileImageUrl, isUploadingImage, imageInputRef, onImageChange,
-    departments, roles, staffMembers, SCHOOL_ROLES,
+    departments, systemRoles, staffMembers,
+    fullName, departmentName, reportingToName,
     isSubmitting, handleSubmit, handleBack, handleCancelEdit,
   } = useStaffDetail(resolvedId);
-
-  useEffect(() => {
-    if (startEditing && !isNew) setIsEditing(true);
-  }, [startEditing, isNew, setIsEditing]);
 
   if (isLoadingData) {
     return (
@@ -54,8 +29,6 @@ function StaffDetailContent({ id }: { id: string }) {
       </Div>
     );
   }
-
-  const fullName = staff ? `${staff.first_name} ${staff.last_name ?? ''}`.trim() : 'New Employee';
 
   return (
     <Div type="col" gap="lg" className="max-w-4xl">
@@ -67,7 +40,7 @@ function StaffDetailContent({ id }: { id: string }) {
         <Div type="col" gap="xs" className="flex-1">
           <H1>{isNew ? 'Add Employee' : fullName}</H1>
           {!isNew && staff?.employee_code && (
-            <P color="muted" className="text-sm">Employee Code: {staff.employee_code}</P>
+            <P color="muted" className="text-sm">Employee Code: {staff?.employee_code}</P>
           )}
         </Div>
         {!isNew && (
@@ -102,9 +75,9 @@ function StaffDetailContent({ id }: { id: string }) {
               </Div>
               <Div type="col" gap="xs">
                 <H2>{fullName}</H2>
-                <Badge variant="info">{staff.role}</Badge>
-                <Badge variant={staff.is_active ? 'success' : 'default'}>
-                  {staff.is_active ? 'Active' : 'Inactive'}
+                <Badge variant="info">{staff?.role ? (systemRoles.find((r) => r.name.toUpperCase().replace(/ /g, '_') === staff.role)?.name ?? staff.role) : ''}</Badge>
+                <Badge variant={staff?.is_active ? 'success' : 'default'}>
+                  {staff?.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               </Div>
             </Div>
@@ -114,25 +87,25 @@ function StaffDetailContent({ id }: { id: string }) {
           <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-5">
             <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Personal Information</H2>
             <Div type="grid" cols={2} className="gap-x-8 gap-y-3">
-              <InfoRow label="Email" value={staff.email} />
-              <InfoRow label="Phone" value={staff.phone_number ? `${staff.dial_code} ${staff.phone_number}` : undefined} />
-              <InfoRow label="Gender" value={staff.gender} />
-              <InfoRow label="Date of Birth" value={staff.date_of_birth} />
-              <InfoRow label="Blood Group" value={staff.blood_group ? (BLOOD_GROUP_LABEL[staff.blood_group] ?? staff.blood_group) : undefined} />
-              <InfoRow label="City" value={staff.city} />
-              <InfoRow label="Father's Name" value={staff.father_name} />
-              <InfoRow label="Husband's Name" value={staff.husband_name} />
-              <InfoRow label="RFID Card" value={staff.rfid_card_number} />
-              <InfoRow label="Qualification" value={staff.qualification} />
+              <InfoRow label="Email" value={staff?.email} />
+              <InfoRow label="Phone" value={staff?.phone_number ? `${staff?.dial_code ?? ''} ${staff?.phone_number}`.trim() : undefined} />
+              <InfoRow label="Gender" value={staff?.gender ? (GENDER_LABEL[staff.gender] ?? staff.gender) : undefined} />
+              <InfoRow label="Date of Birth" value={formatDate(staff?.date_of_birth)} />
+              <InfoRow label="Blood Group" value={staff?.blood_group ? (BLOOD_GROUP_LABEL[staff.blood_group] ?? staff.blood_group) : undefined} />
+              <InfoRow label="City" value={staff?.city} />
+              <InfoRow label="Father's Name" value={staff?.father_name} />
+              <InfoRow label="Husband's Name" value={staff?.husband_name} />
+              <InfoRow label="RFID Card" value={staff?.rfid_card_number} />
+              <InfoRow label="Qualification" value={staff?.qualification} />
             </Div>
-            {staff.address && (
+            {staff?.address && (
               <Div className="mt-2">
-                <InfoRow label="Address" value={staff.address} />
+                <InfoRow label="Address" value={staff?.address} />
               </Div>
             )}
-            {staff.permanent_address && (
+            {staff?.permanent_address && (
               <Div className="mt-1">
-                <InfoRow label="Permanent Address" value={staff.permanent_address} />
+                <InfoRow label="Permanent Address" value={staff?.permanent_address} />
               </Div>
             )}
           </Div>
@@ -141,22 +114,22 @@ function StaffDetailContent({ id }: { id: string }) {
           <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-5">
             <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Employment</H2>
             <Div type="grid" cols={2} className="gap-x-8 gap-y-3">
-              <InfoRow label="Employee Code" value={staff.employee_code} />
-              <InfoRow label="Joining Date" value={staff.joining_date} />
-              <InfoRow label="Department" value={staff.department_id} />
-              <InfoRow label="Designation" value={staff.custom_role_id} />
-              <InfoRow label="Reporting To" value={staff.reporting_to_id} />
+              <InfoRow label="Role" value={staff?.role ? (systemRoles.find((r) => r.name.toUpperCase().replace(/ /g, '_') === staff.role)?.name ?? staff.role) : undefined} />
+              <InfoRow label="Department" value={departmentName} />
+              <InfoRow label="Employee Code" value={staff?.employee_code} />
+              <InfoRow label="Joining Date" value={formatDate(staff?.joining_date)} />
+              <InfoRow label="Reporting To" value={reportingToName} />
             </Div>
           </Div>
 
           {/* Work experience */}
-          {(staff.previous_employer || staff.previous_role || staff.total_experience) && (
+          {(staff?.previous_employer || staff?.previous_role || staff?.total_experience) && (
             <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-5">
               <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Work Experience</H2>
               <Div type="grid" cols={2} className="gap-x-8 gap-y-3">
-                <InfoRow label="Previous Employer" value={staff.previous_employer} />
-                <InfoRow label="Previous Role" value={staff.previous_role} />
-                <InfoRow label="Total Experience" value={staff.total_experience} />
+                <InfoRow label="Previous Employer" value={staff?.previous_employer} />
+                <InfoRow label="Previous Role" value={staff?.previous_role} />
+                <InfoRow label="Total Experience" value={staff?.total_experience} />
               </Div>
             </Div>
           )}
@@ -282,15 +255,15 @@ function StaffDetailContent({ id }: { id: string }) {
             <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5">
               <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Employment</H2>
 
-              <FormField label="Role *" error={form.formState.errors.role?.message}>
-                <Select {...form.register('role')}>
-                  {SCHOOL_ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </Select>
-              </FormField>
-
               <Div type="grid" cols={2} gap="md">
+                <FormField label="Role *" error={form.formState.errors.role?.message}>
+                  <Select {...form.register('role')}>
+                    <option value="">Select role</option>
+                    {systemRoles.map((r) => (
+                      <option key={r.id} value={r.name.toUpperCase().replace(/ /g, '_')}>{r.name}</option>
+                    ))}
+                  </Select>
+                </FormField>
                 <FormField label="Department">
                   <Select {...form.register('department_id')}>
                     <option value="">Select department</option>
@@ -299,6 +272,9 @@ function StaffDetailContent({ id }: { id: string }) {
                     ))}
                   </Select>
                 </FormField>
+              </Div>
+
+              <Div type="grid" cols={2} gap="md">
                 <FormField label="Reporting To">
                   <Select {...form.register('reporting_to_id')}>
                     <option value="">Select manager</option>
@@ -311,23 +287,23 @@ function StaffDetailContent({ id }: { id: string }) {
                       ))}
                   </Select>
                 </FormField>
-              </Div>
-
-              <Div type="grid" cols={2} gap="md">
                 <FormField label="Joining Date">
                   <Input type="date" {...form.register('joining_date')} />
                 </FormField>
+              </Div>
+
+              <Div type="grid" cols={2} gap="md">
                 <FormField label="Employee Code">
                   <Input placeholder="EMP-001" {...form.register('employee_code')} />
+                </FormField>
+                <FormField label="Qualification">
+                  <Input placeholder="M.Ed, B.Sc, etc." {...form.register('qualification')} />
                 </FormField>
               </Div>
 
               <Div type="grid" cols={2} gap="md">
                 <FormField label="RFID Card Number" hint="Managed from RFID Setup page">
                   <Input readOnly {...form.register('rfid_card_number')} className="bg-muted cursor-not-allowed" />
-                </FormField>
-                <FormField label="Qualification">
-                  <Input placeholder="M.Ed, B.Sc, etc." {...form.register('qualification')} />
                 </FormField>
               </Div>
             </Div>
@@ -385,12 +361,15 @@ function StaffDetailContent({ id }: { id: string }) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value?: string | null }) {
-  if (!value) return null;
+function InfoRow({ label, value }: { label: string; value?: unknown }) {
+  if (value === null || value === undefined || value === '') return null;
+  const display = value instanceof Date
+    ? value.toLocaleDateString()
+    : String(value);
   return (
     <Div type="row" gap="md" align="center">
       <P color="muted" className="w-36 shrink-0 text-sm">{label}</P>
-      <P className="text-sm">{value}</P>
+      <P className="text-sm">{display}</P>
     </Div>
   );
 }

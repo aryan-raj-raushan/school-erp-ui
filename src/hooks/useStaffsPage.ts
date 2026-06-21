@@ -4,16 +4,22 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { StaffService, type StaffFilters } from '@/services/staff.service';
+import { RolesService, type Role as ApiRole } from '@/services/roles.service';
 import { ROUTES } from '@/constants';
+import { Role } from '@/types';
 import type { Staff, PaginationMeta, BulkImportJob } from '@/types';
+import { useAuthStore } from '@/store/auth.store';
 
 export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === Role.SCHOOL_ADMIN || user?.role === ('PRINCIPAL' as any);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<StaffFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
+  const [systemRoles, setSystemRoles] = useState<ApiRole[]>([]);
   const [bulkJob, setBulkJob] = useState<BulkImportJob | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const bulkFileRef = useRef<HTMLInputElement>(null);
@@ -124,11 +130,24 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     setFilters((prev) => ({ ...prev, ...next }));
   }
 
+  function slugify(name: string) {
+    return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
   function navigateToNew() { router.push(ROUTES.staffNew); }
-  function navigateToView(id: string) { router.push(ROUTES.staffView(id)); }
-  function navigateToEdit(id: string) { router.push(ROUTES.staffEdit(id)); }
+  function navigateToView(id: string, name: string) {
+    sessionStorage.setItem(`staff_slug:${slugify(name)}`, id);
+    router.push(ROUTES.staffView(id, name));
+  }
+  function navigateToEdit(id: string, name: string) {
+    sessionStorage.setItem(`staff_slug:${slugify(name)}`, id);
+    router.push(ROUTES.staffEdit(id, name));
+  }
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
+
+  useEffect(() => {
+    RolesService.list({ limit: 100 }).then((res) => setSystemRoles(res.items.filter((r) => r.is_system))).catch(() => {});
+  }, []);
 
   return {
     staffList, pagination, filters, isLoading,
@@ -140,5 +159,7 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     closeBulkModal: () => { setShowBulkModal(false); setBulkJob(null); },
     bulkJob, bulkFileRef, isImporting, bulkImport, checkBulkStatus,
     downloadTemplate,
+    isAdmin,
+    systemRoles,
   };
 }
