@@ -176,7 +176,7 @@ function ExamFormContent({ slug }: { slug: string }) {
               <FormField
                 label={EXAMS_PAGE.labels.examName + " *"}
                 error={errors.exam_name?.message}
-                className="sm:col-span-2"
+                // className="sm:col-span-2"
               >
                 <Input
                   {...register("exam_name")}

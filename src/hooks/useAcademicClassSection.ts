@@ -123,6 +123,7 @@ export function useAcademicClassSection(
 
   return {
     years,
+    currentYear,
 
     classes,
     sections,

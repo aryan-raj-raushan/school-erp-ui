@@ -16,7 +16,12 @@ import { SCHEDULE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/;
 
 const subScheduleSchema = z.object({
-  subject_type: z.enum(["MAIN_EXAM", "SECONDARY_EXAM", "PRACTICAL_EXAM", "ORAL_EXAM"] as const),
+  subject_type: z.enum([
+    "MAIN_EXAM",
+    "SECONDARY_EXAM",
+    "PRACTICAL_EXAM",
+    "ORAL_EXAM",
+  ] as const),
   subject_name: z.string().min(1, "Required"),
   exam_date: z.string().min(1, "Required"),
   start_time: z.string().regex(timeRegex, "HH:mm format"),
@@ -31,7 +36,12 @@ const scheduleItemSchema = z.object({
   subject_id: z.string().uuid("Select a subject"),
   subject_name: z.string().min(1, "Required"),
   subject_type: z
-    .enum(["MAIN_EXAM", "SECONDARY_EXAM", "PRACTICAL_EXAM", "ORAL_EXAM"] as const)
+    .enum([
+      "MAIN_EXAM",
+      "SECONDARY_EXAM",
+      "PRACTICAL_EXAM",
+      "ORAL_EXAM",
+    ] as const)
     .optional(),
   exam_date: z.string().min(1, "Required"),
   start_time: z.string().regex(timeRegex, "HH:mm format"),
@@ -52,6 +62,8 @@ export const scheduleFormSchema = z.object({
 });
 
 export type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
+
+export type ScheduleFormInput = z.input<typeof scheduleFormSchema>;
 
 const defaultScheduleItem = {
   subject_id: "",
@@ -107,7 +119,15 @@ export function useExamSchedules(initialFilters: ScheduleFilters = {}) {
     }
   }
 
-  return { schedules, pagination, filters, isLoading, updateFilters, remove, refetch: fetch };
+  return {
+    schedules,
+    pagination,
+    filters,
+    isLoading,
+    updateFilters,
+    remove,
+    refetch: fetch,
+  };
 }
 
 // ── Bulk Create Hook ──────────────────────────────────────────────────────────
@@ -116,7 +136,7 @@ export function useExamScheduleForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<ScheduleFormValues>({
+  const form = useForm<ScheduleFormInput, unknown, ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
       exam_id: "",
@@ -126,7 +146,10 @@ export function useExamScheduleForm() {
     },
   });
 
-  const schedulesField = useFieldArray({ control: form.control, name: "schedules" });
+  const schedulesField = useFieldArray({
+    control: form.control,
+    name: "schedules",
+  });
 
   const onSubmit = form.handleSubmit(async (values) => {
     console.log("Valyes: ", values);

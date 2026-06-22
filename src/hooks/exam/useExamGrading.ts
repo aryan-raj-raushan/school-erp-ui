@@ -31,7 +31,11 @@ export const gradingSchema = z.object({
   is_enabled: z.boolean().optional(),
 });
 
-export type GradingFormValues = z.infer<typeof gradingSchema>;
+// export type GradingFormValues = z.infer<typeof gradingSchema>;
+export type GradingFormValues = z.input<typeof gradingSchema>;
+
+type GradingFormInput = z.input<typeof gradingSchema>;
+type GradingFormOutput = z.output<typeof gradingSchema>;
 
 // ── List Hook ─────────────────────────────────────────────────────────────────
 
@@ -79,7 +83,7 @@ export function useExamGradingDetail(id: string) {
   const [isEditing, setIsEditing] = useState(isNew);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<GradingFormValues>({
+  const form = useForm<GradingFormInput, unknown, GradingFormOutput>({
     resolver: zodResolver(gradingSchema),
     defaultValues: {
       grade_name: "",

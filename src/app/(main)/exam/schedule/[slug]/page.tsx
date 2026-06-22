@@ -341,7 +341,6 @@ function ScheduleCreateContent() {
                             (errors.schedules?.[i] as any)?.subject_name
                               ?.message
                           }
-                          className="md:col-span-2"
                         >
                           <Input
                             {...register(`schedules.${i}.subject_name`)}

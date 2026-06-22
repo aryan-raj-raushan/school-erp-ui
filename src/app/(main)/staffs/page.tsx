@@ -20,10 +20,7 @@ export default function StaffsPage() {
     downloadTemplate, isAdmin, systemRoles,
   } = useStaffsPage();
 
-  console.log("staffList: ", staffList);
 
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === Role.SCHOOL_ADMIN || user?.role === 'PRINCIPAL' as any;
 
   return (
     <Div type="col" gap="lg">

@@ -80,8 +80,6 @@ function MarkAttendanceContent() {
 
   const { students } = useStudents();
 
-  console.log("students: ", students);
-
   const {
     years,
     classes,

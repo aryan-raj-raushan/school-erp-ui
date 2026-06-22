@@ -2,7 +2,10 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import { ExamAttendanceService, ExamScheduleService } from "@/services/exam.service";
+import {
+  ExamAttendanceService,
+  ExamScheduleService,
+} from "@/services/exam.service";
 import type {
   ExamAttendance,
   AttendanceFilters,
@@ -12,6 +15,7 @@ import type {
 } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { ATTENDANCE_PAGE } from "@/constants/exam.constants";
+import { StudentListItem } from "@/types/students.types";
 
 // ── List Hook ─────────────────────────────────────────────────────────────────
 
@@ -42,7 +46,14 @@ export function useExamAttendanceList(initialFilters: AttendanceFilters = {}) {
     setFilters((prev) => ({ ...prev, ...next, page: 1 }));
   }
 
-  return { records, pagination, filters, isLoading, updateFilters, refetch: fetch };
+  return {
+    records,
+    pagination,
+    filters,
+    isLoading,
+    updateFilters,
+    refetch: fetch,
+  };
 }
 
 // ── Bulk Mark Hook ────────────────────────────────────────────────────────────
@@ -75,26 +86,30 @@ export function useMarkAttendance() {
       .finally(() => setIsLoadingSchedules(false));
   }, [examId]);
 
-  function initRows(students: { id: string; first_name:string ;name: string; roll_number?: string }[]) {
+  function initRows(students: StudentListItem[]) {
     const initial: StudentAttendanceRow[] = students.map((s) => ({
       student_id: s.id,
-      student_name: s?.first_name,
-      roll_number: s.roll_number,
-      entries: Object.fromEntries(schedules.map((sc) => [sc.id, "PRESENT" as AttendanceStatus])),
+      student_name: [s.first_name, s.last_name].filter(Boolean).join(" "),
+      roll_number: s.roll_number ?? undefined,
+      entries: Object.fromEntries(
+        schedules.map((sc) => [sc.id, "PRESENT" as AttendanceStatus]),
+      ),
     }));
-    console.log("initRows =========> ", initial)
+
     setRows(initial);
   }
 
-
-
-  function setStatus(studentId: string, scheduleId: string, status: AttendanceStatus) {
+  function setStatus(
+    studentId: string,
+    scheduleId: string,
+    status: AttendanceStatus,
+  ) {
     setRows((prev) =>
       prev.map((r) =>
         r.student_id === studentId
           ? { ...r, entries: { ...r.entries, [scheduleId]: status } }
-          : r
-      )
+          : r,
+      ),
     );
   }
 
@@ -102,8 +117,10 @@ export function useMarkAttendance() {
     setRows((prev) =>
       prev.map((r) => ({
         ...r,
-        entries: Object.fromEntries(schedules.map((sc) => [sc.id, "PRESENT" as AttendanceStatus])),
-      }))
+        entries: Object.fromEntries(
+          schedules.map((sc) => [sc.id, "PRESENT" as AttendanceStatus]),
+        ),
+      })),
     );
   }
 
@@ -111,8 +128,10 @@ export function useMarkAttendance() {
     setRows((prev) =>
       prev.map((r) => ({
         ...r,
-        entries: Object.fromEntries(schedules.map((sc) => [sc.id, "ABSENT" as AttendanceStatus])),
-      }))
+        entries: Object.fromEntries(
+          schedules.map((sc) => [sc.id, "ABSENT" as AttendanceStatus]),
+        ),
+      })),
     );
   }
 
@@ -128,12 +147,18 @@ export function useMarkAttendance() {
           student_id: row.student_id,
           schedule_id: sc.id,
           status: row.entries[sc.id] ?? "ABSENT",
-        }))
+        })),
       );
-      await ExamAttendanceService.bulkMark({ exam_id: examId, academic_year_id: academicYearId, entries });
+      await ExamAttendanceService.bulkMark({
+        exam_id: examId,
+        academic_year_id: academicYearId,
+        entries,
+      });
       toast.success(ATTENDANCE_PAGE.toasts.saveSuccess);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : ATTENDANCE_PAGE.toasts.saveError);
+      toast.error(
+        err instanceof Error ? err.message : ATTENDANCE_PAGE.toasts.saveError,
+      );
     } finally {
       setIsSaving(false);
     }

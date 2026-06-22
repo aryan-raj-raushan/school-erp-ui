@@ -9,7 +9,11 @@ import { toast } from "sonner";
 import { HallPlanService, HallDetailService } from "@/services/exam.service";
 import type { ExamHallPlan, ExamHallDetail } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
-import { HALL_PLANS_PAGE, HALL_DETAILS_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import {
+  HALL_PLANS_PAGE,
+  HALL_DETAILS_PAGE,
+  EXAM_ROUTES,
+} from "@/constants/exam.constants";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -22,13 +26,17 @@ export const hallPlanSchema = z.object({
 export const hallDetailSchema = z.object({
   hall_plan_id: z.string().uuid("Select a hall plan"),
   room_name: z.string().min(1, "Room name is required").max(150),
-  sitting_capacity: z.coerce.number().int().min(1, "Capacity must be at least 1"),
+  sitting_capacity: z.coerce
+    .number()
+    .int()
+    .min(1, "Capacity must be at least 1"),
   is_enabled: z.boolean().optional(),
 });
 
 export type HallPlanFormValues = z.infer<typeof hallPlanSchema>;
-export type HallDetailFormValues = z.infer<typeof hallDetailSchema>;
 
+export type HallDetailFormInput = z.input<typeof hallDetailSchema>;
+export type HallDetailFormValues = z.output<typeof hallDetailSchema>;
 // ── Hall Plan List ────────────────────────────────────────────────────────────
 
 export function useHallPlans() {
@@ -49,7 +57,9 @@ export function useHallPlans() {
     }
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   async function remove(id: string) {
     try {
@@ -86,7 +96,11 @@ export function useHallPlanDetail(id: string) {
     HallPlanService.getById(id)
       .then((data) => {
         setPlan(data);
-        form.reset({ plan_name: data.plan_name, description: data.description ?? "", is_enabled: data.is_enabled });
+        form.reset({
+          plan_name: data.plan_name,
+          description: data.description ?? "",
+          is_enabled: data.is_enabled,
+        });
       })
       .catch(() => toast.error(HALL_PLANS_PAGE.toasts.fetchError))
       .finally(() => setIsLoading(false));
@@ -110,7 +124,16 @@ export function useHallPlanDetail(id: string) {
     }
   });
 
-  return { plan, isLoading, isNew, isEditing, setIsEditing, form, isSubmitting, onSubmit };
+  return {
+    plan,
+    isLoading,
+    isNew,
+    isEditing,
+    setIsEditing,
+    form,
+    isSubmitting,
+    onSubmit,
+  };
 }
 
 // ── Hall Details List ─────────────────────────────────────────────────────────
@@ -123,7 +146,7 @@ export function useHallDetails(hallPlanId?: string) {
   const fetch = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await HallDetailService.list({ hall_plan_id: hallPlanId, limit: 100 });
+      const result = await HallDetailService.list({ hall_plan_id: hallPlanId });
       setDetails(result.items);
       setPagination(result.pagination);
     } catch {
@@ -133,7 +156,9 @@ export function useHallDetails(hallPlanId?: string) {
     }
   }, [hallPlanId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   async function remove(id: string) {
     try {
@@ -159,9 +184,14 @@ export function useHallDetailForm(id: string, defaultPlanId?: string) {
   const [isEditing, setIsEditing] = useState(isNew);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<HallDetailFormValues>({
+  const form = useForm<HallDetailFormInput, unknown, HallDetailFormValues>({
     resolver: zodResolver(hallDetailSchema),
-    defaultValues: { hall_plan_id: defaultPlanId ?? "", room_name: "", sitting_capacity: 30, is_enabled: true },
+    defaultValues: {
+      hall_plan_id: defaultPlanId ?? "",
+      room_name: "",
+      sitting_capacity: 30,
+      is_enabled: true,
+    },
   });
 
   useEffect(() => {
@@ -170,7 +200,12 @@ export function useHallDetailForm(id: string, defaultPlanId?: string) {
     HallDetailService.getById(id)
       .then((data) => {
         setDetail(data);
-        form.reset({ hall_plan_id: data.hall_plan_id, room_name: data.room_name, sitting_capacity: data.sitting_capacity, is_enabled: data.is_enabled });
+        form.reset({
+          hall_plan_id: data.hall_plan_id,
+          room_name: data.room_name,
+          sitting_capacity: data.sitting_capacity,
+          is_enabled: data.is_enabled,
+        });
       })
       .catch(() => toast.error(HALL_DETAILS_PAGE.toasts.fetchError))
       .finally(() => setIsLoading(false));
@@ -194,5 +229,14 @@ export function useHallDetailForm(id: string, defaultPlanId?: string) {
     }
   });
 
-  return { detail, isLoading, isNew, isEditing, setIsEditing, form, isSubmitting, onSubmit };
+  return {
+    detail,
+    isLoading,
+    isNew,
+    isEditing,
+    setIsEditing,
+    form,
+    isSubmitting,
+    onSubmit,
+  };
 }
