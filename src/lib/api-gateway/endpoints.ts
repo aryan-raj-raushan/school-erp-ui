@@ -285,7 +285,8 @@ export const ENDPOINTS = {
   },
   salaryAssignments: {
     list: "/salary/assignments",
-    byEmployee: (employeeId: string) => `/salary/assignments/employee/${employeeId}`,
+    byEmployee: (employeeId: string) =>
+      `/salary/assignments/employee/${employeeId}`,
     byId: (id: string) => `/salary/assignments/${id}`,
   },
   salaryTransactions: {
@@ -301,3 +302,50 @@ export const ENDPOINTS = {
     unassign: "/rfid/unassign",
   },
 };
+
+/* ------------------------------------- 
+EXAM_ENDPOINTS
+-------------------------------------  */
+export const EXAM_ENDPOINTS = {
+  grading: {
+    list: "/exam/grading",
+    byId: (id: string) => `/exam/grading/${id}`,
+  },
+  exams: {
+    list: "/exam/exams",
+    byId: (id: string) => `/exam/exams/${id}`,
+    publish: (id: string) => `/exam/exams/${id}/publish`,
+  },
+  schedules: {
+    list: "/exam/schedules",
+    byId: (id: string) => `/exam/schedules/${id}`,
+    bulk: "/exam/schedules/bulk",
+  },
+  attendance: {
+    list: "/exam/attendance",
+    bySchedule: (scheduleId: string) =>
+      `/exam/attendance/schedule/${scheduleId}`,
+    bulk: "/exam/attendance/bulk",
+  },
+  attendanceCard: {
+    data: "/exam/attendance-card/data",
+    pdf: "/exam/attendance-card/pdf",
+  },
+  hallPlans: {
+    list: "/exam/hall-plans",
+    byId: (id: string) => `/exam/hall-plans/${id}`,
+  },
+  hallDetails: {
+    list: "/exam/hall-details",
+    byId: (id: string) => `/exam/hall-details/${id}`,
+  },
+  sittingPlans: {
+    list: "/exam/sitting-plans",
+    byId: (id: string) => `/exam/sitting-plans/${id}`,
+    bulk: "/exam/sitting-plans/bulk",
+  },
+  admitCard: {
+    data: "/exam/admit-card/data",
+    pdf: "/exam/admit-card/pdf",
+  },
+} as const;
