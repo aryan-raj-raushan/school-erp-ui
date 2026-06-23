@@ -1,19 +1,17 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
-import { GraduationCap, PanelLeft, PanelRight } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { useSidebar } from "@/components/ui/sidebar";
 import { NavMain } from "./NavMain";
 import { NavSecondary } from "./NavSecondary";
-import { NavUser } from "./NavUser";
 import {
   APP_NAV_MAIN,
   APP_NAV_SECONDARY,
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
-import { useDashboardLayout } from "@/hooks";
 import { useAuthStore } from "@/store/auth.store";
 
 const EXPANDED_W = 272;
@@ -21,8 +19,8 @@ const ICON_W = 76;
 const SPRING = { type: "spring" as const, stiffness: 280, damping: 26, mass: 0.9 };
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
-  const { user, userInfo, logout, isLoading } = useDashboardLayout();
+  const { state } = useSidebar();
+  const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
   const isCollapsed = state === "collapsed";
 
@@ -101,16 +99,12 @@ export function AppSidebar() {
           <div
             style={{
               display: "flex",
-              flexDirection: isCollapsed ? "column" : "row",
               alignItems: "center",
-              justifyContent: isCollapsed ? "center" : "space-between",
+              justifyContent: "center",
               padding: isCollapsed ? "10px 4px" : "8px 2px",
-              gap: isCollapsed ? 6 : 8,
               minHeight: 52,
-              transition: "padding 0.2s ease",
             }}
           >
-            {/* Logo + name */}
             <Link
               href="/"
               style={{
@@ -120,9 +114,9 @@ export function AppSidebar() {
                 minWidth: 0,
                 overflow: "hidden",
                 textDecoration: "none",
+                width: "100%",
               }}
             >
-              {/* Icon circle */}
               <motion.div
                 animate={{ scale: isCollapsed ? 1.05 : 1 }}
                 transition={SPRING}
@@ -143,7 +137,6 @@ export function AppSidebar() {
                 <GraduationCap size={18} />
               </motion.div>
 
-              {/* Name + tagline — maxWidth collapse so it takes zero space when hidden */}
               <div
                 style={{
                   overflow: "hidden",
@@ -176,52 +169,6 @@ export function AppSidebar() {
                 </div>
               </div>
             </Link>
-
-            {/* Toggle button — always visible, icon flips on collapse */}
-            <motion.button
-              onClick={toggleSidebar}
-              whileHover={{ backgroundColor: "var(--accent)" }}
-              whileTap={{ scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                borderRadius: 8,
-                color: "var(--muted-foreground)",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {isCollapsed ? (
-                  <motion.span
-                    key="expand"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    style={{ display: "flex" }}
-                  >
-                    <PanelRight size={15} />
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="collapse"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    style={{ display: "flex" }}
-                  >
-                    <PanelLeft size={15} />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
           </div>
         </div>
 
@@ -244,21 +191,6 @@ export function AppSidebar() {
           </div>
         </div>
 
-        {/* ── User footer ──────────────────────────── */}
-        <div
-          style={{
-            borderTop: "1px solid var(--glass-border)",
-            padding: "6px",
-            flexShrink: 0,
-          }}
-        >
-          <NavUser
-            userInfo={userInfo}
-            logout={logout}
-            isLoading={isLoading}
-            isCollapsed={isCollapsed}
-          />
-        </div>
       </motion.div>
     </motion.aside>
   );

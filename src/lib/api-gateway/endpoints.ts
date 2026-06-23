@@ -300,4 +300,7 @@ export const ENDPOINTS = {
     assign: "/rfid/assign",
     unassign: "/rfid/unassign",
   },
+  search: {
+    global: "/search",
+  },
 };

@@ -12,6 +12,11 @@ const AppSidebar = dynamic(
   { ssr: false },
 );
 
+const AppHeader = dynamic(
+  () => import("@/components/layout/AppHeader").then((m) => m.AppHeader),
+  { ssr: false },
+);
+
 export default function DashboardLayout({
   children,
 }: {
@@ -28,11 +33,22 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main style={{ flex: 1, minHeight: "100vh", overflow: "auto" }}>
-        <div style={{ padding: "20px 28px", minHeight: "100%" }}>
-          {children}
-        </div>
-      </main>
+      <div
+        style={{
+          flex: 1,
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        <AppHeader />
+        <main style={{ flex: 1, overflow: "auto" }}>
+          <div style={{ padding: "20px 28px", minHeight: "100%" }}>
+            {children}
+          </div>
+        </main>
+      </div>
     </SidebarProvider>
   );
 }
