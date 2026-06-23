@@ -156,10 +156,20 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     url: "#",
     icon: BookOpen,
     permissions: [PERMISSIONS.exams.view, PERMISSIONS.exams.create],
+    // items: [
+    //   { title: "Exam Setup",     url: "/exams/master-data",  permissions: [PERMISSIONS.exams.create] },
+    //   { title: "Exam Schedule",  url: "/exams/timetable",    permissions: [PERMISSIONS.exams.view]   },
+    //   { title: "Hall Tickets",   url: "/exams/admit-cards",  permissions: [PERMISSIONS.exams.view]   },
+    // ],
     items: [
-      { title: "Exam Setup",     url: "/exams/master-data",  permissions: [PERMISSIONS.exams.create] },
-      { title: "Exam Schedule",  url: "/exams/timetable",    permissions: [PERMISSIONS.exams.view]   },
-      { title: "Hall Tickets",   url: "/exams/admit-cards",  permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Grading",     url: "/exam/grading",  permissions: [PERMISSIONS.exams.create] },
+      { title: "Exam List",  url: "/exam/exams",    permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Schedule",   url: "/exam/schedule",  permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Attendance",   url: "/exam/attendance",  permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Hall Plans",   url: "/exam/hall-plans",  permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Hall Details",   url: "/exam/hall-details",  permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Sitting Plan",   url: "/exam/sitting-plan",  permissions: [PERMISSIONS.exams.view]   },
+      { title: "Exam Admit Card",   url: "/exam/admit-card",  permissions: [PERMISSIONS.exams.view]   },
     ],
   },
 
