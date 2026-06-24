@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { usePlatformFilePicker } from './usePlatformFilePicker';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,6 +59,7 @@ export function useStaffDetail(id: string | undefined) {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const { isNative, pickImage } = usePlatformFilePicker();
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(schema) as any,
@@ -133,6 +135,20 @@ export function useStaffDetail(id: string | undefined) {
       toast.error('Failed to upload photo');
     } finally {
       setIsUploadingImage(false);
+    }
+  }
+
+  async function handleNativeImagePick() {
+    const file = await pickImage();
+    if (!file) return;
+    const targetId = isNew ? 'temp' : (staffId ?? staff?.id ?? id!);
+    if (!isNew) {
+      handleImageUpload(file, targetId);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => setProfileImageUrl(ev.target?.result as string);
+      reader.readAsDataURL(file);
+      (imageInputRef as any)._pendingFile = file;
     }
   }
 
@@ -252,7 +268,8 @@ export function useStaffDetail(id: string | undefined) {
   return {
     staff, isNew, isEditing, setIsEditing,
     form, isLoadingData,
-    profileImageUrl, isUploadingImage, imageInputRef, onImageChange,
+    profileImageUrl, isUploadingImage, imageInputRef, onImageChange, handleNativeImagePick,
+    isNative,
     departments, systemRoles, staffMembers,
     fullName, departmentName, reportingToName,
     isSubmitting: form.formState.isSubmitting,

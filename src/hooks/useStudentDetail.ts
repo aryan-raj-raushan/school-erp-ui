@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { usePlatformFilePicker } from './usePlatformFilePicker';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ export function useStudentDetail(id?: string) {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const { isNative, pickImage } = usePlatformFilePicker();
 
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentFormSchema),
@@ -168,6 +170,19 @@ export function useStudentDetail(id?: string) {
     }
   }
 
+  async function handleNativeImagePick() {
+    const file = await pickImage();
+    if (!file) return;
+    if (!isNew && id) {
+      handleImageUpload(file, id);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => setProfileImageUrl(ev.target?.result as string);
+      reader.readAsDataURL(file);
+      (imageInputRef as any)._pendingFile = file;
+    }
+  }
+
   function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -269,6 +284,8 @@ export function useStudentDetail(id?: string) {
     isUploadingImage,
     imageInputRef,
     onImageChange,
+    handleNativeImagePick,
+    isNative,
     handleSubmit: form.handleSubmit(handleSubmit),
     isSubmitting: form.formState.isSubmitting,
     handleDocumentUpload,

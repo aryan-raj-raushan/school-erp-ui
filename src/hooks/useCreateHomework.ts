@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { usePlatformFilePicker } from './usePlatformFilePicker';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,6 +59,7 @@ export function useCreateHomework() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isNative, pickDocument } = usePlatformFilePicker();
 
   const form = useForm<CreateHomeworkFormValues>({
     resolver: zodResolver(schema) as any,
@@ -106,40 +108,49 @@ export function useCreateHomework() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedClassId]);
 
+  async function processUploadFile(file: File) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error(`${file.name}: only jpg, png, pdf allowed`);
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error(`${file.name}: max 2MB allowed`);
+      return;
+    }
+    const id = `${Date.now()}-${Math.random()}`;
+    const pending: PendingAttachment = {
+      id,
+      file,
+      status: 'uploading',
+      file_type: ALLOWED_EXT_MAP[file.type] ?? 'file',
+      file_size: `${(file.size / 1024).toFixed(1)}KB`,
+    };
+    setAttachments((prev) => [...prev, pending]);
+    try {
+      const result = await UploadsService.uploadDocument(file, {
+        reference_id: crypto.randomUUID(),
+        reference_type: 'homework',
+        document_type: 'attachment',
+      });
+      setAttachments((prev) =>
+        prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url } : a),
+      );
+    } catch {
+      setAttachments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'error' } : a));
+      toast.error(`Failed to upload ${file.name}`);
+    }
+  }
+
+  async function handleNativeFilePick() {
+    const file = await pickDocument(['image/jpeg', 'image/png', 'application/pdf']);
+    if (file) await processUploadFile(file);
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
     for (const file of files) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`${file.name}: only jpg, png, pdf allowed`);
-        continue;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name}: max 2MB allowed`);
-        continue;
-      }
-      const id = `${Date.now()}-${Math.random()}`;
-      const pending: PendingAttachment = {
-        id,
-        file,
-        status: 'uploading',
-        file_type: ALLOWED_EXT_MAP[file.type] ?? 'file',
-        file_size: `${(file.size / 1024).toFixed(1)}KB`,
-      };
-      setAttachments((prev) => [...prev, pending]);
-      try {
-        const result = await UploadsService.uploadDocument(file, {
-          reference_id: crypto.randomUUID(),
-          reference_type: 'homework',
-          document_type: 'attachment',
-        });
-        setAttachments((prev) =>
-          prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url } : a),
-        );
-      } catch {
-        setAttachments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'error' } : a));
-        toast.error(`Failed to upload ${file.name}`);
-      }
+      await processUploadFile(file);
     }
   }
 
@@ -188,7 +199,7 @@ export function useCreateHomework() {
     isLoadingData, attachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(createHomework),
-    handleFileChange, removeAttachment,
+    handleFileChange, handleNativeFilePick, isNative, removeAttachment,
     handleBack,
   };
 }

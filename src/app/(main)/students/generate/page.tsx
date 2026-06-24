@@ -430,7 +430,7 @@ function ModernStudentCard({ data }: { data: StudentIdCardData }) {
       </div>
 
       {/* Details grid */}
-      <div className="px-5 pb-4 grid grid-cols-2 gap-x-4 gap-y-2.5">
+      <div className="px-5 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5">
         <ModernInfoCell label="Roll No." value={data.roll_number ?? "—"} />
         <ModernInfoCell
           label="Blood Group"

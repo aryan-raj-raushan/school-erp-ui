@@ -102,12 +102,12 @@ export default function StaffsPage() {
                 </TableCell>
                 <TableCell>
                   <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => navigateToView(s.id, `${s.first_name} ${s.last_name ?? ''}`.trim())} title="View">
+                    <Button size="sm" variant="ghost" onClick={() => navigateToView(s.id)} title="View">
                       <Eye size={14} />
                     </Button>
                     {isAdmin && (
                       <>
-                        <Button size="sm" variant="ghost" onClick={() => navigateToEdit(s.id, `${s.first_name} ${s.last_name ?? ''}`.trim())} title="Edit">
+                        <Button size="sm" variant="ghost" onClick={() => navigateToEdit(s.id)} title="Edit">
                           <Pencil size={14} />
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => resendInvite(s.id)} title="Resend Invite">

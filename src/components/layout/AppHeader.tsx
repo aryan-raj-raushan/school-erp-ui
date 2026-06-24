@@ -105,7 +105,7 @@ export function AppHeader() {
         >
           <Search size={13} className="shrink-0" />
           <span className="flex-1 text-left opacity-70">Search...</span>
-          <Div type="row" className="gap-0.5 shrink-0">
+          <Div type="row" className="hidden sm:flex gap-0.5 shrink-0">
             <kbd className="px-[5px] py-px rounded bg-background border border-border/50 text-[10px] leading-relaxed">
               ⌘
             </kbd>
@@ -127,7 +127,7 @@ export function AppHeader() {
               <Avatar className="size-[30px]">
                 <AvatarFallback className="text-[11px]">{userInfo.initials}</AvatarFallback>
               </Avatar>
-              <Div className="text-left">
+              <Div className="hidden sm:block text-left">
                 <P color="default" size="sm" weight="medium" noWrap>
                   {userInfo.fullName}
                 </P>

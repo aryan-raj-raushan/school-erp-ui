@@ -107,7 +107,7 @@ function AdmissionsContent() {
             >
               {ADMISSION_PAGE.buttons.manage}
             </Button>
-            <Button onClick={() => router.push("/admissions/create-new")}>
+            <Button onClick={() => router.push("/admissions/view")}>
               <Plus size={16} /> {ADMISSION_PAGE.buttons.addEnquiry}
             </Button>
           </Div>

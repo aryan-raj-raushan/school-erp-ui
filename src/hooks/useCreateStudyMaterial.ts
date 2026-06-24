@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { usePlatformFilePicker } from './usePlatformFilePicker';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +40,8 @@ export function useCreateStudyMaterial() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [nativeFile, setNativeFile] = useState<File | null>(null);
+  const { isNative, pickDocument } = usePlatformFilePicker();
 
   const form = useForm<CreateStudyMaterialFormValues>({
     resolver: zodResolver(schema),
@@ -92,7 +95,7 @@ export function useCreateStudyMaterial() {
       let fileType: string | undefined;
 
       if (values.content_type === 'file') {
-        const file = fileRef.current?.files?.[0];
+        const file = nativeFile ?? fileRef.current?.files?.[0];
         if (!file) { toast.error('Upload a file'); setIsSubmitting(false); return; }
         setIsUploading(true);
         const result = await UploadsService.uploadDocument(file, {
@@ -150,6 +153,9 @@ export function useCreateStudyMaterial() {
     isUploading,
     contentType,
     fileRef,
+    nativeFile,
+    isNative,
+    pickNativeDocument: async () => { const f = await pickDocument(); if (f) setNativeFile(f); },
     handleSubmit: form.handleSubmit(handleSubmit),
     handleBack,
   };

@@ -54,7 +54,7 @@ function AdmitCardPreview({
 
       {/* Student details */}
       <Div className="px-6 py-4">
-        <Div className="grid grid-cols-2 gap-x-8 gap-y-2">
+        <Div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
           {[
             [ADMIT_CARD_PAGE.preview.student, data.student.name],
             [ADMIT_CARD_PAGE.preview.admissionNo, data.student.admissionNumber],

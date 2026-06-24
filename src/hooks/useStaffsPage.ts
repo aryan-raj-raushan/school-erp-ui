@@ -130,17 +130,12 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     setFilters((prev) => ({ ...prev, ...next }));
   }
 
-  function slugify(name: string) {
-    return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  }
   function navigateToNew() { router.push(ROUTES.staffNew); }
-  function navigateToView(id: string, name: string) {
-    sessionStorage.setItem(`staff_slug:${slugify(name)}`, id);
-    router.push(ROUTES.staffView(id, name));
+  function navigateToView(id: string) {
+    router.push(ROUTES.staffView(id));
   }
-  function navigateToEdit(id: string, name: string) {
-    sessionStorage.setItem(`staff_slug:${slugify(name)}`, id);
-    router.push(ROUTES.staffEdit(id, name));
+  function navigateToEdit(id: string) {
+    router.push(ROUTES.staffEdit(id));
   }
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
