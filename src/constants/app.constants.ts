@@ -21,7 +21,7 @@ export const ROUTES = {
   schools: '/schools',
   subscriptions: '/subscriptions',
   // School admin routes
-  schoolDashboard: '/school',
+  schoolDashboard: '/dashboard',
   academicYears: '/school/academic-years',
   academicYearNew: '/school/academic-years/new',
   academicYearEdit: (id: string) => `/school/academic-years/${id}/edit`,

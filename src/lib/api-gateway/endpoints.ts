@@ -304,6 +304,11 @@ export const ENDPOINTS = {
   search: {
     global: "/search",
   },
+  dashboard: {
+    admin: "/dashboard/admin",
+    teacher: "/dashboard/teacher",
+    parent: "/dashboard/parent",
+  },
 };
 
 /* ------------------------------------- 
