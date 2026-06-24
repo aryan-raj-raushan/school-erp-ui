@@ -7,49 +7,49 @@ export const EXAM_ROUTES = {
   grading: {
     list: '/exam/grading',
     create: '/exam/grading/create-new',
-    view: (id: string) => `/exam/grading/${id}`,
-    edit: (id: string) => `/exam/grading/${id}?edit=true`,
+    view: (id: string) => `/exam/grading/view?id=${id}`,
+    edit: (id: string) => `/exam/grading/view?id=${id}&edit=true`,
   },
   // Exams
   exams: {
     list: '/exam/exams',
     create: '/exam/exams/create-new',
-    view: (id: string) => `/exam/exams/${id}`,
-    edit: (id: string) => `/exam/exams/${id}?edit=true`,
+    view: (id: string) => `/exam/exams/view?id=${id}`,
+    edit: (id: string) => `/exam/exams/view?id=${id}&edit=true`,
   },
   // Schedule
   schedule: {
     list: '/exam/schedule',
     create: '/exam/schedule/create-new',
-    view: (id: string) => `/exam/schedule/${id}`,
-    edit: (id: string) => `/exam/schedule/${id}?edit=true`,
+    view: (id: string) => `/exam/schedule/view?id=${id}`,
+    edit: (id: string) => `/exam/schedule/view?id=${id}&edit=true`,
   },
   // Attendance
   attendance: {
     list: '/exam/attendance',
     mark: '/exam/attendance/create-new',
-    view: (id: string) => `/exam/attendance/${id}`,
+    view: (id: string) => `/exam/attendance/view?id=${id}`,
     card: '/exam/attendance/card',
   },
   // Hall Plans
   hallPlans: {
     list: '/exam/hall-plans',
     create: '/exam/hall-plans/create-new',
-    view: (id: string) => `/exam/hall-plans/${id}`,
-    edit: (id: string) => `/exam/hall-plans/${id}?edit=true`,
+    view: (id: string) => `/exam/hall-plans/view?id=${id}`,
+    edit: (id: string) => `/exam/hall-plans/view?id=${id}&edit=true`,
   },
   // Hall Details
   hallDetails: {
     list: '/exam/hall-details',
     create: '/exam/hall-details/create-new',
-    view: (id: string) => `/exam/hall-details/${id}`,
-    edit: (id: string) => `/exam/hall-details/${id}?edit=true`,
+    view: (id: string) => `/exam/hall-details/view?id=${id}`,
+    edit: (id: string) => `/exam/hall-details/view?id=${id}&edit=true`,
   },
   // Sitting Plan
   sittingPlan: {
     list: '/exam/sitting-plan',
     create: '/exam/sitting-plan/create-new',
-    view: (id: string) => `/exam/sitting-plan/${id}`,
+    view: (id: string) => `/exam/sitting-plan/view?id=${id}`,
   },
   // Admit Card
   admitCard: {

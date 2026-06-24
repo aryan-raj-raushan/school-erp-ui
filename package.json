@@ -8,9 +8,20 @@
     "start": "next start -p 3001",
     "lint": "eslint",
     "arch": "node scripts/arch.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android",
+    "cap:build": "next build && npx cap sync",
+    "cap:run:android": "next build && npx cap sync android && npx cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/camera": "^8.2.0",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1",
+    "@capawesome/capacitor-file-picker": "^8.0.3",
     "@hookform/resolvers": "^5.4.0",
     "@msgpack/msgpack": "^3.1.3",
     "axios": "^1.16.1",

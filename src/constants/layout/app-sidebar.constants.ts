@@ -65,7 +65,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     permissions: [PERMISSIONS.admissions.view, PERMISSIONS.admissions.create],
     items: [
       { title: "Enquiry Source",              url: "/admissions/source",      permissions: [PERMISSIONS.admissions.create] },
-      { title: "Add Enquiry",                 url: "/admissions/create-new",  permissions: [PERMISSIONS.admissions.create] },
+      { title: "Add Enquiry",                 url: "/admissions/view",        permissions: [PERMISSIONS.admissions.create] },
       { title: "Enquiry List",                url: "/admissions",             permissions: [PERMISSIONS.admissions.view]   },
       { title: "Today Followup Admissions",   url: "/admissions/follow-up",   permissions: [PERMISSIONS.admissions.view]   },
     ],

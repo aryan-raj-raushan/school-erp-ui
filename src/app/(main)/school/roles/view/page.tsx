@@ -1,0 +1,201 @@
+'use client';
+
+import { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Pencil, X, Lock, ShieldCheck } from 'lucide-react';
+import { useRoleDetail } from '@/hooks/useRoleDetail';
+import { PermissionMatrix } from '@/components/ui/permission-matrix';
+import {
+  Div, H1, H2, P, Button, Input, Textarea, FormField,
+  Badge, Spinner, CheckboxLabel,
+} from '@/components/ui';
+
+function RoleDetailContent({ id }: { id: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryId = searchParams.get('id');
+  const startEditing = searchParams.get('edit') === 'true';
+
+  // id can be "create-new", "view" (with ?id= query), or a UUID
+  const resolvedId =
+    id === 'view' ? (queryId ?? undefined) :
+    id === 'create-new' ? undefined :
+    id;
+
+  const {
+    isNew, isEditing, setIsEditing, isSystem, roleName,
+    form, groupedPermissions, selectedPermissionIds,
+    isLoadingData, togglePermission, toggleResourceAll, toggleSelectAll,
+    toggleIsActive, isSubmitting, handleSubmit, handleBack, handleCancelEdit,
+  } = useRoleDetail(resolvedId);
+
+  useEffect(() => {
+    if (startEditing && !isNew) setIsEditing(true);
+  }, [startEditing, isNew, setIsEditing]);
+
+  if (isLoadingData) {
+    return (
+      <Div type="row" justify="center" align="center" className="py-32">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return (
+    <Div type="col" gap="lg" className="max-w-3xl">
+      {/* Header */}
+      <Div type="row" align="center" gap="md">
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft size={16} />
+          Back
+        </Button>
+        <Div type="col" gap="xs" className="flex-1">
+          <Div type="row" align="center" gap="sm">
+            <ShieldCheck size={20} className="text-primary" />
+            <H1>{isNew ? 'Add New Role' : roleName}</H1>
+            {!isNew && isSystem && <Badge variant="info"><Lock size={10} className="mr-1" />System</Badge>}
+          </Div>
+          {!isNew && (
+            <P color="muted">
+              {isSystem ? 'System role — name is locked but permissions can be adjusted' : 'Edit role name, description, and permissions'}
+            </P>
+          )}
+        </Div>
+
+        {/* Edit toggle — only on view mode */}
+        {!isNew && (
+          <Div type="row" gap="sm">
+            {isEditing ? (
+              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                <X size={14} /> Cancel
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setIsEditing(true)}>
+                <Pencil size={14} /> Edit
+              </Button>
+            )}
+          </Div>
+        )}
+      </Div>
+
+      {/* View mode */}
+      {!isEditing && !isNew && (
+        <Div type="col" gap="lg">
+          <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-5">
+            <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              General
+            </H2>
+            <Div type="row" gap="md" align="center">
+              <P color="muted" className="w-32">Name</P>
+              <P>{roleName}</P>
+            </Div>
+            <Div type="row" gap="md" align="center">
+              <P color="muted" className="w-32">Status</P>
+              <Badge variant={form.getValues('is_active') ? 'success' : 'default'}>
+                {form.getValues('is_active') ? 'Active' : 'Inactive'}
+              </Badge>
+            </Div>
+            {form.getValues('description') && (
+              <Div type="row" gap="md">
+                <P color="muted" className="w-32 shrink-0">Description</P>
+                <P>{form.getValues('description')}</P>
+              </Div>
+            )}
+          </Div>
+
+          <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-5">
+            <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Permissions
+            </H2>
+            <PermissionMatrix
+              groupedPermissions={groupedPermissions}
+              selectedPermissionIds={selectedPermissionIds}
+              onTogglePermission={() => {}}
+              onToggleResourceAll={() => {}}
+              onToggleSelectAll={() => {}}
+              disabled
+            />
+          </Div>
+        </Div>
+      )}
+
+      {/* Create / Edit form */}
+      {(isEditing || isNew) && (
+        <form onSubmit={handleSubmit}>
+          <Div type="col" gap="lg">
+            {/* General section */}
+            <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5">
+              <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                General Information
+              </H2>
+
+              <FormField label="Role Name *" error={form.formState.errors.name?.message}>
+                <Input
+                  placeholder="e.g. Head Teacher, Driver, Lab Assistant"
+                  disabled={isSystem}
+                  {...form.register('name')}
+                />
+                {isSystem && (
+                  <P color="muted" className="text-xs mt-1">System role names cannot be changed.</P>
+                )}
+              </FormField>
+
+              <FormField label="Description" error={form.formState.errors.description?.message}>
+                <Textarea placeholder="What can this role do?" {...form.register('description')} />
+              </FormField>
+
+              <Div type="row" align="center" gap="sm">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={form.watch('is_active')}
+                  onChange={toggleIsActive}
+                />
+                <CheckboxLabel htmlFor="is_active">Active</CheckboxLabel>
+              </Div>
+            </Div>
+
+            {/* Permissions section */}
+            <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-5">
+              <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                Permissions
+              </H2>
+              <P color="muted" className="text-sm mb-2">Select which actions this role can perform.</P>
+              <PermissionMatrix
+                groupedPermissions={groupedPermissions}
+                selectedPermissionIds={selectedPermissionIds}
+                onTogglePermission={togglePermission}
+                onToggleResourceAll={toggleResourceAll}
+                onToggleSelectAll={toggleSelectAll}
+              />
+            </Div>
+
+            {/* Actions */}
+            <Div type="row" justify="end" gap="sm">
+              <Button variant="outline" type="button" onClick={isNew ? handleBack : handleCancelEdit}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                {isNew ? 'Create Role' : 'Save Changes'}
+              </Button>
+            </Div>
+          </Div>
+        </form>
+      )}
+    </Div>
+  );
+}
+
+function RoleDetailPageInner() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') ?? '';
+  return <RoleDetailContent id={id} />;
+}
+
+export default function RoleDetailPage() {
+  return (
+    <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
+      <RoleDetailPageInner />
+    </Suspense>
+  );
+}

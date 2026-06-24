@@ -44,7 +44,7 @@ export default function DashboardLayout({
       >
         <AppHeader />
         <main style={{ flex: 1, overflow: "auto" }}>
-          <div style={{ padding: "20px 28px", minHeight: "100%" }}>
+          <div className="p-4 sm:p-5 md:px-7 md:py-5" style={{ minHeight: "100%" }}>
             {children}
           </div>
         </main>
