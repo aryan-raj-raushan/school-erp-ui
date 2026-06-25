@@ -357,3 +357,45 @@ export const EXAM_ENDPOINTS = {
     pdf: "/exam/admit-card/pdf",
   },
 } as const;
+
+
+/* ------------------------------------- 
+RESULT_ENDPOINTS
+-------------------------------------  */
+
+export const RESULT_ENDPOINTS = {
+  examResults: {
+    list: '/exam-results',
+    bulk: '/exam-results/bulk',
+    publish: '/exam-results/publish',
+  },
+  examSchedules: {
+    byExam: (examId: string) => `/exam-schedules?exam_id=${examId}`,
+  },
+  reportCards: {
+    list: '/report-cards',
+    byId: (id: string) => `/report-cards/${id}`,
+    generate: '/report-cards/generate',
+    publish: '/report-cards/publish',
+  },
+} as const;
+
+
+
+export const EMP_LEAVE_ENDPOINTS = {
+  leaveTypes: {
+    list: '/leave-types',
+    byId: (id: string) => `/leave-types/${id}`,
+  },
+  leaveAssigned: {
+    byEmployee: (employeeId: string) => `/employees/${employeeId}/leaves`,
+    byAssignment: (employeeId: string, assignmentId: string) =>
+      `/employees/${employeeId}/leaves/${assignmentId}`,
+  },
+  leaveApplications: {
+    list: '/leave-applications',
+    byId: (id: string) => `/leave-applications/${id}`,
+    review: (id: string) => `/leave-applications/${id}/review`,
+    cancel: (id: string) => `/leave-applications/${id}/cancel`,
+  },
+};
