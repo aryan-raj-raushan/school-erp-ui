@@ -2,9 +2,9 @@
 
 import { useSessionTimetable } from '@/hooks/useSessionTimetable';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Select, FilterLabel, Spinner, Badge, SectionLabel, P,
+  PageHeader, PageCol,
 } from '@/components/ui';
 import type { DayOfWeek } from '@/services/timetable.service';
 

@@ -2,13 +2,15 @@
 
 import { useParents } from "@/hooks/useParents";
 import { PARENTS_PAGE } from "@/constants";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   P,
   Button,
   Input,
   Select,
+  PageHeader,
+  PageCol,
+  FilterBar,
   Table,
   TableHead,
   TableHeadRow,
@@ -69,7 +71,7 @@ export default function ParentsPage() {
   } = useParents();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={PARENTS_PAGE.title}
         subtitle={pagination ? `${pagination.total} parents` : "Loading..."}
@@ -87,14 +89,14 @@ export default function ParentsPage() {
         }
       />
 
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Input
           width="md"
           placeholder="Search by name or email"
           value={filters.search ?? ""}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
-      </Div>
+      </FilterBar>
 
       <Table>
         <TableHead>
@@ -418,6 +420,6 @@ export default function ParentsPage() {
           </ModalFooter>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

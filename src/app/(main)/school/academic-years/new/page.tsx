@@ -2,11 +2,11 @@
 
 import { useCreateAcademicYear } from '@/hooks/useCreateAcademicYear';
 import { ACADEMIC_YEARS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
   FormField, Input, Select, Textarea,
   CheckboxLabel, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 export default function NewAcademicYearPage() {

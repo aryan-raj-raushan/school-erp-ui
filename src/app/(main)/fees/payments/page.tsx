@@ -4,12 +4,12 @@ import {
   Printer, AlertTriangle, CreditCard, Users, FilePlus, LayoutGrid, FileText,
   Plus, User, Phone, Mail, BookOpen, Hash, Trash2, ChevronDown, ChevronRight, Zap, Tag,
 } from 'lucide-react';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, P, Span, Button, Badge, Spinner, Label,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   FormField, Select, Input,
   FormCard, SectionCard, WarnBanner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -67,7 +67,7 @@ export default function FeePaymentsPage() {
   const { academicYears, classes } = useFeesSetup();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader title="Fee Payments" subtitle="Student payments, bulk operations, and demand receipts" />
       <Tabs options={FEE_PAYMENTS_TABS} value={tab} onChange={(v) => setTab(v as typeof tab)} />
 
@@ -940,6 +940,6 @@ export default function FeePaymentsPage() {
           </ModalFooter>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

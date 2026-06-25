@@ -5,13 +5,13 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditSyllabus } from '@/hooks/useEditSyllabus';
 import { SYLLABUS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, H2,
   FormField, Input, Select, Textarea,
   CheckboxLabel, Spinner,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge,
+  PageHeader, PageCol,
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 

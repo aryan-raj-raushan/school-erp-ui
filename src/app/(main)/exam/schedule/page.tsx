@@ -6,7 +6,6 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useExamSchedules } from "@/hooks/exam/useExamSchedule";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   Button,
@@ -14,6 +13,9 @@ import {
   Badge,
   Spinner,
   P,
+  PageHeader,
+  PageCol,
+  FilterBar,
   Table,
   TableHead,
   TableHeadRow,
@@ -70,7 +72,7 @@ function ScheduleContent() {
   }
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={SCHEDULE_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} entries` : ""}
@@ -82,7 +84,7 @@ function ScheduleContent() {
       />
 
       {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Select
           width="sm"
           value={selectedAcademicYearId}
@@ -140,7 +142,7 @@ function ScheduleContent() {
             </option>
           ))}
         </Select>
-      </Div>
+      </FilterBar>
 
       <Table>
         <TableHead>
@@ -230,7 +232,7 @@ function ScheduleContent() {
           totalPages={pagination.totalPages}
         />
       )}
-    </Div>
+    </PageCol>
   );
 }
 

@@ -7,11 +7,11 @@ import { useEditClass } from '@/hooks/useEditClass';
 import { useDepartmentCrudSelect } from '@/hooks/useDepartmentCrudSelect';
 import { useClassTypeCrudSelect } from '@/hooks/useClassTypeCrudSelect';
 import { CLASSES_PAGE, CLASS_SEQUENCE_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, H2,
   FormField, Input, Select, Textarea,
   CheckboxLabel, Spinner, CrudDropdown,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 function EditClassPageInner() {

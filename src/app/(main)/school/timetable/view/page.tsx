@@ -5,8 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useViewTimetable } from '@/hooks/useViewTimetable';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
-import { Div, Button, Spinner, Badge } from '@/components/ui';
+import { Div, Button, Spinner, Badge, PageHeader, PageCol } from '@/components/ui';
 import { Pencil, Printer } from 'lucide-react';
 
 function ViewTimetablePageInner() {

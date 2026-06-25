@@ -2,9 +2,9 @@
 
 import { useAcademicYears } from '@/hooks/useAcademicYears';
 import { ACADEMIC_YEARS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
 } from '@/components/ui';
@@ -18,7 +18,7 @@ export default function AcademicYearsPage() {
   } = useAcademicYears();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={ACADEMIC_YEARS_PAGE.title}
         subtitle={ACADEMIC_YEARS_PAGE.description}
@@ -80,6 +80,6 @@ export default function AcademicYearsPage() {
           )}
         </TableBody>
       </Table>
-    </Div>
+    </PageCol>
   );
 }

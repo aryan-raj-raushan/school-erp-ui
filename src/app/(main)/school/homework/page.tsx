@@ -8,7 +8,8 @@ import {
   SUBMISSION_STATUS_OPTIONS,
 } from '@/constants';
 import {
-  Div, H1, Button, Select, Input,
+  Div, Button, Select, Input,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Modal, FormField, FilterLabel, Icon,
@@ -37,14 +38,16 @@ export default function HomeworkPage() {
   } = useHomework();
 
   return (
-    <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <H1>{HOMEWORK_PAGE.title}</H1>
-        <Button onClick={goToNew} disabled={!selectedClassId}>
-          <Icon icon={Plus} type="btn-icon" />
-          {HOMEWORK_PAGE.addButton}
-        </Button>
-      </Div>
+    <PageCol>
+      <PageHeader
+        title={HOMEWORK_PAGE.title}
+        actions={
+          <Button onClick={goToNew} disabled={!selectedClassId}>
+            <Icon icon={Plus} type="btn-icon" />
+            {HOMEWORK_PAGE.addButton}
+          </Button>
+        }
+      />
 
       <Div variant="card" padding="p-4">
         <Div type="grid" cols={3} gap="md">
@@ -200,6 +203,6 @@ export default function HomeworkPage() {
           </Div>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

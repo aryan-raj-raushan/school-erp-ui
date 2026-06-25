@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useStudyMaterials } from "@/hooks/useStudyMaterials";
 import { MATERIALS_PAGE, ROUTES } from "@/constants";
 import {
-  Div, H1, Button, Select,
+  Div, Button, Select,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Spinner, FilterLabel, Icon, Modal,
 } from "@/components/ui";
@@ -34,14 +35,16 @@ export default function StudyMaterialsPage() {
   } = useStudyMaterials();
 
   return (
-    <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <H1>{MATERIALS_PAGE.title}</H1>
-        <Button onClick={() => router.push(ROUTES.materialsNew)}>
-          <Icon icon={Plus} type="btn-icon" />
-          {MATERIALS_PAGE.addButton}
-        </Button>
-      </Div>
+    <PageCol>
+      <PageHeader
+        title={MATERIALS_PAGE.title}
+        actions={
+          <Button onClick={() => router.push(ROUTES.materialsNew)}>
+            <Icon icon={Plus} type="btn-icon" />
+            {MATERIALS_PAGE.addButton}
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <Div variant="card" padding="p-4">
@@ -174,6 +177,6 @@ export default function StudyMaterialsPage() {
           </Div>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useStaffAttendance } from "@/hooks/useStaffAttendance";
-import { Div, H1, P, Button, Input, Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, Spinner, MiniStat, FilterLabel } from "@/components/ui";
+import { Div, Button, Input, Table, PageHeader, PageCol, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, Spinner, MiniStat, FilterLabel } from "@/components/ui";
 
 export default function StaffAttendancePage() {
   const {
@@ -26,18 +26,18 @@ export default function StaffAttendancePage() {
   const isLoading = isLoadingStaff || isLoadingAttendance;
 
   return (
-    <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>Staff Attendance</H1>
-          <P color="muted">{date}</P>
-        </Div>
-        {hasStaff && (
-          <Button loading={isSaving} onClick={saveAttendance}>
-            Save Attendance
-          </Button>
-        )}
-      </Div>
+    <PageCol>
+      <PageHeader
+        title="Staff Attendance"
+        subtitle={date}
+        actions={
+          hasStaff ? (
+            <Button loading={isSaving} onClick={saveAttendance}>
+              Save Attendance
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Date filter */}
       <Div variant="card" padding="p-4">
@@ -152,6 +152,6 @@ export default function StaffAttendancePage() {
           </Button>
         </Div>
       )}
-    </Div>
+    </PageCol>
   );
 }

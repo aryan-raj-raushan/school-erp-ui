@@ -1,9 +1,9 @@
 'use client';
 
 import { Plus, Trash2, Pencil, CheckCircle, X, Printer } from 'lucide-react';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
   Input, Select, FormField,
@@ -63,7 +63,7 @@ export default function SalaryManagementPage() {
     items.reduce((sum, i) => sum + parseFloat(i.default_amount || '0'), 0);
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Salary & Payroll"
         subtitle="Manage salary heads, structures, assignments and monthly payroll"
@@ -739,6 +739,6 @@ export default function SalaryManagementPage() {
           )}
         </Div>
       )}
-    </Div>
+    </PageCol>
   );
 }

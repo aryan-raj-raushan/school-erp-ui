@@ -13,13 +13,15 @@ import type {
   AdmissionEnquiryFilters,
   EnquiryStatus,
 } from "@/types/admissions.types";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   P,
   Button,
   Input,
   Select,
+  PageHeader,
+  PageCol,
+  FilterBar,
   Table,
   TableHead,
   TableHeadRow,
@@ -95,27 +97,27 @@ function AdmissionsContent() {
   }
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={ADMISSION_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} enquiries` : ""}
         actions={
-          <Div type="row" gap="sm">
+          <>
             <Button
               variant="outline"
               onClick={() => router.push("/admissions/source")}
             >
               {ADMISSION_PAGE.buttons.manage}
             </Button>
-            <Button onClick={() => router.push("/admissions/view")}>
+            <Button onClick={() => router.push("/admissions/create-new")}>
               <Plus size={16} /> {ADMISSION_PAGE.buttons.addEnquiry}
             </Button>
-          </Div>
+          </>
         }
       />
 
       {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Input
           width="md"
           placeholder="Search student name or phone…"
@@ -171,7 +173,7 @@ function AdmissionsContent() {
             </option>
           ))}
         </Select>
-      </Div>
+      </FilterBar>
 
       {/* Table */}
       <Table>
@@ -313,7 +315,7 @@ function AdmissionsContent() {
           totalPages={pagination.totalPages}
         />
       )}
-    </Div>
+    </PageCol>
   );
 }
 

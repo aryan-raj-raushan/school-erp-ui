@@ -1,9 +1,9 @@
 'use client';
 
 import { useRolesPage } from '@/hooks/useRolesPage';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
 } from '@/components/ui';
@@ -17,7 +17,7 @@ export default function RolesPage() {
   const isSchoolAdmin = user?.role === Role.SCHOOL_ADMIN;
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Roles & Permissions"
         subtitle="Create custom roles (Driver, HOD, etc.) and assign granular permissions to each"
@@ -83,6 +83,6 @@ export default function RolesPage() {
           )}
         </TableBody>
       </Table>
-    </Div>
+    </PageCol>
   );
 }

@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditSubject } from '@/hooks/useEditSubject';
 import { SUBJECTS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, H2,
   FormField, Input, Select,
   CheckboxLabel, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 function EditSubjectPageInner() {

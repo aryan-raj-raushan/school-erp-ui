@@ -2,11 +2,11 @@
 
 import { useCreateClassDetail } from '@/hooks/useCreateClassDetail';
 import { CLASS_DETAILS_PAGE, BEST_EXAM_COUNT_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
   FormField, Input, Select,
   CheckboxLabel, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 export default function NewClassDetailPage() {

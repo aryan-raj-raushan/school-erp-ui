@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Div } from './layout';
+import { Div, PageActions } from './layout';
 import { PageTitle, P } from './typography';
 
 interface PageHeaderProps {
@@ -9,9 +9,14 @@ interface PageHeaderProps {
   illustration?: string;
 }
 
+/**
+ * Responsive page header.
+ * Mobile: title stacks above actions.
+ * sm+: title left, actions right (via .page-header CSS class).
+ */
 export function PageHeader({ title, subtitle, actions, illustration }: PageHeaderProps) {
   return (
-    <Div type="row" justify="between" align="center" gap="md" padding="mb-8">
+    <Div className="page-header">
       <Div type="row" align="center" gap="md">
         {illustration && (
           <Image
@@ -25,14 +30,10 @@ export function PageHeader({ title, subtitle, actions, illustration }: PageHeade
         )}
         <Div type="col" gap="xs">
           <PageTitle>{title}</PageTitle>
-          {subtitle && <P>{subtitle}</P>}
+          {subtitle && <P color="muted">{subtitle}</P>}
         </Div>
       </Div>
-      {actions && (
-        <Div type="row" gap="sm" align="center">
-          {actions}
-        </Div>
-      )}
+      {actions && <PageActions>{actions}</PageActions>}
     </Div>
   );
 }

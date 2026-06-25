@@ -4,9 +4,9 @@ import { SCHOOLS_PAGE, CREATE_SCHOOL_FORM, BOARD_TYPES } from '@/constants';
 import { Role } from '@/types';
 import { useSchools } from '@/hooks/useSchools';
 import { useAuthStore } from '@/store/auth.store';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, P, Button, Input, Select,
+  PageHeader, PageCol, FilterBar,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
   Modal, ModalBody, ModalFooter, FormField,
   Badge, Spinner,
@@ -25,7 +25,7 @@ export default function SchoolsPage() {
   const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={SCHOOLS_PAGE.title}
         subtitle={pagination ? `${pagination.total} schools` : SCHOOLS_PAGE.description}
@@ -33,14 +33,14 @@ export default function SchoolsPage() {
         actions={isSuperAdmin ? <Button onClick={openCreateModal}>{SCHOOLS_PAGE.addButton}</Button> : undefined}
       />
 
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Input
           width="md"
           placeholder="Search by name or code"
           value={filters.search ?? ''}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
-      </Div>
+      </FilterBar>
 
       <Table>
         <TableHead>
@@ -239,6 +239,6 @@ export default function SchoolsPage() {
           </form>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

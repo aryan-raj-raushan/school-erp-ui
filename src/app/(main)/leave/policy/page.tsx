@@ -4,12 +4,13 @@ import { useLeavePolicy } from "@/hooks/useLeave";
 import { LEAVE_POLICY_PAGE } from "@/constants";
 import {
   Div,
-  H1,
   H2,
   P,
   Button,
   Select,
   Input,
+  PageHeader,
+  PageCol,
   Table,
   TableHead,
   TableHeadRow,
@@ -50,15 +51,16 @@ export default function LeavePolicyPage() {
   const { register, handleSubmit, formState: { errors }, watch } = form;
 
   return (
-    <Div type="col" gap="lg">
-      {/* Header */}
-      <Div type="row" justify="between" align="center">
-        <H1>{LEAVE_POLICY_PAGE.title}</H1>
-        <Button onClick={() => setShowModal(true)}>
-          <Icon icon={Plus} type="btn-icon" />
-          {LEAVE_POLICY_PAGE.addButton}
-        </Button>
-      </Div>
+    <PageCol>
+      <PageHeader
+        title={LEAVE_POLICY_PAGE.title}
+        actions={
+          <Button onClick={() => setShowModal(true)}>
+            <Icon icon={Plus} type="btn-icon" />
+            {LEAVE_POLICY_PAGE.addButton}
+          </Button>
+        }
+      />
 
       <Div type="grid" cols={selectedPolicy ? 2 : 1} gap="lg">
         {/* Left: policy list */}
@@ -267,6 +269,6 @@ export default function LeavePolicyPage() {
           </Div>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

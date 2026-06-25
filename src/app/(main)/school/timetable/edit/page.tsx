@@ -5,9 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditTimetable } from '@/hooks/useEditTimetable';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS, MAX_PERIODS_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, Spinner, Input, Select, FormField,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 function EditTimetablePageInner() {

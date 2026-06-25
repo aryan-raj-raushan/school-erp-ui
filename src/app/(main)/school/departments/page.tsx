@@ -2,9 +2,9 @@
 
 import { useDepartmentsPage } from '@/hooks/useDepartmentsPage';
 import { DEPARTMENTS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
 } from '@/components/ui';
@@ -14,7 +14,7 @@ export default function DepartmentsPage() {
   const { departments, isLoading, removeDepartment, navigateToNew, navigateToEdit } = useDepartmentsPage();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={DEPARTMENTS_PAGE.title}
         actions={<Button onClick={navigateToNew}>{DEPARTMENTS_PAGE.addButton}</Button>}
@@ -61,6 +61,6 @@ export default function DepartmentsPage() {
           )}
         </TableBody>
       </Table>
-    </Div>
+    </PageCol>
   );
 }

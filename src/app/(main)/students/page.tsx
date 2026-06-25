@@ -22,7 +22,6 @@ import type {
   StudentStatus,
   Gender,
 } from "@/types/students.types";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   P,
@@ -40,6 +39,9 @@ import {
   TablePagination,
   Badge,
   Spinner,
+  PageCol,
+  FilterBar,
+  PageHeader,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -134,12 +136,12 @@ function StudentsContent() {
   }
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={STUDENT_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} students` : ""}
         actions={
-          <Div type="row" gap="sm">
+          <>
             <Button
               variant="outline"
               onClick={() => router.push(STUDENT_ROUTES.generate)}
@@ -151,12 +153,11 @@ function StudentsContent() {
               <Plus size={16} />
               {STUDENT_PAGE.buttons.addStudent}
             </Button>
-          </Div>
+          </>
         }
       />
 
-      {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Input
           width="md"
           placeholder={STUDENT_PAGE.filters.search}
@@ -249,7 +250,7 @@ function StudentsContent() {
             </option>
           ))}
         </Select>
-      </Div>
+      </FilterBar>
 
       {/* Table */}
       <Table>
@@ -388,7 +389,7 @@ function StudentsContent() {
           totalPages={pagination.totalPages}
         />
       )}
-    </Div>
+    </PageCol>
   );
 }
 
