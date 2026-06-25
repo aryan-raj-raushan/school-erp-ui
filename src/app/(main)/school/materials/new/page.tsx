@@ -1,9 +1,9 @@
 'use client';
 
 import { useCreateStudyMaterial } from '@/hooks/useCreateStudyMaterial';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, H2, FormField, Input, Select, Textarea, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 const CONTENT_TYPE_OPTIONS = [

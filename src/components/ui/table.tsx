@@ -3,11 +3,13 @@ import { cn } from '@/lib/utils';
 
 export function Table({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn('rounded-2xl border border-border/50 bg-card backdrop-blur-sm overflow-hidden glass-card', className)}
-      {...props}
-    >
-      <table className="w-full text-sm">{children}</table>
+    <div className="w-full overflow-x-auto">
+      <div
+        className={cn('min-w-[540px] rounded-2xl border border-border/50 bg-card backdrop-blur-sm overflow-hidden glass-card', className)}
+        {...props}
+      >
+        <table className="w-full text-sm">{children}</table>
+      </div>
     </div>
   );
 }

@@ -5,9 +5,9 @@ import { useClassDetails } from '@/hooks/useClassDetails';
 import { useAcademicYears } from '@/hooks/useAcademicYears';
 import { useClassesPageTabs, CLASSES_TAB_OPTIONS } from '@/hooks/useClassesPageTabs';
 import { CLASSES_PAGE, CLASS_DETAILS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, P, Button, Tabs,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
 } from '@/components/ui';
@@ -24,7 +24,7 @@ export default function ClassesPage() {
   const { classDetails, isLoading: isLoadingDetails, removeClassDetail, navigateToNew: navigateToNewDetail, navigateToEdit: navigateToEditDetail } = useClassDetails();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={CLASSES_PAGE.title}
         illustration="/illustrations/graduation.svg"
@@ -152,6 +152,6 @@ export default function ClassesPage() {
           </TableBody>
         </Table>
       )}
-    </Div>
+    </PageCol>
   );
 }

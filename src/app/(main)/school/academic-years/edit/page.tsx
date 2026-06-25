@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditAcademicYear } from '@/hooks/useEditAcademicYear';
 import { ACADEMIC_YEARS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
   FormField, Input, Select, Textarea,
   CheckboxLabel, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 function EditAcademicYearPageInner() {

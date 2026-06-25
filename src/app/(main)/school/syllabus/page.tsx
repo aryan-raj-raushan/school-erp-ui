@@ -2,9 +2,9 @@
 
 import { useSyllabusPage } from '@/hooks/useSyllabusPage';
 import { SYLLABUS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon, Select, FilterLabel,
 } from '@/components/ui';
@@ -20,7 +20,7 @@ export default function SyllabusPage() {
   } = useSyllabusPage();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={SYLLABUS_PAGE.title}
         actions={<Button onClick={navigateToNew}>{SYLLABUS_PAGE.addButton}</Button>}
@@ -82,6 +82,6 @@ export default function SyllabusPage() {
           )}
         </TableBody>
       </Table>
-    </Div>
+    </PageCol>
   );
 }

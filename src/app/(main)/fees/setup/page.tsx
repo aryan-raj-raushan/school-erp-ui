@@ -2,10 +2,10 @@
 
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Save, ChevronDown, ChevronRight, Search, GripVertical, X } from 'lucide-react';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, Badge, Spinner, Icon, P, FormField, Input, Select, FormCard, SectionCard,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
+  PageHeader, PageCol,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -102,7 +102,7 @@ export default function FeeSetupPage() {
   };
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader title="Fee Setup" subtitle="Configure fee types, plans, class fee structures and late rules" />
       <Tabs options={FEE_SETUP_TABS} value={tab} onChange={(v) => setTab(v as typeof tab)} />
 
@@ -678,6 +678,6 @@ export default function FeeSetupPage() {
           </ModalFooter>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

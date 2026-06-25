@@ -2,11 +2,11 @@
 
 import { useCreateDepartment } from '@/hooks/useCreateDepartment';
 import { DEPARTMENTS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, H2,
   FormField, Input, Textarea,
   CheckboxLabel,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 export default function NewDepartmentPage() {

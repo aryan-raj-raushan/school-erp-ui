@@ -3,12 +3,12 @@
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useSchools } from '@/hooks/useSchools';
 import { SUBSCRIPTIONS_PAGE, SUBSCRIPTION_STATUS_BADGE, PLAN_TYPE_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
   Modal, ModalBody, ModalFooter, FormField, Input, Select,
   Badge, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 export default function SubscriptionsPage() {
@@ -16,7 +16,7 @@ export default function SubscriptionsPage() {
   const { schools } = useSchools();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={SUBSCRIPTIONS_PAGE.title}
         subtitle={SUBSCRIPTIONS_PAGE.description}
@@ -116,6 +116,6 @@ export default function SubscriptionsPage() {
           </form>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

@@ -7,11 +7,12 @@ import {
 } from "@/constants";
 import {
   Div,
-  H1,
   P,
   Button,
   Select,
   Input,
+  PageHeader,
+  PageCol,
   Table,
   TableHead,
   TableHeadRow,
@@ -68,23 +69,19 @@ export default function StudentAttendancePage() {
     : 0;
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       {/* Header */}
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>{STUDENT_ATTENDANCE_PAGE.title}</H1>
-          {selectedClass && (
-            <P>
-              {selectedClass.display_name} &nbsp;·&nbsp; {date}
-            </P>
-          )}
-        </Div>
-        {hasStudents && (
-          <Button loading={isSaving} onClick={saveAttendance}>
-            {STUDENT_ATTENDANCE_PAGE.save}
-          </Button>
-        )}
-      </Div>
+      <PageHeader
+        title={STUDENT_ATTENDANCE_PAGE.title}
+        subtitle={selectedClass ? `${selectedClass.display_name} · ${date}` : undefined}
+        actions={
+          hasStudents ? (
+            <Button loading={isSaving} onClick={saveAttendance}>
+              {STUDENT_ATTENDANCE_PAGE.save}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Filters */}
       <Div variant="card" padding="p-4">
@@ -310,6 +307,6 @@ export default function StudentAttendancePage() {
           </Button>
         </Div>
       )}
-    </Div>
+    </PageCol>
   );
 }

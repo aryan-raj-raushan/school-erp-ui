@@ -2,9 +2,9 @@
 
 import { useEmployeeTimetable } from '@/hooks/useEmployeeTimetable';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Select, FilterLabel, Spinner, Badge, SectionLabel, P,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 export default function EmployeeTimetablePage() {

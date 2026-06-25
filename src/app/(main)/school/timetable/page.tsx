@@ -2,9 +2,9 @@
 
 import { useTimetablePage } from '@/hooks/useTimetablePage';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon, Select, FilterLabel,
 } from '@/components/ui';
@@ -20,11 +20,11 @@ export default function TimetablePage() {
   } = useTimetablePage();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={SCHOOL_TIMETABLE_PAGE.title}
         actions={
-          <Div type="row" gap="sm">
+          <>
             <Button variant="outline" onClick={goToSession}>
               <Calendar className="w-4 h-4 mr-1" />
               Day Schedule
@@ -34,7 +34,7 @@ export default function TimetablePage() {
               Employee Schedule
             </Button>
             <Button onClick={goToNew}>{SCHOOL_TIMETABLE_PAGE.addButton}</Button>
-          </Div>
+          </>
         }
       />
 
@@ -110,6 +110,6 @@ export default function TimetablePage() {
           )}
         </TableBody>
       </Table>
-    </Div>
+    </PageCol>
   );
 }

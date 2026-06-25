@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditClassDetail } from '@/hooks/useEditClassDetail';
 import { CLASS_DETAILS_PAGE, BEST_EXAM_COUNT_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
   FormField, Input, Select,
   CheckboxLabel, Spinner,
+  PageHeader, PageCol,
 } from '@/components/ui';
 
 function EditClassDetailPageInner() {

@@ -4,12 +4,13 @@ import { useAttendanceReports } from "@/hooks/useAttendanceReports";
 import { ATTENDANCE_REPORT_PAGE, ATTENDANCE_STATUS_BADGE } from "@/constants";
 import {
   Div,
-  H1,
   H2,
   P,
   Button,
   Input,
   Select,
+  PageHeader,
+  PageCol,
   Table,
   TableHead,
   TableHeadRow,
@@ -115,44 +116,46 @@ export default function StudentAttendanceReportPage() {
   ];
 
   return (
-    <Div type="col" gap="lg">
-      <Div type="row" justify="between" align="center">
-        <H1>{ATTENDANCE_REPORT_PAGE.title}</H1>
-        <Div type="row" gap="sm" align="center">
-          <Select
-            width="sm"
-            value={exportSectionId}
-            onChange={(e) => setExportSectionId(e.target.value)}
-            disabled={isLoadingClassSection}
-          >
-            <option value="">All Sections</option>
-            {sectionOptions.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </Select>
-          <Input
-            type="date"
-            width="sm"
-            value={exportStartDate}
-            onChange={(e) => setExportStartDate(e.target.value)}
-          />
-          <Input
-            type="date"
-            width="sm"
-            value={exportEndDate}
-            onChange={(e) => setExportEndDate(e.target.value)}
-          />
-          <Button
-            variant="outline"
-            loading={isExporting}
-            onClick={exportAttendance}
-          >
-            {ATTENDANCE_REPORT_PAGE.export}
-          </Button>
-        </Div>
-      </Div>
+    <PageCol>
+      <PageHeader
+        title={ATTENDANCE_REPORT_PAGE.title}
+        actions={
+          <>
+            <Select
+              width="sm"
+              value={exportSectionId}
+              onChange={(e) => setExportSectionId(e.target.value)}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">All Sections</option>
+              {sectionOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </Select>
+            <Input
+              type="date"
+              width="sm"
+              value={exportStartDate}
+              onChange={(e) => setExportStartDate(e.target.value)}
+            />
+            <Input
+              type="date"
+              width="sm"
+              value={exportEndDate}
+              onChange={(e) => setExportEndDate(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              loading={isExporting}
+              onClick={exportAttendance}
+            >
+              {ATTENDANCE_REPORT_PAGE.export}
+            </Button>
+          </>
+        }
+      />
 
       {/* Tabs */}
       <Div type="row" gap="sm">
@@ -592,6 +595,6 @@ export default function StudentAttendanceReportPage() {
           )}
         </Div>
       )}
-    </Div>
+    </PageCol>
   );
 }

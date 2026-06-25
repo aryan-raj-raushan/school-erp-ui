@@ -2,10 +2,11 @@
 
 import { useSubjectsPage } from "@/hooks/useSubjectsPage";
 import { SUBJECTS_PAGE } from "@/constants";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   Button,
+  PageHeader,
+  PageCol,
   Table,
   TableHead,
   TableHeadRow,
@@ -41,7 +42,7 @@ export default function SubjectsPage() {
 console.log("subjects: ", subjects);
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={SUBJECTS_PAGE.title}
         actions={
@@ -144,6 +145,6 @@ console.log("subjects: ", subjects);
           )}
         </TableBody>
       </Table>
-    </Div>
+    </PageCol>
   );
 }

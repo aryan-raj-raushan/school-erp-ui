@@ -87,6 +87,48 @@ const colorMap: Record<DivColor, string> = {
   yellow: 'rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 px-4 py-2 text-center',
 };
 
+// ─── Semantic page-layout components ─────────────────────────────────────────
+// Use in page.tsx instead of verbose <Div type/gap/wrap> combos.
+// Zero classNames needed at the call site.
+
+/** Root page column — replaces <Div type="col" gap="lg"> */
+type PageLayoutProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>;
+
+export function PageCol({ children, ...props }: PageLayoutProps) {
+  return (
+    <Div type="col" gap="lg" {...props}>
+      {children}
+    </Div>
+  );
+}
+
+/**
+ * Responsive filter/toolbar row.
+ * Wraps to next line on mobile, horizontal on sm+.
+ * Replaces <Div type="row" gap="md" align="center" wrap>
+ */
+export function FilterBar({ children, ...props }: PageLayoutProps) {
+  return (
+    <Div type="row" gap="md" align="center" wrap {...props}>
+      {children}
+    </Div>
+  );
+}
+
+/**
+ * Action-button group (header right side).
+ * Replaces <Div type="row" gap="sm" align="center">
+ */
+export function PageActions({ children, ...props }: PageLayoutProps) {
+  return (
+    <Div type="row" gap="sm" align="center" wrap {...props}>
+      {children}
+    </Div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
   type?: 'row' | 'col' | 'grid';
   justify?: JustifyValue;

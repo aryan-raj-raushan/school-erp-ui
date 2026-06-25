@@ -3,11 +3,11 @@
 import { useClassDetails } from '@/hooks/useClassDetails';
 import { useClasses } from '@/hooks/useClasses';
 import { CLASS_DETAILS_PAGE } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
+  PageHeader, PageCol,
 } from '@/components/ui';
 import { Pencil, Trash2 } from 'lucide-react';
 

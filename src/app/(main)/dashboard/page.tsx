@@ -95,7 +95,7 @@ function SchoolBanner({ academicYear }: { academicYear: string }) {
       type="row"
       align="center"
       justify="between"
-      className="rounded-2xl border border-border bg-gradient-to-r from-violet-50/60 to-indigo-50/40 dark:from-violet-950/30 dark:to-indigo-950/20 px-6 py-5"
+      className="flex-col gap-4 sm:flex-row rounded-2xl border border-border bg-gradient-to-r from-violet-50/60 to-indigo-50/40 dark:from-violet-950/30 dark:to-indigo-950/20 px-4 py-4 sm:px-6 sm:py-5"
     >
       <Div type="row" align="center" gap="md">
         <Div
@@ -109,7 +109,7 @@ function SchoolBanner({ academicYear }: { academicYear: string }) {
         <Div type="col" gap="xs">
           <SectionLabel>School Dashboard</SectionLabel>
           <H2 className="text-xl font-bold">School Management</H2>
-          <P color="muted">Manage academics, attendance, fees, and school operations efficiently.</P>
+          <P color="muted" className="hidden sm:block">Manage academics, attendance, fees, and school operations efficiently.</P>
         </Div>
       </Div>
 
@@ -117,7 +117,7 @@ function SchoolBanner({ academicYear }: { academicYear: string }) {
         type="row"
         align="center"
         gap="sm"
-        className="rounded-xl border border-border bg-background px-4 py-2.5 shrink-0"
+        className="rounded-xl border border-border bg-background px-4 py-2.5 shrink-0 self-start sm:self-auto"
       >
         <Div
           type="row"
@@ -200,7 +200,7 @@ function PunchCard() {
       type="row"
       align="center"
       justify="between"
-      className="rounded-xl border border-border bg-card px-6 py-4"
+      className="flex-col gap-4 sm:flex-row rounded-xl border border-border bg-card px-4 py-4 sm:px-6"
     >
       <Div type="row" align="center" gap="md">
         <Badge variant={punched ? "success" : "default"} className="gap-1.5">
@@ -228,7 +228,7 @@ function PunchCard() {
         </Div>
       </Div>
 
-      <Div type="row" align="center" gap="md">
+      <Div type="row" align="center" gap="md" className="self-stretch sm:self-auto justify-between sm:justify-end">
         <Div type="row" align="center" gap="xs" className="text-muted-foreground">
           <Clock size={13} />
           <P color="muted" className="text-xs">{today}</P>
@@ -345,7 +345,7 @@ function GenderPieChart({ data }: { data: { gender: string | null; count: number
   const chartData = data.map((r) => ({ name: r.gender ?? "Unknown", value: Number(r.count) }));
 
   return (
-    <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5" style={{ minWidth: 240 }}>
+    <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5 flex-1 min-w-0 sm:min-w-[240px]">
       <Div type="col" gap="xs">
         <H3 color="default" className="font-semibold">Gender Distribution</H3>
         <P color="muted" className="text-xs">Student gender breakdown</P>
@@ -376,7 +376,7 @@ function AdmissionPieChart({ data }: { data: { status: string; count: number }[]
   const chartData = data.map((r) => ({ name: r.status, value: Number(r.count) }));
 
   return (
-    <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5" style={{ minWidth: 240 }}>
+    <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5 flex-1 min-w-0 sm:min-w-[240px]">
       <Div type="col" gap="xs">
         <H3 color="default" className="font-semibold">Admission Enquiries</H3>
         <P color="muted" className="text-xs">Status breakdown</P>
@@ -567,9 +567,9 @@ export default function DashboardPage() {
   }));
 
   return (
-    <Div type="col" gap="lg" className="min-h-screen bg-background px-6 py-8 max-w-screen-7xl mx-auto">
+    <Div type="col" gap="lg" className="min-h-screen bg-background px-4 py-4 sm:px-6 sm:py-8 max-w-screen-7xl mx-auto">
       {/* Header */}
-      <Div type="row" justify="between" align="center">
+      <Div type="row" justify="between" align="center" className="flex-wrap gap-2">
         <GreetingHeader name={firstName} />
         <Div type="row" align="center" gap="sm">
           {error && (
@@ -610,7 +610,7 @@ export default function DashboardPage() {
         )}
 
         {/* Class-wise students + Fees */}
-        <Div type="row" gap="md" align="stretch">
+        <Div type="row" gap="md" align="stretch" className="flex-col md:flex-row">
           {(data?.students.byClass?.length ?? 0) > 0 && (
             <ClasswiseStudentsChart data={data!.students.byClass} />
           )}
@@ -620,7 +620,7 @@ export default function DashboardPage() {
         </Div>
 
         {/* Pie charts row */}
-        <Div type="row" gap="md" align="stretch">
+        <Div type="row" gap="md" align="stretch" className="flex-col sm:flex-row flex-wrap">
           {(data?.students.byGender?.length ?? 0) > 0 && (
             <GenderPieChart data={data!.students.byGender} />
           )}
@@ -651,7 +651,7 @@ export default function DashboardPage() {
       {/* Upcoming lists */}
       <Div type="col" gap="md">
         <SectionLabel>Upcoming</SectionLabel>
-        <Div type="row" gap="md" align="stretch">
+        <Div type="row" gap="md" align="stretch" className="flex-col md:flex-row">
           <UpcomingList title="Upcoming Exams" items={upcomingExams} emptyText="No upcoming exams" />
           <UpcomingList title="Events & Holidays" items={upcomingEvents} emptyText="No upcoming events" />
           <UpcomingList title="Recent Homework" items={recentHomework} emptyText="No recent homework" />

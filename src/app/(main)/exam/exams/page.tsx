@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Send, SendHorizonal } from "lucide-react";
 import { useExams } from "@/hooks/exam/useExams";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div, P, Button, Select, Badge, Spinner,
+  PageHeader, PageCol, FilterBar,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
 } from "@/components/ui";
@@ -38,7 +38,7 @@ function ExamsContent() {
   }
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={EXAMS_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} exams` : ""}
@@ -50,7 +50,7 @@ function ExamsContent() {
       />
 
       {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Select width="sm" value={selectedAcademicYearId}
           onChange={(e) => handleYearChange(e.target.value)}>
           <option value="">{EXAMS_PAGE.filters.allYears}</option>
@@ -75,7 +75,7 @@ function ExamsContent() {
           <option value="true">Published</option>
           <option value="false">Draft</option>
         </Select>
-      </Div>
+      </FilterBar>
 
       <Table>
         <TableHead>
@@ -143,7 +143,7 @@ function ExamsContent() {
       {pagination && pagination.totalPages > 1 && (
         <TablePagination total={pagination.total} page={pagination.page} totalPages={pagination.totalPages} />
       )}
-    </Div>
+    </PageCol>
   );
 }
 

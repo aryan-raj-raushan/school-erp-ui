@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditHomework } from '@/hooks/useEditHomework';
 import { HOMEWORK_PAGE, HOMEWORK_STATUS_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, H2,
   FormField, Input, Select, Textarea,
@@ -13,6 +12,7 @@ import {
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
   Badge,
+  PageHeader, PageCol,
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 

@@ -1,9 +1,9 @@
 'use client';
 
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, Span, P, FormField, Input, Select,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
 } from '@/components/ui';
@@ -27,7 +27,7 @@ export default function FinanceSetupPage() {
   } = useFinanceSetup();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Finance Setup"
         subtitle="Manage finance accounts and income/expense heads"
@@ -230,6 +230,6 @@ export default function FinanceSetupPage() {
           </ModalFooter>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }

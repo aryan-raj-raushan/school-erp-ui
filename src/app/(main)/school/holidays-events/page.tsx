@@ -9,11 +9,13 @@ import { useFilterParams } from "@/hooks/useFilterParams";
 import type { SchoolEventFilters } from "@/types/setting/school-events.types";
 import {
   Div,
-  H1,
   P,
   Button,
   Input,
   Select,
+  PageHeader,
+  PageCol,
+  FilterBar,
   Table,
   TableHead,
   TableHeadRow,
@@ -88,32 +90,26 @@ function SchoolEventsContent() {
   const activeTab = filters.type ?? "";
 
   return (
-    <Div type="col" gap="lg">
-      {/* Header */}
-      <Div type="row" justify="between" align="center">
-        <Div type="col" gap="xs">
-          <H1>Events & Holidays</H1>
-          <P color="muted">
-            {pagination
-              ? `${pagination.total} total`
-              : "Manage school events and holidays"}
-          </P>
-        </Div>
-        {/* Action buttons */}
-        <Div type="row" gap="sm" align="center">
-          <Button
-            variant="outline"
-            onClick={() => setCalendarOpen(true)}
-          >
-            <CalendarDays size={16} />
-            Calendar view
-          </Button>
-          <Button onClick={() => router.push("holidays-events/create-new")}>
-            <Plus size={16} />
-            Add New
-          </Button>
-        </Div>
-      </Div>
+    <PageCol>
+      <PageHeader
+        title="Events & Holidays"
+        subtitle={pagination ? `${pagination.total} total` : "Manage school events and holidays"}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setCalendarOpen(true)}
+            >
+              <CalendarDays size={16} />
+              Calendar view
+            </Button>
+            <Button onClick={() => router.push("/school/holidays-events/create-new")}>
+              <Plus size={16} />
+              Add New
+            </Button>
+          </>
+        }
+      />
 
       {/* Type Tabs */}
       <Tabs
@@ -128,7 +124,7 @@ function SchoolEventsContent() {
       />
 
       {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Input
           width="md"
           placeholder="Search by name…"
@@ -151,7 +147,7 @@ function SchoolEventsContent() {
             </option>
           ))}
         </Select>
-      </Div>
+      </FilterBar>
 
       {/* Table */}
       <Table>
@@ -234,7 +230,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`holidays-events/view?id=${ev.id}`)
+                        router.push(`/school/holidays-events/view?id=${ev.id}`)
                       }
                       title="View"
                     >
@@ -244,7 +240,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`holidays-events/view?id=${ev.id}&edit=true`)
+                        router.push(`/school/holidays-events/view?id=${ev.id}&edit=true`)
                       }
                       title="Edit"
                     >
@@ -281,7 +277,7 @@ function SchoolEventsContent() {
           onClose={() => setCalendarOpen(false)}
         />
       )}
-    </Div>
+    </PageCol>
   );
 }
 

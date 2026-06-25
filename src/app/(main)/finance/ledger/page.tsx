@@ -1,9 +1,9 @@
 'use client';
 
 import { Trash2, Search, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, Button, Span, P,
+  PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon, FormField, Input, Select, FormCard,
 } from '@/components/ui';
@@ -25,7 +25,7 @@ export default function FinanceLedgerPage() {
   } = useFinanceLedger();
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Finance Ledger"
         subtitle="Record income, expenses, transfers and view reports"
@@ -517,6 +517,6 @@ export default function FinanceLedgerPage() {
           )}
         </Div>
       )}
-    </Div>
+    </PageCol>
   );
 }

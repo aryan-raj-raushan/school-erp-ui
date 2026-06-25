@@ -2,11 +2,11 @@
 
 import { useStaffsPage } from '@/hooks/useStaffsPage';
 import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS } from '@/constants';
-import { PageHeader } from '@/components/ui/page-header';
 import {
   Div, P, Button, Input, Select,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   TablePagination, Modal, ModalBody, ModalFooter, FormField, Badge, Spinner, FileInput,
+  PageCol, FilterBar, PageHeader,
 } from '@/components/ui';
 import { Pencil, Eye, UserX, UserCheck, Mail, Trash2, Plus } from 'lucide-react';
 
@@ -20,10 +20,8 @@ export default function StaffsPage() {
     downloadTemplate, isAdmin, systemRoles,
   } = useStaffsPage();
 
-
-
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Staff"
         subtitle={pagination ? `${pagination.total} staff members` : 'Loading...'}
@@ -37,7 +35,7 @@ export default function StaffsPage() {
         }
       />
 
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Input
           width="md"
           placeholder="Search by name or phone"
@@ -63,7 +61,7 @@ export default function StaffsPage() {
             <option key={r.id} value={r.name.toUpperCase().replace(/ /g, '_')}>{r.name}</option>
           ))}
         </Select>
-      </Div>
+      </FilterBar>
 
       <Table>
         <TableHead>
@@ -143,7 +141,6 @@ export default function StaffsPage() {
         />
       )}
 
-      {/* Bulk Import Modal */}
       {showBulkModal && (
         <Modal onClose={closeBulkModal} title="Bulk Import Staff">
           <ModalBody>
@@ -168,6 +165,6 @@ export default function StaffsPage() {
           </ModalFooter>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }
