@@ -3,17 +3,13 @@ import { z } from 'zod';
 // ─── Leave Type ───────────────────────────────────────────────────────────────
 export const leaveTypeSchema = z.object({
   leave_name: z.string().min(1, 'Leave name is required').max(100),
-  leave_validity: z.enum(['MONTHLY', 'YEARLY', 'ON_OCCASION'], {
-    required_error: 'Please select leave validity',
-  }),
-  leave_pay_type: z.enum(['PAID', 'UNPAID'], {
-    required_error: 'Please select pay type',
-  }),
+  leave_validity: z.enum(['MONTHLY', 'YEARLY', 'ON_OCCASION'], 'Please select leave validity'),
+  leave_pay_type: z.enum(['PAID', 'UNPAID'], 'Please select pay type'),
   leave_count_days: z
     .number({ message: 'Must be a number' })
     .int()
     .min(1, 'Must be at least 1 day'),
-  is_enabled: z.boolean().optional().default(true),
+  is_enabled: z.boolean(),
 });
 export type LeaveTypeFormValues = z.infer<typeof leaveTypeSchema>;
 

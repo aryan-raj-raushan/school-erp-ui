@@ -370,7 +370,7 @@ export const RESULT_ENDPOINTS = {
     publish: '/exam-results/publish',
   },
   examSchedules: {
-    byExam: (examId: string) => `/exam-schedules?exam_id=${examId}`,
+    byExam: (examId: string) => `/exam/schedules?exam_id=${examId}`,
   },
   reportCards: {
     list: '/report-cards',

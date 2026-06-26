@@ -1,4 +1,4 @@
-aimport { LucideIcon } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 import { Role } from "..";
 import { type AppPermission } from "@/constants/permissions.registry";
 
