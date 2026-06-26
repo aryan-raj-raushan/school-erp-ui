@@ -1,10 +1,15 @@
 "use client";
 
-import { Suspense } from "react";
+import { use, Suspense } from "react";
 import { Div, Spinner } from "@/components/ui";
 import { AdmissionEnquiryDetail } from "../enquiry-detail";
 
-export default function CreateAdmissionEnquiryPage() {
+export default function AdmissionEnquiryDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   return (
     <Suspense
       fallback={
@@ -13,7 +18,7 @@ export default function CreateAdmissionEnquiryPage() {
         </Div>
       }
     >
-      <AdmissionEnquiryDetail id="create-new" />
+      <AdmissionEnquiryDetail id={id} />
     </Suspense>
   );
 }

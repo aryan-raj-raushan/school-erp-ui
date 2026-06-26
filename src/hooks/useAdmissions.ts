@@ -8,6 +8,8 @@ import {
   AdmissionSourcesService,
   AdmissionEnquiriesService,
 } from "@/services/admissions.service";
+import { ClassesService } from "@/services/classes.service";
+import { StaffService } from "@/services/staff.service";
 import {
   admissionSourceSchema,
   admissionEnquirySchema,
@@ -23,7 +25,7 @@ import type {
   AdmissionEnquiryFilters,
   AdmissionSourceFilters,
 } from "@/types/admissions.types";
-import type { PaginationMeta } from "@/types";
+import type { PaginationMeta, Class, Staff } from "@/types";
 
 // ─────────────────────────────────────────────
 // Admission Sources
@@ -152,6 +154,25 @@ export function useAdmissionSourceDetail(id?: string) {
     handleSubmit: form.handleSubmit(submit),
     isSubmitting: form.formState.isSubmitting,
   };
+}
+
+// ─────────────────────────────────────────────
+// Shared lookups (classes + teachers) for enquiry list pages
+// ─────────────────────────────────────────────
+export function useAdmissionLookups() {
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [teachers, setTeachers] = useState<Staff[]>([]);
+
+  useEffect(() => {
+    ClassesService.list()
+      .then((r) => setClasses(r.items))
+      .catch(() => {});
+    StaffService.list()
+      .then((r) => setTeachers(r.items))
+      .catch(() => {});
+  }, []);
+
+  return { classes, teachers };
 }
 
 // ─────────────────────────────────────────────

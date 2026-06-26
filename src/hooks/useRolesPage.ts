@@ -34,7 +34,7 @@ export function useRolesPage() {
   }
 
   function navigateToNew() { router.push('/school/roles/create-new'); }
-  function navigateToEdit(id: string) { router.push(`/school/roles/view?id=${id}&edit=true`); }
+  function navigateToEdit(id: string) { router.push(`/school/roles/${id}?edit=true`); }
 
   useEffect(() => { fetchRoles(); }, [fetchRoles]);
 

@@ -3,12 +3,9 @@
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import { useAdmissionEnquiries } from "@/hooks/useAdmissions";
+import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
-import { ClassesService } from "@/services/classes.service";
-import { useEffect, useState } from "react";
-import type { Class, Staff } from "@/types";
 import type {
   AdmissionEnquiryFilters,
   EnquiryStatus,
@@ -30,7 +27,6 @@ import {
   Badge,
   Spinner,
 } from "@/components/ui";
-import { StaffService } from "@/services/staff.service";
 import { getTodayDate } from "@/lib/time.utils";
 import { STATUS_BADGE } from "@/constants/admission.constants";
 
@@ -38,16 +34,7 @@ import { STATUS_BADGE } from "@/constants/admission.constants";
 function AdmissionsContent() {
   const router = useRouter();
   const { years } = useAcademicYears();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [teachers, setTeachers] = useState<Staff[]>([]);
-
-  useEffect(() => {
-    ClassesService.list()
-      .then((r) => setClasses(r.items))
-      .catch(() => {});
-
-    StaffService.list().then((r) => setTeachers(r.items));
-  }, []);
+  const { classes, teachers } = useAdmissionLookups();
 
   const [urlFilters, setUrlFilters] = useFilterParams<
     Record<string, string | undefined>
@@ -114,7 +101,7 @@ function AdmissionsContent() {
                 <TableCell>{i + 1} </TableCell>
                 <TableCell primary>
                   <Div type="col" gap="xs">
-                    <span>{enq.student_name}</span>
+                    <P>{enq.student_name}</P>
                   </Div>
                 </TableCell>
                 <TableCell>
@@ -167,9 +154,7 @@ function AdmissionsContent() {
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      onClick={() =>
-                        router.push(`/admissions/view?id=${enq.id}`)
-                      }
+                      onClick={() => router.push(`/admissions/${enq.id}`)}
                       title="View"
                     >
                       <Eye size={14} />
@@ -178,7 +163,7 @@ function AdmissionsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/admissions/view?id=${enq.id}&edit=true`)
+                        router.push(`/admissions/${enq.id}?edit=true`)
                       }
                       title="Edit"
                     >

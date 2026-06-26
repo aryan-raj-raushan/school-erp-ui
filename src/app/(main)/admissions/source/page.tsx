@@ -150,7 +150,7 @@ function AdmissionSourcesContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/admissions/source/view?id=${src.id}`)
+                        router.push(`/admissions/source/${src.id}`)
                       }
                       title="View"
                     >
@@ -161,7 +161,7 @@ function AdmissionSourcesContent() {
                       variant="ghost"
                       onClick={() =>
                         router.push(
-                          `/admissions/source/view?id=${src.id}&edit=true`,
+                          `/admissions/source/${src.id}?edit=true`,
                         )
                       }
                       title="Edit"

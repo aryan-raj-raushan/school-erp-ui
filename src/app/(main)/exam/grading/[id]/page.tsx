@@ -1,13 +1,18 @@
 "use client";
 
-import { Suspense } from "react";
+import { use, Suspense } from "react";
 import { Div, Spinner } from "@/components/ui";
 import { GradingFormContent } from "../grading-form";
 
-export default function CreateGradingPage() {
+export default function GradingDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   return (
     <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
-      <GradingFormContent slug="create-new" />
+      <GradingFormContent slug={id} />
     </Suspense>
   );
 }

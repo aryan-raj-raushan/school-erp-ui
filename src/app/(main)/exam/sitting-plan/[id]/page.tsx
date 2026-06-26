@@ -1,13 +1,18 @@
 "use client";
 
-import { Suspense } from "react";
+import { use, Suspense } from "react";
 import { Div, Spinner } from "@/components/ui";
 import { SittingPlanFormContent } from "../sitting-plan-form";
 
-export default function CreateSittingPlanPage() {
+export default function SittingPlanDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   return (
     <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
-      <SittingPlanFormContent slug="create-new" />
+      <SittingPlanFormContent slug={id} />
     </Suspense>
   );
 }
