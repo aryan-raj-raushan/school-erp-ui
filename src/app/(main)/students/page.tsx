@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -13,14 +13,14 @@ import {
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudentV2";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-// import { useFilterParams } from "@/hooks/useFilterParams";
-import { useState, useEffect } from "react";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import { ClassesService, SectionsService } from "@/services/classes.service";
 import type { Class, Section } from "@/types";
 import type {
   StudentFilters,
   StudentStatus,
   Gender,
+  StudentListItem,
 } from "@/types/students.types";
 import {
   Div,
@@ -28,21 +28,14 @@ import {
   Button,
   Input,
   Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
   PageCol,
   FilterBar,
-  PageHeader,
 } from "@/components/ui";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   STUDENT_PAGE,
   STUDENT_ROUTES,
@@ -50,7 +43,6 @@ import {
   STUDENT_STATUS_OPTIONS,
   GENDER_OPTIONS,
 } from "@/constants/students-v2.constants";
-import { useFilterParams } from "@/hooks/useFilterParams";
 
 function StudentsContent() {
   const router = useRouter();
@@ -58,7 +50,6 @@ function StudentsContent() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
 
-  // Persistent URL filters
   const [urlFilters, setUrlFilters] = useFilterParams<
     Record<string, string | undefined>
   >({
@@ -91,7 +82,6 @@ function StudentsContent() {
     toggleEnabled,
   } = useStudents(initialFilters);
 
-  // Load classes when academic year changes
   useEffect(() => {
     if (!filters.academic_year_id) {
       setClasses([]);
@@ -106,7 +96,6 @@ function StudentsContent() {
       .catch(() => {});
   }, [filters.academic_year_id]);
 
-  // Load sections when class changes
   useEffect(() => {
     if (!filters.class_id) {
       setSections([]);
@@ -134,6 +123,156 @@ function StudentsContent() {
       urlNext.page = next.page ? String(next.page) : undefined;
     setUrlFilters(urlNext);
   }
+
+  const columns = useMemo<ColumnDef<StudentListItem>[]>(
+    () => [
+      {
+        id: "index",
+        header: STUDENT_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "system_number",
+        header: STUDENT_PAGE.table.systemNo,
+        cell: ({ row }) => (
+          <P color="muted" className="font-mono text-xs">
+            #{row.original.system_number}
+          </P>
+        ),
+      },
+      {
+        accessorKey: "first_name",
+        header: STUDENT_PAGE.table.studentName,
+        meta: { primary: true },
+        cell: ({ row }) => (
+          <Div type="row" align="center" gap="sm">
+            {row.original.profile_image ? (
+              <img
+                src={row.original.profile_image}
+                alt={row.original.first_name}
+                className="h-7 w-7 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <Div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <P color="muted" className="text-xs font-semibold">
+                  {row.original.first_name[0]}
+                  {row.original.last_name?.[0] ?? ""}
+                </P>
+              </Div>
+            )}
+            <span>
+              {row.original.first_name} {row.original.last_name ?? ""}
+            </span>
+          </Div>
+        ),
+      },
+      {
+        accessorKey: "class_name",
+        header: STUDENT_PAGE.table.class,
+        cell: ({ row }) => row.original.class_name ?? "—",
+      },
+      {
+        accessorKey: "section_name",
+        header: STUDENT_PAGE.table.section,
+        cell: ({ row }) => row.original.section_name ?? "—",
+      },
+      {
+        accessorKey: "admission_number",
+        header: STUDENT_PAGE.table.admissionNo,
+        cell: ({ row }) => row.original.admission_number ?? "—",
+      },
+      {
+        accessorKey: "roll_number",
+        header: STUDENT_PAGE.table.rollNo,
+        cell: ({ row }) => row.original.roll_number ?? "—",
+      },
+      {
+        accessorKey: "gender",
+        header: STUDENT_PAGE.table.gender,
+        cell: ({ row }) =>
+          row.original.gender
+            ? row.original.gender.charAt(0) +
+              row.original.gender.slice(1).toLowerCase()
+            : "—",
+      },
+      {
+        accessorKey: "phone_number",
+        header: STUDENT_PAGE.table.phone,
+        cell: ({ row }) => row.original.phone_number ?? "—",
+      },
+      {
+        accessorKey: "status",
+        header: STUDENT_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={STATUS_BADGE[row.original.status]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: STUDENT_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="View"
+              onClick={() => router.push(STUDENT_ROUTES.view(row.original.id))}
+            >
+              <Eye size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="Edit"
+              onClick={() => router.push(STUDENT_ROUTES.edit(row.original.id))}
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title={row.original.is_enabled ? "Disable" : "Enable"}
+              onClick={() =>
+                toggleEnabled(row.original.id, !row.original.is_enabled)
+              }
+            >
+              {row.original.is_enabled ? (
+                <ToggleRight size={14} className="text-emerald-500" />
+              ) : (
+                <ToggleLeft
+                  size={14}
+                  className="text-muted-foreground"
+                />
+              )}
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="Generate ID Card"
+              onClick={() =>
+                router.push(
+                  `${STUDENT_ROUTES.generate}?studentId=${row.original.id}`,
+                )
+              }
+            >
+              <CreditCard size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              title="Delete"
+              onClick={() => deleteStudent(row.original.id)}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [router, deleteStudent, toggleEnabled],
+  );
 
   return (
     <PageCol>
@@ -252,143 +391,13 @@ function StudentsContent() {
         </Select>
       </FilterBar>
 
-      {/* Table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{STUDENT_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.systemNo}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.studentName}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.section}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.admissionNo}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.rollNo}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.gender}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.phone}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{STUDENT_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={11}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : students.length === 0 ? (
-            <TableEmptyRow colSpan={11}>
-              {STUDENT_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            students.map((s, i) => (
-              <TableRow key={s.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell>
-                  <P color="muted" className="font-mono text-xs">
-                    #{s.system_number}
-                  </P>
-                </TableCell>
-                <TableCell primary>
-                  <Div type="row" align="center" gap="sm">
-                    {s.profile_image ? (
-                      <img
-                        src={s.profile_image}
-                        alt={s.first_name}
-                        className="h-7 w-7 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <Div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <P color="muted" className="text-xs font-semibold">
-                          {s.first_name[0]}
-                          {s.last_name?.[0] ?? ""}
-                        </P>
-                      </Div>
-                    )}
-                    <span>
-                      {s.first_name} {s.last_name ?? ""}
-                    </span>
-                  </Div>
-                </TableCell>
-                <TableCell>{s.class_name ?? "—"}</TableCell>
-                <TableCell>{s.section_name ?? "—"}</TableCell>
-                <TableCell>{s.admission_number ?? "—"}</TableCell>
-                <TableCell>{s.roll_number ?? "—"}</TableCell>
-                <TableCell>
-                  {s.gender
-                    ? s.gender.charAt(0) + s.gender.slice(1).toLowerCase()
-                    : "—"}
-                </TableCell>
-                <TableCell>{s.phone_number ?? "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={STATUS_BADGE[s.status]}>{s.status}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title="View"
-                      onClick={() => router.push(STUDENT_ROUTES.view(s.id))}
-                    >
-                      <Eye size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title="Edit"
-                      onClick={() => router.push(STUDENT_ROUTES.edit(s.id))}
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title={s.is_enabled ? "Disable" : "Enable"}
-                      onClick={() => toggleEnabled(s.id, !s.is_enabled)}
-                    >
-                      {s.is_enabled ? (
-                        <ToggleRight size={14} className="text-emerald-500" />
-                      ) : (
-                        <ToggleLeft
-                          size={14}
-                          className="text-muted-foreground"
-                        />
-                      )}
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title="Generate ID Card"
-                      onClick={() =>
-                        router.push(
-                          `${STUDENT_ROUTES.generate}?studentId=${s.id}`,
-                        )
-                      }
-                    >
-                      <CreditCard size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      title="Delete"
-                      onClick={() => deleteStudent(s.id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={students}
+        isLoading={isLoading}
+        emptyText={STUDENT_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+      />
     </PageCol>
   );
 }
