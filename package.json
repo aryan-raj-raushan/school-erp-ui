@@ -13,7 +13,7 @@
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
     "cap:build": "next build && npx cap sync",
-    "cap:assets": "npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --android",
+    "cap:assets": "npx @capacitor/assets generate --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#ffffff'",
     "cap:run:android": "npm run cap:assets && next build && npx cap sync android && npx cap run android"
   },
   "dependencies": {

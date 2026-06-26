@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES, STORAGE_KEYS } from "@/constants";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
@@ -33,18 +33,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // On cold start (native): restore from Preferences into localStorage if needed,
+    // then check auth. localStorage reads are sync so no blank screen.
     initAppStorage(ALL_STORAGE_KEYS).then(() => {
       if (!TokenStorage.isAuthenticated()) {
         router.replace(ROUTES.login);
       }
-      setReady(true);
     });
   }, [router]);
-
-  if (!ready) return null;
 
   return (
     <SidebarProvider>
