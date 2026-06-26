@@ -39,7 +39,7 @@ import { useLeaveTypes } from '@/hooks/leave/useLeaveTypes';
 
 function LeaveApplicationsContent() {
   const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === 'SCHOOL_ADMIN' || user?.role === 'PRINCIPAL';
+  const isAdmin = user?.role === 'SCHOOL_ADMIN';
   const employeeId = user?.id ?? '';
 
   const { years } = useAcademicYears();
