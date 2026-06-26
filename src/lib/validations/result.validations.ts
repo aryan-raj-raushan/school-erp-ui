@@ -8,7 +8,7 @@ export const generateReportCardSchema = z.object({
   section_id: z.string().uuid().optional().or(z.literal('')),
   student_id: z.string().uuid().optional().or(z.literal('')),
   remarks: z.string().max(500, 'Max 500 characters').optional(),
-  scope: z.enum(['class', 'student']).default('class'),
+  scope: z.enum(['class', 'student']),
 });
 
 export type GenerateReportCardFormValues = z.infer<typeof generateReportCardSchema>;

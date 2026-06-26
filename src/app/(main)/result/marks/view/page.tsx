@@ -1,10 +1,9 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, BookOpen, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { useExamResults } from '@/hooks/result/useExamResults';
-import { useStudents } from '@/hooks/useStudents';
 import { useAcademicClassSection } from '@/hooks/useAcademicClassSection';
 import { useExams } from '@/hooks/exam/useExams';
 import {
@@ -26,19 +25,10 @@ import {
   TableRow,
   TableCell,
   TableEmptyRow,
-  InfoRow,
 } from '@/components/ui';
-import {
-  RESULT_MARKS_PAGE,
-  EXAM_TERM_LABELS,
-} from '@/constants/result.constants';
+import { RESULT_MARKS_PAGE, EXAM_TERM_LABELS } from '@/constants/result.constants';
 
-export default function MarkDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = use(params);
+function MarksViewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const studentId = searchParams.get('student_id') ?? undefined;
@@ -60,18 +50,11 @@ export default function MarkDetailPage({
     class_id: selectedClassId,
   });
 
-  const {
-    results,
-    schedules,
-    isLoading,
-    filterForm,
-    examId,
-  } = useExamResults();
+  const { results, isLoading, filterForm, examId } = useExamResults();
 
   const { register, setValue, watch } = filterForm;
   const watchedExamId = watch('exam_id');
 
-  // Pre-fill if coming from query params
   useEffect(() => {
     const qExamId = searchParams.get('exam_id');
     const qClassId = searchParams.get('class_id');
@@ -83,14 +66,12 @@ export default function MarkDetailPage({
     if (qExamId) setValue('exam_id', qExamId);
   }, []);
 
-  // Filter results for this specific student
   const studentResults = studentId
     ? results.filter((r) => r.student_id === studentId)
     : results;
 
   const studentName = studentResults[0]?.student_name ?? '—';
 
-  // Compute totals
   const totalMax = studentResults.reduce((a, r) => a + r.max_marks, 0);
   const totalScored = studentResults.reduce(
     (a, r) =>
@@ -103,15 +84,12 @@ export default function MarkDetailPage({
 
   return (
     <Div type="col" gap="lg" className="max-w-5xl">
-      {/* Header */}
       <Div type="row" align="center" gap="md">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft size={16} /> {RESULT_MARKS_PAGE.buttons.back}
         </Button>
         <Div type="col" gap="xs" className="flex-1">
-          <H1>
-            {studentId ? `${studentName} — Result` : 'Result Detail'}
-          </H1>
+          <H1>{studentId ? `${studentName} — Result` : 'Result Detail'}</H1>
           {selectedExam && (
             <P color="muted">
               {selectedExam.exam_name} ·{' '}
@@ -121,7 +99,6 @@ export default function MarkDetailPage({
         </Div>
       </Div>
 
-      {/* Filters */}
       <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="md">
         <H3 className="text-xs font-semibold uppercase tracking-wider">Filter</H3>
         <Div type="row" gap="md" wrap>
@@ -195,7 +172,6 @@ export default function MarkDetailPage({
         </Div>
       </Div>
 
-      {/* Results Table */}
       {isLoading ? (
         <Div type="row" justify="center" className="py-20">
           <Spinner size="lg" />
@@ -236,9 +212,7 @@ export default function MarkDetailPage({
                     {r.is_absent ? (
                       <Badge variant="warning">Absent</Badge>
                     ) : (
-                      <Div className="font-medium">
-                        {r.marks_obtained ?? '—'}
-                      </Div>
+                      <Div className="font-medium">{r.marks_obtained ?? '—'}</Div>
                     )}
                   </TableCell>
                   <TableCell>
@@ -253,7 +227,6 @@ export default function MarkDetailPage({
             </TableBody>
           </Table>
 
-          {/* Summary */}
           <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="sm">
             <H3 className="text-xs font-semibold uppercase tracking-wider mb-1">Summary</H3>
             <Div type="grid" cols={3} gap="md">
@@ -274,5 +247,19 @@ export default function MarkDetailPage({
         </Div>
       )}
     </Div>
+  );
+}
+
+export default function MarksViewPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <MarksViewContent />
+    </Suspense>
   );
 }

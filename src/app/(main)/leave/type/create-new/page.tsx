@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useLeaveTypeDetail } from '@/hooks/leave/useLeaveTypes';
@@ -19,17 +18,8 @@ import {
   LEAVE_VALIDITY_OPTIONS,
   LEAVE_PAY_TYPE_OPTIONS,
 } from '@/constants/emp-leave.constants';
-import { notFound } from 'next/navigation';
-
-export default function LeaveTypeCreatePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = use(params);
+export default function LeaveTypeCreatePage() {
   const router = useRouter();
-
-  if (slug !== 'create-new') notFound();
 
   const {
     form,

@@ -1,13 +1,12 @@
 'use client';
 
-import { use } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   ExternalLink,
   CheckCircle2,
   XCircle,
-  RefreshCw,
   FileText,
 } from 'lucide-react';
 import { useReportCardDetail, useReportCards } from '@/hooks/result/useReportCards';
@@ -27,18 +26,13 @@ import {
   EXAM_TERM_LABELS,
 } from '@/constants/result.constants';
 
-export default function ReportCardDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = use(params);
+function ReportCardViewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryId = searchParams.get('id') ?? slug;
+  const id = searchParams.get('id') ?? '';
 
-  const { reportCard, isLoading } = useReportCardDetail(queryId);
-  const { publishReportCards, removeReportCard, isPublishing } = useReportCards();
+  const { reportCard, isLoading } = useReportCardDetail(id);
+  const { publishReportCards, isPublishing } = useReportCards();
 
   if (isLoading) {
     return (
@@ -64,7 +58,6 @@ export default function ReportCardDetailPage({
 
   return (
     <Div type="col" gap="lg" className="max-w-4xl">
-      {/* Header */}
       <Div type="row" align="center" gap="md">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft size={16} /> {REPORT_CARD_PAGE.buttons.back}
@@ -87,7 +80,6 @@ export default function ReportCardDetailPage({
           </P>
         </Div>
 
-        {/* Actions */}
         <Div type="row" gap="sm">
           {reportCard.pdf_url && (
             <Button
@@ -105,11 +97,9 @@ export default function ReportCardDetailPage({
               size="sm"
               loading={isPublishing}
               onClick={() =>
-                publishReportCards(
-                  reportCard.exam_id ?? '',
-                  false,
-                  { studentId: reportCard.student_id },
-                )
+                publishReportCards(reportCard.exam_id ?? '', false, {
+                  studentId: reportCard.student_id,
+                })
               }
             >
               <XCircle size={14} />
@@ -121,11 +111,9 @@ export default function ReportCardDetailPage({
               loading={isPublishing}
               disabled={reportCard.status !== 'GENERATED'}
               onClick={() =>
-                publishReportCards(
-                  reportCard.exam_id ?? '',
-                  true,
-                  { studentId: reportCard.student_id },
-                )
+                publishReportCards(reportCard.exam_id ?? '', true, {
+                  studentId: reportCard.student_id,
+                })
               }
             >
               <CheckCircle2 size={14} />
@@ -135,9 +123,7 @@ export default function ReportCardDetailPage({
         </Div>
       </Div>
 
-      {/* Details */}
       <Div type="grid" cols={2} gap="lg">
-        {/* Student Info */}
         <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="sm">
           <H3 className="text-xs font-semibold uppercase tracking-wider mb-2">
             Student Information
@@ -149,7 +135,6 @@ export default function ReportCardDetailPage({
           <InfoRow label="Academic Year" value={reportCard.academic_year_name ?? '—'} />
         </Div>
 
-        {/* Exam Info */}
         <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="sm">
           <H3 className="text-xs font-semibold uppercase tracking-wider mb-2">
             Exam Information
@@ -174,11 +159,8 @@ export default function ReportCardDetailPage({
         </Div>
       </Div>
 
-      {/* Score Summary */}
       <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="md">
-        <H3 className="text-xs font-semibold uppercase tracking-wider">
-          Score Summary
-        </H3>
+        <H3 className="text-xs font-semibold uppercase tracking-wider">Score Summary</H3>
         <Div type="grid" cols={4} gap="md">
           <Div color="default">
             <P color="muted" className="text-xs mb-1">Total Marks</P>
@@ -208,13 +190,10 @@ export default function ReportCardDetailPage({
         </Div>
       </Div>
 
-      {/* PDF Preview */}
       {reportCard.pdf_url && (
         <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="md">
           <Div type="row" justify="between" align="center">
-            <H3 className="text-xs font-semibold uppercase tracking-wider">
-              Report Card PDF
-            </H3>
+            <H3 className="text-xs font-semibold uppercase tracking-wider">Report Card PDF</H3>
             <Button
               size="sm"
               variant="outline"
@@ -247,5 +226,19 @@ export default function ReportCardDetailPage({
         </Div>
       )}
     </Div>
+  );
+}
+
+export default function ReportCardViewPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <ReportCardViewContent />
+    </Suspense>
   );
 }

@@ -50,6 +50,7 @@ export interface StudentMarkEntry {
 export interface ReportCardItem {
   id: string;
   student_id: string;
+  exam_id: string | null;
   student_name: string;
   roll_number: string | null;
   class_name: string | null;

@@ -119,11 +119,11 @@ function EmployeePicker({ onSelect }: EmployeePickerProps) {
                   <Div type="col" gap="xs" className="flex-1 min-w-0">
                     <P className="font-medium truncate">{name}</P>
                     <P color="muted" className="text-xs truncate">
-                      {staff.email ?? staff.phone ?? "—"}
+                      {staff.email ?? staff.phone_number ?? "—"}
                     </P>
-                    {staff.designation && (
+                    {staff.employee_code && (
                       <P color="muted" className="text-xs truncate">
-                        {staff.designation}
+                        {staff.employee_code}
                       </P>
                     )}
                   </Div>
@@ -196,9 +196,9 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
         </Div>
         <Div type="col" gap="xs">
           <P className="text-sm font-medium">{employeeName}</P>
-          {employee?.designation && (
+          {employee?.employee_code && (
             <P color="muted" className="text-xs">
-              {employee?.designation}
+              {employee?.employee_code}
             </P>
           )}
         </Div>
