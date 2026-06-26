@@ -13,7 +13,8 @@
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
     "cap:build": "next build && npx cap sync",
-    "cap:run:android": "next build && npx cap sync android && npx cap run android"
+    "cap:assets": "npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --android",
+    "cap:run:android": "npm run cap:assets && next build && npx cap sync android && npx cap run android"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
@@ -45,6 +46,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
