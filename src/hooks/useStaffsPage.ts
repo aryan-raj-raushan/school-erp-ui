@@ -1,19 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { StaffService, type StaffFilters } from '@/services/staff.service';
-import { RolesService, type Role as ApiRole } from '@/services/roles.service';
-import { ROUTES } from '@/constants';
-import { Role } from '@/types';
-import type { Staff, PaginationMeta, BulkImportJob } from '@/types';
-import { useAuthStore } from '@/store/auth.store';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { StaffService, type StaffFilters } from "@/services/staff.service";
+import { RolesService, type Role as ApiRole } from "@/services/roles.service";
+import { ROUTES } from "@/constants";
+import { Role } from "@/types";
+import type { Staff, PaginationMeta, BulkImportJob } from "@/types";
+import { useAuthStore } from "@/store/auth.store";
 
 export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === Role.SCHOOL_ADMIN || user?.role === ('PRINCIPAL' as any);
+  const isAdmin =
+    user?.role === Role.SCHOOL_ADMIN || user?.role === ("PRINCIPAL" as any);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<StaffFilters>(initialFilters);
@@ -24,55 +25,62 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const [isImporting, setIsImporting] = useState(false);
   const bulkFileRef = useRef<HTMLInputElement>(null);
 
-  const fetchStaff = useCallback(async (overrideFilters?: StaffFilters) => {
-    setIsLoading(true);
-    try {
-      const result = await StaffService.list(overrideFilters ?? filters);
-      setStaffList(result.items);
-      setPagination(result.pagination);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load staff');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters]);
+  const fetchStaff = useCallback(
+    async (overrideFilters?: StaffFilters) => {
+      setIsLoading(true);
+      try {
+        const result = await StaffService.list(overrideFilters ?? filters);
+        setStaffList(result.items);
+        setPagination(result.pagination);
+      } catch (err: unknown) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load staff",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [filters],
+  );
 
   async function removeStaff(id: string) {
     try {
       await StaffService.remove(id);
-      toast.success('Staff member deleted');
+      toast.success("Staff member deleted");
       await fetchStaff();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete');
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
   }
 
   async function offboardStaff(id: string) {
     try {
       await StaffService.offboard(id);
-      toast.success('Staff member offboarded');
+      toast.success("Staff member offboarded");
       await fetchStaff();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to offboard');
+      toast.error(err instanceof Error ? err.message : "Failed to offboard");
     }
   }
 
   async function reonboardStaff(id: string) {
     try {
       await StaffService.reonboard(id);
-      toast.success('Staff member re-onboarded');
+      toast.success("Staff member re-onboarded");
       await fetchStaff();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to re-onboard');
+      toast.error(err instanceof Error ? err.message : "Failed to re-onboard");
     }
   }
 
   async function resendInvite(id: string) {
     try {
       await StaffService.resendInvite(id);
-      toast.success('Invite resent');
+      toast.success("Invite resent");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to resend invite');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to resend invite",
+      );
     }
   }
 
@@ -80,29 +88,34 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     try {
       const blob = await StaffService.downloadBulkTemplate();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'staff-import-template.xlsx';
+      a.download = "staff-import-template.xlsx";
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to download template');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to download template",
+      );
     }
   }
 
   async function bulkImport() {
     const file = bulkFileRef.current?.files?.[0];
-    if (!file) { toast.error('Select a file first'); return; }
+    if (!file) {
+      toast.error("Select a file first");
+      return;
+    }
     setIsImporting(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
       const { jobId } = await StaffService.bulkImport(formData);
       toast.success(`Import started — Job ID: ${jobId}`);
-      setBulkJob({ jobId, status: 'PENDING' });
-      if (bulkFileRef.current) bulkFileRef.current.value = '';
+      setBulkJob({ jobId, status: "PENDING" });
+      if (bulkFileRef.current) bulkFileRef.current.value = "";
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Bulk import failed');
+      toast.error(err instanceof Error ? err.message : "Bulk import failed");
     } finally {
       setIsImporting(false);
     }
@@ -113,16 +126,18 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     try {
       const job = await StaffService.getBulkStatus(bulkJob.jobId);
       setBulkJob(job);
-      if (job.status === 'COMPLETED') {
+      if (job.status === "COMPLETED") {
         toast.success(`Import complete — ${job.processed ?? 0} processed`);
         await fetchStaff();
         setShowBulkModal(false);
         setBulkJob(null);
-      } else if (job.status === 'FAILED') {
-        toast.error('Import failed');
+      } else if (job.status === "FAILED") {
+        toast.error("Import failed");
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to check status');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to check status",
+      );
     }
   }
 
@@ -130,7 +145,9 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     setFilters((prev) => ({ ...prev, ...next }));
   }
 
-  function navigateToNew() { router.push(ROUTES.staffNew); }
+  function navigateToNew() {
+    router.push(ROUTES.staffNew);
+  }
   function navigateToView(id: string) {
     router.push(ROUTES.staffView(id));
   }
@@ -138,21 +155,42 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     router.push(ROUTES.staffEdit(id));
   }
 
-  useEffect(() => { fetchStaff(); }, [fetchStaff]);
+  useEffect(() => {
+    fetchStaff();
+  }, [fetchStaff]);
 
   useEffect(() => {
-    RolesService.list({ limit: 100 }).then((res) => setSystemRoles(res.items.filter((r) => r.is_system))).catch(() => {});
+    RolesService.list({ limit: 100 })
+      .then((res) => setSystemRoles(res.items.filter((r) => r.is_system)))
+      .catch(() => {});
   }, []);
 
   return {
-    staffList, pagination, filters, isLoading,
-    removeStaff, offboardStaff, reonboardStaff, resendInvite,
-    updateFilters, refetch: fetchStaff,
-    navigateToNew, navigateToView, navigateToEdit,
+    staffList,
+    pagination,
+    filters,
+    setFilters,
+    isLoading,
+    removeStaff,
+    offboardStaff,
+    reonboardStaff,
+    resendInvite,
+    updateFilters,
+    refetch: fetchStaff,
+    navigateToNew,
+    navigateToView,
+    navigateToEdit,
     showBulkModal,
     openBulkModal: () => setShowBulkModal(true),
-    closeBulkModal: () => { setShowBulkModal(false); setBulkJob(null); },
-    bulkJob, bulkFileRef, isImporting, bulkImport, checkBulkStatus,
+    closeBulkModal: () => {
+      setShowBulkModal(false);
+      setBulkJob(null);
+    },
+    bulkJob,
+    bulkFileRef,
+    isImporting,
+    bulkImport,
+    checkBulkStatus,
     downloadTemplate,
     isAdmin,
     systemRoles,

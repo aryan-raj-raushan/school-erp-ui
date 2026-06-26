@@ -119,7 +119,6 @@ export function useAcademicClassSection(
     [sections, selectedSectionId],
   );
 
-  console.log("Years: ", years);
 
   return {
     years,
