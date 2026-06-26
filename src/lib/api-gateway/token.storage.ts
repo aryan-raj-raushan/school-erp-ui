@@ -1,4 +1,4 @@
-import { CookieUtils } from '@/lib/cookie.utils';
+import { AppStorage } from '@/lib/app-storage';
 import { AuthContext } from '@/types';
 import { STORAGE_KEYS } from '@/constants';
 
@@ -17,21 +17,21 @@ export interface StoredSession {
 
 export const TokenStorage = {
   save(tokens: TokenPair, context: AuthContext): void {
-    CookieUtils.set(STORAGE_KEYS.accessToken, tokens.accessToken);
-    CookieUtils.set(STORAGE_KEYS.refreshToken, tokens.refreshToken);
-    CookieUtils.set(STORAGE_KEYS.context, context);
+    AppStorage.set(STORAGE_KEYS.accessToken, tokens.accessToken);
+    AppStorage.set(STORAGE_KEYS.refreshToken, tokens.refreshToken);
+    AppStorage.set(STORAGE_KEYS.context, context);
   },
 
   getAccessToken(): string | null {
-    return CookieUtils.get(STORAGE_KEYS.accessToken);
+    return AppStorage.get(STORAGE_KEYS.accessToken);
   },
 
   getRefreshToken(): string | null {
-    return CookieUtils.get(STORAGE_KEYS.refreshToken);
+    return AppStorage.get(STORAGE_KEYS.refreshToken);
   },
 
   getContext(): AuthContext | null {
-    return (CookieUtils.get(STORAGE_KEYS.context) as AuthContext) ?? null;
+    return (AppStorage.get(STORAGE_KEYS.context) as AuthContext) ?? null;
   },
 
   getSession(): StoredSession | null {
@@ -43,22 +43,21 @@ export const TokenStorage = {
   },
 
   updateAccessToken(token: string): void {
-    CookieUtils.set(STORAGE_KEYS.accessToken, token);
+    AppStorage.set(STORAGE_KEYS.accessToken, token);
   },
 
   updateTokens(tokens: TokenPair): void {
-    CookieUtils.set(STORAGE_KEYS.accessToken, tokens.accessToken);
-    CookieUtils.set(STORAGE_KEYS.refreshToken, tokens.refreshToken);
+    AppStorage.set(STORAGE_KEYS.accessToken, tokens.accessToken);
+    AppStorage.set(STORAGE_KEYS.refreshToken, tokens.refreshToken);
   },
 
   clear(): void {
-    CookieUtils.delete(STORAGE_KEYS.accessToken);
-    CookieUtils.delete(STORAGE_KEYS.refreshToken);
-    CookieUtils.delete(STORAGE_KEYS.context);
+    AppStorage.delete(STORAGE_KEYS.accessToken);
+    AppStorage.delete(STORAGE_KEYS.refreshToken);
+    AppStorage.delete(STORAGE_KEYS.context);
   },
 
   isAuthenticated(): boolean {
     return Boolean(TokenStorage.getAccessToken());
   },
-  
 };

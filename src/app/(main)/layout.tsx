@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ROUTES } from "@/constants";
+import { ROUTES, STORAGE_KEYS } from "@/constants";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
+import { initAppStorage } from "@/lib/app-storage";
 import { SidebarProvider } from "@/components/ui";
 import dynamic from "next/dynamic";
 
@@ -17,18 +18,33 @@ const AppHeader = dynamic(
   { ssr: false },
 );
 
+const ALL_STORAGE_KEYS = [
+  STORAGE_KEYS.accessToken,
+  STORAGE_KEYS.refreshToken,
+  STORAGE_KEYS.context,
+  STORAGE_KEYS.isAuthenticated,
+  STORAGE_KEYS.user,
+  "auth:permissions",
+];
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!TokenStorage.isAuthenticated()) {
-      router.replace(ROUTES.login);
-    }
+    initAppStorage(ALL_STORAGE_KEYS).then(() => {
+      if (!TokenStorage.isAuthenticated()) {
+        router.replace(ROUTES.login);
+      }
+      setReady(true);
+    });
   }, [router]);
+
+  if (!ready) return null;
 
   return (
     <SidebarProvider>
