@@ -118,11 +118,6 @@ function MarksContent() {
   const { register, setValue, watch } = filterForm;
   const watchedExamId = watch('exam_id');
 
-  const { exams } = useExams({
-    academic_year_id: selectedAcademicYearId,
-    class_id: selectedClassId,
-  });
-
   const { students } = useStudents(
     selectedClassId && selectedAcademicYearId
       ? {
@@ -159,6 +154,9 @@ function MarksContent() {
     handleSectionChange(sId);
     setValue("section_id", sId);
   }
+
+  const noSelection = !examId || !classId;
+  const isTableBusy = isLoadingSchedules || isLoadingResults;
 
   // Parent schedules only (no sub-subjects as columns — they group under parent)
   const parentSchedules = schedules.filter((s) => !s.parent_schedule_id);
