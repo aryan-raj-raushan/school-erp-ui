@@ -182,9 +182,9 @@ export default function FeePaymentsPage() {
       id: 'action',
       header: 'Action',
       cell: ({ row }) => {
-        const due = billBalanceDue(row.original);
+        const due = billBalanceDue(row.original as any);
         return row.original.status !== 'PAID' && row.original.status !== 'WAIVED' && due > 0 ? (
-          <Button size="sm" onClick={() => openPayBillModal(row.original, due)}>
+          <Button size="sm" onClick={() => openPayBillModal(row.original as any, due)}>
             <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
           </Button>
         ) : null;
@@ -237,7 +237,7 @@ export default function FeePaymentsPage() {
       cell: ({ row }) => {
         const amount = parseFloat(row.original.due_amount);
         return amount > 0 ? (
-          <Button size="sm" onClick={() => openPayDueModal(row.original)}>
+          <Button size="sm" onClick={() => openPayDueModal(row.original as any)}>
             <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
           </Button>
         ) : null;

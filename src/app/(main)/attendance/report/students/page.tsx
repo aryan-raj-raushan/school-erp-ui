@@ -174,7 +174,7 @@ export default function StudentAttendanceReportPage() {
         accessorKey: "status",
         header: ATTENDANCE_REPORT_PAGE.daily.table.status,
         cell: ({ row }) => (
-          <Badge variant={ATTENDANCE_STATUS_BADGE[row.original.status]}>
+          <Badge variant={ATTENDANCE_STATUS_BADGE[row.original.status as keyof typeof ATTENDANCE_STATUS_BADGE]}>
             {row.original.status}
           </Badge>
         ),
@@ -302,7 +302,7 @@ export default function StudentAttendanceReportPage() {
         accessorKey: "status",
         header: ATTENDANCE_REPORT_PAGE.studentHistory.table.status,
         cell: ({ row }) => (
-          <Badge variant={ATTENDANCE_STATUS_BADGE[row.original.status]}>
+          <Badge variant={ATTENDANCE_STATUS_BADGE[row.original.status as keyof typeof ATTENDANCE_STATUS_BADGE]}>
             {row.original.status}
           </Badge>
         ),

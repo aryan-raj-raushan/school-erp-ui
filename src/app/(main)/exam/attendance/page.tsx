@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useMemo } from "react";
 import { ClipboardList } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useExamAttendanceList } from "@/hooks/exam/useExamAttendance";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
@@ -14,15 +14,8 @@ import {
   Select,
   Badge,
   Spinner,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
 import {
   ATTENDANCE_PAGE,
@@ -30,6 +23,15 @@ import {
   ATTENDANCE_STATUS_OPTIONS,
   ATTENDANCE_BADGE,
 } from "@/constants/exam.constants";
+
+type AttendanceRow = {
+  id: string;
+  student_name: string;
+  subject_name: string;
+  exam_date: string;
+  status: string;
+  remarks?: string;
+};
 
 function AttendanceListContent() {
   const router = useRouter();
@@ -140,48 +142,55 @@ function AttendanceListContent() {
         </Select>
       </Div>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{ATTENDANCE_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{ATTENDANCE_PAGE.table.student}</TableHeaderCell>
-            <TableHeaderCell>{ATTENDANCE_PAGE.table.schedule}</TableHeaderCell>
-            <TableHeaderCell>{ATTENDANCE_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{ATTENDANCE_PAGE.table.remarks}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={5}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : records.length === 0 ? (
-            <TableEmptyRow colSpan={5}>
-              {ATTENDANCE_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            records.map((r, i) => (
-              <TableRow key={r.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{r.student_name}</TableCell>
-                <TableCell>{r.subject_name} – {r.exam_date}</TableCell>
-                <TableCell>
-                  <Badge variant={ATTENDANCE_BADGE[r.status]}>{r.status}</Badge>
-                </TableCell>
-                <TableCell>{r.remarks ?? "—"}</TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      {(() => {
+        const columns = useMemo<ColumnDef<AttendanceRow>[]>(
+          () => [
+            {
+              id: "index",
+              header: ATTENDANCE_PAGE.table.sno,
+              cell: ({ row }) => row.index + 1,
+            },
+            {
+              accessorKey: "student_name",
+              header: ATTENDANCE_PAGE.table.student,
+              meta: { primary: true },
+            },
+            {
+              id: "schedule",
+              header: ATTENDANCE_PAGE.table.schedule,
+              cell: ({ row }) => `${row.original.subject_name} – ${row.original.exam_date}`,
+            },
+            {
+              accessorKey: "status",
+              header: ATTENDANCE_PAGE.table.status,
+              cell: ({ row }) => (
+                <Badge variant={ATTENDANCE_BADGE[row.original.status]}>
+                  {row.original.status}
+                </Badge>
+              ),
+            },
+            {
+              accessorKey: "remarks",
+              header: ATTENDANCE_PAGE.table.remarks,
+              cell: ({ row }) => row.original.remarks ?? "—",
+            },
+          ],
+          []
+        );
 
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+        return (
+          <DataTable
+            columns={columns}
+            data={records.map((r) => ({
+              ...r,
+              remarks: r.remarks ?? undefined,
+            }))}
+            isLoading={isLoading}
+            emptyText={ATTENDANCE_PAGE.table.noEntry}
+            pagination={pagination ?? undefined}
+          />
+        );
+      })()}
     </Div>
   );
 }

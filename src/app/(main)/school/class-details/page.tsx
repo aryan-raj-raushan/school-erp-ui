@@ -1,19 +1,94 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useClassDetails } from '@/hooks/useClassDetails';
 import { useClasses } from '@/hooks/useClasses';
 import { CLASS_DETAILS_PAGE } from '@/constants';
 import {
   Div, Button,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
+  DataTable,
   Badge, Spinner, Icon,
   PageHeader, PageCol,
+  type ColumnDef,
 } from '@/components/ui';
 import { Pencil, Trash2 } from 'lucide-react';
+
+type ClassDetailRow = {
+  id: string;
+  class_id: string;
+  name: string;
+  year?: string;
+  class_code?: string;
+  max_internal_exam: number;
+  best_internal_exam_count: number;
+  no_of_elective_subjects: number;
+  is_enabled: boolean;
+};
 
 export default function ClassDetailsPage() {
   const { classDetails, isLoading, removeClassDetail, navigateToNew, navigateToEdit } = useClassDetails();
   const { classes } = useClasses();
+
+  const columns = useMemo<ColumnDef<ClassDetailRow>[]>(
+    () => [
+      {
+        id: "class",
+        header: CLASS_DETAILS_PAGE.table.class,
+        meta: { primary: true },
+        cell: ({ row }) => classes.find((c) => c.id === row.original.class_id)?.name ?? '—',
+      },
+      {
+        accessorKey: "name",
+        header: CLASS_DETAILS_PAGE.table.name,
+      },
+      {
+        accessorKey: "year",
+        header: CLASS_DETAILS_PAGE.table.year,
+        cell: ({ row }) => row.original.year ?? '—',
+      },
+      {
+        accessorKey: "class_code",
+        header: CLASS_DETAILS_PAGE.table.classCode,
+        cell: ({ row }) => row.original.class_code ?? '—',
+      },
+      {
+        accessorKey: "max_internal_exam",
+        header: CLASS_DETAILS_PAGE.table.maxExams,
+      },
+      {
+        accessorKey: "best_internal_exam_count",
+        header: CLASS_DETAILS_PAGE.table.bestExams,
+      },
+      {
+        accessorKey: "no_of_elective_subjects",
+        header: CLASS_DETAILS_PAGE.table.electives,
+      },
+      {
+        accessorKey: "is_enabled",
+        header: CLASS_DETAILS_PAGE.table.enabled,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? 'success' : 'default'}>
+            {row.original.is_enabled ? 'Enabled' : 'Disabled'}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: CLASS_DETAILS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button size="sm" variant="ghost" onClick={() => navigateToEdit(row.original.id)}>
+              <Icon icon={Pencil} type="sm" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => removeClassDetail(row.original.id)}>
+              <Icon icon={Trash2} type="sm-danger" />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [classes, navigateToEdit, removeClassDetail]
+  );
 
   return (
     <Div type="col" gap="lg">
@@ -23,58 +98,16 @@ export default function ClassDetailsPage() {
         actions={<Button onClick={navigateToNew}>{CLASS_DETAILS_PAGE.addButton}</Button>}
       />
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.year}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.classCode}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.maxExams}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.bestExams}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.electives}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.enabled}</TableHeaderCell>
-            <TableHeaderCell>{CLASS_DETAILS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={9}><Spinner /></TableEmptyRow>
-          ) : classDetails.length === 0 ? (
-            <TableEmptyRow colSpan={9}>{CLASS_DETAILS_PAGE.empty}</TableEmptyRow>
-          ) : (
-            classDetails.map((detail) => {
-              const cls = classes.find((c) => c.id === detail.class_id);
-              return (
-                <TableRow key={detail.id}>
-                  <TableCell primary>{cls?.name ?? '—'}</TableCell>
-                  <TableCell>{detail.name}</TableCell>
-                  <TableCell>{detail.year ?? '—'}</TableCell>
-                  <TableCell>{detail.class_code ?? '—'}</TableCell>
-                  <TableCell>{detail.max_internal_exam}</TableCell>
-                  <TableCell>{detail.best_internal_exam_count}</TableCell>
-                  <TableCell>{detail.no_of_elective_subjects}</TableCell>
-                  <TableCell>
-                    <Badge variant={detail.is_enabled ? 'success' : 'default'}>
-                      {detail.is_enabled ? 'Enabled' : 'Disabled'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Div type="row" gap="xs">
-                      <Button size="sm" variant="ghost" onClick={() => navigateToEdit(detail.id)}>
-                        <Icon icon={Pencil} type="sm" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => removeClassDetail(detail.id)}>
-                        <Icon icon={Trash2} type="sm-danger" />
-                      </Button>
-                    </Div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={classDetails.map((detail) => ({
+          ...detail,
+          year: detail.year ?? undefined,
+          class_code: detail.class_code ?? undefined,
+        }))}
+        isLoading={isLoading}
+        emptyText={CLASS_DETAILS_PAGE.empty}
+      />
     </Div>
   );
 }

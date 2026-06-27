@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useExamTimetable } from "@/hooks/useExams";
 import { TIMETABLE_PAGE } from "@/constants";
 import {
@@ -9,21 +10,24 @@ import {
   Button,
   Select,
   Input,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
+  DataTable,
   Spinner,
   Modal,
   FormField,
   FilterLabel,
   Icon,
+  type ColumnDef,
 } from "@/components/ui";
 import { Pencil, Trash2, Plus } from "lucide-react";
+
+type TimetableRow = {
+  id: string;
+  date: string;
+  subject_id: string;
+  start_time?: string;
+  end_time?: string;
+  room_number?: string;
+};
 
 export default function ExamTimetablePage() {
   const {
@@ -51,6 +55,50 @@ export default function ExamTimetablePage() {
   } = useExamTimetable();
 
   const { register, formState: { errors } } = form;
+
+  const columns = useMemo<ColumnDef<TimetableRow>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "date",
+        header: TIMETABLE_PAGE.table.date,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "subject_id",
+        header: TIMETABLE_PAGE.table.subject,
+      },
+      {
+        id: "time",
+        header: TIMETABLE_PAGE.table.time,
+        cell: ({ row }) => `${row.original.start_time ?? "—"} – ${row.original.end_time ?? "—"}`,
+      },
+      {
+        accessorKey: "room_number",
+        header: TIMETABLE_PAGE.table.room,
+        cell: ({ row }) => row.original.room_number ?? "—",
+      },
+      {
+        id: "actions",
+        header: TIMETABLE_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button size="sm" variant="ghost" onClick={() => openEditEntry(row.original as any)}>
+              <Icon icon={Pencil} type="sm" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => handleDelete(row.original.id)}>
+              <Icon icon={Trash2} type="sm-danger" />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [openEditEntry, handleDelete]
+  );
 
   return (
     <Div type="col" gap="lg">
@@ -96,48 +144,17 @@ export default function ExamTimetablePage() {
         </Div>
       </Div>
 
-      {/* Timetable Table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>{TIMETABLE_PAGE.table.date}</TableHeaderCell>
-            <TableHeaderCell>{TIMETABLE_PAGE.table.subject}</TableHeaderCell>
-            <TableHeaderCell>{TIMETABLE_PAGE.table.time}</TableHeaderCell>
-            <TableHeaderCell>{TIMETABLE_PAGE.table.room}</TableHeaderCell>
-            <TableHeaderCell>{TIMETABLE_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
-          ) : !selectedExamId ? (
-            <TableEmptyRow colSpan={6}>{TIMETABLE_PAGE.empty}</TableEmptyRow>
-          ) : timetable.length === 0 ? (
-            <TableEmptyRow colSpan={6}>No timetable entries yet.</TableEmptyRow>
-          ) : (
-            timetable.map((entry, i) => (
-              <TableRow key={entry.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{entry.date}</TableCell>
-                <TableCell>{entry.subject_id}</TableCell>
-                <TableCell>{entry.start_time ?? "—"} – {entry.end_time ?? "—"}</TableCell>
-                <TableCell>{entry.room_number ?? "—"}</TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => openEditEntry(entry)}>
-                      <Icon icon={Pencil} type="sm" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(entry.id)}>
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={timetable.map((entry) => ({
+          ...entry,
+          start_time: entry.start_time ?? undefined,
+          end_time: entry.end_time ?? undefined,
+          room_number: entry.room_number ?? undefined,
+        }))}
+        isLoading={isLoading}
+        emptyText={!selectedExamId ? TIMETABLE_PAGE.empty : "No timetable entries yet."}
+      />
 
       {/* Add/Edit Modal */}
       {showModal && (

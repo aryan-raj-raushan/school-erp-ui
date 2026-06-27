@@ -230,7 +230,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/school/holidays-events/${ev.id}`)
+                        router.push(`/school/holidays-events/view?id=${ev.id}`)
                       }
                       title="View"
                     >
@@ -240,7 +240,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/school/holidays-events/${ev.id}?edit=true`)
+                        router.push(`/school/holidays-events/view?id=${ev.id}&edit=true`)
                       }
                       title="Edit"
                     >
