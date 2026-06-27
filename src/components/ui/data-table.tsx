@@ -71,6 +71,37 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const manualSort = sorting !== undefined && onSortingChange !== undefined;
 
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const stickyBarRef = React.useRef<HTMLDivElement>(null);
+  const stickyInnerRef = React.useRef<HTMLDivElement>(null);
+
+  // Keep sticky bar width in sync with actual table scroll width
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    const inner = stickyInnerRef.current;
+    if (!el || !inner) return;
+    const sync = () => { inner.style.width = el.scrollWidth + 'px'; };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [data, columns]);
+
+  // Bidirectional scroll sync between table and sticky bar
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    const bar = stickyBarRef.current;
+    if (!el || !bar) return;
+    const onTable = () => { if (bar.scrollLeft !== el.scrollLeft) bar.scrollLeft = el.scrollLeft; };
+    const onBar = () => { if (el.scrollLeft !== bar.scrollLeft) el.scrollLeft = bar.scrollLeft; };
+    el.addEventListener('scroll', onTable);
+    bar.addEventListener('scroll', onBar);
+    return () => {
+      el.removeEventListener('scroll', onTable);
+      bar.removeEventListener('scroll', onBar);
+    };
+  }, []);
+
   const table = useReactTable<TData>({
     data,
     columns,
@@ -87,7 +118,7 @@ export function DataTable<TData>({
 
   return (
     <>
-      <Table>
+      <Table scrollRef={scrollRef}>
         <TableHead>
           <TableHeadRow>
             {table.getHeaderGroups()[0]?.headers.map((header) => (
@@ -127,6 +158,13 @@ export function DataTable<TData>({
           )}
         </TableBody>
       </Table>
+      {/* Sticky scrollbar — sticks to bottom of viewport so it's always accessible */}
+      <div
+        ref={stickyBarRef}
+        className="sticky bottom-0 overflow-x-auto overflow-y-hidden"
+      >
+        <div ref={stickyInnerRef} className="h-px" />
+      </div>
       {pagination && pagination.totalPages > 1 && (
         <TablePagination
           total={pagination.total}
