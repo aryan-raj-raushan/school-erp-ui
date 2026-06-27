@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, CheckCheck, XCircle, Download } from "lucide-react";
-import { useMarkAttendance } from "@/hooks/exam/useExamAttendance";
+import { useMarkAttendance, type AttendanceSource } from "@/hooks/exam/useExamAttendance";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useExamAttendanceCard } from "@/hooks/exam/useExamAttendanceCard";
@@ -14,48 +14,55 @@ import {
   P,
   Button,
   Select,
-  Badge,
   Spinner,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
 } from "@/components/ui";
-import {
-  ATTENDANCE_PAGE,
-  EXAM_ROUTES,
-  ATTENDANCE_STATUS_OPTIONS,
-  ATTENDANCE_BADGE,
-} from "@/constants/exam.constants";
+import { ATTENDANCE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 import type { AttendanceStatus } from "@/types/exam.types";
 import { useStudents } from "@/hooks/useStudentV2";
 
-// ── Status Toggle Cell ────────────────────────────────────────────────────────
+// ── Status pill — click cycles P → A → L ─────────────────────────────────────
 
-function StatusCell({
+const STATUS_COLORS: Record<AttendanceStatus, string> = {
+  PRESENT: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+  ABSENT: "bg-red-100 text-red-700 hover:bg-red-200",
+  LATE: "bg-amber-100 text-amber-700 hover:bg-amber-200",
+};
+
+const STATUS_LABEL: Record<AttendanceStatus, string> = {
+  PRESENT: "P",
+  ABSENT: "A",
+  LATE: "L",
+};
+
+function AttendanceCell({
   status,
-  onChange,
+  source,
+  onClick,
 }: {
   status: AttendanceStatus;
-  onChange: (s: AttendanceStatus) => void;
+  source: AttendanceSource;
+  onClick: () => void;
 }) {
   return (
-    <Select
-      width="sm"
-      value={status}
-      onChange={(e) => onChange(e.target.value as AttendanceStatus)}
+    <button
+      type="button"
+      onClick={onClick}
+      title={`${status}${source === "rfid-auto" ? " (RFID)" : ""} — click to change`}
+      className={`relative w-10 h-8 rounded-md text-xs font-semibold transition-colors ${STATUS_COLORS[status]}`}
     >
-      {ATTENDANCE_STATUS_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </Select>
+      {STATUS_LABEL[status]}
+      {source === "rfid-auto" && (
+        <span className="absolute -top-1.5 -right-1.5 text-[9px] leading-none">
+          📡
+        </span>
+      )}
+    </button>
   );
+}
+
+function fmtDate(iso: string) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -67,11 +74,11 @@ function MarkAttendanceContent() {
     setExamId,
     academicYearId,
     setAcademicYearId,
-    schedules,
+    availableDates,
     isLoadingSchedules,
     rows,
     initRows,
-    setStatus,
+    cycleStatus,
     markAllPresent,
     markAllAbsent,
     isSaving,
@@ -96,20 +103,19 @@ function MarkAttendanceContent() {
   const { exams } = useExams(
     selectedAcademicYearId && selectedClassId
       ? { academic_year_id: selectedAcademicYearId, class_id: selectedClassId }
-      : {},
+      : {}
   );
 
-  // When year changes, sync to state
   useEffect(() => {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
 
-  // Init rows only after schedules have finished loading
   useEffect(() => {
     if (!examId || !selectedAcademicYearId || !selectedClassId) return;
-    if (isLoadingSchedules || schedules.length === 0) return;
+    if (isLoadingSchedules || availableDates.length === 0) return;
     initRows(students);
-  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, schedules, isLoadingSchedules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, availableDates, isLoadingSchedules]);
 
   const { attendanceCardUrl } = useExamAttendanceCard({
     examId,
@@ -118,13 +124,11 @@ function MarkAttendanceContent() {
     sectionId: selectedSectionId,
   });
 
-  const totalCols = 3 + schedules.length; // roll, name, status-per-schedule
-
   return (
     <Div type="col" gap="lg">
       <PageHeader
         title="Mark Exam Attendance"
-        subtitle="Bulk mark attendance for all students across all exam schedules"
+        subtitle="Click any cell to cycle: Present → Absent → Late. 📡 = RFID auto-marked."
         actions={
           <Div type="row" gap="sm">
             {attendanceCardUrl && (
@@ -147,10 +151,9 @@ function MarkAttendanceContent() {
         }
       />
 
-      {/* Selectors */}
+      {/* Filters */}
       <Div variant="card" className="p-5">
         <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Academic Year */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.academicYear}
@@ -169,7 +172,6 @@ function MarkAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Class */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.class}
@@ -188,7 +190,6 @@ function MarkAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Section */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.section}
@@ -207,7 +208,6 @@ function MarkAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Exam */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.exam}
@@ -228,20 +228,19 @@ function MarkAttendanceContent() {
         </Div>
       </Div>
 
-      {/* Attendance grid */}
+      {/* Grid */}
       {examId && (
         <>
           {isLoadingSchedules ? (
             <Div type="row" justify="center" className="py-10">
               <Spinner size="lg" />
             </Div>
-          ) : schedules.length === 0 ? (
+          ) : availableDates.length === 0 ? (
             <Div variant="card-dashed">
               <P color="muted">No exam schedules found for this exam.</P>
             </Div>
           ) : (
             <>
-              {/* Bulk actions */}
               <Div type="row" gap="sm" align="center">
                 <H3 color="default" className="text-sm">
                   Quick Actions:
@@ -256,43 +255,25 @@ function MarkAttendanceContent() {
                 </Button>
               </Div>
 
-              {/* Scrollable attendance table */}
               <Div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-sm min-w-[640px]">
+                <table className="w-full text-sm min-w-[520px]">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-10">
                         #
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-28">
-                        Roll No.
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-20">
+                        Roll
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground min-w-[160px]">
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground min-w-[150px]">
                         Student
                       </th>
-                      {schedules.map((sc) => (
+                      {availableDates.map((date) => (
                         <th
-                          key={sc.id}
-                          className="px-3 py-3 text-center font-medium text-muted-foreground min-w-[130px]"
+                          key={date}
+                          className="px-3 py-3 text-center font-medium text-muted-foreground w-20"
                         >
-                          <Div type="col" gap="xs" align="center">
-                            <Div className="truncate max-w-[120px] block">
-                              {sc.subject_name}
-                            </Div>
-                            {sc.subject_type && sc.subject_type !== "MAIN_EXAM" && (
-                              <Badge variant="info" className="text-[10px] px-1 py-0 capitalize">
-                                {sc.subject_type.replace(/_/g, " ").toLowerCase()}
-                              </Badge>
-                            )}
-                            {sc.section_name && (
-                              <Div className="text-[10px] font-normal text-muted-foreground/60">
-                                Sec {sc.section_name}
-                              </Div>
-                            )}
-                            <Div className="text-xs font-normal text-muted-foreground/70">
-                              {sc.exam_date}
-                            </Div>
-                          </Div>
+                          {fmtDate(date)}
                         </th>
                       ))}
                     </tr>
@@ -301,19 +282,19 @@ function MarkAttendanceContent() {
                     {rows.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={totalCols}
+                          colSpan={3 + availableDates.length}
                           className="px-4 py-12 text-center text-muted-foreground"
                         >
-                          Load students by selecting a class above
+                          Select a class to load students
                         </td>
                       </tr>
                     ) : (
                       rows.map((row, i) => (
                         <tr
                           key={row.student_id}
-                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                          className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
                         >
-                          <td className="px-4 py-3 text-muted-foreground">
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
                             {i + 1}
                           </td>
                           <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
@@ -322,28 +303,25 @@ function MarkAttendanceContent() {
                           <td className="px-4 py-3 font-medium text-foreground">
                             {row.student_name}
                           </td>
-                          {schedules.map((sc) => (
-                            <td key={sc.id} className="px-3 py-2 text-center">
-                              <Div type="col" gap="xs" align="center">
-                                <Badge
-                                  variant={
-                                    ATTENDANCE_BADGE[
-                                      row.entries[sc.id] ?? "ABSENT"
-                                    ]
-                                  }
-                                  className="text-xs mb-1"
-                                >
-                                  {row.entries[sc.id] ?? "ABSENT"}
-                                </Badge>
-                                <StatusCell
-                                  status={row.entries[sc.id] ?? "ABSENT"}
-                                  onChange={(s) =>
-                                    setStatus(row.student_id, sc.id, s)
-                                  }
-                                />
-                              </Div>
-                            </td>
-                          ))}
+                          {availableDates.map((date) => {
+                            const entry = row.entries[date] ?? {
+                              status: "PRESENT" as AttendanceStatus,
+                              source: "manual" as AttendanceSource,
+                            };
+                            return (
+                              <td key={date} className="px-3 py-2 text-center">
+                                <Div type="row" justify="center">
+                                  <AttendanceCell
+                                    status={entry.status}
+                                    source={entry.source}
+                                    onClick={() =>
+                                      cycleStatus(row.student_id, date)
+                                    }
+                                  />
+                                </Div>
+                              </td>
+                            );
+                          })}
                         </tr>
                       ))
                     )}
