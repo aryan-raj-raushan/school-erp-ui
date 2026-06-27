@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Download, FileText, Search } from "lucide-react";
 import { useAdmitCard } from "@/hooks/exam/useExamSittingAndAdmit";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
@@ -8,16 +8,17 @@ import { useExams } from "@/hooks/exam/useExams";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H1,
   H2,
   H3,
   P,
   Button,
   Select,
-  Input,
   Spinner,
 } from "@/components/ui";
 import { ADMIT_CARD_PAGE } from "@/constants/exam.constants";
+import { ExamsService } from "@/services/exam.service";
+import { StudentsService } from "@/services/students.service";
+import type { Student } from "@/types";
 
 // ── Admit Card Preview ────────────────────────────────────────────────────────
 
@@ -169,19 +170,59 @@ function AdmitCardContent() {
     getPdfUrl,
   } = useAdmitCard();
 
-  const {
-    years,
-    selectedAcademicYearId,
-    setSelectedAcademicYearId,
-  } = useAcademicClassSection({ autoSelectCurrentYear: true });
+  const { years, selectedAcademicYearId, setSelectedAcademicYearId } =
+    useAcademicClassSection({ autoSelectCurrentYear: true });
 
   const { exams } = useExams(
     selectedAcademicYearId ? { academic_year_id: selectedAcademicYearId, is_published: true } : {}
   );
 
+  const [examClassId, setExamClassId] = useState("");
+  const [sections, setSections] = useState<{ id: string; name: string }[]>([]);
+  const [sectionId, setSectionId] = useState("");
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+
   useEffect(() => {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
+
+  // When exam changes: get class_id + sections + all students for that class
+  useEffect(() => {
+    setStudentId("");
+    setSectionId("");
+    setSections([]);
+    setAllStudents([]);
+    setExamClassId("");
+    if (!examId || !selectedAcademicYearId) return;
+    setStudentsLoading(true);
+    ExamsService.getById(examId)
+      .then(async (exam) => {
+        setExamClassId(exam.class_id);
+        const [studentsRes, classesRes] = await Promise.all([
+          StudentsService.list({
+            class_id: exam.class_id,
+            academic_year_id: selectedAcademicYearId,
+            limit: 500,
+          }),
+          import("@/services/classes.service").then((m) =>
+            m.ClassesService.list({ academic_year_id: selectedAcademicYearId })
+          ),
+        ]);
+        setAllStudents(studentsRes.items);
+        const classSections = classesRes.sections.filter(
+          (s: { class_id: string; id: string; name: string }) => s.class_id === exam.class_id
+        );
+        setSections(classSections);
+      })
+      .catch(() => {})
+      .finally(() => setStudentsLoading(false));
+  }, [examId, selectedAcademicYearId, setStudentId]);
+
+  // Filter students by section when section changes
+  const students = sectionId
+    ? allStudents.filter((s) => s.section_id === sectionId)
+    : allStudents;
 
   return (
     <Div type="col" gap="lg">
@@ -205,13 +246,16 @@ function AdmitCardContent() {
                 onChange={(e) => {
                   setSelectedAcademicYearId(e.target.value);
                   setExamId("");
+                  setAllStudents([]);
+                  setSections([]);
+                  setSectionId("");
+                  setStudentId("");
                 }}
               >
                 <option value="">Select year</option>
                 {years.map((y) => (
                   <option key={y.id} value={y.id}>
-                    {y.name}
-                    {y.is_current ? " (Current)" : ""}
+                    {y.name}{y.is_current ? " (Current)" : ""}
                   </option>
                 ))}
               </Select>
@@ -223,30 +267,53 @@ function AdmitCardContent() {
               </P>
               <Select
                 value={examId}
-                onChange={(e) => setExamId(e.target.value)}
+                onChange={(e) => { setExamId(e.target.value); setStudentId(""); }}
                 disabled={!selectedAcademicYearId}
               >
-                <option value="">Select published exam</option>
+                <option value="">Select exam</option>
                 {exams.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.exam_name}
-                  </option>
+                  <option key={e.id} value={e.id}>{e.exam_name}</option>
                 ))}
               </Select>
             </Div>
+
+            {sections.length > 0 && (
+              <Div type="col" gap="xs">
+                <P color="muted" className="text-xs font-medium">Section</P>
+                <Select
+                  value={sectionId}
+                  onChange={(e) => { setSectionId(e.target.value); setStudentId(""); }}
+                  disabled={!examId}
+                >
+                  <option value="">All sections</option>
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Select>
+              </Div>
+            )}
 
             <Div type="col" gap="xs">
               <P color="muted" className="text-xs font-medium">
                 {ADMIT_CARD_PAGE.labels.student} *
               </P>
-              <Div type="row" gap="sm">
-                <Input
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="Paste student UUID"
-                  disabled={!examId}
-                />
-              </Div>
+              <Select
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                disabled={!examId || studentsLoading}
+              >
+                <option value="">
+                  {studentsLoading ? "Loading students…" : "Select student"}
+                </option>
+                {students.map((s) => {
+                  const name = [s.first_name, s.last_name].filter(Boolean).join(" ");
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {name}{s.roll_number ? ` (#${s.roll_number})` : ""}
+                    </option>
+                  );
+                })}
+              </Select>
             </Div>
 
             <Button

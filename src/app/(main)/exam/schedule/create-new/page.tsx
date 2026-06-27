@@ -1,14 +1,16 @@
 "use client";
 
 import { Suspense, useEffect, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useFieldArray, Controller } from "react-hook-form";
 import { useState } from "react";
 import { useExamScheduleForm } from "@/hooks/exam/useExamSchedule";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
-import { useHallPlans, useHallDetails } from "@/hooks/exam/useExamHall";
+import { useHallDetails } from "@/hooks/exam/useExamHall";
+import { ClassSubjectsService } from "@/services/class-subject.service";
+import type { Subject } from "@/types";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
@@ -177,10 +179,12 @@ function ScheduleCreateContent() {
   const {
     years,
     classes,
+    sections,
     // currentYear,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     handleClassChange,
+    handleSectionChange,
   } = useAcademicClassSection({ autoSelectCurrentYear: true });
 
   const { exams } = useExams(
@@ -188,10 +192,20 @@ function ScheduleCreateContent() {
       ? { academic_year_id: watchedYearId, class_id: watchedClassId }
       : {},
   );
-  const { plans } = useHallPlans();
   const { details: hallRooms } = useHallDetails();
 
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+  const [classSubjects, setClassSubjects] = useState<Subject[]>([]);
+
+  useEffect(() => {
+    if (!watchedClassId) {
+      setClassSubjects([]);
+      return;
+    }
+    ClassSubjectsService.list({ class_id: watchedClassId, limit: 100 }).then((r) =>
+      setClassSubjects(r.items),
+    );
+  }, [watchedClassId]);
 
   const currentYear = useMemo(
     () => years?.find((year) => year.is_current),
@@ -228,7 +242,7 @@ function ScheduleCreateContent() {
         <Div type="col" gap="md">
           {/* Header selectors */}
           <Div variant="card" className="p-5">
-            <Div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <FormField
                 label={SCHEDULE_PAGE.labels.academicYear + " *"}
                 error={errors.academic_year_id?.message}
@@ -238,6 +252,7 @@ function ScheduleCreateContent() {
                   onChange={(e) => {
                     setValue("academic_year_id", e.target.value);
                     setValue("class_id", "");
+                    setValue("section_id", "");
                     setValue("exam_id", "");
                     setSelectedAcademicYearId(e.target.value);
                     handleClassChange("");
@@ -254,22 +269,42 @@ function ScheduleCreateContent() {
               </FormField>
 
               <FormField
-                label={SCHEDULE_PAGE.labels.exam + " *"}
-                error={errors.exam_id?.message}
+                label={SCHEDULE_PAGE.labels.class + " *"}
+                error={errors.class_id?.message}
               >
                 <Select
                   {...register("class_id")}
                   disabled={!watchedYearId}
                   onChange={(e) => {
                     setValue("class_id", e.target.value);
+                    setValue("section_id", "");
                     setValue("exam_id", "");
                     handleClassChange(e.target.value);
+                    handleSectionChange("");
                   }}
                 >
                   <option value="">Select class</option>
                   {classes.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label={SCHEDULE_PAGE.labels.section}>
+                <Select
+                  {...register("section_id")}
+                  disabled={!watchedClassId}
+                  onChange={(e) => {
+                    setValue("section_id", e.target.value);
+                    handleSectionChange(e.target.value);
+                  }}
+                >
+                  <option value="">All sections</option>
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </Select>
@@ -338,14 +373,36 @@ function ScheduleCreateContent() {
                         <FormField
                           label={SCHEDULE_PAGE.labels.subject + " *"}
                           error={
+                            (errors.schedules?.[i] as any)?.subject_id
+                              ?.message ??
                             (errors.schedules?.[i] as any)?.subject_name
                               ?.message
                           }
                         >
-                          <Input
-                            {...register(`schedules.${i}.subject_name`)}
-                            placeholder="Subject name"
-                          />
+                          <Select
+                            value={watch(`schedules.${i}.subject_id`) ?? ""}
+                            disabled={!watchedClassId}
+                            onChange={(e) => {
+                              const subj = classSubjects.find(
+                                (s) => s.id === e.target.value,
+                              );
+                              setValue(
+                                `schedules.${i}.subject_id`,
+                                e.target.value,
+                              );
+                              setValue(
+                                `schedules.${i}.subject_name`,
+                                subj?.name ?? "",
+                              );
+                            }}
+                          >
+                            <option value="">Select subject</option>
+                            {classSubjects.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </Select>
                         </FormField>
                         <FormField label={SCHEDULE_PAGE.labels.subjectType}>
                           <Select {...register(`schedules.${i}.subject_type`)}>

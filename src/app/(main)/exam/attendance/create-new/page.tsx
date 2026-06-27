@@ -104,13 +104,12 @@ function MarkAttendanceContent() {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
 
-  // When exam + section selected, load students and init rows
+  // Init rows only after schedules have finished loading
   useEffect(() => {
     if (!examId || !selectedAcademicYearId || !selectedClassId) return;
-    // In real usage: fetch students from StudentsService
-    // For now, students are set externally via initRows
+    if (isLoadingSchedules || schedules.length === 0) return;
     initRows(students);
-  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId]);
+  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, schedules, isLoadingSchedules]);
 
   const { attendanceCardUrl } = useExamAttendanceCard({
     examId,
@@ -280,6 +279,16 @@ function MarkAttendanceContent() {
                             <Div className="truncate max-w-[120px] block">
                               {sc.subject_name}
                             </Div>
+                            {sc.subject_type && sc.subject_type !== "MAIN_EXAM" && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 capitalize">
+                                {sc.subject_type.replace(/_/g, " ").toLowerCase()}
+                              </Badge>
+                            )}
+                            {sc.section_name && (
+                              <Div className="text-[10px] font-normal text-muted-foreground/60">
+                                Sec {sc.section_name}
+                              </Div>
+                            )}
                             <Div className="text-xs font-normal text-muted-foreground/70">
                               {sc.exam_date}
                             </Div>

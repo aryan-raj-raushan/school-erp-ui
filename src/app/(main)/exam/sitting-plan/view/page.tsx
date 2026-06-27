@@ -1,339 +1,302 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
-import { useSittingPlanForm } from "@/hooks/exam/useExamSittingAndAdmit";
-import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
-import { useExams } from "@/hooks/exam/useExams";
-import { useHallPlans, useHallDetails } from "@/hooks/exam/useExamHall";
+import { Suspense, useState, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ArrowLeft, Save, Users, X } from "lucide-react";
+import { useRoomSittingPlan } from "@/hooks/exam/useExamSittingAndAdmit";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  Div,
-  H3,
-  P,
-  Button,
-  Select,
-  Input,
-  Spinner,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-} from "@/components/ui";
-import { SITTING_PLAN_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
-import type { SittingRow } from "@/hooks/exam/useExamSittingAndAdmit";
+import { Div, P, Button, Spinner } from "@/components/ui";
+import { EXAM_ROUTES } from "@/constants/exam.constants";
+import type { StudentSlot } from "@/hooks/exam/useExamSittingAndAdmit";
 
-// ── Add Student Row Form ──────────────────────────────────────────────────────
+interface DragPayload {
+  studentId: string;
+  fromSeatIndex: number | null;
+}
 
-function AddStudentRow({
-  rooms,
-  onAdd,
+// ── Pool Chip ─────────────────────────────────────────────────────────────────
+
+function PoolChip({
+  slot,
+  draggingRef,
+  onDragStart,
 }: {
-  rooms: { id: string; room_name: string; sitting_capacity: number }[];
-  onAdd: (row: SittingRow) => void;
+  slot: StudentSlot;
+  draggingRef: React.MutableRefObject<DragPayload | null>;
+  onDragStart: () => void;
 }) {
-  const [studentId, setStudentId] = useState("");
-  const [studentName, setStudentName] = useState("");
-  const [rollNumber, setRollNumber] = useState("");
-  const [hallDetailId, setHallDetailId] = useState("");
-  const [seatNumber, setSeatNumber] = useState("");
-
-  function handleAdd() {
-    if (!studentId || !hallDetailId) return;
-    onAdd({
-      student_id: studentId,
-      student_name: studentName || studentId,
-      hall_detail_id: hallDetailId,
-      roll_number: rollNumber || undefined,
-      seat_number: seatNumber ? Number(seatNumber) : undefined,
-    });
-    setStudentId("");
-    setStudentName("");
-    setRollNumber("");
-    setSeatNumber("");
-  }
-
   return (
-    <Div variant="glass-sm" className="p-4">
-      <H3 color="default" className="mb-3 text-sm">
-        Add Student
-      </H3>
-      <Div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Div type="col" gap="xs">
-          <P color="muted" className="text-xs">
-            Student ID *
-          </P>
-          <Input
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Student UUID"
-          />
-        </Div>
-        <Div type="col" gap="xs">
-          <P color="muted" className="text-xs">
-            Student Name
-          </P>
-          <Input
-            value={studentName}
-            onChange={(e) => setStudentName(e.target.value)}
-            placeholder="Display name"
-          />
-        </Div>
-        <Div type="col" gap="xs">
-          <P color="muted" className="text-xs">
-            Roll No.
-          </P>
-          <Input
-            value={rollNumber}
-            onChange={(e) => setRollNumber(e.target.value)}
-            placeholder="e.g. A-12"
-          />
-        </Div>
-        <Div type="col" gap="xs">
-          <P color="muted" className="text-xs">
-            {SITTING_PLAN_PAGE.labels.room} *
-          </P>
-          <Select
-            value={hallDetailId}
-            onChange={(e) => setHallDetailId(e.target.value)}
-          >
-            <option value="">Select room</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.room_name} ({r.sitting_capacity} seats)
-              </option>
-            ))}
-          </Select>
-        </Div>
-        <Div type="col" gap="xs">
-          <P color="muted" className="text-xs">
-            {SITTING_PLAN_PAGE.labels.seatNumber}
-          </P>
-          <Div type="row" gap="sm">
-            <Input
-              value={seatNumber}
-              onChange={(e) => setSeatNumber(e.target.value)}
-              type="number"
-              min={1}
-              placeholder="e.g. 5"
-            />
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleAdd}
-              disabled={!studentId || !hallDetailId}
-            >
-              <Plus size={14} />
-            </Button>
-          </Div>
-        </Div>
-      </Div>
-    </Div>
+    <div
+      draggable
+      onDragStart={() => {
+        draggingRef.current = { studentId: slot.student_id, fromSeatIndex: null };
+        onDragStart();
+      }}
+      title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}`}
+      className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-card hover:border-primary hover:bg-primary/5 cursor-grab active:cursor-grabbing select-none transition-colors"
+    >
+      <span className="text-[11px] font-medium truncate max-w-[110px]">{slot.name}</span>
+      {slot.roll_number && (
+        <span className="text-[9px] text-muted-foreground shrink-0">#{slot.roll_number}</span>
+      )}
+    </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Seat Box ──────────────────────────────────────────────────────────────────
 
-function SittingPlanCreateContent() {
-  const router = useRouter();
-  const {
-    examId,
-    setExamId,
-    academicYearId,
-    setAcademicYearId,
-    hallPlanId,
-    setHallPlanId,
-    rows,
-    addRow,
-    removeRow,
-    isSaving,
-    save,
-  } = useSittingPlanForm();
-
-  const {
-    years,
-    selectedAcademicYearId,
-    setSelectedAcademicYearId,
-  } = useAcademicClassSection({ autoSelectCurrentYear: true });
-
-  const { exams } = useExams(
-    selectedAcademicYearId ? { academic_year_id: selectedAcademicYearId } : {}
-  );
-  const { plans } = useHallPlans();
-  const { details: rooms } = useHallDetails(hallPlanId || undefined);
-
-  useEffect(() => {
-    if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
-  }, [selectedAcademicYearId, setAcademicYearId]);
-
-  // Room capacity map for display
-  const roomMap = Object.fromEntries(rooms.map((r) => [r.id, r.room_name]));
+function SeatBox({
+  index,
+  slot,
+  isDragging,
+  draggingRef,
+  onDragStart,
+  onDrop,
+  onRemove,
+}: {
+  index: number;
+  slot: StudentSlot | null;
+  isDragging: boolean;
+  draggingRef: React.MutableRefObject<DragPayload | null>;
+  onDragStart: () => void;
+  onDrop: (i: number) => void;
+  onRemove: (i: number) => void;
+}) {
+  const [over, setOver] = useState(false);
+  const canDrop = isDragging && !slot;
+  const saved = !!slot?.sitting_plan_id;
+  const label = slot ? slot.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) : null;
 
   return (
-    <Div type="col" gap="lg" className="max-w-5xl">
-      <PageHeader
-        title="Assign Sitting Plan"
-        subtitle="Assign students to exam rooms — capacity is validated automatically"
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(EXAM_ROUTES.sittingPlan.list)}
+    <div
+      onDragOver={(e) => { if (canDrop) { e.preventDefault(); setOver(true); } }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => { e.preventDefault(); setOver(false); if (canDrop) onDrop(index); }}
+      className={[
+        "relative rounded flex flex-col items-center justify-center border transition-all select-none overflow-hidden",
+        "w-full h-full min-h-[30px]",
+        slot
+          ? saved
+            ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 dark:border-emerald-700"
+            : "border-blue-400 bg-blue-50 dark:bg-blue-950/50 dark:border-blue-700"
+          : over
+          ? "border-2 border-primary bg-primary/10"
+          : "border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 hover:border-slate-600 dark:hover:border-slate-400",
+      ].join(" ")}
+    >
+      {/* seat number */}
+      <span className="absolute top-[2px] left-[3px] text-[8px] text-slate-500 dark:text-slate-400 font-bold leading-none">
+        {index + 1}
+      </span>
+
+      {slot ? (
+        <>
+          <button
+            onClick={() => onRemove(index)}
+            className="absolute top-[1px] right-[2px] w-3 h-3 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 flex items-center justify-center z-10"
+            title="Unassign"
           >
-            <ArrowLeft size={14} /> {SITTING_PLAN_PAGE.buttons.cancel}
-          </Button>
+            <X size={6} className="text-red-600 dark:text-red-300" />
+          </button>
+          <div
+            draggable
+            onDragStart={() => {
+              draggingRef.current = { studentId: slot.student_id, fromSeatIndex: index };
+              onDragStart();
+            }}
+            className="flex flex-col items-center justify-center w-full h-full pt-2 cursor-grab active:cursor-grabbing"
+            title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}`}
+          >
+            <span
+              className={[
+                "text-[10px] font-bold leading-none",
+                saved ? "text-emerald-700 dark:text-emerald-300" : "text-blue-700 dark:text-blue-300",
+              ].join(" ")}
+            >
+              {label}
+            </span>
+            {slot.roll_number && (
+              <span className="text-[7px] opacity-50 mt-0.5">{slot.roll_number}</span>
+            )}
+          </div>
+        </>
+      ) : (
+        over && <span className="text-[9px] text-primary font-bold">+</span>
+      )}
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+function RoomSittingContent() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const hallDetailId = params.get("hall_detail_id") ?? "";
+  const examId = params.get("exam_id") ?? "";
+  const academicYearId = params.get("academic_year_id") ?? "";
+
+  const {
+    room,
+    exam,
+    seated,
+    unassigned,
+    isLoading,
+    isSaving,
+    hasChanges,
+    newCount,
+    removedCount,
+    movePoolToSeat,
+    removeSeat,
+    moveSeatToSeat,
+    save,
+  } = useRoomSittingPlan(hallDetailId, examId, academicYearId);
+
+  const draggingRef = useRef<DragPayload | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  function endDrag() { draggingRef.current = null; setIsDragging(false); }
+
+  function handleDropToSeat(toIdx: number) {
+    const d = draggingRef.current;
+    if (!d) return;
+    d.fromSeatIndex === null
+      ? movePoolToSeat(d.studentId, toIdx)
+      : moveSeatToSeat(d.fromSeatIndex, toIdx);
+    endDrag();
+  }
+
+  function handleDropToPool() {
+    const d = draggingRef.current;
+    if (d?.fromSeatIndex != null) removeSeat(d.fromSeatIndex);
+    endDrag();
+  }
+
+  const occupiedCount = seated.filter(Boolean).length;
+  const capacity = room?.sitting_capacity ?? 0;
+  const gridCols = room?.grid_cols ?? null;
+  const pct = capacity > 0 ? Math.round((occupiedCount / capacity) * 100) : 0;
+  const saveLabel = [newCount > 0 && `+${newCount}`, removedCount > 0 && `−${removedCount}`].filter(Boolean).join(" ");
+
+  if (isLoading) return <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>;
+  if (!room) return <Div type="row" justify="center" className="py-20"><P color="muted">Room not found.</P></Div>;
+
+  return (
+    <div className="flex flex-col gap-3 h-[calc(100vh-72px)]" onDragEnd={endDrag}>
+      {/* Header */}
+      <PageHeader
+        title={room.room_name}
+        subtitle={exam?.exam_name ?? ""}
+        actions={
+          <Div type="row" gap="sm">
+            {hasChanges && (
+              <Button loading={isSaving} onClick={save} size="sm">
+                <Save size={13} /> Save {saveLabel}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => router.push(EXAM_ROUTES.sittingPlan.list)}>
+              <ArrowLeft size={13} /> Back
+            </Button>
+          </Div>
         }
       />
 
-      {/* Header Selectors */}
-      <Div variant="card" className="p-5">
-        <Div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Div type="col" gap="xs">
-            <P color="muted" className="text-xs font-medium">
-              {SITTING_PLAN_PAGE.labels.academicYear} *
-            </P>
-            <Select
-              value={selectedAcademicYearId}
-              onChange={(e) => {
-                setSelectedAcademicYearId(e.target.value);
-                setExamId("");
-              }}
-            >
-              <option value="">Select year</option>
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name}
-                  {y.is_current ? " (Current)" : ""}
-                </option>
-              ))}
-            </Select>
-          </Div>
+      {/* Stats */}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+        <span><strong className="text-foreground">{occupiedCount}</strong>/{capacity} filled</span>
+        <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className={`h-full rounded-full ${pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+        </div>
+        <span><strong className="text-foreground">{unassigned.length}</strong> unassigned</span>
+        {hasChanges && (
+          <span className="text-amber-600 dark:text-amber-400 font-medium">
+            {[newCount > 0 && `+${newCount} new`, removedCount > 0 && `−${removedCount} removed`].filter(Boolean).join(", ")} · unsaved
+          </span>
+        )}
+        <div className="ml-auto flex items-center gap-2 text-[10px]">
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 inline-block" /> Saved</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-blue-400 bg-blue-50 dark:bg-blue-950 inline-block" /> New</span>
+        </div>
+      </div>
 
-          <Div type="col" gap="xs">
-            <P color="muted" className="text-xs font-medium">
-              {SITTING_PLAN_PAGE.labels.exam} *
-            </P>
-            <Select
-              value={examId}
-              onChange={(e) => setExamId(e.target.value)}
-              disabled={!selectedAcademicYearId}
-            >
-              <option value="">Select exam</option>
-              {exams.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.exam_name}
-                </option>
-              ))}
-            </Select>
-          </Div>
+      {/* Body: left pool + right grid */}
+      <div className="flex gap-3 flex-1 min-h-0">
 
-          <Div type="col" gap="xs">
-            <P color="muted" className="text-xs font-medium">
-              {SITTING_PLAN_PAGE.labels.hallPlan} *
-            </P>
-            <Select
-              value={hallPlanId}
-              onChange={(e) => setHallPlanId(e.target.value)}
-            >
-              <option value="">Select hall plan</option>
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.plan_name}
-                </option>
-              ))}
-            </Select>
-          </Div>
-        </Div>
-      </Div>
+        {/* Left — unassigned pool */}
+        <div
+          onDragOver={(e) => { if (isDragging && draggingRef.current?.fromSeatIndex != null) e.preventDefault(); }}
+          onDrop={(e) => { e.preventDefault(); handleDropToPool(); }}
+          className={[
+            "w-44 shrink-0 flex flex-col rounded-xl border-2 transition-colors",
+            isDragging && draggingRef.current?.fromSeatIndex != null
+              ? "border-amber-400 bg-amber-50/30 dark:bg-amber-950/10"
+              : "border-border",
+          ].join(" ")}
+        >
+          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-muted/40 rounded-t-xl shrink-0">
+            <Users size={12} className="text-muted-foreground" />
+            <span className="text-[11px] font-semibold">Unassigned</span>
+            <span className="ml-auto text-[9px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{unassigned.length}</span>
+          </div>
+          {isDragging && draggingRef.current?.fromSeatIndex != null && (
+            <div className="text-center text-[9px] text-amber-600 dark:text-amber-400 font-medium py-1 bg-amber-50/50 dark:bg-amber-950/10 shrink-0">
+              drop to unassign
+            </div>
+          )}
+          <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+            {unassigned.length === 0
+              ? <span className="text-[10px] text-muted-foreground text-center mt-4">All seated</span>
+              : unassigned.map((s) => (
+                  <PoolChip
+                    key={s.student_id}
+                    slot={s}
+                    draggingRef={draggingRef}
+                    onDragStart={() => setIsDragging(true)}
+                  />
+                ))
+            }
+          </div>
+        </div>
 
-      {/* Add row form */}
-      {hallPlanId && rooms.length > 0 && (
-        <AddStudentRow rooms={rooms} onAdd={addRow} />
-      )}
-
-      {/* Assigned students table */}
-      {rows.length > 0 && (
-        <>
-          <Table>
-            <TableHead>
-              <TableHeadRow>
-                <TableHeaderCell>#</TableHeaderCell>
-                <TableHeaderCell>{SITTING_PLAN_PAGE.table.student}</TableHeaderCell>
-                <TableHeaderCell>{SITTING_PLAN_PAGE.table.rollNo}</TableHeaderCell>
-                <TableHeaderCell>{SITTING_PLAN_PAGE.table.room}</TableHeaderCell>
-                <TableHeaderCell>{SITTING_PLAN_PAGE.table.seatNo}</TableHeaderCell>
-                <TableHeaderCell>{SITTING_PLAN_PAGE.table.actions}</TableHeaderCell>
-              </TableHeadRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((row, i) => (
-                <TableRow key={row.student_id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>{row.student_name}</TableCell>
-                  <TableCell>
-                    <P color="muted" className="font-mono text-xs">
-                      {row.roll_number ?? "—"}
-                    </P>
-                  </TableCell>
-                  <TableCell>
-                    {roomMap[row.hall_detail_id] ?? row.hall_detail_id}
-                  </TableCell>
-                  <TableCell>{row.seat_number ?? "—"}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      type="button"
-                      onClick={() => removeRow(row.student_id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          <Div type="row" gap="md">
-            <Button
-              variant="outline"
-              onClick={() => router.push(EXAM_ROUTES.sittingPlan.list)}
-            >
-              {SITTING_PLAN_PAGE.buttons.cancel}
-            </Button>
-            <Button loading={isSaving} onClick={save}>
-              <Save size={14} /> {SITTING_PLAN_PAGE.buttons.save}
-            </Button>
-          </Div>
-        </>
-      )}
-
-      {rows.length === 0 && hallPlanId && (
-        <Div variant="card-dashed">
-          <P color="muted">
-            Select a hall plan and use the form above to add students
-          </P>
-        </Div>
-      )}
-    </Div>
+        {/* Right — seat grid */}
+        <div className="flex-1 min-h-0 min-w-0">
+          <div
+            className="grid gap-1 h-full w-full"
+            style={
+              gridCols && room.grid_rows
+                ? {
+                    gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+                    gridTemplateRows: `repeat(${room.grid_rows}, minmax(0, 1fr))`,
+                  }
+                : {
+                    gridTemplateColumns: "repeat(auto-fill, minmax(34px, 1fr))",
+                    alignContent: "start",
+                  }
+            }
+          >
+            {seated.map((slot, i) => (
+              <SeatBox
+                key={i}
+                index={i}
+                slot={slot}
+                isDragging={isDragging}
+                draggingRef={draggingRef}
+                onDragStart={() => setIsDragging(true)}
+                onDrop={handleDropToSeat}
+                onRemove={removeSeat}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-export default function SittingPlanSlugPage() {
+export default function RoomSittingPage() {
   return (
-    <Suspense
-      fallback={
-        <Div type="row" justify="center" className="py-20">
-          <Spinner size="lg" />
-        </Div>
-      }
-    >
-      <SittingPlanCreateContent />
+    <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
+      <RoomSittingContent />
     </Suspense>
   );
 }

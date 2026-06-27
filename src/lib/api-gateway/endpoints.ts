@@ -339,10 +339,6 @@ export const EXAM_ENDPOINTS = {
     data: "/exam/attendance-card/data",
     pdf: "/exam/attendance-card/pdf",
   },
-  hallPlans: {
-    list: "/exam/hall-plans",
-    byId: (id: string) => `/exam/hall-plans/${id}`,
-  },
   hallDetails: {
     list: "/exam/hall-details",
     byId: (id: string) => `/exam/hall-details/${id}`,

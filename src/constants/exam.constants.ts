@@ -31,17 +31,10 @@ export const EXAM_ROUTES = {
     view: (id: string) => `/exam/attendance/view?id=${id}`,
     card: '/exam/attendance/card',
   },
-  // Hall Plans
-  hallPlans: {
-    list: '/exam/hall-plans',
-    create: '/exam/hall-plans/create-new',
-    view: (id: string) => `/exam/hall-plans/view?id=${id}`,
-    edit: (id: string) => `/exam/hall-plans/view?id=${id}&edit=true`,
-  },
   // Hall Details
   hallDetails: {
     list: '/exam/hall-details',
-    create: '/exam/hall-details/create-new',
+    create: '/exam/hall-details/view?id=create-new',
     view: (id: string) => `/exam/hall-details/view?id=${id}`,
     edit: (id: string) => `/exam/hall-details/view?id=${id}&edit=true`,
   },
@@ -49,7 +42,8 @@ export const EXAM_ROUTES = {
   sittingPlan: {
     list: '/exam/sitting-plan',
     create: '/exam/sitting-plan/create-new',
-    view: (id: string) => `/exam/sitting-plan/view?id=${id}`,
+    roomView: (hallDetailId: string, examId: string, academicYearId: string) =>
+      `/exam/sitting-plan/view?hall_detail_id=${hallDetailId}&exam_id=${examId}&academic_year_id=${academicYearId}`,
   },
   // Admit Card
   admitCard: {
@@ -192,6 +186,7 @@ export const SCHEDULE_PAGE = {
   table: {
     sno: 'S. No.',
     subject: 'Subject',
+    section: 'Section',
     type: 'Type',
     date: 'Date',
     time: 'Time',
@@ -206,6 +201,7 @@ export const SCHEDULE_PAGE = {
     exam: 'Exam',
     academicYear: 'Academic Year',
     class: 'Class',
+    section: 'Section',
     subject: 'Subject Name',
     subjectType: 'Subject Type',
     examDate: 'Exam Date',
@@ -220,6 +216,7 @@ export const SCHEDULE_PAGE = {
   filters: {
     allYears: 'All Years',
     allClasses: 'All Classes',
+    allSections: 'All Sections',
     allExams: 'All Exams',
     allTypes: 'All Types',
   },
@@ -279,41 +276,10 @@ export const ATTENDANCE_PAGE = {
 
 // ── Hall Plans Page ───────────────────────────────────────────────────────────
 
-export const HALL_PLANS_PAGE = {
-  pageHeading: { title: 'Exam Hall Plans', subtitle: 'Manage hall plan groupings' },
-  buttons: {
-    add: 'Add Hall Plan',
-    save: 'Save',
-    cancel: 'Cancel',
-    edit: 'Edit',
-    back: 'Back',
-    viewRooms: 'View Rooms',
-  },
-  table: {
-    sno: 'S. No.',
-    planName: 'Plan Name',
-    description: 'Description',
-    status: 'Status',
-    actions: 'Actions',
-    noEntry: 'No hall plans found',
-  },
-  labels: {
-    planName: 'Plan Name',
-    description: 'Description',
-    isEnabled: 'Enabled',
-  },
-  toasts: {
-    createSuccess: 'Hall plan created',
-    updateSuccess: 'Hall plan updated',
-    deleteSuccess: 'Hall plan deleted',
-    fetchError: 'Failed to load hall plans',
-  },
-} as const;
-
 // ── Hall Details Page ─────────────────────────────────────────────────────────
 
 export const HALL_DETAILS_PAGE = {
-  pageHeading: { title: 'Exam Hall Rooms', subtitle: 'Manage rooms within a hall plan' },
+  pageHeading: { title: 'Exam Hall Rooms', subtitle: 'Manage exam rooms and seating capacity' },
   buttons: {
     add: 'Add Room',
     save: 'Save',
@@ -324,20 +290,15 @@ export const HALL_DETAILS_PAGE = {
   table: {
     sno: 'S. No.',
     roomName: 'Room Name',
-    hallPlan: 'Hall Plan',
     capacity: 'Sitting Capacity',
     status: 'Status',
     actions: 'Actions',
     noEntry: 'No rooms found',
   },
   labels: {
-    hallPlan: 'Hall Plan',
     roomName: 'Room Name',
     sittingCapacity: 'Sitting Capacity',
     isEnabled: 'Enabled',
-  },
-  filters: {
-    allPlans: 'All Plans',
   },
   toasts: {
     createSuccess: 'Room created',
@@ -364,14 +325,12 @@ export const SITTING_PLAN_PAGE = {
     rollNo: 'Roll No.',
     room: 'Room',
     seatNo: 'Seat No.',
-    hallPlan: 'Hall Plan',
     actions: 'Actions',
     noEntry: 'No sitting plan entries found',
   },
   labels: {
     exam: 'Exam',
     academicYear: 'Academic Year',
-    hallPlan: 'Hall Plan',
     room: 'Room',
     student: 'Student',
     seatNumber: 'Seat Number',

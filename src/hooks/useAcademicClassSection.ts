@@ -126,6 +126,7 @@ export function useAcademicClassSection(
 
     classes,
     sections,
+    allSections,
 
     selectedClass,
     selectedSection,

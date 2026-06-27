@@ -288,11 +288,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         permissions: [PERMISSIONS.exams.view],
       },
       {
-        title: "Exam Hall Plans",
-        url: "/exam/hall-plans",
-        permissions: [PERMISSIONS.exams.view],
-      },
-      {
         title: "Exam Hall Details",
         url: "/exam/hall-details",
         permissions: [PERMISSIONS.exams.view],

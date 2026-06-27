@@ -163,8 +163,8 @@ function AttendanceListContent() {
             records.map((r, i) => (
               <TableRow key={r.id}>
                 <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{r.student_id}</TableCell>
-                <TableCell>{r.schedule_id}</TableCell>
+                <TableCell primary>{r.student_name}</TableCell>
+                <TableCell>{r.subject_name} – {r.exam_date}</TableCell>
                 <TableCell>
                   <Badge variant={ATTENDANCE_BADGE[r.status]}>{r.status}</Badge>
                 </TableCell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useExamSchedules } from "@/hooks/exam/useExamSchedule";
@@ -40,10 +40,21 @@ function ScheduleContent() {
   const {
     years,
     classes,
+    sections,
+    allSections,
+    currentYear,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
     handleClassChange,
-  } = useAcademicClassSection({ autoSelectCurrentYear: false });
+    handleSectionChange,
+  } = useAcademicClassSection({ autoSelectCurrentYear: true });
+
+  // sync auto-selected current year into schedule filters on first load
+  useEffect(() => {
+    if (currentYear && !filters.academic_year_id) {
+      updateFilters({ academic_year_id: currentYear.id });
+    }
+  }, [currentYear]);
 
   const { exams } = useExams(
     filters.academic_year_id
@@ -54,21 +65,25 @@ function ScheduleContent() {
       : {},
   );
 
-  console.log("exams: ", exams);
-
   function handleYearChange(val: string) {
     setSelectedAcademicYearId(val);
     handleClassChange("");
     updateFilters({
       academic_year_id: val || undefined,
       class_id: undefined,
+      section_id: undefined,
       exam_id: undefined,
     });
   }
 
   function handleClassFilter(val: string) {
     handleClassChange(val);
-    updateFilters({ class_id: val || undefined, exam_id: undefined });
+    updateFilters({ class_id: val || undefined, section_id: undefined, exam_id: undefined });
+  }
+
+  function handleSectionFilter(val: string) {
+    handleSectionChange(val);
+    updateFilters({ section_id: val || undefined });
   }
 
   return (
@@ -113,6 +128,19 @@ function ScheduleContent() {
         </Select>
         <Select
           width="sm"
+          value={filters.section_id ?? ""}
+          disabled={!filters.class_id}
+          onChange={(e) => handleSectionFilter(e.target.value)}
+        >
+          <option value="">{SCHEDULE_PAGE.filters.allSections}</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
           value={filters.exam_id ?? ""}
           disabled={!filters.class_id}
           onChange={(e) =>
@@ -149,6 +177,7 @@ function ScheduleContent() {
           <TableHeadRow>
             <TableHeaderCell>{SCHEDULE_PAGE.table.sno}</TableHeaderCell>
             <TableHeaderCell>{SCHEDULE_PAGE.table.subject}</TableHeaderCell>
+            <TableHeaderCell>{SCHEDULE_PAGE.table.section}</TableHeaderCell>
             <TableHeaderCell>{SCHEDULE_PAGE.table.type}</TableHeaderCell>
             <TableHeaderCell>{SCHEDULE_PAGE.table.date}</TableHeaderCell>
             <TableHeaderCell>{SCHEDULE_PAGE.table.time}</TableHeaderCell>
@@ -159,11 +188,11 @@ function ScheduleContent() {
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={8}>
+            <TableEmptyRow colSpan={9}>
               <Spinner />
             </TableEmptyRow>
           ) : schedules.length === 0 ? (
-            <TableEmptyRow colSpan={8}>
+            <TableEmptyRow colSpan={9}>
               {SCHEDULE_PAGE.table.noEntry}
             </TableEmptyRow>
           ) : (
@@ -182,6 +211,11 @@ function ScheduleContent() {
                   )}
                 </TableCell>
                 <TableCell primary>{s.subject_name}</TableCell>
+                <TableCell>
+                  {s.section_id
+                    ? (allSections.find((sec) => sec.id === s.section_id)?.name ?? "—")
+                    : "—"}
+                </TableCell>
                 <TableCell>
                   <Badge
                     variant={

@@ -86,13 +86,33 @@ export function useMarkAttendance() {
       .finally(() => setIsLoadingSchedules(false));
   }, [examId]);
 
-  function initRows(students: StudentListItem[]) {
+  async function initRows(students: StudentListItem[]) {
+    // fetch existing records so saved status is preserved on reload
+    let existing: ExamAttendance[] = [];
+    if (examId && academicYearId) {
+      try {
+        const res = await ExamAttendanceService.list({ exam_id: examId, academic_year_id: academicYearId, limit: 500 });
+        existing = res.items;
+      } catch {
+        // ignore — fall back to PRESENT default
+      }
+    }
+
+    const existingMap: Record<string, Record<string, AttendanceStatus>> = {};
+    for (const r of existing) {
+      if (!existingMap[r.student_id]) existingMap[r.student_id] = {};
+      existingMap[r.student_id][r.schedule_id] = r.status;
+    }
+
     const initial: StudentAttendanceRow[] = students.map((s) => ({
       student_id: s.id,
       student_name: [s.first_name, s.last_name].filter(Boolean).join(" "),
       roll_number: s.roll_number ?? undefined,
       entries: Object.fromEntries(
-        schedules.map((sc) => [sc.id, "PRESENT" as AttendanceStatus]),
+        schedules.map((sc) => [
+          sc.id,
+          existingMap[s.id]?.[sc.id] ?? "PRESENT" as AttendanceStatus,
+        ]),
       ),
     }));
 

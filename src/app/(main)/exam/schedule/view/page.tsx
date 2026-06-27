@@ -1,24 +1,24 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { useFieldArray, Controller } from "react-hook-form";
-import { useState } from "react";
-import { useExamScheduleForm } from "@/hooks/exam/useExamSchedule";
+import { Suspense, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ArrowLeft, Pencil } from "lucide-react";
+import { Controller } from "react-hook-form";
+import { useExamScheduleEdit } from "@/hooks/exam/useExamSchedule";
+import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
-import { useHallPlans, useHallDetails } from "@/hooks/exam/useExamHall";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H3,
   P,
   Button,
   Spinner,
   FormField,
   Input,
   Select,
+  Badge,
 } from "@/components/ui";
 import {
   SCHEDULE_PAGE,
@@ -26,468 +26,294 @@ import {
   SUBJECT_TYPE_OPTIONS,
 } from "@/constants/exam.constants";
 
-function SubScheduleRows({
-  nestIndex,
-  control,
-  register,
-  errors,
-  isReadOnly,
-}: any) {
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: `schedules.${nestIndex}.sub_schedules`,
-  });
-
-  return (
-    <Div type="col" gap="sm" className="pl-4 border-l-2 border-border mt-3">
-      {fields.map((field, si) => (
-        <Div key={field.id} variant="glass-sm" className="p-3">
-          <Div type="row" justify="between" align="center" className="mb-3">
-            <P className="text-xs font-semibold text-muted-foreground">
-              Sub-Subject {si + 1}
-            </P>
-            {!isReadOnly && (
-              <Button
-                size="icon-xs"
-                variant="destructive"
-                type="button"
-                onClick={() => remove(si)}
-              >
-                <Trash2 size={12} />
-              </Button>
-            )}
-          </Div>
-          <Div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <FormField label="Type">
-              <Select
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.subject_type`,
-                )}
-                disabled={isReadOnly}
-              >
-                {SUBJECT_TYPE_OPTIONS.filter(
-                  (o) => o.value !== "MAIN_EXAM",
-                ).map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-            <FormField label="Sub-Subject Name">
-              <Input
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.subject_name`,
-                )}
-                placeholder="e.g. Physics Practical"
-                disabled={isReadOnly}
-              />
-            </FormField>
-            <FormField label="Date">
-              <Input
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.exam_date`,
-                )}
-                type="date"
-                disabled={isReadOnly}
-              />
-            </FormField>
-            <FormField label="Start Time">
-              <Input
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.start_time`,
-                )}
-                type="time"
-                disabled={isReadOnly}
-              />
-            </FormField>
-            <FormField label="End Time">
-              <Input
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.end_time`,
-                )}
-                type="time"
-                disabled={isReadOnly}
-              />
-            </FormField>
-            <FormField label="Max Marks">
-              <Input
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.exam_marks`,
-                )}
-                type="number"
-                min={0}
-                disabled={isReadOnly}
-              />
-            </FormField>
-            <FormField label="Pass Marks">
-              <Input
-                {...register(
-                  `schedules.${nestIndex}.sub_schedules.${si}.passing_marks`,
-                )}
-                type="number"
-                min={0}
-                disabled={isReadOnly}
-              />
-            </FormField>
-          </Div>
-        </Div>
-      ))}
-      {!isReadOnly && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-fit"
-          onClick={() =>
-            append({
-              subject_type: "PRACTICAL_EXAM",
-              subject_name: "",
-              exam_date: "",
-              start_time: "",
-              end_time: "",
-              exam_marks: 30,
-              passing_marks: 10,
-            })
-          }
-        >
-          <Plus size={13} /> {SCHEDULE_PAGE.buttons.addSubSchedule}
-        </Button>
-      )}
-    </Div>
-  );
-}
-
-function ScheduleCreateContent() {
+function ScheduleViewContent() {
   const router = useRouter();
-  const { form, schedulesField, isSubmitting, onSubmit, addScheduleRow } =
-    useExamScheduleForm();
+  const params = useSearchParams();
+  const id = params.get("id");
+  const isEdit = params.get("edit") === "true";
+
+  const { form, schedule, subSchedules, isLoading, isSubmitting, onSubmit } =
+    useExamScheduleEdit(id);
   const {
     register,
     control,
     formState: { errors },
-    watch,
-    setValue,
   } = form;
-
-  const watchedYearId = watch("academic_year_id");
-  const watchedClassId = watch("class_id");
-  const watchedExamId = watch("exam_id");
-
-  const {
-    years,
-    classes,
-    // currentYear,
-    selectedAcademicYearId,
-    setSelectedAcademicYearId,
-    handleClassChange,
-  } = useAcademicClassSection({ autoSelectCurrentYear: true });
-
-  const { exams } = useExams(
-    watchedYearId
-      ? { academic_year_id: watchedYearId, class_id: watchedClassId }
-      : {},
-  );
-  const { plans } = useHallPlans();
   const { details: hallRooms } = useHallDetails();
 
-  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
-
-  const currentYear = useMemo(
-    () => years?.find((year) => year.is_current),
-    [years],
+  // load names for year / class / section / exam
+  const { years } = useAcademicYears();
+  const {
+    classes,
+    allSections,
+    setSelectedAcademicYearId,
+  } = useAcademicClassSection({ autoSelectCurrentYear: false });
+  const { exams } = useExams(
+    schedule?.academic_year_id
+      ? { academic_year_id: schedule.academic_year_id, class_id: schedule.class_id }
+      : {},
   );
-  useEffect(() => {
-    if (currentYear && !watchedYearId) {
-      setValue("academic_year_id", currentYear.id);
-      setSelectedAcademicYearId(currentYear.id);
-    }
-  }, [currentYear, watchedYearId, setValue, setSelectedAcademicYearId]);
 
-  function toggleRow(i: number) {
-    setExpandedRows((p) => ({ ...p, [i]: !p[i] }));
+  useEffect(() => {
+    if (schedule?.academic_year_id) {
+      setSelectedAcademicYearId(schedule.academic_year_id);
+    }
+  }, [schedule?.academic_year_id]);
+
+  const yearName = years.find((y) => y.id === schedule?.academic_year_id)?.name ?? "—";
+  const className = classes.find((c) => c.id === schedule?.class_id)?.name ?? "—";
+  const sectionName = schedule?.section_id
+    ? (allSections.find((s) => s.id === schedule.section_id)?.name ?? "—")
+    : "—";
+  const examName = exams.find((e) => e.id === schedule?.exam_id)?.exam_name ?? "—";
+
+  if (isLoading) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  if (!schedule) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <P color="muted">Schedule not found.</P>
+      </Div>
+    );
   }
 
   return (
-    <Div type="col" gap="lg" className="max-w-5xl">
+    <Div type="col" gap="lg" className="max-w-3xl">
       <PageHeader
-        title="Create Exam Schedule"
-        subtitle="Bulk add all subject schedules for an exam"
+        title={isEdit ? "Edit Schedule" : "View Schedule"}
+        subtitle={schedule.subject_name}
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(EXAM_ROUTES.schedule.list)}
-          >
-            <ArrowLeft size={14} /> {SCHEDULE_PAGE.buttons.cancel}
-          </Button>
+          <Div type="row" gap="sm">
+            {!isEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  router.push(EXAM_ROUTES.schedule.edit(schedule.id))
+                }
+              >
+                <Pencil size={14} /> Edit
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(EXAM_ROUTES.schedule.list)}
+            >
+              <ArrowLeft size={14} /> {SCHEDULE_PAGE.buttons.cancel}
+            </Button>
+          </Div>
         }
       />
 
+      {/* Read-only meta */}
+      <Div variant="card" className="p-4">
+        <Div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <Div type="col" gap="xs">
+            <P color="muted" className="text-xs">Academic Year</P>
+            <P>{yearName}</P>
+          </Div>
+          <Div type="col" gap="xs">
+            <P color="muted" className="text-xs">Class</P>
+            <P>{className}</P>
+          </Div>
+          <Div type="col" gap="xs">
+            <P color="muted" className="text-xs">Section</P>
+            <P>{sectionName}</P>
+          </Div>
+          <Div type="col" gap="xs">
+            <P color="muted" className="text-xs">Exam</P>
+            <P>{examName}</P>
+          </Div>
+          <Div type="col" gap="xs">
+            <P color="muted" className="text-xs">Subject Type</P>
+            <Badge variant={schedule.subject_type === "MAIN_EXAM" ? "info" : "warning"}>
+              {schedule.subject_type.replace(/_/g, " ")}
+            </Badge>
+          </Div>
+          {subSchedules.length > 0 && (
+            <Div type="col" gap="xs">
+              <P color="muted" className="text-xs">Sub-Subjects</P>
+              <P>{subSchedules.length}</P>
+            </Div>
+          )}
+        </Div>
+      </Div>
+
+      {/* Editable fields */}
       <form onSubmit={onSubmit}>
         <Div type="col" gap="md">
-          {/* Header selectors */}
           <Div variant="card" className="p-5">
-            <Div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <FormField
-                label={SCHEDULE_PAGE.labels.academicYear + " *"}
-                error={errors.academic_year_id?.message}
+                label={SCHEDULE_PAGE.labels.subject + " *"}
+                error={errors.subject_name?.message}
               >
-                <Select
-                  {...register("academic_year_id")}
-                  onChange={(e) => {
-                    setValue("academic_year_id", e.target.value);
-                    setValue("class_id", "");
-                    setValue("exam_id", "");
-                    setSelectedAcademicYearId(e.target.value);
-                    handleClassChange("");
-                  }}
-                >
-                  <option value="">Select year</option>
-                  {years.map((y) => (
-                    <option key={y.id} value={y.id}>
-                      {y.name}
-                      {y.is_current ? " (Current)" : ""}
+                <Input
+                  {...register("subject_name")}
+                  disabled={!isEdit}
+                />
+              </FormField>
+
+              <FormField label={SCHEDULE_PAGE.labels.subjectType}>
+                <Select {...register("subject_type")} disabled={!isEdit}>
+                  {SUBJECT_TYPE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
                     </option>
                   ))}
                 </Select>
               </FormField>
 
               <FormField
-                label={SCHEDULE_PAGE.labels.exam + " *"}
-                error={errors.exam_id?.message}
+                label={SCHEDULE_PAGE.labels.examDate + " *"}
+                error={errors.exam_date?.message}
               >
-                <Select
-                  {...register("class_id")}
-                  disabled={!watchedYearId}
-                  onChange={(e) => {
-                    setValue("class_id", e.target.value);
-                    setValue("exam_id", "");
-                    handleClassChange(e.target.value);
-                  }}
-                >
-                  <option value="">Select class</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
+                <Input
+                  {...register("exam_date")}
+                  type="date"
+                  disabled={!isEdit}
+                />
               </FormField>
 
               <FormField
-                label={SCHEDULE_PAGE.labels.exam + " *"}
-                error={errors.exam_id?.message}
+                label={SCHEDULE_PAGE.labels.startTime + " *"}
+                error={errors.start_time?.message}
               >
-                <Select {...register("exam_id")} disabled={!watchedClassId}>
-                  <option value="">Select exam</option>
-                  {exams.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.exam_name}
+                <Input
+                  {...register("start_time")}
+                  type="time"
+                  disabled={!isEdit}
+                />
+              </FormField>
+
+              <FormField
+                label={SCHEDULE_PAGE.labels.endTime + " *"}
+                error={errors.end_time?.message}
+              >
+                <Input
+                  {...register("end_time")}
+                  type="time"
+                  disabled={!isEdit}
+                />
+              </FormField>
+
+              <FormField label={SCHEDULE_PAGE.labels.examMarks + " *"}>
+                <Input
+                  {...register("exam_marks")}
+                  type="number"
+                  min={0}
+                  disabled={!isEdit}
+                />
+              </FormField>
+
+              <FormField label={SCHEDULE_PAGE.labels.passingMarks + " *"}>
+                <Input
+                  {...register("passing_marks")}
+                  type="number"
+                  min={0}
+                  disabled={!isEdit}
+                />
+              </FormField>
+
+              <FormField label={SCHEDULE_PAGE.labels.room}>
+                <Select {...register("hall_detail_id")} disabled={!isEdit}>
+                  <option value="">Select room</option>
+                  {hallRooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.room_name}
                     </option>
                   ))}
                 </Select>
               </FormField>
             </Div>
+
+            {isEdit && (
+              <Div type="row" align="center" gap="sm" className="mt-4">
+                <Controller
+                  control={control}
+                  name="sub_subject_enabled"
+                  render={({ field }) => (
+                    <input
+                      type="checkbox"
+                      id="sub_enabled"
+                      checked={field.value ?? false}
+                      onChange={field.onChange}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                  )}
+                />
+                <label htmlFor="sub_enabled" className="text-sm text-foreground">
+                  {SCHEDULE_PAGE.labels.subSubjectEnabled}
+                </label>
+              </Div>
+            )}
           </Div>
 
-          {/* Schedule rows */}
-          <Div type="col" gap="sm">
-            {schedulesField.fields.map((field, i) => {
-              const subEnabled = watch(`schedules.${i}.sub_subject_enabled`);
-              const expanded = expandedRows[i] !== false;
-              return (
-                <Div key={field.id} variant="card" className="overflow-hidden">
-                  {/* Row header */}
-                  <Div
-                    type="row"
-                    align="center"
-                    justify="between"
-                    className="px-4 py-3 border-b border-border bg-muted/30"
-                  >
-                    <H3 color="default">Subject {i + 1}</H3>
-                    <Div type="row" gap="xs">
-                      <Button
-                        size="icon-xs"
-                        type="button"
-                        variant="ghost"
-                        onClick={() => toggleRow(i)}
-                      >
-                        {expanded ? (
-                          <ChevronUp size={14} />
-                        ) : (
-                          <ChevronDown size={14} />
-                        )}
-                      </Button>
-                      {schedulesField.fields.length > 1 && (
-                        <Button
-                          size="icon-xs"
-                          type="button"
-                          variant="destructive"
-                          onClick={() => schedulesField.remove(i)}
-                        >
-                          <Trash2 size={13} />
-                        </Button>
-                      )}
+          {/* Sub-schedules read-only list */}
+          {subSchedules.length > 0 && (
+            <Div type="col" gap="sm">
+              <P className="text-sm font-medium">Sub-Subjects</P>
+              {subSchedules.map((sub, i) => (
+                <Div key={sub.id} variant="glass-sm" className="p-3">
+                  <Div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <Div type="col" gap="xs">
+                      <P color="muted" className="text-xs">Name</P>
+                      <P>{sub.subject_name}</P>
+                    </Div>
+                    <Div type="col" gap="xs">
+                      <P color="muted" className="text-xs">Type</P>
+                      <Badge variant="warning">{sub.subject_type.replace(/_/g, " ")}</Badge>
+                    </Div>
+                    <Div type="col" gap="xs">
+                      <P color="muted" className="text-xs">Date</P>
+                      <P>{sub.exam_date}</P>
+                    </Div>
+                    <Div type="col" gap="xs">
+                      <P color="muted" className="text-xs">Time</P>
+                      <P>{sub.start_time} – {sub.end_time}</P>
+                    </Div>
+                    <Div type="col" gap="xs">
+                      <P color="muted" className="text-xs">Max Marks</P>
+                      <P>{sub.exam_marks}</P>
+                    </Div>
+                    <Div type="col" gap="xs">
+                      <P color="muted" className="text-xs">Pass Marks</P>
+                      <P>{sub.passing_marks}</P>
                     </Div>
                   </Div>
-
-                  {expanded && (
-                    <Div className="p-4">
-                      <Div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <FormField
-                          label={SCHEDULE_PAGE.labels.subject + " *"}
-                          error={
-                            (errors.schedules?.[i] as any)?.subject_name
-                              ?.message
-                          }
-                        >
-                          <Input
-                            {...register(`schedules.${i}.subject_name`)}
-                            placeholder="Subject name"
-                          />
-                        </FormField>
-                        <FormField label={SCHEDULE_PAGE.labels.subjectType}>
-                          <Select {...register(`schedules.${i}.subject_type`)}>
-                            {SUBJECT_TYPE_OPTIONS.map((o) => (
-                              <option key={o.value} value={o.value}>
-                                {o.label}
-                              </option>
-                            ))}
-                          </Select>
-                        </FormField>
-                        <FormField
-                          label={SCHEDULE_PAGE.labels.examDate + " *"}
-                          error={
-                            (errors.schedules?.[i] as any)?.exam_date?.message
-                          }
-                        >
-                          <Input
-                            {...register(`schedules.${i}.exam_date`)}
-                            type="date"
-                          />
-                        </FormField>
-                        <FormField
-                          label={SCHEDULE_PAGE.labels.startTime + " *"}
-                          error={
-                            (errors.schedules?.[i] as any)?.start_time?.message
-                          }
-                        >
-                          <Input
-                            {...register(`schedules.${i}.start_time`)}
-                            type="time"
-                          />
-                        </FormField>
-                        <FormField
-                          label={SCHEDULE_PAGE.labels.endTime + " *"}
-                          error={
-                            (errors.schedules?.[i] as any)?.end_time?.message
-                          }
-                        >
-                          <Input
-                            {...register(`schedules.${i}.end_time`)}
-                            type="time"
-                          />
-                        </FormField>
-                        <FormField
-                          label={SCHEDULE_PAGE.labels.examMarks + " *"}
-                        >
-                          <Input
-                            {...register(`schedules.${i}.exam_marks`)}
-                            type="number"
-                            min={0}
-                          />
-                        </FormField>
-                        <FormField
-                          label={SCHEDULE_PAGE.labels.passingMarks + " *"}
-                        >
-                          <Input
-                            {...register(`schedules.${i}.passing_marks`)}
-                            type="number"
-                            min={0}
-                          />
-                        </FormField>
-                        <FormField label={SCHEDULE_PAGE.labels.room}>
-                          <Select
-                            {...register(`schedules.${i}.hall_detail_id`)}
-                          >
-                            <option value="">Select room</option>
-                            {hallRooms.map((r) => (
-                              <option key={r.id} value={r.id}>
-                                {r.room_name}
-                              </option>
-                            ))}
-                          </Select>
-                        </FormField>
-                      </Div>
-
-                      <Div type="row" align="center" gap="sm" className="mt-3">
-                        <Controller
-                          control={control}
-                          name={`schedules.${i}.sub_subject_enabled`}
-                          render={({ field }) => (
-                            <input
-                              type="checkbox"
-                              id={`sub_${i}`}
-                              checked={field.value ?? false}
-                              onChange={field.onChange}
-                              className="h-4 w-4 rounded border-border"
-                            />
-                          )}
-                        />
-                        <label
-                          htmlFor={`sub_${i}`}
-                          className="text-sm text-foreground"
-                        >
-                          {SCHEDULE_PAGE.labels.subSubjectEnabled}
-                        </label>
-                      </Div>
-
-                      {subEnabled && (
-                        <SubScheduleRows
-                          nestIndex={i}
-                          control={control}
-                          register={register}
-                          errors={errors}
-                          isReadOnly={false}
-                        />
-                      )}
-                    </Div>
-                  )}
                 </Div>
-              );
-            })}
-          </Div>
+              ))}
+            </Div>
+          )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-fit"
-            onClick={addScheduleRow}
-          >
-            <Plus size={14} /> {SCHEDULE_PAGE.buttons.addRow}
-          </Button>
-
-          <Div type="row" gap="md" className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push(EXAM_ROUTES.schedule.list)}
-            >
-              {SCHEDULE_PAGE.buttons.cancel}
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {SCHEDULE_PAGE.buttons.save}
-            </Button>
-          </Div>
+          {isEdit && (
+            <Div type="row" gap="md" className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(EXAM_ROUTES.schedule.list)}
+              >
+                {SCHEDULE_PAGE.buttons.cancel}
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                {SCHEDULE_PAGE.buttons.save}
+              </Button>
+            </Div>
+          )}
         </Div>
       </form>
     </Div>
   );
 }
 
-export default function ScheduleSlugPage() {
+export default function ScheduleViewPage() {
   return (
     <Suspense
       fallback={
@@ -496,7 +322,7 @@ export default function ScheduleSlugPage() {
         </Div>
       }
     >
-      <ScheduleCreateContent />
+      <ScheduleViewContent />
     </Suspense>
   );
 }
