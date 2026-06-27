@@ -34,11 +34,12 @@ export function TableHeadRow({ className, ...props }: React.HTMLAttributes<HTMLT
   );
 }
 
-type TableRowVariant = 'default' | 'danger';
+type TableRowVariant = 'default' | 'danger' | 'muted';
 
 const rowVariantMap: Record<TableRowVariant, string> = {
   default: '',
   danger: 'bg-red-50/50 dark:bg-red-950/10',
+  muted: 'bg-muted/20',
 };
 
 export function TableRow({

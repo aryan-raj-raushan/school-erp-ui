@@ -49,7 +49,9 @@ export interface DataTableProps<TData> {
   emptyText?: string;
   pagination?: DataTablePagination;
   /** Optional: returns the row variant used by TableRow */
-  getRowVariant?: (row: Row<TData>) => 'default' | 'danger';
+  getRowVariant?: (row: Row<TData>) => 'default' | 'danger' | 'muted';
+  /** Optional: called when a row is clicked */
+  onRowClick?: (row: Row<TData>) => void;
   /** Optional: server-side sorting state */
   sorting?: SortingState;
   /** Optional: setter for server-side sorting (must pair with sorting) */
@@ -63,6 +65,7 @@ export function DataTable<TData>({
   emptyText = 'No data found',
   pagination,
   getRowVariant,
+  onRowClick,
   sorting,
   onSortingChange,
 }: DataTableProps<TData>) {
@@ -108,6 +111,8 @@ export function DataTable<TData>({
               <TableRow
                 key={row.id}
                 variant={getRowVariant ? getRowVariant(row) : 'default'}
+                onClick={() => onRowClick?.(row)}
+                className={onRowClick ? 'cursor-pointer' : undefined}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell

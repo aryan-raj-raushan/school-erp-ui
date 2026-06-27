@@ -1,41 +1,56 @@
-"use client";
+﻿"use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useExamSchedules } from "@/hooks/exam/useExamSchedule";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import {
   Div,
   Button,
   Select,
   Badge,
   Spinner,
-  P,
+  DataTable,
+  type ColumnDef,
   PageHeader,
-  PageCol,
-  FilterBar,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
 } from "@/components/ui";
 import {
   SCHEDULE_PAGE,
   EXAM_ROUTES,
   SUBJECT_TYPE_OPTIONS,
 } from "@/constants/exam.constants";
+import type { ExamSchedule } from "@/types/exam.types";
 
 function ScheduleContent() {
   const router = useRouter();
+
+  const [urlFilters, setUrlFilters] = useFilterParams<
+    Record<string, string | undefined>
+  >({
+    academic_year_id: undefined,
+    class_id: undefined,
+    section_id: undefined,
+    exam_id: undefined,
+    subject_type: undefined,
+    page: undefined,
+  });
+
   const { schedules, pagination, filters, isLoading, updateFilters, remove } =
-    useExamSchedules();
+    useExamSchedules({
+      academic_year_id: urlFilters.academic_year_id
+        ? urlFilters.academic_year_id
+        : undefined,
+      class_id: urlFilters.class_id ? urlFilters.class_id : undefined,
+      section_id: urlFilters.section_id ? urlFilters.section_id : undefined,
+      exam_id: urlFilters.exam_id ? urlFilters.exam_id : undefined,
+      subject_type: urlFilters.subject_type
+        ? (urlFilters.subject_type as any)
+        : undefined,
+      page: urlFilters.page ? Number(urlFilters.page) : 1,
+    });
 
   const {
     years,
@@ -53,6 +68,9 @@ function ScheduleContent() {
   useEffect(() => {
     if (currentYear && !filters.academic_year_id) {
       updateFilters({ academic_year_id: currentYear.id });
+      setUrlFilters({
+        academic_year_id: currentYear.id,
+      });
     }
   }, [currentYear]);
 
@@ -62,35 +80,139 @@ function ScheduleContent() {
           academic_year_id: filters.academic_year_id,
           class_id: filters.class_id,
         }
-      : {},
+      : {}
   );
+
+  function handleFilterChange(next: Partial<Record<string, string | undefined>>) {
+    updateFilters(next as any);
+    setUrlFilters(next);
+  }
 
   function handleYearChange(val: string) {
     setSelectedAcademicYearId(val);
     handleClassChange("");
-    updateFilters({
+    handleFilterChange({
       academic_year_id: val || undefined,
       class_id: undefined,
       section_id: undefined,
       exam_id: undefined,
+      page: undefined,
     });
   }
 
   function handleClassFilter(val: string) {
     handleClassChange(val);
-    updateFilters({ class_id: val || undefined, section_id: undefined, exam_id: undefined });
+    handleFilterChange({
+      class_id: val || undefined,
+      section_id: undefined,
+      exam_id: undefined,
+      page: undefined,
+    });
   }
 
   function handleSectionFilter(val: string) {
     handleSectionChange(val);
-    updateFilters({ section_id: val || undefined });
+    handleFilterChange({
+      section_id: val || undefined,
+      page: undefined,
+    });
   }
 
+  async function handleDelete(id: string) {
+    await remove(id);
+  }
+
+  const columns = useMemo<ColumnDef<ExamSchedule>[]>(
+    () => [
+      {
+        id: "sno",
+        header: SCHEDULE_PAGE.table.sno,
+        cell: ({ row }) => {
+          const isChild = !!row.original.parent_schedule_id;
+          return isChild ? `↳ ${row.index + 1}` : row.index + 1;
+        },
+      },
+      {
+        accessorKey: "subject_name",
+        header: SCHEDULE_PAGE.table.subject,
+        meta: { primary: true },
+      },
+      {
+        id: "section",
+        header: SCHEDULE_PAGE.table.section,
+        cell: ({ row }) => {
+          const section = allSections.find(
+            (sec) => sec.id === row.original.section_id
+          );
+          return section ? section.name : "—";
+        },
+      },
+      {
+        accessorKey: "subject_type",
+        header: SCHEDULE_PAGE.table.type,
+        cell: ({ row }) => (
+          <Badge
+            variant={
+              row.original.subject_type === "MAIN_EXAM" ? "info" : "warning"
+            }
+          >
+            {row.original.subject_type.replace(/_/g, " ")}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "exam_date",
+        header: SCHEDULE_PAGE.table.date,
+      },
+      {
+        id: "time",
+        header: SCHEDULE_PAGE.table.time,
+        cell: ({ row }) =>
+          `${row.original.start_time} – ${row.original.end_time}`,
+      },
+      {
+        accessorKey: "exam_marks",
+        header: SCHEDULE_PAGE.table.marks,
+      },
+      {
+        accessorKey: "passing_marks",
+        header: SCHEDULE_PAGE.table.passing,
+      },
+      {
+        id: "actions",
+        header: SCHEDULE_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="Edit"
+              onClick={() => router.push(EXAM_ROUTES.schedule.edit(row.original.id))}
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              title="Delete"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [allSections, router]
+  );
+
   return (
-    <PageCol>
+    <Div type="col" gap="lg">
       <PageHeader
         title={SCHEDULE_PAGE.pageHeading.title}
-        subtitle={pagination ? `${pagination.total} entries` : ""}
+        subtitle={
+          pagination ? `${pagination.total} entries` : ""
+        }
         actions={
           <Button onClick={() => router.push(EXAM_ROUTES.schedule.create)}>
             <Plus size={16} /> {SCHEDULE_PAGE.buttons.add}
@@ -99,7 +221,7 @@ function ScheduleContent() {
       />
 
       {/* Filters */}
-      <FilterBar>
+      <Div type="row" gap="md" wrap>
         <Select
           width="sm"
           value={selectedAcademicYearId}
@@ -144,7 +266,7 @@ function ScheduleContent() {
           value={filters.exam_id ?? ""}
           disabled={!filters.class_id}
           onChange={(e) =>
-            updateFilters({ exam_id: e.target.value || undefined })
+            handleFilterChange({ exam_id: e.target.value || undefined })
           }
         >
           <option value="">{SCHEDULE_PAGE.filters.allExams}</option>
@@ -158,7 +280,7 @@ function ScheduleContent() {
           width="sm"
           value={filters.subject_type ?? ""}
           onChange={(e) =>
-            updateFilters({
+            handleFilterChange({
               subject_type: (e.target.value as any) || undefined,
             })
           }
@@ -170,103 +292,20 @@ function ScheduleContent() {
             </option>
           ))}
         </Select>
-      </FilterBar>
+      </Div>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.subject}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.section}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.type}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.date}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.time}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.marks}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.passing}</TableHeaderCell>
-            <TableHeaderCell>{SCHEDULE_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={9}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : schedules.length === 0 ? (
-            <TableEmptyRow colSpan={9}>
-              {SCHEDULE_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            schedules.map((s, i) => (
-              <TableRow
-                key={s.id}
-                className={s.parent_schedule_id ? "bg-muted/20" : ""}
-              >
-                <TableCell>
-                  {s.parent_schedule_id ? (
-                    <P color="muted" className="pl-4 text-xs">
-                      ↳ {i + 1}
-                    </P>
-                  ) : (
-                    i + 1
-                  )}
-                </TableCell>
-                <TableCell primary>{s.subject_name}</TableCell>
-                <TableCell>
-                  {s.section_id
-                    ? (allSections.find((sec) => sec.id === s.section_id)?.name ?? "—")
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      s.subject_type === "MAIN_EXAM" ? "info" : "warning"
-                    }
-                  >
-                    {s.subject_type.replace(/_/g, " ")}
-                  </Badge>
-                </TableCell>
-                <TableCell>{s.exam_date}</TableCell>
-                <TableCell>
-                  {s.start_time} – {s.end_time}
-                </TableCell>
-                <TableCell>{s.exam_marks}</TableCell>
-                <TableCell>{s.passing_marks}</TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title="Edit"
-                      onClick={() =>
-                        router.push(EXAM_ROUTES.schedule.edit(s.id))
-                      }
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      title="Delete"
-                      onClick={() => remove(s.id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
-    </PageCol>
+      {/* Table */}
+      <DataTable
+        columns={columns}
+        data={schedules}
+        isLoading={isLoading}
+        emptyText={SCHEDULE_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+        getRowVariant={(row) =>
+          row.original.parent_schedule_id ? "muted" : "default"
+        }
+      />
+    </Div>
   );
 }
 

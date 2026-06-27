@@ -1,29 +1,50 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Send, SendHorizonal } from "lucide-react";
 import { useExams } from "@/hooks/exam/useExams";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
-import {
-  Div, P, Button, Select, Badge, Spinner,
-  PageHeader, PageCol, FilterBar,
-  Table, TableHead, TableHeadRow, TableHeaderCell,
-  TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
-} from "@/components/ui";
-import { EXAMS_PAGE, EXAM_ROUTES, EXAM_TERM_OPTIONS } from "@/constants/exam.constants";
+import type { Exam } from "@/types/exam.types";
 import type { ExamFilters } from "@/types/exam.types";
+import {
+  Div,
+  P,
+  Button,
+  Select,
+  Badge,
+  Spinner,
+  DataTable,
+  type ColumnDef,
+  PageHeader,
+  PageCol,
+  FilterBar,
+} from "@/components/ui";
+import {
+  EXAMS_PAGE,
+  EXAM_ROUTES,
+  EXAM_TERM_OPTIONS,
+} from "@/constants/exam.constants";
 
 function ExamsContent() {
   const router = useRouter();
-  const { exams, pagination, filters, isLoading, updateFilters, remove, togglePublish } = useExams();
-
-  console.log("exams: ", exams);
+  const {
+    exams,
+    pagination,
+    filters,
+    isLoading,
+    updateFilters,
+    remove,
+    togglePublish,
+  } = useExams();
 
   const {
-    years, classes,
-    selectedAcademicYearId, setSelectedAcademicYearId,
-    selectedClassId, handleClassChange,
+    years,
+    classes,
+    selectedAcademicYearId,
+    setSelectedAcademicYearId,
+    selectedClassId,
+    handleClassChange,
   } = useAcademicClassSection({ autoSelectCurrentYear: false });
 
   function handleYearChange(val: string) {
@@ -37,6 +58,100 @@ function ExamsContent() {
     updateFilters({ class_id: val || undefined });
   }
 
+  const columns = useMemo<ColumnDef<Exam>[]>(
+    () => [
+      {
+        id: "index",
+        header: EXAMS_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "exam_name",
+        header: EXAMS_PAGE.table.examName,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "exam_term",
+        header: EXAMS_PAGE.table.term,
+        cell: ({ row }) => (
+          <Badge variant="info">{row.original.exam_term}</Badge>
+        ),
+      },
+      {
+        accessorKey: "start_date",
+        header: EXAMS_PAGE.table.startDate,
+      },
+      {
+        accessorKey: "end_date",
+        header: EXAMS_PAGE.table.endDate,
+      },
+      {
+        accessorKey: "is_published",
+        header: EXAMS_PAGE.table.published,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_published ? "success" : "warning"}>
+            {row.original.is_published ? "Published" : "Draft"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "is_enabled",
+        header: EXAMS_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? "success" : "default"}>
+            {row.original.is_enabled ? "Active" : "Disabled"}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: EXAMS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="Edit"
+              onClick={() =>
+                router.push(EXAM_ROUTES.exams.edit(row.original.id))
+              }
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title={
+                row.original.is_published ? "Unpublish" : "Publish"
+              }
+              onClick={() =>
+                togglePublish(
+                  row.original.id,
+                  !row.original.is_published,
+                )
+              }
+            >
+              {row.original.is_published ? (
+                <Send size={14} className="text-amber-500" />
+              ) : (
+                <SendHorizonal size={14} className="text-emerald-500" />
+              )}
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              title="Delete"
+              onClick={() => remove(row.original.id)}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [router, togglePublish, remove],
+  );
+
   return (
     <PageCol>
       <PageHeader
@@ -49,107 +164,92 @@ function ExamsContent() {
         }
       />
 
-      {/* Filters */}
       <FilterBar>
-        <Select width="sm" value={selectedAcademicYearId}
-          onChange={(e) => handleYearChange(e.target.value)}>
+        <Select
+          width="sm"
+          value={selectedAcademicYearId}
+          onChange={(e) => handleYearChange(e.target.value)}
+        >
           <option value="">{EXAMS_PAGE.filters.allYears}</option>
           {years.map((y) => (
-            <option key={y.id} value={y.id}>{y.name}{y.is_current ? " (Current)" : ""}</option>
+            <option key={y.id} value={y.id}>
+              {y.name}
+              {y.is_current ? " (Current)" : ""}
+            </option>
           ))}
         </Select>
-        <Select width="sm" value={selectedClassId}
+        <Select
+          width="sm"
+          value={selectedClassId}
           onChange={(e) => handleClassFilter(e.target.value)}
-          disabled={!selectedAcademicYearId}>
+          disabled={!selectedAcademicYearId}
+        >
           <option value="">{EXAMS_PAGE.filters.allClasses}</option>
-          {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </Select>
-        <Select width="sm" value={filters.exam_term ?? ""}
-          onChange={(e) => updateFilters({ exam_term: (e.target.value as ExamFilters["exam_term"]) || undefined })}>
+        <Select
+          width="sm"
+          value={filters.exam_term ?? ""}
+          onChange={(e) =>
+            updateFilters({
+              exam_term:
+                (e.target.value as ExamFilters["exam_term"]) || undefined,
+            })
+          }
+        >
           <option value="">{EXAMS_PAGE.filters.allTerms}</option>
-          {EXAM_TERM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {EXAM_TERM_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </Select>
-        <Select width="sm" value={filters.is_published === undefined ? "" : String(filters.is_published)}
-          onChange={(e) => updateFilters({ is_published: e.target.value === "" ? undefined : e.target.value === "true" })}>
+        <Select
+          width="sm"
+          value={
+            filters.is_published === undefined
+              ? ""
+              : String(filters.is_published)
+          }
+          onChange={(e) =>
+            updateFilters({
+              is_published:
+                e.target.value === ""
+                  ? undefined
+                  : e.target.value === "true",
+            })
+          }
+        >
           <option value="">{EXAMS_PAGE.filters.allStatus}</option>
           <option value="true">Published</option>
           <option value="false">Draft</option>
         </Select>
       </FilterBar>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{EXAMS_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.examName}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.term}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.startDate}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.endDate}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.published}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{EXAMS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={8}><Spinner /></TableEmptyRow>
-          ) : exams.length === 0 ? (
-            <TableEmptyRow colSpan={8}>{EXAMS_PAGE.table.noEntry}</TableEmptyRow>
-          ) : (
-            exams.map((exam, i) => (
-              <TableRow key={exam.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{exam.exam_name}</TableCell>
-                <TableCell>
-                  <Badge variant="info">{exam.exam_term}</Badge>
-                </TableCell>
-                <TableCell>{exam.start_date}</TableCell>
-                <TableCell>{exam.end_date}</TableCell>
-                <TableCell>
-                  <Badge variant={exam.is_published ? "success" : "warning"}>
-                    {exam.is_published ? "Published" : "Draft"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={exam.is_enabled ? "success" : "default"}>
-                    {exam.is_enabled ? "Active" : "Disabled"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="icon-sm" variant="ghost" title="Edit"
-                      onClick={() => router.push(EXAM_ROUTES.exams.edit(exam.id))}>
-                      <Pencil size={14} />
-                    </Button>
-                    <Button size="icon-sm" variant="ghost"
-                      title={exam.is_published ? "Unpublish" : "Publish"}
-                      onClick={() => togglePublish(exam.id, !exam.is_published)}>
-                      {exam.is_published
-                        ? <Send size={14} className="text-amber-500" />
-                        : <SendHorizonal size={14} className="text-emerald-500" />}
-                    </Button>
-                    <Button size="icon-sm" variant="destructive" title="Delete"
-                      onClick={() => remove(exam.id)}>
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination total={pagination.total} page={pagination.page} totalPages={pagination.totalPages} />
-      )}
+      <DataTable
+        columns={columns}
+        data={exams}
+        isLoading={isLoading}
+        emptyText={EXAMS_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+      />
     </PageCol>
   );
 }
 
 export default function ExamsPage() {
   return (
-    <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
       <ExamsContent />
     </Suspense>
   );
