@@ -50,7 +50,7 @@ function MarksViewContent() {
     class_id: selectedClassId,
   });
 
-  const { results, isLoading, filterForm, examId } = useExamResults();
+  const { results, isLoadingResults, filterForm, examId } = useExamResults();
 
   const { register, setValue, watch } = filterForm;
   const watchedExamId = watch('exam_id');
@@ -172,7 +172,7 @@ function MarksViewContent() {
         </Div>
       </Div>
 
-      {isLoading ? (
+      {isLoadingResults ? (
         <Div type="row" justify="center" className="py-20">
           <Spinner size="lg" />
         </Div>

@@ -1,7 +1,6 @@
-'use client';
+"use client";
 
-import { Suspense, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from "react";
 import {
   BookOpen,
   Save,
@@ -9,42 +8,32 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
-} from 'lucide-react';
-import { useExamResults } from '@/hooks/result/useExamResults';
-import { useAcademicClassSection } from '@/hooks/useAcademicClassSection';
-import { useExams } from '@/hooks/exam/useExams';
-import { useStudents } from '@/hooks/useStudents';
-import { PageHeader } from '@/components/ui/page-header';
+} from "lucide-react";
+import { useExamResults } from "@/hooks/result/useExamResults";
+import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
+import { useExams } from "@/hooks/exam/useExams";
+import { useStudents } from "@/hooks/useStudents";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H1,
-  H2,
   H3,
   P,
   Button,
   Select,
   Input,
   FormField,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
   Badge,
   Spinner,
   Modal,
   ModalBody,
   ModalFooter,
-} from '@/components/ui';
+} from "@/components/ui";
 import {
   RESULT_MARKS_PAGE,
   EXAM_TERM_LABELS,
-} from '@/constants/result.constants';
+} from "@/constants/result.constants";
 
-// ── Confirm modal (publish / unpublish) ──────────────────────────────────────
+// ── Confirm modal ─────────────────────────────────────────────────────────────
 
 function ConfirmModal({
   title,
@@ -78,12 +67,14 @@ function ConfirmModal({
   );
 }
 
-// ── Main content ──────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 function MarksContent() {
-  const router = useRouter();
-  const [confirmAction, setConfirmAction] = useState<'publish' | 'unpublish' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "publish" | "unpublish" | null
+  >(null);
 
+  // ── Academic year / class / section selectors ─────────────────────────────
   const {
     years,
     classes,
@@ -97,11 +88,19 @@ function MarksContent() {
     isLoadingClasses,
   } = useAcademicClassSection();
 
+  // ── Exams filtered by year + class ────────────────────────────────────────
+  const { exams } = useExams({
+    academic_year_id: selectedAcademicYearId || undefined,
+    class_id: selectedClassId || undefined,
+  });
+
+  // ── Mark-entry hook (schedules + saved marks + grid state) ────────────────
   const {
+    results,
     schedules,
     studentEntries,
-    isLoading,
     isLoadingSchedules,
+    isLoadingResults,
     isSaving,
     isPublishing,
     isDirty,
@@ -109,23 +108,17 @@ function MarksContent() {
     filterForm,
     examId,
     classId,
+    buildGrid,
     updateMark,
     saveMarks,
     togglePublish,
   } = useExamResults();
 
+  const { setValue, watch } = filterForm;
+  const watchedExamId = watch("exam_id");
 
-  console.log("studentEntries: ",studentEntries);``
-
-  const { register, setValue, watch } = filterForm;
-  const watchedExamId = watch('exam_id');
-
-  const { exams } = useExams({
-    academic_year_id: selectedAcademicYearId,
-    class_id: selectedClassId,
-  });
-
-  const { students } = useStudents(
+  // ── Student list — driven by ACS selections ───────────────────────────────
+  const { students, isLoading: isLoadingStudents } = useStudents(
     selectedClassId && selectedAcademicYearId
       ? {
           class_id: selectedClassId,
@@ -135,38 +128,37 @@ function MarksContent() {
       : {},
   );
 
-  // Sync ACS selections into the filter form
+  // ── Rebuild the grid whenever students OR saved marks change ──────────────
+  useEffect(() => {
+    buildGrid(students, results);
+  }, [students, results]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sync ACS → filter form ────────────────────────────────────────────────
   function onYearChange(yearId: string) {
     setSelectedAcademicYearId(yearId);
-    setValue('academic_year_id', yearId);
-    setValue('class_id', '');
-    setValue('exam_id', '');
-    handleClassChange('');
+    setValue("academic_year_id", yearId);
+    handleClassChange("");
+    setValue("class_id", "");
+    setValue("section_id", "");
+    setValue("exam_id", "");
   }
 
   function onClassChange(cId: string) {
     handleClassChange(cId);
-    setValue('class_id', cId);
-    setValue('exam_id', '');
+    setValue("class_id", cId);
+    setValue("section_id", "");
+    setValue("exam_id", "");
   }
 
   function onSectionChange(sId: string) {
     handleSectionChange(sId);
-    setValue('section_id', sId);
+    setValue("section_id", sId);
   }
 
-  // Parent schedules only (no sub-subjects as columns — they group under parent)
-  const parentSchedules = schedules.filter((s) => !s.parent_schedule_id);
-
-  console.log("schedules: ", schedules);
-
-  const totalCols = 3 + parentSchedules.length; // S.No + Roll + Name + schedules
-
-  // Build a map: student_id → student for subject_id lookup during save
-  const studentSubjectMap = students.map((s) => ({
-    student_id: s.id,
-    subject_id: '',
-  }));
+  const noSelection = !watchedExamId || !selectedClassId;
+  const isTableBusy =
+    isLoadingSchedules || isLoadingResults || isLoadingStudents;
+  const totalCols = 3 + schedules.length;
 
   return (
     <Div type="col" gap="lg">
@@ -180,33 +172,38 @@ function MarksContent() {
                 {isDirty && (
                   <Button
                     size="sm"
-                    onClick={() => saveMarks(studentSubjectMap)}
+                    onClick={() =>
+                      saveMarks({
+                        examId: watchedExamId,
+                        classId: selectedClassId,
+                        sectionId: selectedSectionId,
+                        academicYearId: selectedAcademicYearId,
+                      })
+                    }
                     loading={isSaving}
                   >
-                    <Save size={14} />
-                    {RESULT_MARKS_PAGE.buttons.saveMarks}
+                    <Save size={14} /> {RESULT_MARKS_PAGE.buttons.saveMarks}
                   </Button>
                 )}
                 {isPublished ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setConfirmAction('unpublish')}
                     loading={isPublishing}
+                    onClick={() => setConfirmAction("unpublish")}
                   >
-                    <EyeOff size={14} />
+                    <EyeOff size={14} />{" "}
                     {RESULT_MARKS_PAGE.buttons.unpublishResult}
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setConfirmAction('publish')}
                     loading={isPublishing}
                     disabled={studentEntries.length === 0}
+                    onClick={() => setConfirmAction("publish")}
                   >
-                    <Eye size={14} />
-                    {RESULT_MARKS_PAGE.buttons.publishResult}
+                    <Eye size={14} /> {RESULT_MARKS_PAGE.buttons.publishResult}
                   </Button>
                 )}
               </>
@@ -216,12 +213,15 @@ function MarksContent() {
       />
 
       {/* ── Filters ── */}
-      <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="md">
+      <Div
+        className="rounded-xl border border-border bg-card p-5"
+        type="col"
+        gap="md"
+      >
         <H3 className="text-xs font-semibold uppercase tracking-wider">
           Select Exam &amp; Class
         </H3>
         <Div type="row" gap="md" wrap align="end">
-          {/* Academic Year */}
           <FormField label="Academic Year">
             <Select
               width="sm"
@@ -237,7 +237,6 @@ function MarksContent() {
             </Select>
           </FormField>
 
-          {/* Class */}
           <FormField label="Class">
             <Select
               width="sm"
@@ -254,7 +253,6 @@ function MarksContent() {
             </Select>
           </FormField>
 
-          {/* Section */}
           <FormField label="Section">
             <Select
               width="sm"
@@ -262,7 +260,9 @@ function MarksContent() {
               onChange={(e) => onSectionChange(e.target.value)}
               disabled={!selectedClassId}
             >
-              <option value="">{RESULT_MARKS_PAGE.filters.selectSection}</option>
+              <option value="">
+                {RESULT_MARKS_PAGE.filters.selectSection}
+              </option>
               {sections.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -271,13 +271,11 @@ function MarksContent() {
             </Select>
           </FormField>
 
-          {/* Exam */}
           <FormField label="Exam">
             <Select
               width="md"
               value={watchedExamId}
-              {...register('exam_id')}
-              onChange={(e) => setValue('exam_id', e.target.value)}
+              onChange={(e) => setValue("exam_id", e.target.value)}
               disabled={!selectedClassId}
             >
               <option value="">{RESULT_MARKS_PAGE.filters.selectExam}</option>
@@ -291,7 +289,7 @@ function MarksContent() {
         </Div>
       </Div>
 
-      {/* ── Status banner ── */}
+      {/* ── Banners ── */}
       {examId && classId && isPublished && (
         <Div
           type="row"
@@ -321,7 +319,7 @@ function MarksContent() {
       )}
 
       {/* ── Mark Entry Table ── */}
-      {!watchedExamId || !selectedClassId ? (
+      {noSelection ? (
         <Div
           type="col"
           gap="sm"
@@ -331,11 +329,11 @@ function MarksContent() {
           <BookOpen size={32} className="text-muted-foreground/40" />
           <P color="muted">{RESULT_MARKS_PAGE.table.noEntry}</P>
         </Div>
-      ) : isLoadingSchedules || isLoading ? (
+      ) : isTableBusy ? (
         <Div type="row" justify="center" className="py-20">
           <Spinner size="lg" />
         </Div>
-      ) : parentSchedules.length === 0 ? (
+      ) : schedules.length === 0 ? (
         <Div
           type="col"
           gap="sm"
@@ -346,9 +344,9 @@ function MarksContent() {
         </Div>
       ) : (
         <Div type="col" gap="sm">
-          {/* Schedule info pills */}
+          {/* Subject pills */}
           <Div type="row" gap="sm" wrap>
-            {parentSchedules.map((s) => (
+            {schedules.map((s) => (
               <Div
                 key={s.id}
                 type="row"
@@ -356,14 +354,20 @@ function MarksContent() {
                 align="center"
                 className="rounded-full border border-border bg-muted/40 px-3 py-1"
               >
-                <Div className="text-xs font-medium text-foreground">{s.subject_name}</Div>
+                <Div className="text-xs font-medium text-foreground">
+                  {s.subject_name}
+                </Div>
                 <Div className="text-xs text-muted-foreground">
-                  ({RESULT_MARKS_PAGE.subjectTypes[s.subject_type] ?? s.subject_type} / {s.exam_marks})
+                  (
+                  {RESULT_MARKS_PAGE.subjectTypes[s.subject_type] ??
+                    s.subject_type}{" "}
+                  / {s.exam_marks})
                 </Div>
               </Div>
             ))}
           </Div>
 
+          {/* Scrollable grid */}
           <Div className="overflow-x-auto rounded-xl border border-border bg-card">
             <table className="w-full text-sm min-w-max">
               <thead>
@@ -377,15 +381,17 @@ function MarksContent() {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground min-w-[160px]">
                     {RESULT_MARKS_PAGE.table.studentName}
                   </th>
-                  {parentSchedules.map((s) => (
+                  {schedules.map((s) => (
                     <th
                       key={s.id}
-                      className="px-4 py-3 text-center font-medium text-muted-foreground min-w-[120px]"
+                      className="px-4 py-3 text-center font-medium text-muted-foreground min-w-[130px]"
                     >
-                      <Div type="col" gap="xs" align="center">
+                      <Div className="flex flex-col items-center gap-0.5">
                         <Div>{s.subject_name}</Div>
                         <Div className="text-xs font-normal text-muted-foreground/70">
-                          Max: {s.exam_marks}
+                          {RESULT_MARKS_PAGE.subjectTypes[s.subject_type] ??
+                            s.subject_type}{" "}
+                          · Max: {s.exam_marks}
                         </Div>
                       </Div>
                     </th>
@@ -399,7 +405,7 @@ function MarksContent() {
                       colSpan={totalCols}
                       className="px-4 py-12 text-center text-muted-foreground"
                     >
-                      No students found for this class/section.
+                      No students found for this class / section.
                     </td>
                   </tr>
                 ) : (
@@ -408,66 +414,85 @@ function MarksContent() {
                       key={entry.student_id}
                       className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
                     >
-                      <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {entry.roll_number ?? '—'}
+                        {idx + 1}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {entry.roll_number ?? "—"}
                       </td>
                       <td className="px-4 py-3 font-medium text-foreground">
                         {entry.student_name}
                       </td>
-                      {parentSchedules.map((schedule) => {
+
+                      {schedules.map((schedule) => {
                         const mark = entry.marks[schedule.id];
                         const isAbsent = mark?.is_absent ?? false;
                         const marksVal = mark?.marks_obtained;
+
                         return (
-                          <td key={schedule.id} className="px-3 py-2 text-center">
-                            <Div type="col" gap="xs" align="center">
-                              {isAbsent ? (
-                                <Div type="row" gap="xs" align="center">
-                                  <Badge variant="warning">Absent</Badge>
-                                  <Button
-                                    type="button"
-                                    className="text-xs text-muted-foreground underline hover:text-foreground"
-                                    onClick={() =>
-                                      updateMark(entry.student_id, schedule.id, null, false)
-                                    }
-                                  >
-                                    undo
-                                  </Button>
-                                </Div>
-                              ) : (
-                                <Div type="row" gap="xs" align="center">
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    max={schedule.exam_marks}
-                                    width="xs"
-                                    placeholder="—"
-                                    value={marksVal ?? ''}
-                                    className="text-center"
-                                    onChange={(e) => {
-                                      const v = e.target.value;
-                                      updateMark(
-                                        entry.student_id,
-                                        schedule.id,
-                                        v === '' ? null : parseFloat(v),
-                                        false,
-                                      );
-                                    }}
-                                  />
-                                  <Button
-                                    type="button"
-                                    title="Mark absent"
-                                    className="text-xs text-muted-foreground hover:text-destructive"
-                                    onClick={() =>
-                                      updateMark(entry.student_id, schedule.id, null, true)
-                                    }
-                                  >
-                                    A
-                                  </Button>
-                                </Div>
-                              )}
-                            </Div>
+                          <td
+                            key={schedule.id}
+                            className="px-3 py-2 text-center"
+                          >
+                            {isAbsent ? (
+                              <Div className="flex items-center justify-center gap-1.5">
+                                <Badge variant="warning">Absent</Badge>
+                                <Button
+                                  type="button"
+                                  className="text-xs text-muted-foreground underline hover:text-foreground"
+                                  onClick={() =>
+                                    updateMark(
+                                      entry.student_id,
+                                      schedule.id,
+                                      null,
+                                      false,
+                                    )
+                                  }
+                                >
+                                  undo
+                                </Button>
+                              </Div>
+                            ) : (
+                              <Div className="flex items-center justify-center gap-1.5">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={schedule.exam_marks}
+                                  width="xs"
+                                  placeholder="—"
+                                  value={
+                                    marksVal !== null && marksVal !== undefined
+                                      ? String(marksVal)
+                                      : ""
+                                  }
+                                  className="text-center"
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    updateMark(
+                                      entry.student_id,
+                                      schedule.id,
+                                      v === "" ? null : parseFloat(v),
+                                      false,
+                                    );
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  title="Mark absent"
+                                  className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground border border-border hover:border-destructive hover:text-destructive transition-colors"
+                                  onClick={() =>
+                                    updateMark(
+                                      entry.student_id,
+                                      schedule.id,
+                                      null,
+                                      true,
+                                    )
+                                  }
+                                >
+                                  A
+                                </Button>
+                              </Div>
+                            )}
                           </td>
                         );
                       })}
@@ -478,16 +503,21 @@ function MarksContent() {
             </table>
           </Div>
 
-          {/* Footer save */}
           {studentEntries.length > 0 && (
             <Div type="row" justify="end">
               <Button
-                onClick={() => saveMarks(studentSubjectMap)}
+                onClick={() =>
+                  saveMarks({
+                    examId: watchedExamId,
+                    classId: selectedClassId,
+                    sectionId: selectedSectionId,
+                    academicYearId: selectedAcademicYearId,
+                  })
+                }
                 loading={isSaving}
                 disabled={!isDirty}
               >
-                <Save size={14} />
-                {RESULT_MARKS_PAGE.buttons.saveMarks}
+                <Save size={14} /> {RESULT_MARKS_PAGE.buttons.saveMarks}
               </Button>
             </Div>
           )}
@@ -495,7 +525,7 @@ function MarksContent() {
       )}
 
       {/* ── Confirm modals ── */}
-      {confirmAction === 'publish' && (
+      {confirmAction === "publish" && (
         <ConfirmModal
           title={RESULT_MARKS_PAGE.confirmPublish.title}
           description={RESULT_MARKS_PAGE.confirmPublish.description}
@@ -508,7 +538,7 @@ function MarksContent() {
           isLoading={isPublishing}
         />
       )}
-      {confirmAction === 'unpublish' && (
+      {confirmAction === "unpublish" && (
         <ConfirmModal
           title={RESULT_MARKS_PAGE.confirmUnpublish.title}
           description={RESULT_MARKS_PAGE.confirmUnpublish.description}
