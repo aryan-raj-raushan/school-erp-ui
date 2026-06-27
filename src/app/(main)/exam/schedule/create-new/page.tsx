@@ -13,6 +13,7 @@ import {
   Div,
   H3,
   P,
+  Span,
   Button,
   Spinner,
   FormField,
@@ -94,43 +95,43 @@ function SubScheduleRows({ nestIndex, control, register, isReadOnly }: any) {
 function ScheduleSummary({ schedules }: { schedules: any[] }) {
   const filled = schedules.filter((s) => s.subject_name);
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center gap-2">
+    <Div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <Div type="row" align="center" gap="sm" className="px-4 py-3 border-b border-border bg-muted/40">
         <BookOpen size={14} className="text-muted-foreground" />
-        <span className="text-sm font-semibold">{SCHEDULE_PAGE.summary.title}</span>
+        <Span className="text-sm font-semibold">{SCHEDULE_PAGE.summary.title}</Span>
         {filled.length > 0 && (
-          <span className="ml-auto text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full">
+          <Span className="ml-auto text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full">
             {filled.length} {SCHEDULE_PAGE.summary.subjectsLabel}
-          </span>
+          </Span>
         )}
-      </div>
-      <div className="divide-y divide-border max-h-[calc(100vh-220px)] overflow-y-auto">
+      </Div>
+      <Div className="divide-y divide-border max-h-[calc(100vh-220px)] overflow-y-auto">
         {filled.length === 0 ? (
-          <p className="text-[12px] text-muted-foreground text-center py-8 px-4">
+          <P className="text-[12px] text-muted-foreground text-center py-8 px-4">
             {SCHEDULE_PAGE.summary.empty}
-          </p>
+          </P>
         ) : (
           filled.map((s, i) => (
-            <div key={i} className="px-4 py-2.5">
-              <p className="text-[12px] font-semibold text-foreground truncate">{s.subject_name || `Subject ${i + 1}`}</p>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <Div key={i} className="px-4 py-2.5">
+              <P className="text-[12px] font-semibold text-foreground truncate">{s.subject_name || `Subject ${i + 1}`}</P>
+              <Div type="row" align="center" gap="sm" className="mt-0.5 flex-wrap">
                 {s.exam_date && (
-                  <span className="text-[10px] text-muted-foreground">{s.exam_date}</span>
+                  <Span className="text-[10px] text-muted-foreground">{s.exam_date}</Span>
                 )}
                 {s.start_time && s.end_time && (
-                  <span className="text-[10px] text-muted-foreground">{s.start_time}–{s.end_time}</span>
+                  <Span className="text-[10px] text-muted-foreground">{s.start_time}–{s.end_time}</Span>
                 )}
                 {s.exam_marks > 0 && (
-                  <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                  <Span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                     {s.exam_marks} marks
-                  </span>
+                  </Span>
                 )}
-              </div>
-            </div>
+              </Div>
+            </Div>
           ))
         )}
-      </div>
-    </div>
+      </Div>
+    </Div>
   );
 }
 
@@ -144,12 +145,12 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
   const [passing, setPassing] = useState("");
 
   return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3">
-      <p className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+    <Div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3">
+      <P className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
         {SCHEDULE_PAGE.bulk.sectionTitle} — {SCHEDULE_PAGE.buttons.applyToAll}
-      </p>
-      <div className="flex flex-wrap gap-2 items-end">
-        <div className="flex flex-col gap-1">
+      </P>
+      <Div type="row" align="end" className="flex-wrap gap-2">
+        <Div type="col" gap="xs">
           <label className="text-[10px] text-muted-foreground">{SCHEDULE_PAGE.bulk.date}</label>
           <input
             type="date"
@@ -158,8 +159,8 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
             onChange={(e) => setDate(e.target.value)}
             className="h-7 text-xs px-2 rounded border border-border bg-background disabled:opacity-50"
           />
-        </div>
-        <div className="flex flex-col gap-1">
+        </Div>
+        <Div type="col" gap="xs">
           <label className="text-[10px] text-muted-foreground">{SCHEDULE_PAGE.bulk.startTime}</label>
           <input
             type="time"
@@ -168,8 +169,8 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
             onChange={(e) => setStart(e.target.value)}
             className="h-7 text-xs px-2 rounded border border-border bg-background disabled:opacity-50"
           />
-        </div>
-        <div className="flex flex-col gap-1">
+        </Div>
+        <Div type="col" gap="xs">
           <label className="text-[10px] text-muted-foreground">{SCHEDULE_PAGE.bulk.endTime}</label>
           <input
             type="time"
@@ -178,8 +179,8 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
             onChange={(e) => setEnd(e.target.value)}
             className="h-7 text-xs px-2 rounded border border-border bg-background disabled:opacity-50"
           />
-        </div>
-        <div className="flex flex-col gap-1">
+        </Div>
+        <Div type="col" gap="xs">
           <label className="text-[10px] text-muted-foreground">{SCHEDULE_PAGE.bulk.marks}</label>
           <input
             type="number"
@@ -189,8 +190,8 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
             onChange={(e) => setMarks(e.target.value)}
             className="h-7 text-xs px-2 rounded border border-border bg-background w-20 disabled:opacity-50"
           />
-        </div>
-        <div className="flex flex-col gap-1">
+        </Div>
+        <Div type="col" gap="xs">
           <label className="text-[10px] text-muted-foreground">{SCHEDULE_PAGE.bulk.passing}</label>
           <input
             type="number"
@@ -200,7 +201,7 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
             onChange={(e) => setPassing(e.target.value)}
             className="h-7 text-xs px-2 rounded border border-border bg-background w-20 disabled:opacity-50"
           />
-        </div>
+        </Div>
         <Button
           type="button"
           size="sm"
@@ -217,8 +218,8 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
         >
           {SCHEDULE_PAGE.buttons.applyToAll}
         </Button>
-      </div>
-    </div>
+      </Div>
+    </Div>
   );
 }
 
@@ -244,32 +245,33 @@ function SiblingCopyModal({
   return (
     <Modal title="Copy schedule to other classes?" onClose={onDismiss} size="sm">
       <ModalBody>
-        <p className="text-sm text-muted-foreground mb-4">
+        <P className="text-sm text-muted-foreground mb-4">
           This exam exists for other classes too. Apply the same dates, times and marks to:
-        </p>
-        <div className="flex flex-col gap-2">
+        </P>
+        <Div type="col" gap="sm">
           {siblings.map((s) => {
             const checked = selected.includes(s.exam.id);
             return (
-              <button
+              <Button
                 key={s.exam.id}
                 type="button"
+                variant="outline"
                 onClick={() => toggle(s.exam.id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left justify-start"
               >
                 {checked ? (
                   <CheckSquare size={14} className="text-primary shrink-0" />
                 ) : (
                   <Square size={14} className="text-muted-foreground shrink-0" />
                 )}
-                <span className="text-sm">{s.className ?? s.exam.class_id}</span>
-              </button>
+                <Span className="text-sm">{s.className ?? s.exam.class_id}</Span>
+              </Button>
             );
           })}
-        </div>
-        <p className="text-xs text-muted-foreground mt-3">
+        </Div>
+        <P className="text-xs text-muted-foreground mt-3">
           Subjects are matched by name — mismatches are skipped.
-        </p>
+        </P>
       </ModalBody>
       <ModalFooter>
         <Button variant="outline" size="sm" onClick={onDismiss}>
@@ -366,9 +368,9 @@ function ScheduleCreateContent() {
         onDismiss={dismissSiblingCopy}
       />
     )}
-    <div className="flex gap-6 items-start">
+    <Div type="row" align="start" gap="lg">
       {/* ── Left: form ────────────────────────────────────────────────────── */}
-      <div className="flex-1 min-w-0">
+      <Div className="flex-1 min-w-0">
         <form onSubmit={onSubmit}>
           <Div type="col" gap="md">
             <PageHeader
@@ -451,7 +453,7 @@ function ScheduleCreateContent() {
               </Div>
 
               {/* Load All Subjects button */}
-              <div className="mt-3 pt-3 border-t border-border flex items-center gap-2">
+              <Div type="row" align="center" gap="sm" className="mt-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   size="sm"
@@ -463,10 +465,10 @@ function ScheduleCreateContent() {
                   <Wand2 size={13} />
                   {SCHEDULE_PAGE.buttons.loadSubjects}
                 </Button>
-                <p className="text-[11px] text-muted-foreground">
+                <P className="text-[11px] text-muted-foreground">
                   Auto-fills all class subjects — then just set dates & times
-                </p>
-              </div>
+                </P>
+              </Div>
             </Div>
 
             {/* Bulk-apply strip */}
@@ -599,13 +601,13 @@ function ScheduleCreateContent() {
             </Div>
           </Div>
         </form>
-      </div>
+      </Div>
 
       {/* ── Right: summary panel ───────────────────────────────────────────── */}
-      <div className="w-64 xl:w-72 shrink-0 sticky top-4 hidden lg:block">
+      <Div className="w-64 xl:w-72 shrink-0 sticky top-4 hidden lg:block">
         <ScheduleSummary schedules={watchedSchedules ?? []} />
-      </div>
-    </div>
+      </Div>
+    </Div>
     </>
   );
 }

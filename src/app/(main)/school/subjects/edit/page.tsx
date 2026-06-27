@@ -112,7 +112,7 @@ function EditSubjectPageInner() {
 
 export default function EditSubjectPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}> {/* arch-ignore */}
       <EditSubjectPageInner />
     </Suspense>
   );

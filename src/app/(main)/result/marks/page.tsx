@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Save,
@@ -27,13 +28,23 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
+  DataTable,
+  type ColumnDef,
+  PageCol,
 } from "@/components/ui";
 import {
   RESULT_MARKS_PAGE,
   EXAM_TERM_LABELS,
 } from "@/constants/result.constants";
 
-// ── Confirm modal ─────────────────────────────────────────────────────────────
+type StudentMarksEntry = {
+  student_id: string;
+  roll_number: string;
+  student_name: string;
+  marks: Record<string, { marks_obtained?: number; is_absent: boolean }>;
+};
+
+// ── Confirm modal (publish / unpublish) ──────────────────────────────────────
 
 function ConfirmModal({
   title,
@@ -114,9 +125,8 @@ function MarksContent() {
     togglePublish,
   } = useExamResults();
 
-
   const { register, setValue, watch } = filterForm;
-  const watchedExamId = watch('exam_id');
+  const watchedExamId = watch("exam_id");
 
   const { students } = useStudents(
     selectedClassId && selectedAcademicYearId
@@ -161,16 +171,99 @@ function MarksContent() {
   // Parent schedules only (no sub-subjects as columns — they group under parent)
   const parentSchedules = schedules.filter((s) => !s.parent_schedule_id);
 
-  const totalCols = 3 + parentSchedules.length; // S.No + Roll + Name + schedules
+  // Dynamic columns: static columns + schedule columns
+  const columns = useMemo<ColumnDef<StudentMarksEntry>[]>(() => {
+    const baseCols: ColumnDef<StudentMarksEntry>[] = [
+      {
+        id: "index",
+        header: RESULT_MARKS_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "roll_number",
+        header: RESULT_MARKS_PAGE.table.rollNo,
+      },
+      {
+        accessorKey: "student_name",
+        header: RESULT_MARKS_PAGE.table.studentName,
+        meta: { primary: true },
+      },
+    ];
 
-  // Build a map: student_id → student for subject_id lookup during save
-  const studentSubjectMap = students.map((s) => ({
-    student_id: s.id,
-    subject_id: '',
-  }));
+    // Add dynamic columns for each schedule
+    const scheduleCols = parentSchedules.map(
+      (schedule): ColumnDef<StudentMarksEntry> => ({
+        id: `schedule-${schedule.id}`,
+        header: () => (
+          <Div type="col" gap="xs" align="center">
+            <Div className="text-xs font-medium">{schedule.subject_name}</Div>
+            <Div className="text-xs font-normal text-muted-foreground/70">
+              Max: {schedule.exam_marks}
+            </Div>
+          </Div>
+        ),
+        cell: ({ row }) => {
+          const mark = row.original.marks[schedule.id];
+          const isAbsent = mark?.is_absent ?? false;
+          const marksVal = mark?.marks_obtained;
+          return (
+            <Div type="col" gap="xs" align="center">
+              {isAbsent ? (
+                <Div type="row" gap="xs" align="center">
+                  <Badge variant="warning">Absent</Badge>
+                  <Button
+                    type="button"
+                    className="text-xs text-muted-foreground underline hover:text-foreground"
+                    onClick={() =>
+                      updateMark(row.original.student_id, schedule.id, null, false)
+                    }
+                  >
+                    undo
+                  </Button>
+                </Div>
+              ) : (
+                <Div type="row" gap="xs" align="center">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={schedule.exam_marks}
+                    width="xs"
+                    placeholder="—"
+                    value={marksVal ?? ""}
+                    className="text-center"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      updateMark(
+                        row.original.student_id,
+                        schedule.id,
+                        v === "" ? null : parseFloat(v),
+                        false,
+                      );
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    title="Mark absent"
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() =>
+                      updateMark(row.original.student_id, schedule.id, null, true)
+                    }
+                  >
+                    A
+                  </Button>
+                </Div>
+              )}
+            </Div>
+          );
+        },
+      })
+    );
+
+    return [...baseCols, ...scheduleCols];
+  }, [parentSchedules, updateMark]);
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={RESULT_MARKS_PAGE.pageHeading.title}
         subtitle={RESULT_MARKS_PAGE.pageHeading.subtitle}
@@ -376,141 +469,25 @@ function MarksContent() {
             ))}
           </Div>
 
-          {/* Scrollable grid */}
-          <Div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <table className="w-full text-sm min-w-max">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">
-                    {RESULT_MARKS_PAGE.table.sno}
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground w-20">
-                    {RESULT_MARKS_PAGE.table.rollNo}
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground min-w-[160px]">
-                    {RESULT_MARKS_PAGE.table.studentName}
-                  </th>
-                  {schedules.map((s) => (
-                    <th
-                      key={s.id}
-                      className="px-4 py-3 text-center font-medium text-muted-foreground min-w-[130px]"
-                    >
-                      <Div className="flex flex-col items-center gap-0.5">
-                        <Div>{s.subject_name}</Div>
-                        <Div className="text-xs font-normal text-muted-foreground/70">
-                          {RESULT_MARKS_PAGE.subjectTypes[s.subject_type] ??
-                            s.subject_type}{" "}
-                          · Max: {s.exam_marks}
-                        </Div>
-                      </Div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {studentEntries.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={totalCols}
-                      className="px-4 py-12 text-center text-muted-foreground"
-                    >
-                      No students found for this class / section.
-                    </td>
-                  </tr>
-                ) : (
-                  studentEntries.map((entry, idx) => (
-                    <tr
-                      key={entry.student_id}
-                      className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {idx + 1}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {entry.roll_number ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {entry.student_name}
-                      </td>
-
-                      {schedules.map((schedule) => {
-                        const mark = entry.marks[schedule.id];
-                        const isAbsent = mark?.is_absent ?? false;
-                        const marksVal = mark?.marks_obtained;
-
-                        return (
-                          <td
-                            key={schedule.id}
-                            className="px-3 py-2 text-center"
-                          >
-                            {isAbsent ? (
-                              <Div className="flex items-center justify-center gap-1.5">
-                                <Badge variant="warning">Absent</Badge>
-                                <Button
-                                  type="button"
-                                  className="text-xs text-muted-foreground underline hover:text-foreground"
-                                  onClick={() =>
-                                    updateMark(
-                                      entry.student_id,
-                                      schedule.id,
-                                      null,
-                                      false,
-                                    )
-                                  }
-                                >
-                                  undo
-                                </Button>
-                              </Div>
-                            ) : (
-                              <Div className="flex items-center justify-center gap-1.5">
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  max={schedule.exam_marks}
-                                  width="xs"
-                                  placeholder="—"
-                                  value={
-                                    marksVal !== null && marksVal !== undefined
-                                      ? String(marksVal)
-                                      : ""
-                                  }
-                                  className="text-center"
-                                  onChange={(e) => {
-                                    const v = e.target.value;
-                                    updateMark(
-                                      entry.student_id,
-                                      schedule.id,
-                                      v === "" ? null : parseFloat(v),
-                                      false,
-                                    );
-                                  }}
-                                />
-                                <Button
-                                  type="button"
-                                  title="Mark absent"
-                                  className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground border border-border hover:border-destructive hover:text-destructive transition-colors"
-                                  onClick={() =>
-                                    updateMark(
-                                      entry.student_id,
-                                      schedule.id,
-                                      null,
-                                      true,
-                                    )
-                                  }
-                                >
-                                  A
-                                </Button>
-                              </Div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </Div>
+          <DataTable
+            columns={columns}
+            data={studentEntries.map((s) => ({
+              ...s,
+              roll_number: s.roll_number ?? "",
+              marks: Object.entries(s.marks).reduce(
+                (acc, [key, val]) => ({
+                  ...acc,
+                  [key]: {
+                    marks_obtained: val.marks_obtained ?? undefined,
+                    is_absent: val.is_absent,
+                  },
+                }),
+                {} as Record<string, { marks_obtained?: number; is_absent: boolean }>
+              ),
+            }))}
+            isLoading={isTableBusy}
+            emptyText="No students found"
+          />
 
           {studentEntries.length > 0 && (
             <Div type="row" justify="end">
@@ -560,7 +537,7 @@ function MarksContent() {
           isLoading={isPublishing}
         />
       )}
-    </Div>
+    </PageCol>
   );
 }
 

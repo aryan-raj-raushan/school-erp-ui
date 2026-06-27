@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useSubjectsPage } from "@/hooks/useSubjectsPage";
 import { SUBJECTS_PAGE } from "@/constants";
 import {
@@ -7,21 +8,16 @@ import {
   Button,
   PageHeader,
   PageCol,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
+  DataTable,
   Badge,
   Spinner,
   Icon,
   Select,
   FilterLabel,
+  type ColumnDef,
 } from "@/components/ui";
 import { Pencil, Trash2 } from "lucide-react";
+import type { Subject } from "@/services/subjects.service";
 
 export default function SubjectsPage() {
   const {
@@ -38,6 +34,70 @@ export default function SubjectsPage() {
     navigateToEdit,
     getClassNames,
   } = useSubjectsPage();
+
+  const columns = useMemo<ColumnDef<Subject>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: SUBJECTS_PAGE.table.name,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "code",
+        header: SUBJECTS_PAGE.table.code,
+        cell: ({ row }) => row.original.code ?? "—",
+      },
+      {
+        id: "class",
+        header: "Class",
+        cell: ({ row }) => getClassNames(row.original.class_ids ?? []),
+      },
+      {
+        accessorKey: "display_order",
+        header: SUBJECTS_PAGE.table.displayOrder,
+      },
+      {
+        accessorKey: "total_marks",
+        header: SUBJECTS_PAGE.table.totalMarks,
+      },
+      {
+        accessorKey: "passing_marks",
+        header: SUBJECTS_PAGE.table.passingMarks,
+      },
+      {
+        accessorKey: "is_active",
+        header: SUBJECTS_PAGE.table.enabled,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_active ? "success" : "default"}>
+            {row.original.is_active ? "Enabled" : "Disabled"}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: SUBJECTS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => navigateToEdit(row.original.id)}
+            >
+              <Icon icon={Pencil} type="sm" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => removeSubject(row.original.id)}
+            >
+              <Icon icon={Trash2} type="sm-danger" />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [getClassNames, navigateToEdit, removeSubject]
+  );
 
   return (
     <PageCol>
@@ -82,67 +142,12 @@ export default function SubjectsPage() {
         </Div>
       </Div>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{SUBJECTS_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{SUBJECTS_PAGE.table.code}</TableHeaderCell>
-            <TableHeaderCell>Class</TableHeaderCell>
-            <TableHeaderCell>
-              {SUBJECTS_PAGE.table.displayOrder}
-            </TableHeaderCell>
-            <TableHeaderCell>{SUBJECTS_PAGE.table.totalMarks}</TableHeaderCell>
-            <TableHeaderCell>
-              {SUBJECTS_PAGE.table.passingMarks}
-            </TableHeaderCell>
-            <TableHeaderCell>{SUBJECTS_PAGE.table.enabled}</TableHeaderCell>
-            <TableHeaderCell>{SUBJECTS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={8}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : subjects.length === 0 ? (
-            <TableEmptyRow colSpan={8}>{SUBJECTS_PAGE.empty}</TableEmptyRow>
-          ) : (
-            subjects.map((subject) => (
-              <TableRow key={subject.id}>
-                <TableCell primary>{subject.name}</TableCell>
-                <TableCell>{subject.code ?? "—"}</TableCell>
-                <TableCell>{getClassNames(subject.class_ids ?? [])}</TableCell>
-                <TableCell>{subject.display_order}</TableCell>
-                <TableCell>{subject.total_marks}</TableCell>
-                <TableCell>{subject.passing_marks}</TableCell>
-                <TableCell>
-                  <Badge variant={subject.is_active ? "success" : "default"}>
-                    {subject.is_active ? "Enabled" : "Disabled"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => navigateToEdit(subject.id)}
-                    >
-                      <Icon icon={Pencil} type="sm" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeSubject(subject.id)}
-                    >
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={subjects}
+        isLoading={isLoading}
+        emptyText={SUBJECTS_PAGE.empty}
+      />
     </PageCol>
   );
 }

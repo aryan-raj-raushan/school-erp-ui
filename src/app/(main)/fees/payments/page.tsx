@@ -1,15 +1,16 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
   Printer, AlertTriangle, CreditCard, Users, FilePlus, LayoutGrid, FileText,
   Plus, User, Phone, Mail, BookOpen, Hash, Trash2, ChevronDown, ChevronRight, Zap, Tag,
 } from 'lucide-react';
 import {
   Div, P, Span, Button, Badge, Spinner, Label,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   FormField, Select, Input,
   FormCard, SectionCard, WarnBanner,
   PageHeader, PageCol,
+  DataTable, type ColumnDef,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -20,6 +21,45 @@ import {
   FEE_PAYMENTS_TABS, FEE_BILL_STATUS_COLORS,
   buildMonthYearOpts, monthValueToLabel, billBalanceDue,
 } from '@/constants/fee-payments.constants';
+
+type BillRow = {
+  id: string;
+  fee_type_name: string;
+  frequency: string;
+  bill_month?: string;
+  due_date?: string;
+  status: string;
+  total_amount: string;
+  paid_amount: string;
+  discount_amount: string;
+};
+
+type MonthlyDueRow = {
+  student_id: string;
+  admission_number?: string;
+  student_name: string;
+  father_name?: string;
+  phone?: string;
+  due_amount: string;
+};
+
+type StructureRow = {
+  fee_type_id: string;
+  fee_type_name: string;
+  frequency: string;
+  applicable_months?: string[];
+  amount?: string;
+};
+
+type DemandReceiptRow = {
+  student_id: string;
+  student_name: string;
+  admission_number?: string;
+  roll_no?: string;
+  father_name?: string;
+  total_due: string;
+  bills: Array<{ fee_type_name: string; bill_month?: string; total_amount: string; paid_amount: string; due_amount: string; due_date?: string; }>;
+};
 
 export default function FeePaymentsPage() {
   const {
@@ -65,6 +105,173 @@ export default function FeePaymentsPage() {
   } = useFeesPayments();
 
   const { academicYears, classes } = useFeesSetup();
+
+  // Bill columns with DataTable
+  const billColumns = useMemo<ColumnDef<BillRow>[]>(() => [
+    {
+      id: 'expand',
+      header: '',
+      cell: ({ row }) => {
+        const isExpanded = expandedBillId === row.original.id;
+        return (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => toggleBillPayments(row.original.id)}
+            title="View payment history"
+          >
+            {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </Button>
+        );
+      },
+    },
+    {
+      accessorKey: 'fee_type_name',
+      header: 'Fee Type',
+      meta: { primary: true },
+    },
+    {
+      accessorKey: 'frequency',
+      header: 'Frequency',
+    },
+    {
+      accessorKey: 'bill_month',
+      header: 'Month / Year',
+      cell: ({ row }) => row.original.bill_month ?? '—',
+    },
+    {
+      accessorKey: 'due_date',
+      header: 'Due Date',
+      cell: ({ row }) => row.original.due_date ?? '—',
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={FEE_BILL_STATUS_COLORS[row.original.status] ?? 'default'}>{row.original.status}</Badge>
+      ),
+    },
+    {
+      accessorKey: 'total_amount',
+      header: 'Total',
+      cell: ({ row }) => `₹${parseFloat(row.original.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      accessorKey: 'paid_amount',
+      header: 'Paid',
+      cell: ({ row }) => `₹${parseFloat(row.original.paid_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      accessorKey: 'discount_amount',
+      header: 'Discount',
+      cell: ({ row }) => `₹${parseFloat(row.original.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      id: 'due',
+      header: 'Due',
+      cell: ({ row }) => {
+        const due = billBalanceDue(row.original);
+        return (
+          <P className={due > 0 ? 'font-semibold text-destructive' : 'text-muted-foreground'}>
+            ₹{due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          </P>
+        );
+      },
+    },
+    {
+      id: 'action',
+      header: 'Action',
+      cell: ({ row }) => {
+        const due = billBalanceDue(row.original as any);
+        return row.original.status !== 'PAID' && row.original.status !== 'WAIVED' && due > 0 ? (
+          <Button size="sm" onClick={() => openPayBillModal(row.original as any, due)}>
+            <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
+          </Button>
+        ) : null;
+      },
+    },
+  ], [expandedBillId, toggleBillPayments, openPayBillModal]);
+
+  // Monthly dues columns
+  const monthlyDuesColumns = useMemo<ColumnDef<MonthlyDueRow>[]>(() => [
+    {
+      accessorKey: 'admission_number',
+      header: 'Reg ID',
+      cell: ({ row }) => row.original.admission_number ?? '—',
+    },
+    {
+      accessorKey: 'student_name',
+      header: 'Student Name',
+      meta: { primary: true },
+    },
+    {
+      accessorKey: 'father_name',
+      header: 'Father Name',
+      cell: ({ row }) => row.original.father_name ?? '—',
+    },
+    {
+      accessorKey: 'phone',
+      header: 'Phone Number',
+      cell: ({ row }) => row.original.phone ?? '—',
+    },
+    {
+      id: 'monthLabel',
+      header: 'Month Name',
+      cell: () => monthValueToLabel(monthlyFilter.month),
+    },
+    {
+      accessorKey: 'due_amount',
+      header: 'Due Amount',
+      cell: ({ row }) => {
+        const amount = parseFloat(row.original.due_amount);
+        return (
+          <P className={amount > 0 ? 'font-semibold text-destructive' : 'text-muted-foreground'}>
+            ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          </P>
+        );
+      },
+    },
+    {
+      id: 'payAction',
+      header: 'Pay Now',
+      cell: ({ row }) => {
+        const amount = parseFloat(row.original.due_amount);
+        return amount > 0 ? (
+          <Button size="sm" onClick={() => openPayDueModal(row.original as any)}>
+            <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
+          </Button>
+        ) : null;
+      },
+    },
+  ], [monthlyFilter.month, openPayDueModal]);
+
+  // Structure columns
+  const structureColumns = useMemo<ColumnDef<StructureRow>[]>(() => [
+    {
+      id: 'index',
+      header: '#',
+      cell: ({ row }) => row.index + 1,
+    },
+    {
+      accessorKey: 'fee_type_name',
+      header: 'Fee Type',
+      meta: { primary: true },
+    },
+    {
+      accessorKey: 'frequency',
+      header: 'Frequency',
+    },
+    {
+      id: 'months',
+      header: 'Months / Schedule',
+      cell: ({ row }) => row.original.frequency === 'Monthly' ? (row.original.applicable_months?.join(', ') || '—') : 'One-time',
+    },
+    {
+      accessorKey: 'amount',
+      header: 'Amount (₹)',
+      cell: ({ row }) => `₹${parseFloat(row.original.amount ?? '0').toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+    },
+  ], []);
 
   return (
     <PageCol>
@@ -149,47 +356,17 @@ export default function FeePaymentsPage() {
               title={`${(classes as any[]).find(c => c.id === studentFilter.class_id)?.name ?? (classes as any[]).find(c => c.id === studentFilter.class_id)?.class_name ?? ''} Class Fee Structure`}
               subtitle={`${studentStructure.length} fee types`}
             >
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/40 text-xs text-muted-foreground uppercase tracking-wide bg-muted/10">
-                    <th className="px-5 py-2.5 text-left">Name</th>
-                    <th className="px-5 py-2.5 text-left">Fee Type</th>
-                    <th className="px-5 py-2.5 text-left">Schedule</th>
-                    <th className="px-5 py-2.5 text-right">Fee Amount</th>
-                    <th className="px-5 py-2.5 text-right">Total Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {studentStructure.map(s => {
-                    const months = s.frequency === 'Monthly' ? (s.applicable_months?.length ?? 1) : 1;
-                    const lineTotal = parseFloat(s.amount ?? '0') * months;
-                    return (
-                      <tr key={s.fee_type_id} className="border-b border-border/20 hover:bg-muted/10">
-                        <td className="px-5 py-3 font-medium text-foreground">{s.fee_type_name}</td>
-                        <td className="px-5 py-3 text-muted-foreground">{s.frequency}</td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground max-w-xs truncate">
-                          {s.frequency === 'Monthly' ? (s.applicable_months?.join(', ') ?? '—') : 'Only Once'}
-                        </td>
-                        <td className="px-5 py-3 text-right text-foreground">₹{parseFloat(s.amount ?? '0').toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                        <td className="px-5 py-3 text-right font-medium text-foreground">
-                          × {months} = ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-muted/20 border-t border-border/40">
-                    <td colSpan={4} className="px-5 py-3 text-sm font-semibold text-right text-foreground">Total Due Fee Amount</td>
-                    <td className="px-5 py-3 text-right font-bold text-primary">
-                      ₹{studentStructure.reduce((sum, s) => {
-                        const months = s.frequency === 'Monthly' ? (s.applicable_months?.length ?? 1) : 1;
-                        return sum + parseFloat(s.amount ?? '0') * months;
-                      }, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+              <DataTable
+                columns={structureColumns}
+                data={studentStructure.map(s => ({
+                  ...s,
+                  applicable_months: s.applicable_months ?? undefined,
+                  amount: s.amount ?? undefined,
+                  structure_id: s.structure_id ?? undefined,
+                  is_enabled: s.is_enabled ?? undefined,
+                }))}
+                emptyText="No fee structure found"
+              />
             </SectionCard>
           )}
 
@@ -219,119 +396,22 @@ export default function FeePaymentsPage() {
                 </Button>
               </>}
             >
-              {studentBills.length === 0 && (
+              {studentBills.length === 0 ? (
                 <Div type="col" align="center" center gap="sm" padding="p-8">
                   <Zap className="w-7 h-7 text-primary/50" />
                   <P color="default" weight="medium">No bills generated yet</P>
                   <P size="xs">Fee structure is configured. Click "Generate Bills" above to create them.</P>
                 </Div>
-              )}
-              {studentBills.length > 0 && (
-                <Div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/40 text-xs text-muted-foreground uppercase tracking-wide bg-muted/10">
-                        <th className="px-4 py-2.5 w-8"></th>
-                        <th className="px-4 py-2.5 text-left">Fee Type</th>
-                        <th className="px-4 py-2.5 text-left">Frequency</th>
-                        <th className="px-4 py-2.5 text-left">Month / Year</th>
-                        <th className="px-4 py-2.5 text-left">Due Date</th>
-                        <th className="px-4 py-2.5 text-left">Status</th>
-                        <th className="px-4 py-2.5 text-right">Total</th>
-                        <th className="px-4 py-2.5 text-right">Paid</th>
-                        <th className="px-4 py-2.5 text-right">Discount</th>
-                        <th className="px-4 py-2.5 text-right">Due</th>
-                        <th className="px-4 py-2.5 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {studentBills.map(b => {
-                        const due = billBalanceDue(b);
-                        const isExpanded = expandedBillId === b.id;
-                        const payments = billPaymentsMap[b.id] ?? [];
-                        return (
-                          <>
-                            <tr key={b.id} className="border-b border-border/20 hover:bg-muted/10">
-                              <td className="px-2 py-3 text-center">
-                                <Button variant="ghost" size="icon-sm" onClick={() => toggleBillPayments(b.id)} title="View payment history">
-                                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                                </Button>
-                              </td>
-                              <td className="px-4 py-3 font-medium text-foreground">{b.fee_type_name}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{b.frequency}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{b.bill_month ?? '—'}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{b.due_date ?? '—'}</td>
-                              <td className="px-4 py-3">
-                                <Badge variant={FEE_BILL_STATUS_COLORS[b.status] ?? 'default'}>{b.status}</Badge>
-                              </td>
-                              <td className="px-4 py-3 text-right text-foreground">₹{parseFloat(b.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td className="px-4 py-3 text-right text-foreground">₹{parseFloat(b.paid_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td className="px-4 py-3 text-right text-muted-foreground">₹{parseFloat(b.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td className={`px-4 py-3 text-right font-semibold ${due > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                ₹{due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                {b.status !== 'PAID' && b.status !== 'WAIVED' && due > 0 && (
-                                  <Button size="sm" onClick={() => openPayBillModal(b, due)}>
-                                    <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
-                                  </Button>
-                                )}
-                              </td>
-                            </tr>
-                            {isExpanded && (
-                              <tr key={`${b.id}-payments`} className="bg-muted/5">
-                                <td colSpan={11} className="px-6 py-3">
-                                  {loadingPaymentsFor === b.id ? (
-                                    <Div type="row" align="center" gap="sm"><Spinner /><P size="xs">Loading payments…</P></Div>
-                                  ) : payments.length === 0 ? (
-                                    <P size="xs">No payments recorded for this bill.</P>
-                                  ) : (
-                                    <Div className="rounded-lg border border-border/40 overflow-hidden">
-                                      <table className="w-full text-xs">
-                                        <thead>
-                                          <tr className="bg-muted/20 text-muted-foreground uppercase tracking-wide">
-                                            <th className="px-3 py-2 text-left">Date</th>
-                                            <th className="px-3 py-2 text-left">Mode</th>
-                                            <th className="px-3 py-2 text-left">Txn ID</th>
-                                            <th className="px-3 py-2 text-left">Remarks</th>
-                                            <th className="px-3 py-2 text-right">Amount</th>
-                                            <th className="px-3 py-2 text-center">Delete</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {payments.map(p => (
-                                            <tr key={p.id} className="border-t border-border/20 hover:bg-muted/10">
-                                              <td className="px-3 py-2">{p.payment_date}</td>
-                                              <td className="px-3 py-2">{p.payment_mode}</td>
-                                              <td className="px-3 py-2 text-muted-foreground">{p.transaction_id ?? '—'}</td>
-                                              <td className="px-3 py-2 text-muted-foreground">{p.remarks ?? '—'}</td>
-                                              <td className="px-3 py-2 text-right font-medium text-success">₹{parseFloat(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                                              <td className="px-3 py-2 text-center">
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon-sm"
-                                                  onClick={() => deleteBillPayment(p.id, b.id, () => fetchStudentData(selectedStudent, studentFilter.academic_year_id, regularPlanId, studentFilter.class_id))}
-                                                  className="text-destructive hover:text-destructive/80"
-                                                  title="Delete this payment"
-                                                >
-                                                  <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                              </td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </Div>
-                                  )}
-                                </td>
-                              </tr>
-                            )}
-                          </>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </Div>
+              ) : (
+                <DataTable
+                  columns={billColumns}
+                  data={studentBills.map(b => ({
+                    ...b,
+                    bill_month: b.bill_month ?? undefined,
+                    due_date: b.due_date ?? undefined,
+                  }))}
+                  emptyText="No bills found"
+                />
               )}
             </SectionCard>
           )}
@@ -395,42 +475,17 @@ export default function FeePaymentsPage() {
               title={`${monthValueToLabel(monthlyFilter.month)} ${(classes as any[]).find(c => c.id === monthlyFilter.class_id)?.name ?? (classes as any[]).find(c => c.id === monthlyFilter.class_id)?.class_name ?? ''} Class Fee Payment Details`}
               subtitle={`${monthlyDues.length} student${monthlyDues.length !== 1 ? 's' : ''} · ${(academicYears as any[]).find(y => y.id === monthlyFilter.academic_year_id)?.name ?? ''}`}
             >
-              <Table>
-                <TableHead>
-                  <TableHeadRow>
-                    <TableHeaderCell>Reg ID</TableHeaderCell>
-                    <TableHeaderCell>Student Name</TableHeaderCell>
-                    <TableHeaderCell>Father Name</TableHeaderCell>
-                    <TableHeaderCell>Phone Number</TableHeaderCell>
-                    <TableHeaderCell>Month Name</TableHeaderCell>
-                    <TableHeaderCell>Due Amount</TableHeaderCell>
-                    <TableHeaderCell>Pay Now</TableHeaderCell>
-                  </TableHeadRow>
-                </TableHead>
-                <TableBody>
-                  {monthlyDues.map(d => (
-                    <TableRow key={d.student_id}>
-                      <TableCell>{d.admission_number ?? '—'}</TableCell>
-                      <TableCell primary>{d.student_name}</TableCell>
-                      <TableCell>{d.father_name ?? '—'}</TableCell>
-                      <TableCell>{d.phone ?? '—'}</TableCell>
-                      <TableCell>{monthValueToLabel(monthlyFilter.month)}</TableCell>
-                      <TableCell>
-                        <Span className={parseFloat(d.due_amount) > 0 ? 'font-semibold text-destructive' : 'text-muted-foreground'}>
-                          ₹{parseFloat(d.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </Span>
-                      </TableCell>
-                      <TableCell>
-                        {parseFloat(d.due_amount) > 0 && (
-                          <Button size="sm" onClick={() => openPayDueModal(d)}>
-                            <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={monthlyDuesColumns}
+                data={monthlyDues.map(m => ({
+                  ...m,
+                  admission_number: m.admission_number ?? undefined,
+                  father_name: m.father_name ?? undefined,
+                  phone: m.phone ?? undefined,
+                  roll_no: m.roll_no ?? undefined,
+                }))}
+                emptyText="No dues found"
+              />
             </SectionCard>
           )}
 
@@ -557,30 +612,17 @@ export default function FeePaymentsPage() {
               title="Fee Structure"
               subtitle={`${structureView.length} fee type${structureView.length !== 1 ? 's' : ''} · Total ₹${structureView.reduce((sum, s) => sum + parseFloat(s.amount ?? '0'), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
             >
-              <Table>
-                <TableHead>
-                  <TableHeadRow>
-                    <TableHeaderCell>#</TableHeaderCell>
-                    <TableHeaderCell>Fee Type</TableHeaderCell>
-                    <TableHeaderCell>Frequency</TableHeaderCell>
-                    <TableHeaderCell>Months / Schedule</TableHeaderCell>
-                    <TableHeaderCell className="text-right">Amount (₹)</TableHeaderCell>
-                  </TableHeadRow>
-                </TableHead>
-                <TableBody>
-                  {structureView.map((s, idx) => (
-                    <TableRow key={s.fee_type_id}>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell primary>{s.fee_type_name}</TableCell>
-                      <TableCell>{s.frequency}</TableCell>
-                      <TableCell>{s.frequency === 'Monthly' ? (s.applicable_months?.join(', ') || '—') : 'One-time'}</TableCell>
-                      <TableCell className="text-right font-medium text-foreground">
-                        ₹{parseFloat(s.amount ?? '0').toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={structureColumns}
+                data={structureView.map(s => ({
+                  ...s,
+                  applicable_months: s.applicable_months ?? undefined,
+                  amount: s.amount ?? undefined,
+                  structure_id: s.structure_id ?? undefined,
+                  is_enabled: s.is_enabled ?? undefined,
+                }))}
+                emptyText="No fee structure found"
+              />
             </SectionCard>
           )}
 

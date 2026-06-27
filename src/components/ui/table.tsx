@@ -1,11 +1,16 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export function Table({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function Table({
+  className,
+  children,
+  scrollRef,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { scrollRef?: React.RefObject<HTMLDivElement | null> }) {
   return (
-    <div className="w-full overflow-x-auto">
+    <div ref={scrollRef} className={cn('w-full overflow-x-auto', scrollRef && '[&::-webkit-scrollbar]:hidden scrollbar-none')}>
       <div
-        className={cn('min-w-[540px] rounded-2xl border border-border/50 bg-card backdrop-blur-sm overflow-hidden glass-card', className)}
+        className={cn('inline-block min-w-full rounded-2xl border border-border/50 bg-card backdrop-blur-sm overflow-hidden glass-card', className)}
         {...props}
       >
         <table className="w-full text-sm">{children}</table>
@@ -34,11 +39,12 @@ export function TableHeadRow({ className, ...props }: React.HTMLAttributes<HTMLT
   );
 }
 
-type TableRowVariant = 'default' | 'danger';
+type TableRowVariant = 'default' | 'danger' | 'muted';
 
 const rowVariantMap: Record<TableRowVariant, string> = {
   default: '',
   danger: 'bg-red-50/50 dark:bg-red-950/10',
+  muted: 'bg-muted/20',
 };
 
 export function TableRow({

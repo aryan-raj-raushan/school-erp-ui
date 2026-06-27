@@ -5,6 +5,8 @@ import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
 import {
   Div, Select, FilterLabel, Spinner, Badge, SectionLabel, P,
   PageHeader, PageCol,
+  Table, TableHead, TableHeadRow, TableHeaderCell,
+  TableBody, TableRow, TableCell, TableEmptyRow,
 } from '@/components/ui';
 import type { DayOfWeek } from '@/services/timetable.service';
 
@@ -106,71 +108,60 @@ export default function SessionTimetablePage() {
             )}
           </Div>
 
-          <div className="overflow-x-auto rounded-xl border border-border/50">
-            <table className="min-w-full border-collapse text-sm">
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-20 border-b border-r border-border/50 bg-muted/60 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground w-36">
-                    Class Name
-                  </th>
+          <Div className="overflow-x-auto rounded-xl border border-border/50">
+            <Table>
+              <TableHead>
+                <TableHeadRow>
+                  <TableHeaderCell>Class Name</TableHeaderCell>
                   {periods.map((p) => (
-                    <th
-                      key={p}
-                      className="border-b border-r border-border/50 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide min-w-[165px]"
-                      style={{ background: 'var(--theme-glow-soft)', color: 'var(--theme-gradient-from)' }}
-                    >
+                    <TableHeaderCell key={p} className="text-center">
                       Period {p}
-                    </th>
+                    </TableHeaderCell>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableHeadRow>
+              </TableHead>
+              <TableBody>
                 {rows.map((row, idx) => {
                   const label = [row.class_name, row.class_detail_name].filter(Boolean).join(' / ')
                     || row.timetable_name;
                   return (
-                    <tr key={row.timetable_id} className={idx % 2 === 0 ? 'bg-card' : 'bg-muted/10'}>
-                      <td className="sticky left-0 z-10 border-b border-r border-border/50 bg-inherit px-4 py-3 align-middle">
-                        <span className="text-sm font-semibold text-foreground">{label}</span>
-                      </td>
+                    <TableRow key={row.timetable_id}>
+                      <TableCell primary>{label}</TableCell>
                       {periods.map((p) => {
                         const cell = getCell(row.timetable_id, p);
                         const timeStr = cell?.start_time && cell?.end_time
                           ? `${fmt12(cell.start_time)} – ${fmt12(cell.end_time)}`
                           : null;
                         return (
-                          <td
-                            key={p}
-                            className="border-b border-r border-border/50 px-3 py-2.5 align-top transition-colors hover:bg-muted/20"
-                          >
+                          <TableCell key={p} className="align-top">
                             {cell ? (
                               <Div type="col" gap="xs">
                                 {timeStr && (
-                                  <span className="text-[11px] font-medium text-muted-foreground leading-none">
+                                  <P size="xs" color="muted" className="leading-none">
                                     {timeStr}
-                                  </span>
+                                  </P>
                                 )}
-                                <span className="text-sm font-semibold text-foreground leading-snug">
+                                <P size="sm" weight="semibold" className="leading-snug">
                                   {cell.subject_name ?? (
-                                    <span className="text-muted-foreground/50 font-normal text-xs">No Subject</span>
+                                    <P size="xs" color="muted" weight="normal">No Subject</P>
                                   )}
-                                </span>
-                                <span className="text-xs text-muted-foreground leading-none">
+                                </P>
+                                <P size="xs" color="muted" className="leading-none">
                                   [{cell.teacher_name ?? 'Not Assigned'}]
-                                </span>
+                                </P>
                               </Div>
                             ) : (
-                              <span className="text-muted-foreground/25 text-base select-none">—</span>
+                              <P size="sm" color="muted" className="text-muted-foreground/25 select-none">—</P>
                             )}
-                          </td>
+                          </TableCell>
                         );
                       })}
-                    </tr>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Div>
         </Div>
       )}
     </Div>

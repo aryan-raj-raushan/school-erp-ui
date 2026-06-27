@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Save, ChevronDown, ChevronRight, Search, GripVertical, X } from 'lucide-react';
 import {
   Div, Button, Badge, Spinner, Icon, P, FormField, Input, Select, FormCard, SectionCard,
@@ -195,7 +194,7 @@ export default function FeeSetupPage() {
           )}
 
           {!loadingStructure && classStructure.length > 0 && structureMode === 'idle' && (
-            <Div className="rounded-xl border border-dashed border-border/60 bg-muted/10 p-10 flex flex-col items-center gap-3">
+            <Div className="rounded-xl border border-dashed border-border/60 bg-muted/10 p-10 type-col gap-3" type="col" align="center" gap="lg">
               <Div className="w-10 h-10 rounded-full bg-muted/40 flex items-center justify-center">
                 <Plus className="w-5 h-5 text-muted-foreground" />
               </Div>
@@ -225,40 +224,38 @@ export default function FeeSetupPage() {
                 </Button>
               }
             >
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/40 text-xs text-muted-foreground uppercase tracking-wide bg-muted/10">
-                    <th className="px-5 py-2.5 text-left">#</th>
-                    <th className="px-5 py-2.5 text-left">Fee Type</th>
-                    <th className="px-5 py-2.5 text-left">Frequency</th>
-                    <th className="px-5 py-2.5 text-left">Months / Schedule</th>
-                    <th className="px-5 py-2.5 text-right">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHead>
+                  <TableHeadRow>
+                    <TableHeaderCell className="text-left">#</TableHeaderCell>
+                    <TableHeaderCell className="text-left">Fee Type</TableHeaderCell>
+                    <TableHeaderCell className="text-left">Frequency</TableHeaderCell>
+                    <TableHeaderCell className="text-left">Months / Schedule</TableHeaderCell>
+                    <TableHeaderCell className="text-right">Amount (₹)</TableHeaderCell>
+                  </TableHeadRow>
+                </TableHead>
+                <TableBody>
                   {builderItems.map((item, idx) => (
-                    <tr key={item.fee_type_id} className="border-b border-border/20 hover:bg-muted/10">
-                      <td className="px-5 py-3 text-muted-foreground text-xs">{idx + 1}</td>
-                      <td className="px-5 py-3 font-medium text-foreground">{item.fee_type_name}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{item.frequency}</td>
-                      <td className="px-5 py-3 text-xs text-muted-foreground">
+                    <TableRow key={item.fee_type_id}>
+                      <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
+                      <TableCell><P weight="semibold">{item.fee_type_name}</P></TableCell>
+                      <TableCell><P color="muted">{item.frequency}</P></TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
                         {item.frequency === 'Monthly' ? (item.applicable_months?.join(', ') || '—') : 'One-time'}
-                      </td>
-                      <td className="px-5 py-3 text-right font-medium text-foreground">
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
                         ₹{(parseFloat(item.amount) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-muted/20 border-t border-border/40">
-                    <td colSpan={4} className="px-5 py-3 text-sm font-semibold text-right text-foreground">Total</td>
-                    <td className="px-5 py-3 text-right font-bold text-primary">
-                      ₹{builderTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+                </TableBody>
+              </Table>
+              <Div type="row" justify="between" align="center" className="px-5 py-3 border-t border-border/40 bg-muted/20">
+                <P size="sm" weight="semibold">Total</P>
+                <P size="sm" weight="bold" color="primary">
+                  ₹{builderTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </P>
+              </Div>
             </SectionCard>
           )}
 
@@ -277,167 +274,158 @@ export default function FeeSetupPage() {
                 </Div>
               }
             >
-              <div className="flex min-h-[460px]">
+              <Div type="row" className="min-h-115">
 
                 {/* ── Left: palette ─────────────────────────────────── */}
-                <div className="w-60 shrink-0 flex flex-col border-r border-border/50 bg-muted/30">
-                  <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/40">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Palette</span>
+                <Div type="col" className="w-60 shrink-0 border-r border-border/50 bg-muted/30">
+                  <Div type="row" align="center" justify="between" className="px-4 pt-4 pb-3 border-b border-border/40">
+                    <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest">Palette</P>
                     {availableTypes.length > 0 && (
-                      <span className="text-[10px] tabular-nums text-muted-foreground/40">{availableTypes.length} available</span>
+                      <P size="xs" color="muted" className="tabular-nums">{availableTypes.length} available</P>
                     )}
-                  </div>
+                  </Div>
 
-                  <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5">
+                  <Div type="col" className="flex-1 overflow-y-auto p-3 gap-1.5">
                     {availableTypes.length === 0 ? (
-                      <div className="flex items-center justify-center h-full py-10">
-                        <span className="text-xs text-muted-foreground/40">All types added</span>
-                      </div>
+                      <Div type="col" align="center" justify="center" className="h-full py-10">
+                        <P size="xs" color="muted">All types added</P>
+                      </Div>
                     ) : availableTypes.map(s => (
-                      <div
+                      <Div
                         key={s.fee_type_id}
+                        type="row"
+                        className={draggingId === s.fee_type_id
+                          ? 'fee-type-source-item gap-2 p-2.5 rounded-lg border select-none transition-colors opacity-30 cursor-grabbing border-border/20 bg-transparent'
+                          : 'fee-type-source-item gap-2 p-2.5 rounded-lg border select-none transition-colors border-border/40 bg-card cursor-grab hover:border-border/70 hover:bg-card hover:shadow-sm'
+                        }
                         draggable
                         onDragStart={(e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.fee_type_id); }}
                         onDragEnd={() => setDraggingId(null)}
-                        className={cn(
-                          'fee-type-source-item flex items-start gap-2 p-2.5 rounded-lg border select-none transition-colors',
-                          draggingId === s.fee_type_id
-                            ? 'opacity-30 cursor-grabbing border-border/20 bg-transparent'
-                            : 'border-border/40 bg-card cursor-grab hover:border-border/70 hover:bg-card hover:shadow-sm'
-                        )}
                       >
                         <GripVertical className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                          <div className="flex items-start justify-between gap-1.5 min-w-0">
-                            <span className="text-[0.82rem] font-medium text-foreground truncate leading-snug">{s.fee_type_name}</span>
-                            <span className="text-[0.78rem] font-semibold text-foreground/70 tabular-nums shrink-0">
+                        <Div type="col" className="flex-1 min-w-0 gap-0.5">
+                          <Div type="row" justify="between" align="start" className="min-w-0 gap-1.5">
+                            <P size="sm" weight="medium" className="truncate leading-snug">{s.fee_type_name}</P>
+                            <P size="xs" weight="semibold" className="tabular-nums shrink-0">
                               {s.amount && parseFloat(s.amount) > 0
                                 ? `₹${parseFloat(s.amount).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`
                                 : '—'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className={cn(
-                              'text-[10px] font-medium px-1.5 py-0.5 rounded',
-                              s.frequency === 'Monthly'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
-                                : 'bg-muted text-muted-foreground'
-                            )}>
+                            </P>
+                          </Div>
+                          <Div type="row" className="gap-1.5">
+                            <Badge variant={s.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px]">
                               {s.frequency}
-                            </span>
+                            </Badge>
                             {s.frequency === 'Monthly' && s.applicable_months?.length && (
-                              <span className="text-[10px] text-muted-foreground/50">
+                              <P size="xs" color="muted">
                                 {s.applicable_months.length} months
-                              </span>
+                              </P>
                             )}
                             {!s.fee_type_active && (
-                              <span className="text-[10px] text-muted-foreground/40 italic">inactive</span>
+                              <P size="xs" color="muted" className="italic">inactive</P>
                             )}
-                          </div>
-                        </div>
-                      </div>
+                          </Div>
+                        </Div>
+                      </Div>
                     ))}
-                  </div>
-                </div>
+                  </Div>
+                </Div>
 
                 {/* ── Right: drop zone / builder ─────────────────────── */}
-                <div
-                  className={cn(
-                    'fee-drop-zone flex-1 flex flex-col min-w-0 transition-colors',
-                    dropZoneActive && 'fee-drop-zone--active bg-primary/[0.02]'
-                  )}
+                <Div
+                  type="col"
+                  className={dropZoneActive ? 'fee-drop-zone flex-1 min-w-0 transition-colors fee-drop-zone--active bg-primary/2' : 'fee-drop-zone flex-1 min-w-0 transition-colors'}
                   onDragOver={(e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropZoneActive(true); }}
                   onDragLeave={(e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropZoneActive(false); }}
                   onDrop={handleDrop}
                 >
                   {builderItems.length === 0 ? (
-                    <div className={cn(
-                      'fee-drop-empty flex flex-col items-center justify-center flex-1 m-5 rounded-xl border-2 border-dashed transition-colors gap-1',
-                      dropZoneActive ? 'border-primary/50 bg-primary/[0.03]' : 'border-border/25'
-                    )}>
-                      <span className={cn('text-sm font-medium transition-colors', dropZoneActive ? 'text-primary' : 'text-muted-foreground/30')}>
+                    <Div
+                      type="col"
+                      align="center"
+                      justify="center"
+                      className={dropZoneActive
+                        ? 'fee-drop-empty flex-1 m-5 rounded-xl border-2 border-dashed transition-colors gap-1 border-primary/50 bg-primary/3'
+                        : 'fee-drop-empty flex-1 m-5 rounded-xl border-2 border-dashed transition-colors gap-1 border-border/25'
+                      }
+                    >
+                      <P size="sm" weight="medium" className={dropZoneActive ? 'transition-colors text-primary' : 'transition-colors text-muted-foreground/30'}>
                         {dropZoneActive ? 'Release to add' : 'Drag fee types here'}
-                      </span>
+                      </P>
                       {!dropZoneActive && (
-                        <span className="text-xs text-muted-foreground/25">from the palette on the left</span>
+                        <P size="xs" color="muted">from the palette on the left</P>
                       )}
-                    </div>
+                    </Div>
                   ) : (
                     <>
                       {/* column headers */}
-                      <div className="grid grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 pt-4 pb-2.5 border-b border-border/40">
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 text-center">#</span>
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Fee Type</span>
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Schedule</span>
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 text-right">Amount (₹)</span>
-                        <span />
-                      </div>
+                      <Div type="row" className="grid grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 pt-4 pb-2.5 border-b border-border/40">
+                        <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest text-center">#</P>
+                        <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest">Fee Type</P>
+                        <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest">Schedule</P>
+                        <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest text-right">Amount (₹)</P>
+                        <Div />
+                      </Div>
 
                       {/* rows */}
-                      <div className="flex-1 divide-y divide-border/20 overflow-y-auto">
+                      <Div type="col" className="flex-1 divide-y divide-border/20 overflow-y-auto">
                         {builderItems.map((item, idx) => (
-                          <div
+                          <Div
                             key={item.fee_type_id}
+                            type="row"
                             className="fee-structure-row group grid grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 py-3"
                           >
-                            <span className="text-[11px] text-muted-foreground/35 font-medium text-center tabular-nums">{idx + 1}</span>
-                            <div className="min-w-0">
-                              <p className="text-[0.83rem] font-medium text-foreground truncate leading-snug">{item.fee_type_name}</p>
-                              <p className="text-[0.75rem] text-muted-foreground/50 leading-snug">
+                            <P size="xs" weight="medium" color="muted" className="text-center tabular-nums">{idx + 1}</P>
+                            <Div type="col" className="min-w-0">
+                              <P size="sm" weight="medium" className="truncate leading-snug">{item.fee_type_name}</P>
+                              <P size="xs" color="muted" className="leading-snug">
                                 {item.frequency === 'Monthly'
                                   ? (item.applicable_months?.length ? item.applicable_months.join(', ') : 'Monthly')
                                   : 'One-time payment'}
-                              </p>
-                            </div>
-                            <div>
-                              <span className={cn(
-                                'text-[10px] font-medium px-2 py-1 rounded',
-                                item.frequency === 'Monthly'
-                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
-                                  : 'bg-muted text-muted-foreground'
-                              )}>
-                                {item.frequency === 'Monthly'
-                                  ? `Monthly · ${item.applicable_months?.length ?? 0} mo`
-                                  : 'One-time'}
-                              </span>
-                            </div>
-                            <input
+                              </P>
+                            </Div>
+                            <Badge variant={item.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px] w-fit">
+                              {item.frequency === 'Monthly'
+                                ? `Monthly · ${item.applicable_months?.length ?? 0} mo`
+                                : 'One-time'}
+                            </Badge>
+                            <Input
                               type="number" min="0" step="0.01"
-                              className="w-full rounded-md border border-border/40 bg-background px-2.5 py-1.5 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary/40 transition-colors"
+                              className="text-right tabular-nums"
                               value={item.amount}
                               onChange={e => updateBuilderAmount(item.fee_type_id, e.target.value)}
                               placeholder="0.00"
                             />
-                            <div className="flex justify-center">
+                            <Div type="row" justify="center">
                               <Button variant="ghost" size="icon-sm"
                                 className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
                                 onClick={() => removeFromBuilder(item.fee_type_id)}>
                                 <X className="w-3.5 h-3.5" />
                               </Button>
-                            </div>
-                          </div>
+                            </Div>
+                          </Div>
                         ))}
-                      </div>
+                      </Div>
 
                       {dropZoneActive && (
-                        <div className="fee-drop-indicator mx-5 mb-2 flex items-center justify-center h-10 rounded-lg border border-dashed border-primary/40 bg-primary/[0.02]">
-                          <span className="text-xs text-primary/60 font-medium">Release to add</span>
-                        </div>
+                        <Div type="row" align="center" justify="center" className="fee-drop-indicator mx-5 mb-2 h-10 rounded-lg border border-dashed border-primary/40 bg-primary/2">
+                          <P size="xs" weight="medium" className="text-primary/60">Release to add</P>
+                        </Div>
                       )}
 
                       {/* total */}
-                      <div className="fee-structure-total flex items-center justify-between px-5 py-3.5 border-t border-border/40 bg-muted/20">
-                        <span className="text-xs text-muted-foreground/50">
+                      <Div type="row" justify="between" align="center" className="fee-structure-total px-5 py-3.5 border-t border-border/40 bg-muted/20">
+                        <P size="xs" color="muted">
                           {builderItems.length} fee{builderItems.length !== 1 ? 's' : ''} configured
-                        </span>
-                        <span className="text-sm font-semibold text-foreground tabular-nums">
+                        </P>
+                        <P size="sm" weight="semibold" className="tabular-nums">
                           ₹{builderTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
+                        </P>
+                      </Div>
                     </>
                   )}
-                </div>
-              </div>
+                </Div>
+              </Div>
             </SectionCard>
           )}
         </Div>

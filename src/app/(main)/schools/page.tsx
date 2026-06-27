@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { SCHOOLS_PAGE, CREATE_SCHOOL_FORM, BOARD_TYPES } from '@/constants';
 import { Role } from '@/types';
 import { useSchools } from '@/hooks/useSchools';
@@ -7,10 +8,21 @@ import { useAuthStore } from '@/store/auth.store';
 import {
   Div, P, Button, Input, Select,
   PageHeader, PageCol, FilterBar,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
+  DataTable,
   Modal, ModalBody, ModalFooter, FormField,
   Badge, Spinner,
+  type ColumnDef,
 } from '@/components/ui';
+
+type SchoolRow = {
+  id: string;
+  name: string;
+  code?: string;
+  board_type?: string;
+  city?: string;
+  is_active: boolean;
+  created_at: string;
+};
 
 export default function SchoolsPage() {
   const {
@@ -23,6 +35,70 @@ export default function SchoolsPage() {
 
   const user = useAuthStore((s) => s.user);
   const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
+
+  const columns = useMemo<ColumnDef<SchoolRow>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: SCHOOLS_PAGE.table.name,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "code",
+        header: SCHOOLS_PAGE.table.code,
+        cell: ({ row }) => row.original.code ?? '—',
+      },
+      {
+        accessorKey: "board_type",
+        header: SCHOOLS_PAGE.table.board,
+        cell: ({ row }) => row.original.board_type ?? '—',
+      },
+      {
+        accessorKey: "city",
+        header: SCHOOLS_PAGE.table.city,
+        cell: ({ row }) => row.original.city ?? '—',
+      },
+      {
+        accessorKey: "is_active",
+        header: SCHOOLS_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_active ? 'success' : 'default'}>
+            {row.original.is_active ? SCHOOLS_PAGE.status.active : SCHOOLS_PAGE.status.inactive}
+          </Badge>
+        ),
+      },
+      {
+        id: "created_date",
+        header: SCHOOLS_PAGE.table.created,
+        cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString(),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <Div type="row" gap="sm">
+            <Button
+              size="sm"
+              onClick={() => loginAsSchool(row.original as any)}
+              loading={switchingId === row.original.id}
+              disabled={!row.original.is_active}
+            >
+              Login
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openEditModal(row.original as any)}>
+              Edit
+            </Button>
+            {isSuperAdmin && (
+              <Button size="sm" variant="ghost" onClick={() => deleteSchool(row.original as any)}>
+                Delete
+              </Button>
+            )}
+          </Div>
+        ),
+      },
+    ],
+    [isSuperAdmin, switchingId, loginAsSchool, openEditModal, deleteSchool]
+  );
 
   return (
     <PageCol>
@@ -42,69 +118,18 @@ export default function SchoolsPage() {
         />
       </FilterBar>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{SCHOOLS_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{SCHOOLS_PAGE.table.code}</TableHeaderCell>
-            <TableHeaderCell>{SCHOOLS_PAGE.table.board}</TableHeaderCell>
-            <TableHeaderCell>{SCHOOLS_PAGE.table.city}</TableHeaderCell>
-            <TableHeaderCell>{SCHOOLS_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{SCHOOLS_PAGE.table.created}</TableHeaderCell>
-            <TableHeaderCell>Actions</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-          ) : schools.length === 0 ? (
-            <TableEmptyRow colSpan={7}>{SCHOOLS_PAGE.empty}</TableEmptyRow>
-          ) : (
-            schools.map((school) => (
-              <TableRow key={school.id}>
-                <TableCell primary>{school.name}</TableCell>
-                <TableCell>{school.code ?? '—'}</TableCell>
-                <TableCell>{school.board_type ?? '—'}</TableCell>
-                <TableCell>{school.city ?? '—'}</TableCell>
-                <TableCell>
-                  <Badge variant={school.is_active ? 'success' : 'default'}>
-                    {school.is_active ? SCHOOLS_PAGE.status.active : SCHOOLS_PAGE.status.inactive}
-                  </Badge>
-                </TableCell>
-                <TableCell>{new Date(school.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Div type="row" gap="sm">
-                    <Button
-                      size="sm"
-                      onClick={() => loginAsSchool(school)}
-                      loading={switchingId === school.id}
-                      disabled={!school.is_active}
-                    >
-                      Login
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => openEditModal(school)}>
-                      Edit
-                    </Button>
-                    {isSuperAdmin && (
-                      <Button size="sm" variant="ghost" onClick={() => deleteSchool(school)}>
-                        Delete
-                      </Button>
-                    )}
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={schools.map((school) => ({
+          ...school,
+          code: school.code ?? undefined,
+          board_type: school.board_type ?? undefined,
+          city: school.city ?? undefined,
+        }))}
+        isLoading={isLoading}
+        emptyText={SCHOOLS_PAGE.empty}
+        pagination={pagination ?? undefined}
+      />
 
       {/* Create Modal */}
       {showCreateModal && (
