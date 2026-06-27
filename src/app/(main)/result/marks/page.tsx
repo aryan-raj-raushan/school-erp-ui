@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Suspense, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Save,
@@ -9,12 +9,12 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
-} from 'lucide-react';
-import { useExamResults } from '@/hooks/result/useExamResults';
-import { useAcademicClassSection } from '@/hooks/useAcademicClassSection';
-import { useExams } from '@/hooks/exam/useExams';
-import { useStudents } from '@/hooks/useStudents';
-import { PageHeader } from '@/components/ui/page-header';
+} from "lucide-react";
+import { useExamResults } from "@/hooks/result/useExamResults";
+import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
+import { useExams } from "@/hooks/exam/useExams";
+import { useStudents } from "@/hooks/useStudents";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   H3,
@@ -31,11 +31,11 @@ import {
   DataTable,
   type ColumnDef,
   PageCol,
-} from '@/components/ui';
+} from "@/components/ui";
 import {
   RESULT_MARKS_PAGE,
   EXAM_TERM_LABELS,
-} from '@/constants/result.constants';
+} from "@/constants/result.constants";
 
 type StudentMarksEntry = {
   student_id: string;
@@ -78,12 +78,14 @@ function ConfirmModal({
   );
 }
 
-// ── Main content ──────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 function MarksContent() {
-  const router = useRouter();
-  const [confirmAction, setConfirmAction] = useState<'publish' | 'unpublish' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "publish" | "unpublish" | null
+  >(null);
 
+  // ── Academic year / class / section selectors ─────────────────────────────
   const {
     years,
     classes,
@@ -97,11 +99,19 @@ function MarksContent() {
     isLoadingClasses,
   } = useAcademicClassSection();
 
+  // ── Exams filtered by year + class ────────────────────────────────────────
+  const { exams } = useExams({
+    academic_year_id: selectedAcademicYearId || undefined,
+    class_id: selectedClassId || undefined,
+  });
+
+  // ── Mark-entry hook (schedules + saved marks + grid state) ────────────────
   const {
+    results,
     schedules,
     studentEntries,
-    isLoading,
     isLoadingSchedules,
+    isLoadingResults,
     isSaving,
     isPublishing,
     isDirty,
@@ -109,18 +119,14 @@ function MarksContent() {
     filterForm,
     examId,
     classId,
+    buildGrid,
     updateMark,
     saveMarks,
     togglePublish,
   } = useExamResults();
 
   const { register, setValue, watch } = filterForm;
-  const watchedExamId = watch('exam_id');
-
-  const { exams } = useExams({
-    academic_year_id: selectedAcademicYearId,
-    class_id: selectedClassId,
-  });
+  const watchedExamId = watch("exam_id");
 
   const { students } = useStudents(
     selectedClassId && selectedAcademicYearId
@@ -132,49 +138,53 @@ function MarksContent() {
       : {},
   );
 
-  // Sync ACS selections into the filter form
+  // ── Rebuild the grid whenever students OR saved marks change ──────────────
+  useEffect(() => {
+    buildGrid(students, results);
+  }, [students, results]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sync ACS → filter form ────────────────────────────────────────────────
   function onYearChange(yearId: string) {
     setSelectedAcademicYearId(yearId);
-    setValue('academic_year_id', yearId);
-    setValue('class_id', '');
-    setValue('exam_id', '');
-    handleClassChange('');
+    setValue("academic_year_id", yearId);
+    handleClassChange("");
+    setValue("class_id", "");
+    setValue("section_id", "");
+    setValue("exam_id", "");
   }
 
   function onClassChange(cId: string) {
     handleClassChange(cId);
-    setValue('class_id', cId);
-    setValue('exam_id', '');
+    setValue("class_id", cId);
+    setValue("section_id", "");
+    setValue("exam_id", "");
   }
 
   function onSectionChange(sId: string) {
     handleSectionChange(sId);
-    setValue('section_id', sId);
+    setValue("section_id", sId);
   }
+
+  const noSelection = !examId || !classId;
+  const isTableBusy = isLoadingSchedules || isLoadingResults;
 
   // Parent schedules only (no sub-subjects as columns — they group under parent)
   const parentSchedules = schedules.filter((s) => !s.parent_schedule_id);
-
-  // Build a map: student_id → student for subject_id lookup during save
-  const studentSubjectMap = students.map((s) => ({
-    student_id: s.id,
-    subject_id: '',
-  }));
 
   // Dynamic columns: static columns + schedule columns
   const columns = useMemo<ColumnDef<StudentMarksEntry>[]>(() => {
     const baseCols: ColumnDef<StudentMarksEntry>[] = [
       {
-        id: 'index',
+        id: "index",
         header: RESULT_MARKS_PAGE.table.sno,
         cell: ({ row }) => row.index + 1,
       },
       {
-        accessorKey: 'roll_number',
+        accessorKey: "roll_number",
         header: RESULT_MARKS_PAGE.table.rollNo,
       },
       {
-        accessorKey: 'student_name',
+        accessorKey: "student_name",
         header: RESULT_MARKS_PAGE.table.studentName,
         meta: { primary: true },
       },
@@ -219,14 +229,14 @@ function MarksContent() {
                     max={schedule.exam_marks}
                     width="xs"
                     placeholder="—"
-                    value={marksVal ?? ''}
+                    value={marksVal ?? ""}
                     className="text-center"
                     onChange={(e) => {
                       const v = e.target.value;
                       updateMark(
                         row.original.student_id,
                         schedule.id,
-                        v === '' ? null : parseFloat(v),
+                        v === "" ? null : parseFloat(v),
                         false,
                       );
                     }}
@@ -264,33 +274,38 @@ function MarksContent() {
                 {isDirty && (
                   <Button
                     size="sm"
-                    onClick={() => saveMarks(studentSubjectMap)}
+                    onClick={() =>
+                      saveMarks({
+                        examId: watchedExamId,
+                        classId: selectedClassId,
+                        sectionId: selectedSectionId,
+                        academicYearId: selectedAcademicYearId,
+                      })
+                    }
                     loading={isSaving}
                   >
-                    <Save size={14} />
-                    {RESULT_MARKS_PAGE.buttons.saveMarks}
+                    <Save size={14} /> {RESULT_MARKS_PAGE.buttons.saveMarks}
                   </Button>
                 )}
                 {isPublished ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setConfirmAction('unpublish')}
                     loading={isPublishing}
+                    onClick={() => setConfirmAction("unpublish")}
                   >
-                    <EyeOff size={14} />
+                    <EyeOff size={14} />{" "}
                     {RESULT_MARKS_PAGE.buttons.unpublishResult}
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setConfirmAction('publish')}
                     loading={isPublishing}
                     disabled={studentEntries.length === 0}
+                    onClick={() => setConfirmAction("publish")}
                   >
-                    <Eye size={14} />
-                    {RESULT_MARKS_PAGE.buttons.publishResult}
+                    <Eye size={14} /> {RESULT_MARKS_PAGE.buttons.publishResult}
                   </Button>
                 )}
               </>
@@ -300,12 +315,15 @@ function MarksContent() {
       />
 
       {/* ── Filters ── */}
-      <Div className="rounded-xl border border-border bg-card p-5" type="col" gap="md">
+      <Div
+        className="rounded-xl border border-border bg-card p-5"
+        type="col"
+        gap="md"
+      >
         <H3 className="text-xs font-semibold uppercase tracking-wider">
           Select Exam &amp; Class
         </H3>
         <Div type="row" gap="md" wrap align="end">
-          {/* Academic Year */}
           <FormField label="Academic Year">
             <Select
               width="sm"
@@ -321,7 +339,6 @@ function MarksContent() {
             </Select>
           </FormField>
 
-          {/* Class */}
           <FormField label="Class">
             <Select
               width="sm"
@@ -338,7 +355,6 @@ function MarksContent() {
             </Select>
           </FormField>
 
-          {/* Section */}
           <FormField label="Section">
             <Select
               width="sm"
@@ -346,7 +362,9 @@ function MarksContent() {
               onChange={(e) => onSectionChange(e.target.value)}
               disabled={!selectedClassId}
             >
-              <option value="">{RESULT_MARKS_PAGE.filters.selectSection}</option>
+              <option value="">
+                {RESULT_MARKS_PAGE.filters.selectSection}
+              </option>
               {sections.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -355,13 +373,11 @@ function MarksContent() {
             </Select>
           </FormField>
 
-          {/* Exam */}
           <FormField label="Exam">
             <Select
               width="md"
               value={watchedExamId}
-              {...register('exam_id')}
-              onChange={(e) => setValue('exam_id', e.target.value)}
+              onChange={(e) => setValue("exam_id", e.target.value)}
               disabled={!selectedClassId}
             >
               <option value="">{RESULT_MARKS_PAGE.filters.selectExam}</option>
@@ -375,7 +391,7 @@ function MarksContent() {
         </Div>
       </Div>
 
-      {/* ── Status banner ── */}
+      {/* ── Banners ── */}
       {examId && classId && isPublished && (
         <Div
           type="row"
@@ -405,7 +421,7 @@ function MarksContent() {
       )}
 
       {/* ── Mark Entry Table ── */}
-      {!watchedExamId || !selectedClassId ? (
+      {noSelection ? (
         <Div
           type="col"
           gap="sm"
@@ -415,11 +431,11 @@ function MarksContent() {
           <BookOpen size={32} className="text-muted-foreground/40" />
           <P color="muted">{RESULT_MARKS_PAGE.table.noEntry}</P>
         </Div>
-      ) : isLoadingSchedules || isLoading ? (
+      ) : isTableBusy ? (
         <Div type="row" justify="center" className="py-20">
           <Spinner size="lg" />
         </Div>
-      ) : parentSchedules.length === 0 ? (
+      ) : schedules.length === 0 ? (
         <Div
           type="col"
           gap="sm"
@@ -430,9 +446,9 @@ function MarksContent() {
         </Div>
       ) : (
         <Div type="col" gap="sm">
-          {/* Schedule info pills */}
+          {/* Subject pills */}
           <Div type="row" gap="sm" wrap>
-            {parentSchedules.map((s) => (
+            {schedules.map((s) => (
               <Div
                 key={s.id}
                 type="row"
@@ -440,41 +456,54 @@ function MarksContent() {
                 align="center"
                 className="rounded-full border border-border bg-muted/40 px-3 py-1"
               >
-                <Div className="text-xs font-medium text-foreground">{s.subject_name}</Div>
+                <Div className="text-xs font-medium text-foreground">
+                  {s.subject_name}
+                </Div>
                 <Div className="text-xs text-muted-foreground">
-                  ({RESULT_MARKS_PAGE.subjectTypes[s.subject_type] ?? s.subject_type} / {s.exam_marks})
+                  (
+                  {RESULT_MARKS_PAGE.subjectTypes[s.subject_type] ??
+                    s.subject_type}{" "}
+                  / {s.exam_marks})
                 </Div>
               </Div>
             ))}
           </Div>
 
-            <DataTable
+          <DataTable
             columns={columns}
-            data={studentEntries.map(s => ({
+            data={studentEntries.map((s) => ({
               ...s,
               roll_number: s.roll_number ?? "",
-              marks: Object.entries(s.marks).reduce((acc, [key, val]) => ({
-                ...acc,
-                [key]: {
-                  marks_obtained: val.marks_obtained ?? undefined,
-                  is_absent: val.is_absent,
-                }
-              }), {} as Record<string, { marks_obtained?: number; is_absent: boolean }>),
+              marks: Object.entries(s.marks).reduce(
+                (acc, [key, val]) => ({
+                  ...acc,
+                  [key]: {
+                    marks_obtained: val.marks_obtained ?? undefined,
+                    is_absent: val.is_absent,
+                  },
+                }),
+                {} as Record<string, { marks_obtained?: number; is_absent: boolean }>
+              ),
             }))}
-            isLoading={isLoading}
+            isLoading={isTableBusy}
             emptyText="No students found"
           />
 
-          {/* Footer save */}
           {studentEntries.length > 0 && (
             <Div type="row" justify="end">
               <Button
-                onClick={() => saveMarks(studentSubjectMap)}
+                onClick={() =>
+                  saveMarks({
+                    examId: watchedExamId,
+                    classId: selectedClassId,
+                    sectionId: selectedSectionId,
+                    academicYearId: selectedAcademicYearId,
+                  })
+                }
                 loading={isSaving}
                 disabled={!isDirty}
               >
-                <Save size={14} />
-                {RESULT_MARKS_PAGE.buttons.saveMarks}
+                <Save size={14} /> {RESULT_MARKS_PAGE.buttons.saveMarks}
               </Button>
             </Div>
           )}
@@ -482,7 +511,7 @@ function MarksContent() {
       )}
 
       {/* ── Confirm modals ── */}
-      {confirmAction === 'publish' && (
+      {confirmAction === "publish" && (
         <ConfirmModal
           title={RESULT_MARKS_PAGE.confirmPublish.title}
           description={RESULT_MARKS_PAGE.confirmPublish.description}
@@ -495,7 +524,7 @@ function MarksContent() {
           isLoading={isPublishing}
         />
       )}
-      {confirmAction === 'unpublish' && (
+      {confirmAction === "unpublish" && (
         <ConfirmModal
           title={RESULT_MARKS_PAGE.confirmUnpublish.title}
           description={RESULT_MARKS_PAGE.confirmUnpublish.description}

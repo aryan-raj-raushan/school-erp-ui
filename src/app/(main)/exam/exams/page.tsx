@@ -26,6 +26,9 @@ import {
   EXAM_TERM_OPTIONS,
 } from "@/constants/exam.constants";
 
+// A "group" is all sibling exam rows (same name + term + year across classes)
+type ExamGroup = Exam[];
+
 function ExamsContent() {
   const router = useRouter();
   const {
@@ -45,7 +48,23 @@ function ExamsContent() {
     setSelectedAcademicYearId,
     selectedClassId,
     handleClassChange,
-  } = useAcademicClassSection({ autoSelectCurrentYear: false });
+  } = useAcademicClassSection({ autoSelectCurrentYear: true });
+
+  const classNameById = useMemo(
+    () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
+    [classes],
+  );
+
+  // Group sibling exams (same name+term+year = one logical exam across classes)
+  const examGroups = useMemo(() => {
+    const groups = new Map<string, Exam[]>();
+    exams.forEach((e) => {
+      const key = `${e.exam_name}||${e.exam_term}||${e.academic_year_id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(e);
+    });
+    return [...groups.values()];
+  }, [exams]);
 
   function handleYearChange(val: string) {
     setSelectedAcademicYearId(val);
@@ -58,7 +77,15 @@ function ExamsContent() {
     updateFilters({ class_id: val || undefined });
   }
 
-  const columns = useMemo<ColumnDef<Exam>[]>(
+  async function removeGroup(group: ExamGroup) {
+    for (const e of group) await remove(e.id);
+  }
+
+  async function togglePublishGroup(group: ExamGroup, publish: boolean) {
+    for (const e of group) await togglePublish(e.id, publish);
+  }
+
+  const columns = useMemo<ColumnDef<ExamGroup>[]>(
     () => [
       {
         id: "index",
@@ -66,97 +93,115 @@ function ExamsContent() {
         cell: ({ row }) => row.index + 1,
       },
       {
-        accessorKey: "exam_name",
+        id: "exam_name",
         header: EXAMS_PAGE.table.examName,
         meta: { primary: true },
+        cell: ({ row }) => row.original[0].exam_name,
       },
       {
-        accessorKey: "exam_term",
+        id: "exam_term",
         header: EXAMS_PAGE.table.term,
         cell: ({ row }) => (
-          <Badge variant="info">{row.original.exam_term}</Badge>
+          <Badge variant="info">{row.original[0].exam_term}</Badge>
         ),
       },
       {
-        accessorKey: "start_date",
+        id: "classes",
+        header: "Classes",
+        cell: ({ row }) => (
+          <Div type="row" gap="xs" wrap>
+            {row.original.map((e) => (
+              <Badge key={e.id} variant="default">
+                {classNameById[e.class_id] ?? e.class_id.slice(0, 6)}
+              </Badge>
+            ))}
+          </Div>
+        ),
+      },
+      {
+        id: "start_date",
         header: EXAMS_PAGE.table.startDate,
+        cell: ({ row }) => row.original[0].start_date,
       },
       {
-        accessorKey: "end_date",
+        id: "end_date",
         header: EXAMS_PAGE.table.endDate,
+        cell: ({ row }) => row.original[0].end_date,
       },
       {
-        accessorKey: "is_published",
+        id: "is_published",
         header: EXAMS_PAGE.table.published,
-        cell: ({ row }) => (
-          <Badge variant={row.original.is_published ? "success" : "warning"}>
-            {row.original.is_published ? "Published" : "Draft"}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const isPublished = row.original.every((e) => e.is_published);
+          return (
+            <Badge variant={isPublished ? "success" : "warning"}>
+              {isPublished ? "Published" : "Draft"}
+            </Badge>
+          );
+        },
       },
       {
-        accessorKey: "is_enabled",
+        id: "is_enabled",
         header: EXAMS_PAGE.table.status,
-        cell: ({ row }) => (
-          <Badge variant={row.original.is_enabled ? "success" : "default"}>
-            {row.original.is_enabled ? "Active" : "Disabled"}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const isEnabled = row.original.every((e) => e.is_enabled);
+          return (
+            <Badge variant={isEnabled ? "success" : "default"}>
+              {isEnabled ? "Active" : "Disabled"}
+            </Badge>
+          );
+        },
       },
       {
         id: "actions",
         header: EXAMS_PAGE.table.actions,
-        cell: ({ row }) => (
-          <Div type="row" gap="xs">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title="Edit"
-              onClick={() =>
-                router.push(EXAM_ROUTES.exams.edit(row.original.id))
-              }
-            >
-              <Pencil size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title={
-                row.original.is_published ? "Unpublish" : "Publish"
-              }
-              onClick={() =>
-                togglePublish(
-                  row.original.id,
-                  !row.original.is_published,
-                )
-              }
-            >
-              {row.original.is_published ? (
-                <Send size={14} className="text-amber-500" />
-              ) : (
-                <SendHorizonal size={14} className="text-emerald-500" />
-              )}
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              title="Delete"
-              onClick={() => remove(row.original.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Div>
-        ),
+        cell: ({ row }) => {
+          const group = row.original;
+          const rep = group[0];
+          const isPublished = group.every((e) => e.is_published);
+          return (
+            <Div type="row" gap="xs">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                title="Edit"
+                onClick={() => router.push(EXAM_ROUTES.exams.edit(rep.id))}
+              >
+                <Pencil size={14} />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                title={isPublished ? "Unpublish" : "Publish"}
+                onClick={() => togglePublishGroup(group, !isPublished)}
+              >
+                {isPublished ? (
+                  <Send size={14} className="text-amber-500" />
+                ) : (
+                  <SendHorizonal size={14} className="text-emerald-500" />
+                )}
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="destructive"
+                title="Delete"
+                onClick={() => removeGroup(group)}
+              >
+                <Trash2 size={14} />
+              </Button>
+            </Div>
+          );
+        },
       },
     ],
-    [router, togglePublish, remove],
+    [router, classNameById, togglePublishGroup, removeGroup],
   );
 
   return (
     <PageCol>
       <PageHeader
         title={EXAMS_PAGE.pageHeading.title}
-        subtitle={pagination ? `${pagination.total} exams` : ""}
+        subtitle={examGroups.length ? `${examGroups.length} exam${examGroups.length > 1 ? "s" : ""}` : ""}
         actions={
           <Button onClick={() => router.push(EXAM_ROUTES.exams.create)}>
             <Plus size={16} /> {EXAMS_PAGE.buttons.add}
@@ -232,7 +277,7 @@ function ExamsContent() {
 
       <DataTable
         columns={columns}
-        data={exams}
+        data={examGroups}
         isLoading={isLoading}
         emptyText={EXAMS_PAGE.table.noEntry}
         pagination={pagination ?? undefined}

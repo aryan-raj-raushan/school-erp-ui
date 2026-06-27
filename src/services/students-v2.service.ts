@@ -103,6 +103,33 @@ export type UpdateStudentPayload = Partial<CreateStudentPayload>;
 
 
 
+export interface GuardianRow {
+  id: string;
+  student_id: string;
+  student_name: string;
+  relation: string;
+  first_name: string;
+  last_name: string | null;
+  phone_number: string;
+  dial_code: string | null;
+  email: string | null;
+  occupation: string | null;
+  is_primary: boolean;
+  can_pickup: boolean;
+}
+
+export interface AddGuardianPayload {
+  relation: string;
+  first_name: string;
+  last_name?: string;
+  phone_number: string;
+  dial_code?: string;
+  email?: string;
+  occupation?: string;
+  is_primary?: boolean;
+  can_pickup?: boolean;
+}
+
 // ─── Service ───────────────────────────────────────────────────────────────────
 
 export const StudentsService = {
@@ -161,6 +188,20 @@ export const StudentsService = {
   async getPickupCardData(id: string): Promise<PickupCardData> {
     const res = await apiGateway.get<PickupCardData>(ENDPOINTS.student.pickupCard(id));
     return res.data;
+  },
+
+  async listAllGuardians(params: { search?: string } = {}): Promise<GuardianRow[]> {
+    const res = await apiGateway.get<GuardianRow[]>(ENDPOINTS.student.guardiansAll, { params });
+    return res.data;
+  },
+
+  async addGuardian(studentId: string, payload: AddGuardianPayload): Promise<unknown> {
+    const res = await apiGateway.post(ENDPOINTS.student.guardians(studentId), payload);
+    return res.data;
+  },
+
+  async removeGuardian(guardianId: string): Promise<void> {
+    await apiGateway.delete(ENDPOINTS.student.guardian(guardianId));
   },
 
   async uploadProfileImage(file: File, studentId: string): Promise<{ url: string; s3Key: string }> {

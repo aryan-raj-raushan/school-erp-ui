@@ -15,7 +15,7 @@ import type { Class } from '@/types';
 const createSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().max(20).optional(),
-  class_id: z.string().optional(),
+  class_ids: z.array(z.string()).optional(),
   class_detail_id: z.string().optional(),
   display_order: z.coerce.number().int().min(0),
   total_marks: z.coerce.number().int().min(0),
@@ -34,10 +34,8 @@ export function useCreateSubject() {
 
   const form = useForm<CreateSubjectFormValues>({
     resolver: zodResolver(createSubjectSchema) as any,
-    defaultValues: { display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
+    defaultValues: { class_ids: [], display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
   });
-
-  const watchedClassId = form.watch('class_id');
 
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
@@ -48,20 +46,22 @@ export function useCreateSubject() {
     finally { setIsLoadingData(false); }
   }, []);
 
-  const fetchClassDetails = useCallback(async (classId: string) => {
-    if (!classId) { setClassDetails([]); return; }
+  const fetchClassDetails = useCallback(async (classIds: string[]) => {
+    if (!classIds.length) { setClassDetails([]); return; }
     try {
-      const res = await ClassDetailsService.list({ class_id: classId, limit: 100 });
+      const res = await ClassDetailsService.list({ class_id: classIds[0], limit: 100 });
       setClassDetails(res.items);
     } catch { /* ignore */ }
   }, []);
 
+  const watchedClassIds = form.watch('class_ids');
+
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
-    fetchClassDetails(watchedClassId ?? '');
+    fetchClassDetails(watchedClassIds ?? []);
     form.setValue('class_detail_id', '');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedClassId]);
+  }, [JSON.stringify(watchedClassIds)]);
 
   function toggleIsElective() { form.setValue('is_elective', !form.getValues('is_elective')); }
   function toggleIsActive() { form.setValue('is_active', !form.getValues('is_active')); }
@@ -71,7 +71,7 @@ export function useCreateSubject() {
       const subject = await SubjectsService.create({
         name: values.name,
         code: values.code || undefined,
-        class_id: values.class_id || undefined,
+        class_ids: values.class_ids?.length ? values.class_ids : undefined,
         class_detail_id: values.class_detail_id || undefined,
         display_order: values.display_order,
         total_marks: values.total_marks,

@@ -1,7 +1,7 @@
 'use client';
 
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
-import { RESULT_ENDPOINTS } from '@/lib/api-gateway/endpoints';
+import { RESULT_ENDPOINTS, EXAM_ENDPOINTS } from '@/lib/api-gateway/endpoints';
 import type {
   ExamResultRow,
   ExamResultFilters,
@@ -42,11 +42,16 @@ export const ExamResultsService = {
     await apiGateway.patch(RESULT_ENDPOINTS.examResults.publish, payload);
   },
 
+  // Uses the schedules LIST endpoint filtered by exam_id — NOT /schedules/:id
   async getSchedules(examId: string): Promise<ExamScheduleItem[]> {
     const res = await apiGateway.get<ExamScheduleItem[]>(
-      RESULT_ENDPOINTS.examSchedules.byExam(examId),
+      EXAM_ENDPOINTS.schedules.list,
+      { params: { exam_id: examId } },
     );
-    return res.data;
+    // res.data may be a paginated wrapper or a flat array depending on the gateway
+    // The list endpoint returns items inside pagination so unwrap if needed
+    const raw = res.data as any;
+    return Array.isArray(raw) ? raw : (raw?.items ?? raw);
   },
 };
 

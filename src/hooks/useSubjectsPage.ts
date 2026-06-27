@@ -67,14 +67,15 @@ export function useSubjectsPage() {
   function navigateToNew() { router.push(ROUTES.subjectNew); }
   function navigateToEdit(id: string) { router.push(ROUTES.subjectEdit(id)); }
 
-  function getClassName(classId?: string | null) {
-    return classes.find((c) => c.id === classId)?.name ?? '—';
+  function getClassNames(classIds: string[]): string {
+    if (!classIds.length) return '—';
+    return classIds.map((id) => classes.find((c) => c.id === id)?.name ?? id).join(', ');
   }
 
   return {
     subjects, classes, classDetails, isLoading,
     filterClassId, setFilterClassId,
     filterClassDetailId, setFilterClassDetailId,
-    removeSubject, navigateToNew, navigateToEdit, getClassName,
+    removeSubject, navigateToNew, navigateToEdit, getClassNames,
   };
 }

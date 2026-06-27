@@ -188,16 +188,6 @@ export const ENDPOINTS = {
       `/mark-sheet/student/${studentId}/annual`,
     markSheetClassAnnual: "/mark-sheet/class/annual",
   },
-  parent: {
-    list: "/parent",
-    bulkTemplate: "/parent/bulk/template",
-    bulkImport: "/parent/bulk/import",
-    bulkStatus: (jobId: string) => `/parent/bulk/status/${jobId}`,
-    studentDetail: (id: string) => `/parent/student-detail/${id}`,
-    byId: (id: string) => `/parent/${id}`,
-    linkStudent: (id: string, studentId: string) =>
-      `/parent/${id}/link-student/${studentId}`,
-  },
   timetable: {
     list: "/timetable",
     byId: (id: string) => `/timetable/${id}`,
@@ -249,6 +239,9 @@ export const ENDPOINTS = {
       `/students/${id}/documents/${docId}`,
     idCard: (id: string) => `/students/${id}/id-card`,
     pickupCard: (id: string) => `/students/${id}/pickup-card`,
+    guardiansAll: "/students/guardians/all",
+    guardians: (studentId: string) => `/students/${studentId}/guardians`,
+    guardian: (guardianId: string) => `/students/guardians/${guardianId}`,
   },
   financeAccounts: {
     list: "/finance/accounts",
@@ -347,6 +340,8 @@ export const EXAM_ENDPOINTS = {
     list: "/exam/sitting-plans",
     byId: (id: string) => `/exam/sitting-plans/${id}`,
     bulk: "/exam/sitting-plans/bulk",
+    autoShuffle: "/exam/sitting-plans/auto-shuffle",
+    roomPdf: "/exam/sitting-plans/room-pdf",
   },
   admitCard: {
     data: "/exam/admit-card/data",

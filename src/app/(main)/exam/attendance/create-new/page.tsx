@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, CheckCheck, XCircle, Download } from "lucide-react";
-import { useMarkAttendance } from "@/hooks/exam/useExamAttendance";
+import { useMarkAttendance, type AttendanceSource } from "@/hooks/exam/useExamAttendance";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useExamAttendanceCard } from "@/hooks/exam/useExamAttendanceCard";
@@ -31,8 +31,15 @@ type AttendanceRow = {
   student_id: string;
   student_name: string;
   roll_number?: string;
-  entries: Record<string, AttendanceStatus>;
+  entries: Record<string, { status: AttendanceStatus; source: AttendanceSource }>;
 };
+
+function fmtDate(iso: string) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 
 function MarkAttendanceContent() {
   const router = useRouter();
@@ -41,11 +48,12 @@ function MarkAttendanceContent() {
     setExamId,
     academicYearId,
     setAcademicYearId,
-    schedules,
+    availableDates,
     isLoadingSchedules,
     rows,
     initRows,
-    setStatus,
+    cycleStatus,
+    setDateStatus,
     markAllPresent,
     markAllAbsent,
     isSaving,
@@ -70,7 +78,7 @@ function MarkAttendanceContent() {
   const { exams } = useExams(
     selectedAcademicYearId && selectedClassId
       ? { academic_year_id: selectedAcademicYearId, class_id: selectedClassId }
-      : {},
+      : {}
   );
 
   useEffect(() => {
@@ -79,9 +87,10 @@ function MarkAttendanceContent() {
 
   useEffect(() => {
     if (!examId || !selectedAcademicYearId || !selectedClassId) return;
-    if (isLoadingSchedules || schedules.length === 0) return;
+    if (isLoadingSchedules || availableDates.length === 0) return;
     initRows(students);
-  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, schedules, isLoadingSchedules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, availableDates, isLoadingSchedules]);
 
   const { attendanceCardUrl } = useExamAttendanceCard({
     examId,
@@ -90,7 +99,7 @@ function MarkAttendanceContent() {
     sectionId: selectedSectionId,
   });
 
-  // Dynamic columns for each schedule
+  // Dynamic columns: one per available date
   const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
     const baseCols: ColumnDef<AttendanceRow>[] = [
       {
@@ -110,47 +119,37 @@ function MarkAttendanceContent() {
       },
     ];
 
-    const scheduleCols = schedules.map(
-      (sc): ColumnDef<AttendanceRow> => ({
-        id: `schedule-${sc.id}`,
-        header: () => (
-          <Div type="col" gap="xs" align="center">
-            <Div className="truncate max-w-[120px] block text-xs font-medium">
-              {sc.subject_name}
-            </Div>
-            {sc.subject_type && sc.subject_type !== "MAIN_EXAM" && (
-              <Badge variant="secondary" className="text-[10px] px-1 py-0 capitalize">
-                {sc.subject_type.replace(/_/g, " ").toLowerCase()}
-              </Badge>
-            )}
-            {sc.section_name && (
-              <Div className="text-[10px] font-normal text-muted-foreground/60">
-                Sec {sc.section_name}
-              </Div>
-            )}
-            <Div className="text-xs font-normal text-muted-foreground/70">
-              {sc.exam_date}
-            </Div>
-          </Div>
-        ),
+    const dateCols = availableDates.map(
+      (date): ColumnDef<AttendanceRow> => ({
+        id: `date-${date}`,
+        header: fmtDate(date),
         cell: ({ row }) => {
-          const status = row.original.entries[sc.id] ?? "ABSENT";
+          const entry = row.original.entries[date] ?? {
+            status: "PRESENT" as AttendanceStatus,
+            source: "manual" as AttendanceSource,
+          };
           return (
             <Div type="col" gap="xs" align="center">
-              <Badge variant={ATTENDANCE_BADGE[status]} className="text-xs mb-1">
-                {status}
+              <Badge
+                variant={ATTENDANCE_BADGE[entry.status]}
+                className="text-xs cursor-pointer select-none"
+                onClick={() => cycleStatus(row.original.student_id, date)}
+                title={`${entry.status}${entry.source === "rfid-auto" ? " (RFID)" : ""} — click to change`}
+              >
+                {entry.status.charAt(0)}
+                {entry.source === "rfid-auto" && " 📡"}
               </Badge>
               <Select
                 width="sm"
-                value={status}
+                value={entry.status}
                 onChange={(e) =>
-                  setStatus(row.original.student_id, sc.id, e.target.value as AttendanceStatus)
+                  setDateStatus(row.original.student_id, date, e.target.value as AttendanceStatus)
                 }
                 className="text-xs"
               >
                 <option value="PRESENT">Present</option>
                 <option value="ABSENT">Absent</option>
-                <option value="LEAVE">Leave</option>
+                <option value="LATE">Late</option>
               </Select>
             </Div>
           );
@@ -158,14 +157,14 @@ function MarkAttendanceContent() {
       })
     );
 
-    return [...baseCols, ...scheduleCols];
-  }, [schedules, setStatus]);
+    return [...baseCols, ...dateCols];
+  }, [availableDates, cycleStatus, setDateStatus]);
 
   return (
     <Div type="col" gap="lg">
       <PageHeader
         title="Mark Exam Attendance"
-        subtitle="Bulk mark attendance for all students across all exam schedules"
+        subtitle="Click any cell to cycle: Present → Absent → Late. 📡 = RFID auto-marked."
         actions={
           <Div type="row" gap="sm">
             {attendanceCardUrl && (
@@ -188,10 +187,9 @@ function MarkAttendanceContent() {
         }
       />
 
-      {/* Selectors */}
+      {/* Filters */}
       <Div variant="card" className="p-5">
         <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Academic Year */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.academicYear}
@@ -210,7 +208,6 @@ function MarkAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Class */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.class}
@@ -229,7 +226,6 @@ function MarkAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Section */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.section}
@@ -248,7 +244,6 @@ function MarkAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Exam */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.exam}
@@ -269,20 +264,19 @@ function MarkAttendanceContent() {
         </Div>
       </Div>
 
-      {/* Attendance grid */}
+      {/* Grid */}
       {examId && (
         <>
           {isLoadingSchedules ? (
             <Div type="row" justify="center" className="py-10">
               <Spinner size="lg" />
             </Div>
-          ) : schedules.length === 0 ? (
+          ) : availableDates.length === 0 ? (
             <Div variant="card-dashed">
               <P color="muted">No exam schedules found for this exam.</P>
             </Div>
           ) : (
             <>
-              {/* Bulk actions */}
               <Div type="row" gap="sm" align="center">
                 <H3 color="default" className="text-sm">
                   Quick Actions:
@@ -297,7 +291,6 @@ function MarkAttendanceContent() {
                 </Button>
               </Div>
 
-              {/* DataTable with dynamic schedule columns */}
               {rows.length === 0 ? (
                 <Div
                   type="col"

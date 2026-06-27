@@ -9,7 +9,6 @@ export * from './subscriptions.constants';
 export * from './academic-years.constants';
 export * from './school-dashboard.constants';
 export * from './staff.constants';
-export * from './parents.constants';
 export * from './attendance.constants';
 export * from './exams.constants';
 export * from './leave.constants';

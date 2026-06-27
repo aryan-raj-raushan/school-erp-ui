@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
-import { useMarkAttendance } from "@/hooks/exam/useExamAttendance";
+import { useMarkAttendance, type AttendanceSource } from "@/hooks/exam/useExamAttendance";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useExamAttendanceCard } from "@/hooks/exam/useExamAttendanceCard";
@@ -30,8 +30,13 @@ type AttendanceRow = {
   student_id: string;
   student_name: string;
   roll_number?: string;
-  entries: Record<string, AttendanceStatus>;
+  entries: Record<string, { status: AttendanceStatus; source: AttendanceSource }>;
 };
+
+function fmtDate(iso: string) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
 
 function ViewAttendanceContent() {
   const router = useRouter();
@@ -40,7 +45,7 @@ function ViewAttendanceContent() {
     setExamId,
     academicYearId,
     setAcademicYearId,
-    schedules,
+    availableDates,
     isLoadingSchedules,
     rows,
     initRows,
@@ -73,9 +78,10 @@ function ViewAttendanceContent() {
 
   useEffect(() => {
     if (!examId || !selectedAcademicYearId || !selectedClassId) return;
-    if (isLoadingSchedules || schedules.length === 0) return;
+    if (isLoadingSchedules || availableDates.length === 0) return;
     initRows(students);
-  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, availableDates, isLoadingSchedules]);
 
   const { attendanceCardUrl } = useExamAttendanceCard({
     examId,
@@ -84,7 +90,7 @@ function ViewAttendanceContent() {
     sectionId: selectedSectionId,
   });
 
-  // Dynamic columns for each schedule (read-only)
+  // Dynamic columns: one per available date (read-only)
   const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
     const baseCols: ColumnDef<AttendanceRow>[] = [
       {
@@ -104,37 +110,27 @@ function ViewAttendanceContent() {
       },
     ];
 
-    const scheduleCols = schedules.map(
-      (sc): ColumnDef<AttendanceRow> => ({
-        id: `schedule-${sc.id}`,
-        header: () => (
-          <Div type="col" gap="xs" align="center">
-            <Div className="truncate max-w-30 text-xs font-medium">
-              {sc.subject_name}
-            </Div>
-            {sc.section_name && (
-              <Div className="text-[10px] font-normal text-muted-foreground/60">
-                Sec {sc.section_name}
-              </Div>
-            )}
-            <Div className="text-xs font-normal text-muted-foreground/70">
-              {sc.exam_date}
-            </Div>
-          </Div>
-        ),
+    const dateCols = availableDates.map(
+      (date): ColumnDef<AttendanceRow> => ({
+        id: `date-${date}`,
+        header: fmtDate(date),
         cell: ({ row }) => {
-          const status = row.original.entries[sc.id] ?? "ABSENT";
+          const entry = row.original.entries[date] ?? {
+            status: "ABSENT" as AttendanceStatus,
+            source: "manual" as AttendanceSource,
+          };
           return (
-            <Badge variant={ATTENDANCE_BADGE[status]} className="text-xs">
-              {status}
+            <Badge variant={ATTENDANCE_BADGE[entry.status]} className="text-xs">
+              {entry.status}
+              {entry.source === "rfid-auto" && " 📡"}
             </Badge>
           );
         },
       })
     );
 
-    return [...baseCols, ...scheduleCols];
-  }, [schedules]);
+    return [...baseCols, ...dateCols];
+  }, [availableDates]);
 
   return (
     <Div type="col" gap="lg">
@@ -251,7 +247,7 @@ function ViewAttendanceContent() {
             <Div type="row" justify="center" className="py-10">
               <Spinner size="lg" />
             </Div>
-          ) : schedules.length === 0 ? (
+          ) : availableDates.length === 0 ? (
             <Div variant="card-dashed">
               <P color="muted">No exam schedules found for this exam.</P>
             </Div>

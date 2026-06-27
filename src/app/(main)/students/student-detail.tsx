@@ -151,6 +151,21 @@ export function StudentDetail({ id }: { id: string }) {
     }
   }, [isNew, currentYear, watchedAcademicYearId, setValue]);
 
+  // Auto-add one parent row for new students
+  useEffect(() => {
+    if (isNew && parentsArray.fields.length === 0) {
+      parentsArray.append({
+        relation: "FATHER",
+        first_name: "",
+        phone_number: "",
+        dial_code: "+91",
+        is_primary: true,
+        can_pickup: true,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew]);
+
   if (isLoading) {
     return (
       <Div type="row" justify="center" className="py-20">

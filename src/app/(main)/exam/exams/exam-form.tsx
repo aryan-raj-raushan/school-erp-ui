@@ -14,6 +14,7 @@ import {
   Input,
   Select,
   Badge,
+  MultiSelect,
 } from "@/components/ui";
 import {
   EXAMS_PAGE,
@@ -44,13 +45,13 @@ export function ExamFormContent({ slug }: { slug: string }) {
     setValue,
   } = form;
   const watchedAcademicYearId = watch("academic_year_id");
+  const watchedClassIds = watch("class_ids");
 
   const {
     years,
     classes,
     currentYear,
     setSelectedAcademicYearId,
-    handleClassChange,
   } = useAcademicClassSection({ autoSelectCurrentYear: true });
 
   // Sync academic year selection into form
@@ -59,27 +60,11 @@ export function ExamFormContent({ slug }: { slug: string }) {
       setValue("academic_year_id", currentYear.id);
       setSelectedAcademicYearId(currentYear.id);
     }
-  }, [
-    isNew,
-    currentYear,
-    watchedAcademicYearId,
-    setValue,
-    setSelectedAcademicYearId,
-  ]);
+  }, [isNew, currentYear, watchedAcademicYearId, setValue, setSelectedAcademicYearId]);
 
   useEffect(() => {
     if (watchedAcademicYearId) setSelectedAcademicYearId(watchedAcademicYearId);
   }, [watchedAcademicYearId, setSelectedAcademicYearId]);
-
-  // Re-apply class_id once classes finish loading.
-  // form.reset() fires before classes are fetched → DOM select has no matching
-  // option → browser resets it to "" → submit would send empty class_id.
-  useEffect(() => {
-    if (!isNew && classes.length > 0 && exam?.class_id) {
-      setValue("class_id", exam.class_id);
-      handleClassChange(exam.class_id);
-    }
-  }, [classes, exam, isNew, setValue, handleClassChange]);
 
   useEffect(() => {
     if (isEditMode) setIsEditing(true);
@@ -94,6 +79,9 @@ export function ExamFormContent({ slug }: { slug: string }) {
   }
 
   const isReadOnly = !isEditing;
+
+  const classOptions = classes.map((c) => ({ value: c.id, label: c.name }));
+  const classError = (errors.class_ids as { message?: string } | undefined)?.message;
 
   return (
     <Div type="col" gap="lg" className="max-w-3xl">
@@ -145,7 +133,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
                   disabled={isReadOnly || !isNew}
                   onChange={(e) => {
                     setValue("academic_year_id", e.target.value);
-                    setValue("class_id", "");
+                    setValue("class_ids", []);
                     setSelectedAcademicYearId(e.target.value);
                   }}
                 >
@@ -160,24 +148,27 @@ export function ExamFormContent({ slug }: { slug: string }) {
               </FormField>
 
               <FormField
-                label={EXAMS_PAGE.labels.class + " *"}
-                error={errors.class_id?.message}
+                label={
+                  isNew
+                    ? `${EXAMS_PAGE.labels.class} * (multi-select)`
+                    : `${EXAMS_PAGE.labels.class} *`
+                }
+                error={classError}
               >
-                <Select
-                  {...register("class_id")}
+                <MultiSelect
+                  options={classOptions}
+                  value={watchedClassIds ?? []}
+                  onChange={(ids) =>
+                    setValue("class_ids", ids, { shouldValidate: true })
+                  }
+                  placeholder={
+                    !watchedAcademicYearId
+                      ? "Select academic year first"
+                      : "Select class(es)..."
+                  }
                   disabled={isReadOnly || !watchedAcademicYearId}
-                  onChange={(e) => {
-                    setValue("class_id", e.target.value);
-                    handleClassChange(e.target.value);
-                  }}
-                >
-                  <option value="">Select class</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
+                  error={!!classError}
+                />
               </FormField>
 
               <FormField
@@ -203,8 +194,6 @@ export function ExamFormContent({ slug }: { slug: string }) {
                   ))}
                 </Select>
               </FormField>
-
-              <Div />
 
               <FormField
                 label={EXAMS_PAGE.labels.startDate + " *"}

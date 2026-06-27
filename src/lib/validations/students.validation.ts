@@ -37,11 +37,11 @@ export const studentHostelInfoSchema = z.object({
 
 export const studentParentSchema = z.object({
   relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER']),
-  first_name: z.string().min(1, 'First name is required').max(100),
+  first_name: z.string().max(100).optional(),
   last_name: z.string().max(100).optional(),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   dial_code: z.string().optional(),
-  phone_number: z.string().min(7, 'Phone number is required').max(15),
+  phone_number: z.string().max(15).optional(),
   alternate_phone: z.string().max(15).optional(),
   occupation: z.string().max(100).optional(),
   qualification: z.enum([
@@ -52,6 +52,16 @@ export const studentParentSchema = z.object({
   aadhaar_number: z.string().max(12).optional(),
   is_primary: z.boolean().optional(),
   can_pickup: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  const hasData = data.first_name?.trim() || data.phone_number?.trim();
+  if (hasData) {
+    if (!data.first_name?.trim()) {
+      ctx.addIssue({ code: 'custom', message: 'First name is required', path: ['first_name'] });
+    }
+    if (!data.phone_number?.trim() || data.phone_number.length < 7) {
+      ctx.addIssue({ code: 'custom', message: 'Valid phone number required (min 7 digits)', path: ['phone_number'] });
+    }
+  }
 });
 
 export const studentDocumentSchema = z.object({

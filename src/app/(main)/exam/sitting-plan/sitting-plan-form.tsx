@@ -2,11 +2,12 @@
 
 import { Suspense, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Users, X } from "lucide-react";
+import { ArrowLeft, Save, Users, X, Download } from "lucide-react";
 import { useRoomSittingPlan } from "@/hooks/exam/useExamSittingAndAdmit";
+import { SittingPlanService } from "@/services/exam.service";
 import { PageHeader } from "@/components/ui/page-header";
 import { Div, P, Button, Spinner } from "@/components/ui";
-import { EXAM_ROUTES } from "@/constants/exam.constants";
+import { EXAM_ROUTES, SITTING_PLAN_PAGE } from "@/constants/exam.constants";
 import type { StudentSlot } from "@/hooks/exam/useExamSittingAndAdmit";
 
 interface DragPayload {
@@ -26,20 +27,23 @@ function PoolChip({
   onDragStart: () => void;
 }) {
   return (
-    <div
+    <Div
       draggable
       onDragStart={() => {
         draggingRef.current = { studentId: slot.student_id, fromSeatIndex: null };
         onDragStart();
       }}
-      title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}`}
+      title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}${slot.class_label ? ` · ${slot.class_label}` : ""}`}
       className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-card hover:border-primary hover:bg-primary/5 cursor-grab active:cursor-grabbing select-none transition-colors"
     >
-      <span className="text-[11px] font-medium truncate max-w-[110px]">{slot.name}</span>
-      {slot.roll_number && (
-        <span className="text-[9px] text-muted-foreground shrink-0">#{slot.roll_number}</span>
+      {slot.class_label && (
+        <P className="text-[8px] font-bold bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0 leading-none">{slot.class_label}</P>
       )}
-    </div>
+      <P className="text-[11px] font-medium truncate max-w-[100px]">{slot.name}</P>
+      {slot.roll_number && (
+        <P className="text-[9px] text-muted-foreground shrink-0">#{slot.roll_number}</P>
+      )}
+    </Div>
   );
 }
 
@@ -68,13 +72,13 @@ function SeatBox({
   const label = slot ? slot.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) : null;
 
   return (
-    <div
+    <Div
       onDragOver={(e) => { if (canDrop) { e.preventDefault(); setOver(true); } }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); if (canDrop) onDrop(index); }}
       className={[
         "relative rounded flex flex-col items-center justify-center border transition-all select-none overflow-hidden",
-        "w-full h-full min-h-[30px]",
+        "w-full h-full min-h-[38px]",
         slot
           ? saved
             ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 dark:border-emerald-700"
@@ -85,45 +89,48 @@ function SeatBox({
       ].join(" ")}
     >
       {/* seat number */}
-      <span className="absolute top-[2px] left-[3px] text-[8px] text-slate-500 dark:text-slate-400 font-bold leading-none">
+      <P className="absolute top-[2px] left-[3px] text-[8px] text-slate-500 dark:text-slate-400 font-bold leading-none">
         {index + 1}
-      </span>
+      </P>
 
       {slot ? (
         <>
-          <button
+          <Button
             onClick={() => onRemove(index)}
             className="absolute top-[1px] right-[2px] w-3 h-3 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 flex items-center justify-center z-10"
             title="Unassign"
           >
             <X size={6} className="text-red-600 dark:text-red-300" />
-          </button>
-          <div
+          </Button>
+          <Div
             draggable
             onDragStart={() => {
               draggingRef.current = { studentId: slot.student_id, fromSeatIndex: index };
               onDragStart();
             }}
             className="flex flex-col items-center justify-center w-full h-full pt-2 cursor-grab active:cursor-grabbing"
-            title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}`}
+            title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}${slot.class_label ? ` · ${slot.class_label}` : ""}`}
           >
-            <span
+            <P
               className={[
                 "text-[10px] font-bold leading-none",
                 saved ? "text-emerald-700 dark:text-emerald-300" : "text-blue-700 dark:text-blue-300",
               ].join(" ")}
             >
               {label}
-            </span>
+            </P>
             {slot.roll_number && (
-              <span className="text-[7px] opacity-50 mt-0.5">{slot.roll_number}</span>
+              <P className="text-[7px] opacity-50 mt-0.5">{slot.roll_number}</P>
             )}
-          </div>
+            {slot.class_label && (
+              <P className="text-[7px] opacity-40 mt-0.5 leading-none">{slot.class_label}</P>
+            )}
+          </Div>
         </>
       ) : (
-        over && <span className="text-[9px] text-primary font-bold">+</span>
+        over && <P className="text-[9px] text-primary font-bold">+</P>
       )}
-    </div>
+    </Div>
   );
 }
 
@@ -145,6 +152,7 @@ function RoomSittingContent() {
     isSaving,
     hasChanges,
     newCount,
+    movedCount,
     removedCount,
     movePoolToSeat,
     removeSeat,
@@ -154,6 +162,23 @@ function RoomSittingContent() {
 
   const draggingRef = useRef<DragPayload | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  async function handleDownloadPdf() {
+    setIsDownloadingPdf(true);
+    try {
+      await SittingPlanService.downloadRoomPdf({
+        hall_detail_id: hallDetailId,
+        exam_ids: [examId],
+        academic_year_id: academicYearId,
+        room_name: room?.room_name,
+      });
+    } catch {
+      // toast shown by service on error
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }
 
   function endDrag() { draggingRef.current = null; setIsDragging(false); }
 
@@ -174,19 +199,21 @@ function RoomSittingContent() {
 
   const occupiedCount = seated.filter(Boolean).length;
   const capacity = room?.sitting_capacity ?? 0;
-  const gridCols = room?.grid_cols ?? null;
+  // Use defined grid or derive sensible columns from capacity
+  const gridCols = room?.grid_cols ?? (capacity > 0 ? Math.ceil(Math.sqrt(capacity)) : 5);
+  const gridRows = room?.grid_rows ?? (capacity > 0 ? Math.ceil(capacity / gridCols) : null);
   const pct = capacity > 0 ? Math.round((occupiedCount / capacity) * 100) : 0;
-  const saveLabel = [newCount > 0 && `+${newCount}`, removedCount > 0 && `−${removedCount}`].filter(Boolean).join(" ");
+  const saveLabel = [newCount > 0 && `+${newCount}`, movedCount > 0 && `↔${movedCount}`, removedCount > 0 && `−${removedCount}`].filter(Boolean).join(" ");
 
   if (isLoading) return <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>;
   if (!room) return <Div type="row" justify="center" className="py-20"><P color="muted">Room not found.</P></Div>;
 
   return (
-    <div className="flex flex-col gap-3 h-[calc(100vh-72px)]" onDragEnd={endDrag}>
+    <Div type="col" gap="sm" className="h-[calc(100vh-72px)]" onDragEnd={endDrag}>
       {/* Header */}
       <PageHeader
         title={room.room_name}
-        subtitle={exam?.exam_name ?? ""}
+        subtitle={[exam?.exam_name, room.grid_cols && room.grid_rows ? `${room.grid_rows}×${room.grid_cols} grid` : `${capacity} seats`].filter(Boolean).join(" · ")}
         actions={
           <Div type="row" gap="sm">
             {hasChanges && (
@@ -194,6 +221,15 @@ function RoomSittingContent() {
                 <Save size={13} /> Save {saveLabel}
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              loading={isDownloadingPdf}
+              onClick={handleDownloadPdf}
+              disabled={!room || seated.filter(Boolean).length === 0}
+            >
+              <Download size={13} /> {SITTING_PLAN_PAGE.buttons.roomPdf}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => router.push(EXAM_ROUTES.sittingPlan.list)}>
               <ArrowLeft size={13} /> Back
             </Button>
@@ -202,28 +238,28 @@ function RoomSittingContent() {
       />
 
       {/* Stats */}
-      <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
-        <span><strong className="text-foreground">{occupiedCount}</strong>/{capacity} filled</span>
-        <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
-        </div>
-        <span><strong className="text-foreground">{unassigned.length}</strong> unassigned</span>
+      <Div type="row" align="center" gap="sm" className="text-xs text-muted-foreground shrink-0">
+        <P className="text-xs text-muted-foreground"><strong className="text-foreground">{occupiedCount}</strong>/{capacity} filled</P>
+        <Div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+          <Div className={`h-full rounded-full ${pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+        </Div>
+        <P className="text-xs text-muted-foreground"><strong className="text-foreground">{unassigned.length}</strong> unassigned</P>
         {hasChanges && (
-          <span className="text-amber-600 dark:text-amber-400 font-medium">
-            {[newCount > 0 && `+${newCount} new`, removedCount > 0 && `−${removedCount} removed`].filter(Boolean).join(", ")} · unsaved
-          </span>
+          <P className="text-amber-600 dark:text-amber-400 font-medium text-xs">
+            {[newCount > 0 && `+${newCount} new`, movedCount > 0 && `↔${movedCount} moved`, removedCount > 0 && `−${removedCount} removed`].filter(Boolean).join(", ")} · unsaved
+          </P>
         )}
-        <div className="ml-auto flex items-center gap-2 text-[10px]">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 inline-block" /> Saved</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border-2 border-blue-400 bg-blue-50 dark:bg-blue-950 inline-block" /> New</span>
-        </div>
-      </div>
+        <Div type="row" align="center" gap="sm" className="ml-auto text-[10px]">
+          <P className="flex items-center gap-1 text-[10px]"><Div className="w-2.5 h-2.5 rounded-sm border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 inline-block" /> Saved</P>
+          <P className="flex items-center gap-1 text-[10px]"><Div className="w-2.5 h-2.5 rounded-sm border-2 border-blue-400 bg-blue-50 dark:bg-blue-950 inline-block" /> New</P>
+        </Div>
+      </Div>
 
       {/* Body: left pool + right grid */}
-      <div className="flex gap-3 flex-1 min-h-0">
+      <Div type="row" gap="sm" className="flex-1 min-h-0">
 
         {/* Left — unassigned pool */}
-        <div
+        <Div
           onDragOver={(e) => { if (isDragging && draggingRef.current?.fromSeatIndex != null) e.preventDefault(); }}
           onDrop={(e) => { e.preventDefault(); handleDropToPool(); }}
           className={[
@@ -233,19 +269,19 @@ function RoomSittingContent() {
               : "border-border",
           ].join(" ")}
         >
-          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-muted/40 rounded-t-xl shrink-0">
+          <Div type="row" align="center" gap="xs" className="px-3 py-2 border-b border-border bg-muted/40 rounded-t-xl shrink-0">
             <Users size={12} className="text-muted-foreground" />
-            <span className="text-[11px] font-semibold">Unassigned</span>
-            <span className="ml-auto text-[9px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{unassigned.length}</span>
-          </div>
+            <P className="text-[11px] font-semibold">Unassigned</P>
+            <P className="ml-auto text-[9px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{unassigned.length}</P>
+          </Div>
           {isDragging && draggingRef.current?.fromSeatIndex != null && (
-            <div className="text-center text-[9px] text-amber-600 dark:text-amber-400 font-medium py-1 bg-amber-50/50 dark:bg-amber-950/10 shrink-0">
+            <P className="text-center text-[9px] text-amber-600 dark:text-amber-400 font-medium py-1 bg-amber-50/50 dark:bg-amber-950/10 shrink-0">
               drop to unassign
-            </div>
+            </P>
           )}
-          <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          <Div type="col" gap="xs" className="flex-1 overflow-y-auto p-2">
             {unassigned.length === 0
-              ? <span className="text-[10px] text-muted-foreground text-center mt-4">All seated</span>
+              ? <P className="text-[10px] text-muted-foreground text-center mt-4">All seated</P>
               : unassigned.map((s) => (
                   <PoolChip
                     key={s.student_id}
@@ -255,24 +291,18 @@ function RoomSittingContent() {
                   />
                 ))
             }
-          </div>
-        </div>
+          </Div>
+        </Div>
 
         {/* Right — seat grid */}
-        <div className="flex-1 min-h-0 min-w-0">
-          <div
-            className="grid gap-1 h-full w-full"
-            style={
-              gridCols && room.grid_rows
-                ? {
-                    gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-                    gridTemplateRows: `repeat(${room.grid_rows}, minmax(0, 1fr))`,
-                  }
-                : {
-                    gridTemplateColumns: "repeat(auto-fill, minmax(34px, 1fr))",
-                    alignContent: "start",
-                  }
-            }
+        <Div className="flex-1 min-h-0 min-w-0 overflow-auto">
+          <Div
+            className="grid gap-1 w-full"
+            style={{
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+              ...(gridRows ? { gridTemplateRows: `repeat(${gridRows}, minmax(36px, 1fr))` } : { alignContent: "start" }),
+              minHeight: gridRows ? `${gridRows * 38}px` : undefined,
+            }}
           >
             {seated.map((slot, i) => (
               <SeatBox
@@ -286,10 +316,10 @@ function RoomSittingContent() {
                 onRemove={removeSeat}
               />
             ))}
-          </div>
-        </div>
-      </div>
-    </div>
+          </Div>
+        </Div>
+      </Div>
+    </Div>
   );
 }
 

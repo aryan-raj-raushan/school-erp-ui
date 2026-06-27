@@ -1,61 +1,60 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
-import { ExamResultsService } from '@/services/result.service';
+import { useState, useCallback, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { ExamResultsService } from "@/services/result.service";
 import type {
   ExamResultRow,
   ExamResultFilters,
   ExamScheduleItem,
   StudentMarkEntry,
-} from '@/types/result.types';
-// import { markFilterSchema, type MarkFilterFormValues } from '@/validations/result.schema';
-import { markFilterSchema, type MarkFilterFormValues } from '@/lib/validations/result.validations';
-import { RESULT_MARKS_PAGE } from '@/constants/result.constants';
-
-// ─── List + Mark Entry Hook ───────────────────────────────────────────────────
+} from "@/types/result.types";
+import type { StudentListItem } from "@/types/students.types";
+import {
+  markFilterSchema,
+  type MarkFilterFormValues,
+} from "@/lib/validations/result.validations";
+import { RESULT_MARKS_PAGE } from "@/constants/result.constants";
+import { Student } from "@/types";
 
 export function useExamResults() {
   const [results, setResults] = useState<ExamResultRow[]>([]);
   const [schedules, setSchedules] = useState<ExamScheduleItem[]>([]);
   const [studentEntries, setStudentEntries] = useState<StudentMarkEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
-  // Filter form (academic year / class / section / exam)
+  // ── Filter form ───────────────────────────────────────────────────────────
   const filterForm = useForm<MarkFilterFormValues>({
     resolver: zodResolver(markFilterSchema),
     defaultValues: {
-      academic_year_id: '',
-      exam_id: '',
-      class_id: '',
-      section_id: '',
+      academic_year_id: "",
+      exam_id: "",
+      class_id: "",
+      section_id: "",
     },
   });
 
   const { watch } = filterForm;
-  const examId = watch('exam_id');
-  const classId = watch('class_id');
-  const sectionId = watch('section_id');
-  const academicYearId = watch('academic_year_id');
+  const examId = watch("exam_id");
+  const classId = watch("class_id");
+  const sectionId = watch("section_id");
+  const academicYearId = watch("academic_year_id");
 
-  // ── Load schedules when exam changes ────────────────────────────────────────
+  // ── 1. Load schedules when exam changes ───────────────────────────────────
   const fetchSchedules = useCallback(async (eId: string) => {
     if (!eId) {
       setSchedules([]);
-      setStudentEntries([]);
       return;
     }
     setIsLoadingSchedules(true);
     try {
       const data = await ExamResultsService.getSchedules(eId);
-      console.log("DATA -> ", data);
-      // Only top-level (parent) schedules shown as columns; sub-subjects nested
       setSchedules(data);
     } catch {
       toast.error(RESULT_MARKS_PAGE.toasts.loadScheduleError);
@@ -68,58 +67,69 @@ export function useExamResults() {
     fetchSchedules(examId);
   }, [examId, fetchSchedules]);
 
-  // ── Load existing results when exam + class ready ────────────────────────────
-  const fetchResults = useCallback(async () => {
-    if (!examId || !classId) {
+  // ── 2. Load saved marks when exam + class are ready ───────────────────────
+  //    Does NOT fetch students — the page passes them in via buildGrid().
+  const fetchSavedMarks = useCallback(async () => {
+    if (!examId || !classId || !academicYearId) {
       setResults([]);
-      setStudentEntries([]);
       return;
     }
-    setIsLoading(true);
+    setIsLoadingResults(true);
     try {
-      const filters: ExamResultFilters = {
+      const { items } = await ExamResultsService.list({
         exam_id: examId,
         class_id: classId,
         section_id: sectionId || undefined,
-        academic_year_id: academicYearId || undefined,
-      };
-      const { items } = await ExamResultsService.list(filters);
+        academic_year_id: academicYearId,
+      } as ExamResultFilters);
       setResults(items);
-      buildStudentEntries(items);
+
     } catch {
       toast.error(RESULT_MARKS_PAGE.toasts.loadResultsError);
     } finally {
-      setIsLoading(false);
+      setIsLoadingResults(false);
     }
   }, [examId, classId, sectionId, academicYearId]);
 
   useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+    fetchSavedMarks();
+  }, [fetchSavedMarks, examId, classId, sectionId, academicYearId]);
 
-  // ── Build matrix: students × schedules ───────────────────────────────────────
-  function buildStudentEntries(rows: ExamResultRow[]) {
-    const map: Record<string, StudentMarkEntry> = {};
-    rows.forEach((r) => {
-      if (!map[r.student_id]) {
-        map[r.student_id] = {
-          student_id: r.student_id,
-          student_name: r.student_name,
-          roll_number: r.roll_number,
-          admission_number: '',
-          marks: {},
-        };
-      }
-      map[r.student_id].marks[r.exam_schedule_id] = {
-        marks_obtained: r.marks_obtained != null ? parseFloat(r.marks_obtained) : null,
+
+  // ── 3. Build the editable grid from the student list + saved marks ─────────
+  //    Called by the page whenever students or results change.
+  function buildGrid(students: Student[], savedMarks: ExamResultRow[]) {
+    // lookup: student_id → { scheduleId → mark }
+    const savedMap: Record<
+      string,
+      Record<string, { marks_obtained: number | null; is_absent: boolean }>
+    > = {};
+    savedMarks.forEach((r) => {
+      if (!savedMap[r.student_id]) savedMap[r.student_id] = {};
+      savedMap[r.student_id][r.exam_schedule_id] = {
+        marks_obtained:
+          r.marks_obtained != null ? parseFloat(r.marks_obtained) : null,
         is_absent: r.is_absent,
       };
     });
-    setStudentEntries(Object.values(map));
+
+    const entries: StudentMarkEntry[] = students.map((s) => {
+      const academic = (s as any).academic_info ?? s;
+      return {
+        student_id: s.id,
+        student_name: `${s.first_name} ${s.last_name ?? ""}`.trim(),
+        roll_number: academic.roll_number ?? (s as any).roll_number ?? null,
+        admission_number:
+          academic.admission_number ?? (s as any).admission_number ?? "",
+        marks: savedMap[s.id] ?? {},
+      };
+    });
+
+    setStudentEntries(entries);
     setIsDirty(false);
   }
 
-  // ── Cell-level update (called from table input onChange) ─────────────────────
+  // ── 4. Cell-level update ─────────────────────────────────────────────────
   function updateMark(
     studentId: string,
     scheduleId: string,
@@ -127,70 +137,72 @@ export function useExamResults() {
     isAbsent: boolean,
   ) {
     setStudentEntries((prev) =>
-      prev.map((entry) =>
-        entry.student_id === studentId
+      prev.map((e) =>
+        e.student_id === studentId
           ? {
-              ...entry,
+              ...e,
               marks: {
-                ...entry.marks,
+                ...e.marks,
                 [scheduleId]: { marks_obtained: value, is_absent: isAbsent },
               },
             }
-          : entry,
+          : e,
       ),
     );
     setIsDirty(true);
   }
 
-  // ── Save all marks ────────────────────────────────────────────────────────────
-  async function saveMarks(students: { student_id: string; subject_id: string }[]) {
+  // ── 5. Save all marks ────────────────────────────────────────────────────
+  async function saveMarks(filters: {
+    examId: string;
+    classId: string;
+    sectionId?: string;
+    academicYearId: string;
+  }) {
     if (!examId || !classId || !academicYearId) {
-      toast.error('Please select exam, class and academic year');
+      toast.error("Please select exam, class and academic year");
+      return;
+    }
+    if (studentEntries.length === 0) {
+      toast.error("No students to save marks for");
       return;
     }
     setIsSaving(true);
     try {
-      const resultRows: {
-        student_id: string;
-        exam_schedule_id: string;
-        subject_id: string;
-        marks_obtained: number | null;
-        is_absent: boolean;
-      }[] = [];
-
-      studentEntries.forEach((entry) => {
-        schedules.forEach((schedule) => {
+      const resultRows = studentEntries.flatMap((entry) =>
+        schedules.map((schedule) => {
           const mark = entry.marks[schedule.id];
-          const subjectEntry = students.find((s) => s.student_id === entry.student_id);
-          resultRows.push({
+          return {
             student_id: entry.student_id,
             exam_schedule_id: schedule.id,
             subject_id: schedule.subject_id,
             marks_obtained: mark?.marks_obtained ?? null,
             is_absent: mark?.is_absent ?? false,
-          });
-        });
-      });
+          };
+        }),
+      );
 
       await ExamResultsService.bulkUpsert({
-        exam_id: examId,
-        class_id: classId,
-        section_id: sectionId || undefined,
-        academic_year_id: academicYearId,
+        exam_id: filters.examId,
+        class_id: filters.classId,
+        section_id: filters.sectionId,
+        academic_year_id: filters.academicYearId,
         results: resultRows,
       });
 
       toast.success(RESULT_MARKS_PAGE.toasts.saveSuccess);
       setIsDirty(false);
-      await fetchResults();
+      await fetchSavedMarks();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : RESULT_MARKS_PAGE.toasts.saveError);
+      toast.error(
+        err instanceof Error ? err.message : RESULT_MARKS_PAGE.toasts.saveError,
+      );
     } finally {
       setIsSaving(false);
     }
   }
 
-  // ── Publish / unpublish ───────────────────────────────────────────────────────
+  // ── 6. Publish / unpublish ───────────────────────────────────────────────
   async function togglePublish(isPublished: boolean) {
     if (!examId) return;
     setIsPublishing(true);
@@ -206,38 +218,40 @@ export function useExamResults() {
           ? RESULT_MARKS_PAGE.toasts.publishSuccess
           : RESULT_MARKS_PAGE.toasts.unpublishSuccess,
       );
-      await fetchResults();
+      await fetchSavedMarks();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : RESULT_MARKS_PAGE.toasts.publishError);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : RESULT_MARKS_PAGE.toasts.publishError,
+      );
     } finally {
       setIsPublishing(false);
     }
   }
 
-  // Derived: are all current results published?
-  const isPublished = results.length > 0 && results.every((r) => r.is_published);
+  const isPublished =
+    results.length > 0 && results.every((r) => r.is_published);
 
   return {
-    // state
     results,
     schedules,
     studentEntries,
-    isLoading,
     isLoadingSchedules,
+    isLoadingResults,
     isSaving,
     isPublishing,
     isDirty,
     isPublished,
-    // filter form
     filterForm,
     examId,
     classId,
     sectionId,
     academicYearId,
-    // actions
+    buildGrid,
     updateMark,
     saveMarks,
     togglePublish,
-    refetch: fetchResults,
+    refetch: fetchSavedMarks,
   };
 }

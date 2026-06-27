@@ -17,17 +17,7 @@ import {
   type ColumnDef,
 } from "@/components/ui";
 import { Pencil, Trash2 } from "lucide-react";
-
-type SubjectRow = {
-  id: string;
-  name: string;
-  code?: string;
-  class_id: string;
-  display_order: number;
-  total_marks: number;
-  passing_marks: number;
-  is_active: boolean;
-};
+import type { Subject } from "@/services/subjects.service";
 
 export default function SubjectsPage() {
   const {
@@ -42,10 +32,10 @@ export default function SubjectsPage() {
     removeSubject,
     navigateToNew,
     navigateToEdit,
-    getClassName,
+    getClassNames,
   } = useSubjectsPage();
 
-  const columns = useMemo<ColumnDef<SubjectRow>[]>(
+  const columns = useMemo<ColumnDef<Subject>[]>(
     () => [
       {
         accessorKey: "name",
@@ -60,7 +50,7 @@ export default function SubjectsPage() {
       {
         id: "class",
         header: "Class",
-        cell: ({ row }) => getClassName(row.original.class_id),
+        cell: ({ row }) => getClassNames(row.original.class_ids ?? []),
       },
       {
         accessorKey: "display_order",
@@ -106,7 +96,7 @@ export default function SubjectsPage() {
         ),
       },
     ],
-    [getClassName, navigateToEdit, removeSubject]
+    [getClassNames, navigateToEdit, removeSubject]
   );
 
   return (
@@ -154,11 +144,7 @@ export default function SubjectsPage() {
 
       <DataTable
         columns={columns}
-        data={subjects.map((subject) => ({
-          ...subject,
-          code: subject.code ?? undefined,
-          class_id: subject.class_id ?? "",
-        }))}
+        data={subjects}
         isLoading={isLoading}
         emptyText={SUBJECTS_PAGE.empty}
       />

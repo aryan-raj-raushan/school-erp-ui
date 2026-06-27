@@ -6,10 +6,17 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ExamScheduleService } from "@/services/exam.service";
+import { ExamScheduleService, ExamsService } from "@/services/exam.service";
+import { ClassSubjectsService } from "@/services/class-subject.service";
 import type { ExamSchedule, ScheduleFilters } from "@/types/exam.types";
+import type { Exam } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SCHEDULE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+
+export interface SiblingCopyTask {
+  exam: Exam;
+  className?: string;
+}
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -136,6 +143,10 @@ export function useExamSchedules(initialFilters: ScheduleFilters = {}) {
 export function useExamScheduleForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingSiblings, setPendingSiblings] = useState<SiblingCopyTask[]>([]);
+  const [isCopyingToSiblings, setIsCopyingToSiblings] = useState(false);
+  // Store the last submitted payload so we can copy it to siblings
+  const lastPayloadRef = { current: null as Parameters<typeof ExamScheduleService.bulkCreate>[0] | null };
 
   const form = useForm<ScheduleFormInput, unknown, ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
@@ -171,7 +182,28 @@ export function useExamScheduleForm() {
         })),
       };
       await ExamScheduleService.bulkCreate(payload);
+      lastPayloadRef.current = payload;
       toast.success(SCHEDULE_PAGE.toasts.createSuccess);
+
+      // Detect sibling exams (same name+term, different class) and offer to copy
+      try {
+        const [submittedExam, allExamsRes] = await Promise.all([
+          ExamsService.getById(values.exam_id),
+          ExamsService.list({ academic_year_id: values.academic_year_id, limit: 200 }),
+        ]);
+        const siblings = allExamsRes.items.filter(
+          (e) =>
+            e.exam_name === submittedExam.exam_name &&
+            e.exam_term === submittedExam.exam_term &&
+            e.class_id !== submittedExam.class_id,
+        );
+        if (siblings.length > 0) {
+          setPendingSiblings(siblings.map((e) => ({ exam: e })));
+          return; // Stay on page to show copy dialog
+        }
+      } catch {
+        // Non-fatal — just navigate away
+      }
       router.push(EXAM_ROUTES.schedule.list);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -179,6 +211,51 @@ export function useExamScheduleForm() {
       setIsSubmitting(false);
     }
   });
+
+  async function copyToSiblings(selectedSiblingExamIds: string[]) {
+    const payload = lastPayloadRef.current;
+    if (!payload || selectedSiblingExamIds.length === 0) {
+      router.push(EXAM_ROUTES.schedule.list);
+      return;
+    }
+    setIsCopyingToSiblings(true);
+    try {
+      await Promise.all(
+        selectedSiblingExamIds.map(async (siblingExamId) => {
+          const siblingExam = pendingSiblings.find((t) => t.exam.id === siblingExamId)?.exam;
+          if (!siblingExam) return;
+
+          // Fetch sibling class subjects to remap subject_ids by name
+          const subjectsRes = await ClassSubjectsService.list({ class_id: siblingExam.class_id, limit: 100 });
+          const subjectByName: Record<string, string> = {};
+          subjectsRes.items.forEach((s) => { subjectByName[s.name.toLowerCase()] = s.id; });
+
+          const siblingSchedules = payload.schedules.map((s) => ({
+            ...s,
+            subject_id: subjectByName[s.subject_name.toLowerCase()] ?? s.subject_id,
+          }));
+
+          await ExamScheduleService.bulkCreate({
+            ...payload,
+            exam_id: siblingExamId,
+            class_id: siblingExam.class_id,
+            schedules: siblingSchedules,
+          });
+        }),
+      );
+      toast.success(`Schedule copied to ${selectedSiblingExamIds.length} more class${selectedSiblingExamIds.length > 1 ? "es" : ""}`);
+      router.push(EXAM_ROUTES.schedule.list);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to copy schedule");
+    } finally {
+      setIsCopyingToSiblings(false);
+    }
+  }
+
+  function dismissSiblingCopy() {
+    setPendingSiblings([]);
+    router.push(EXAM_ROUTES.schedule.list);
+  }
 
   function addScheduleRow() {
     schedulesField.append({ ...defaultScheduleItem });
@@ -188,14 +265,54 @@ export function useExamScheduleForm() {
     schedulesField.remove(index);
   }
 
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+
+  async function loadAllSubjects(classId: string) {
+    if (!classId) return 0;
+    setIsLoadingSubjects(true);
+    try {
+      const res = await ClassSubjectsService.list({ class_id: classId, limit: 100 });
+      const rows = res.items.map((s) => ({
+        ...defaultScheduleItem,
+        subject_id: s.id,
+        subject_name: s.name,
+      }));
+      if (rows.length === 0) {
+        toast.error("No subjects found for this class");
+        return 0;
+      }
+      schedulesField.replace(rows);
+      toast.success(`${rows.length} subjects loaded`);
+      return rows.length;
+    } catch {
+      toast.error("Failed to load subjects");
+      return 0;
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  }
+
+  function applyToAll(field: "exam_date" | "start_time" | "end_time" | "exam_marks" | "passing_marks", value: string | number) {
+    schedulesField.fields.forEach((_, i) => {
+      form.setValue(`schedules.${i}.${field}` as any, value as any);
+    });
+  }
+
   return {
     form,
     schedulesField,
     isSubmitting,
+    isLoadingSubjects,
     onSubmit,
     addScheduleRow,
     removeScheduleRow,
+    loadAllSubjects,
+    applyToAll,
     defaultScheduleItem,
+    pendingSiblings,
+    isCopyingToSiblings,
+    copyToSiblings,
+    dismissSiblingCopy,
   };
 }
 

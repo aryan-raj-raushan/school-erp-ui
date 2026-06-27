@@ -7,6 +7,7 @@ export interface Subject {
   school_id: string;
   class_id?: string | null;
   class_detail_id?: string | null;
+  class_ids: string[];
   name: string;
   code?: string | null;
   display_order: number;
@@ -29,7 +30,7 @@ export interface SubjectFilters {
 export interface CreateSubjectPayload {
   name: string;
   code?: string;
-  class_id?: string;
+  class_ids?: string[];
   class_detail_id?: string;
   display_order?: number;
   total_marks?: number;

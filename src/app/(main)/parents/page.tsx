@@ -1,7 +1,6 @@
 "use client";
 
 import { useParents } from "@/hooks/useParents";
-import { PARENTS_PAGE } from "@/constants";
 import {
   Div,
   P,
@@ -19,15 +18,19 @@ import {
   TableRow,
   TableCell,
   TableEmptyRow,
-  TablePagination,
   Modal,
   ModalBody,
   ModalFooter,
   FormField,
   Badge,
   Spinner,
-  FileInput,
 } from "@/components/ui";
+import { PARENT_RELATION_OPTIONS } from "@/constants/students-v2.constants";
+
+const RELATION_LABEL: Record<string, string> = {
+  FATHER: "Father", MOTHER: "Mother", GUARDIAN: "Guardian",
+  GRANDPARENT: "Grandparent", SIBLING: "Sibling", OTHER: "Other",
+};
 
 export default function ParentsPage() {
   const {
@@ -41,58 +44,29 @@ export default function ParentsPage() {
     form,
     handleSubmit,
     isSubmitting,
-    showEditModal,
-    openEditModal,
-    closeEditModal,
-    editForm,
-    handleEditSubmit,
-    isEditSubmitting,
     deleteParent,
     students,
-    linkClasses,
-    linkSections,
-    showLinkModal,
-    linkingParent,
-    openLinkModal,
-    closeLinkModal,
-    linkForm,
-    handleLinkSubmit,
-    isLinkSubmitting,
-    showBulkModal,
-    openBulkModal,
-    closeBulkModal,
-    bulkJob,
-    bulkFileRef,
-    isImporting,
-    bulkImport,
-    checkBulkStatus,
-    downloadTemplate,
+    studentsLoading,
     updateFilters,
   } = useParents();
+
+  const { register, formState: { errors }, watch } = form;
+  const watchedStudentId = watch("student_id");
 
   return (
     <PageCol>
       <PageHeader
-        title={PARENTS_PAGE.title}
-        subtitle={pagination ? `${pagination.total} parents` : "Loading..."}
-        illustration="/illustrations/parents.svg"
+        title="Parents & Guardians"
+        subtitle={`${pagination.total} guardian records`}
         actions={
-          <>
-            <Button variant="outline" onClick={downloadTemplate}>
-              {PARENTS_PAGE.downloadTemplate}
-            </Button>
-            <Button variant="outline" onClick={openBulkModal}>
-              {PARENTS_PAGE.bulkImport}
-            </Button>
-            <Button onClick={openModal}>{PARENTS_PAGE.addButton}</Button>
-          </>
+          <Button onClick={openModal}>Add Guardian</Button>
         }
       />
 
       <FilterBar>
         <Input
           width="md"
-          placeholder="Search by name or email"
+          placeholder="Search by name, phone or student"
           value={filters.search ?? ""}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
@@ -101,63 +75,48 @@ export default function ParentsPage() {
       <Table>
         <TableHead>
           <TableHeadRow>
-            <TableHeaderCell>{PARENTS_PAGE.table.name}</TableHeaderCell>
-            <TableHeaderCell>{PARENTS_PAGE.table.email}</TableHeaderCell>
-            <TableHeaderCell>{PARENTS_PAGE.table.phone}</TableHeaderCell>
-            <TableHeaderCell>{PARENTS_PAGE.table.occupation}</TableHeaderCell>
-            <TableHeaderCell>{PARENTS_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{PARENTS_PAGE.table.actions}</TableHeaderCell>
+            <TableHeaderCell>Guardian Name</TableHeaderCell>
+            <TableHeaderCell>Relation</TableHeaderCell>
+            <TableHeaderCell>Phone</TableHeaderCell>
+            <TableHeaderCell>Student</TableHeaderCell>
+            <TableHeaderCell>Occupation</TableHeaderCell>
+            <TableHeaderCell>Flags</TableHeaderCell>
+            <TableHeaderCell>Actions</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={6}>
-              <Spinner />
-            </TableEmptyRow>
+            <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
           ) : parents.length === 0 ? (
-            <TableEmptyRow colSpan={6}>{PARENTS_PAGE.empty}</TableEmptyRow>
+            <TableEmptyRow colSpan={7}>No guardians found</TableEmptyRow>
           ) : (
-            parents.map((parent) => (
-              <TableRow key={parent.id}>
+            parents.map((g) => (
+              <TableRow key={g.id}>
                 <TableCell primary>
-                  {parent.first_name} {parent.last_name ?? ""}
-                </TableCell>
-                <TableCell>{parent.email ?? "—"}</TableCell>
-                <TableCell>
-                  {parent.phone_number
-                    ? `${parent.dial_code ?? ""} ${parent.phone_number}`
-                    : "—"}
-                </TableCell>
-                <TableCell>{parent.occupation ?? "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={parent.is_active ? "success" : "default"}>
-                    {parent.is_active ? "Active" : "Inactive"}
-                  </Badge>
+                  {g.first_name} {g.last_name ?? ""}
                 </TableCell>
                 <TableCell>
-                  <Div type="row" gap="sm">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openEditModal(parent)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openLinkModal(parent)}
-                    >
-                      Link Student
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteParent(parent.id)}
-                    >
-                      Delete
-                    </Button>
+                  <Badge variant="default">{RELATION_LABEL[g.relation] ?? g.relation}</Badge>
+                </TableCell>
+                <TableCell>
+                  {g.phone_number ? `${g.dial_code ?? ""} ${g.phone_number}` : "—"}
+                </TableCell>
+                <TableCell>{g.student_name}</TableCell>
+                <TableCell>{g.occupation ?? "—"}</TableCell>
+                <TableCell>
+                  <Div type="row" gap="xs">
+                    {g.is_primary && <Badge variant="success">Primary</Badge>}
+                    {g.can_pickup && <Badge variant="default">Pickup</Badge>}
                   </Div>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteParent(g.id)}
+                  >
+                    Remove
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
@@ -165,259 +124,83 @@ export default function ParentsPage() {
         </TableBody>
       </Table>
 
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
-
-      {/* Add Parent Modal */}
+      {/* Add Guardian Modal */}
       {showModal && (
-        <Modal onClose={closeModal} title={PARENTS_PAGE.form.title}>
+        <Modal onClose={closeModal} title="Add Guardian / Parent">
           <form onSubmit={handleSubmit}>
             <ModalBody>
               <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={PARENTS_PAGE.form.firstName}
-                    error={form.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={PARENTS_PAGE.placeholders.firstName}
-                      {...form.register("first_name")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={PARENTS_PAGE.form.lastName}
-                    error={form.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={PARENTS_PAGE.placeholders.lastName}
-                      {...form.register("last_name")}
-                    />
-                  </FormField>
-                </Div>
+                {/* Student selection first */}
                 <FormField
-                  label={PARENTS_PAGE.form.email}
-                  error={form.formState.errors.email?.message}
+                  label="Student *"
+                  error={errors.student_id?.message}
                 >
-                  <Input
-                    type="email"
-                    placeholder={PARENTS_PAGE.placeholders.email}
-                    {...form.register("email")}
-                  />
-                </FormField>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={PARENTS_PAGE.form.dialCode}
-                    error={form.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={PARENTS_PAGE.placeholders.dialCode}
-                      {...form.register("dial_code")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={PARENTS_PAGE.form.phone}
-                    error={form.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={PARENTS_PAGE.placeholders.phone}
-                      {...form.register("phone_number")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={PARENTS_PAGE.form.occupation}
-                  error={form.formState.errors.occupation?.message}
-                >
-                  <Input
-                    placeholder={PARENTS_PAGE.placeholders.occupation}
-                    {...form.register("occupation")}
-                  />
-                </FormField>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeModal}>
-                {PARENTS_PAGE.form.cancel}
-              </Button>
-              <Button type="submit" loading={isSubmitting}>
-                {PARENTS_PAGE.form.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Edit Parent Modal */}
-      {showEditModal && (
-        <Modal onClose={closeEditModal} title={PARENTS_PAGE.editForm.title}>
-          <form onSubmit={handleEditSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <Div type="grid" cols={2} gap="md">
-                  <FormField
-                    label={PARENTS_PAGE.form.firstName}
-                    error={editForm.formState.errors.first_name?.message}
-                  >
-                    <Input
-                      placeholder={PARENTS_PAGE.placeholders.firstName}
-                      {...editForm.register("first_name")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={PARENTS_PAGE.form.lastName}
-                    error={editForm.formState.errors.last_name?.message}
-                  >
-                    <Input
-                      placeholder={PARENTS_PAGE.placeholders.lastName}
-                      {...editForm.register("last_name")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={PARENTS_PAGE.form.email}
-                  error={editForm.formState.errors.email?.message}
-                >
-                  <Input
-                    type="email"
-                    placeholder={PARENTS_PAGE.placeholders.email}
-                    {...editForm.register("email")}
-                  />
-                </FormField>
-                <Div type="row" gap="sm">
-                  <FormField
-                    label={PARENTS_PAGE.form.dialCode}
-                    error={editForm.formState.errors.dial_code?.message}
-                  >
-                    <Input
-                      width="xs"
-                      placeholder={PARENTS_PAGE.placeholders.dialCode}
-                      {...editForm.register("dial_code")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={PARENTS_PAGE.form.phone}
-                    error={editForm.formState.errors.phone_number?.message}
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={PARENTS_PAGE.placeholders.phone}
-                      {...editForm.register("phone_number")}
-                    />
-                  </FormField>
-                </Div>
-                <FormField
-                  label={PARENTS_PAGE.form.occupation}
-                  error={editForm.formState.errors.occupation?.message}
-                >
-                  <Input
-                    placeholder={PARENTS_PAGE.placeholders.occupation}
-                    {...editForm.register("occupation")}
-                  />
-                </FormField>
-              </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeEditModal}>
-                {PARENTS_PAGE.editForm.cancel}
-              </Button>
-              <Button type="submit" loading={isEditSubmitting}>
-                {PARENTS_PAGE.editForm.submit}
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
-
-      {/* Link Student Modal */}
-      {showLinkModal && (
-        <Modal
-          onClose={closeLinkModal}
-          title={`${PARENTS_PAGE.linkStudentForm.title} — ${linkingParent?.first_name}`}
-        >
-          <form onSubmit={handleLinkSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <FormField
-                  label={PARENTS_PAGE.linkStudentForm.studentId}
-                  error={linkForm.formState.errors.student_id?.message}
-                >
-                  <Select {...linkForm.register("student_id")}>
-                    <option value="">Select student</option>
-                    {students.map((s) => {
-                      const cls = linkClasses.find((c) => c.id === s.class_id);
-                      const sec = linkSections.find((sec) => sec.id === s.section_id);
-                      const label = [
-                        `${s.first_name} ${s.last_name ?? ""}`.trim(),
-                        s.admission_number,
-                        cls?.name,
-                        sec?.name,
-                      ].filter(Boolean).join(" · ");
-                      return (
-                        <option key={s.id} value={s.id}>{label}</option>
-                      );
-                    })}
+                  <Select {...register("student_id")} defaultValue="">
+                    <option value="">{studentsLoading ? "Loading students…" : "Select student"}</option>
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.first_name} {s.last_name ?? ""} — {s.admission_number}
+                      </option>
+                    ))}
                   </Select>
                 </FormField>
+
+                {watchedStudentId && (
+                  <>
+                    <Div type="grid" cols={2} gap="md">
+                      <FormField label="Relation *" error={errors.relation?.message}>
+                        <Select {...register("relation")} defaultValue="FATHER">
+                          {PARENT_RELATION_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </Select>
+                      </FormField>
+                      <FormField label="First Name *" error={errors.first_name?.message}>
+                        <Input placeholder="First name" {...register("first_name")} />
+                      </FormField>
+                      <FormField label="Last Name" error={errors.last_name?.message}>
+                        <Input placeholder="Last name" {...register("last_name")} />
+                      </FormField>
+                      <FormField label="Phone *" error={errors.phone_number?.message}>
+                        <Div type="row" gap="xs">
+                          <Input width="xs" placeholder="+91" {...register("dial_code")} />
+                          <Input placeholder="Phone number" {...register("phone_number")} />
+                        </Div>
+                      </FormField>
+                      <FormField label="Email" error={errors.email?.message}>
+                        <Input type="email" placeholder="Email" {...register("email")} />
+                      </FormField>
+                      <FormField label="Occupation">
+                        <Input placeholder="Occupation" {...register("occupation")} />
+                      </FormField>
+                    </Div>
+                    <Div type="row" gap="lg">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input type="checkbox" {...register("is_primary")} className="h-4 w-4 rounded" />
+                        Primary guardian
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input type="checkbox" {...register("can_pickup")} className="h-4 w-4 rounded" />
+                        Can pickup
+                      </label>
+                    </Div>
+                  </>
+                )}
+
+                {!watchedStudentId && (
+                  <P color="muted" className="text-center text-sm py-2">
+                    Select a student above to fill in guardian details
+                  </P>
+                )}
               </Div>
             </ModalBody>
             <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeLinkModal}>
-                {PARENTS_PAGE.linkStudentForm.cancel}
-              </Button>
-              <Button type="submit" loading={isLinkSubmitting}>
-                {PARENTS_PAGE.linkStudentForm.submit}
+              <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
+              <Button type="submit" loading={isSubmitting} disabled={!watchedStudentId}>
+                Add Guardian
               </Button>
             </ModalFooter>
           </form>
-        </Modal>
-      )}
-
-      {/* Bulk Import Modal */}
-      {showBulkModal && (
-        <Modal onClose={closeBulkModal} title={PARENTS_PAGE.bulkImportForm.title}>
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label={PARENTS_PAGE.bulkImportForm.file}>
-                <FileInput
-                  ref={bulkFileRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                />
-              </FormField>
-              {bulkJob && (
-                <Div type="col" gap="xs">
-                  <P>Job ID: {bulkJob.jobId}</P>
-                  <P>Status: {bulkJob.status}</P>
-                  {bulkJob.processed != null && (
-                    <P>Processed: {bulkJob.processed} / {bulkJob.total}</P>
-                  )}
-                  {bulkJob.failed != null && bulkJob.failed > 0 && (
-                    <P>Failed: {bulkJob.failed}</P>
-                  )}
-                </Div>
-              )}
-            </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button type="button" variant="outline" onClick={closeBulkModal}>
-              {PARENTS_PAGE.bulkImportForm.cancel}
-            </Button>
-            {bulkJob && (
-              <Button type="button" variant="outline" onClick={checkBulkStatus}>
-                Check Status
-              </Button>
-            )}
-            <Button type="button" loading={isImporting} onClick={bulkImport}>
-              {PARENTS_PAGE.bulkImportForm.submit}
-            </Button>
-          </ModalFooter>
         </Modal>
       )}
     </PageCol>
