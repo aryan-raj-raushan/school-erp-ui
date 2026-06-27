@@ -6,8 +6,10 @@ import { Suspense } from 'react';
 import { useEditTimetable } from '@/hooks/useEditTimetable';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS, MAX_PERIODS_OPTIONS } from '@/constants';
 import {
-  Div, Button, Spinner, Input, Select, FormField,
+  Div, Button, Spinner, Input, Select, FormField, P,
   PageHeader, PageCol,
+  Table, TableHead, TableHeadRow, TableHeaderCell,
+  TableBody, TableRow, TableCell,
 } from '@/components/ui';
 
 function EditTimetablePageInner() {
@@ -78,67 +80,67 @@ function EditTimetablePageInner() {
       </Div>
 
       <Div type="col" gap="sm">
-        <p className="text-sm font-semibold">{SCHOOL_TIMETABLE_PAGE.form.periodTimes}</p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-muted">
-                <th className="border px-2 py-1 font-medium text-left">Period</th>
+        <P size="sm" weight="semibold">{SCHOOL_TIMETABLE_PAGE.form.periodTimes}</P>
+        <Div className="overflow-x-auto rounded-lg border border-border/50">
+          <Table>
+            <TableHead>
+              <TableHeadRow>
+                <TableHeaderCell>Period</TableHeaderCell>
                 {periods.map((p) => (
-                  <th key={p} className="border px-2 py-1 font-medium text-center">P{p}</th>
+                  <TableHeaderCell key={p} className="text-center">P{p}</TableHeaderCell>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border px-2 py-1 text-muted-foreground text-xs">Start</td>
+              </TableHeadRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell className="text-muted-foreground text-xs">Start</TableCell>
                 {periods.map((p) => (
-                  <td key={p} className="border px-1 py-1">
+                  <TableCell key={p}>
                     <Input
                       type="time"
                       className="w-24 text-xs"
                       value={periodTimes.find((pt) => pt.period_number === p)?.start_time ?? ''}
                       onChange={(e) => setPeriodTime(p, 'start_time', e.target.value)}
                     />
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
-              <tr>
-                <td className="border px-2 py-1 text-muted-foreground text-xs">End</td>
+              </TableRow>
+              <TableRow>
+                <TableCell className="text-muted-foreground text-xs">End</TableCell>
                 {periods.map((p) => (
-                  <td key={p} className="border px-1 py-1">
+                  <TableCell key={p}>
                     <Input
                       type="time"
                       className="w-24 text-xs"
                       value={periodTimes.find((pt) => pt.period_number === p)?.end_time ?? ''}
                       onChange={(e) => setPeriodTime(p, 'end_time', e.target.value)}
                     />
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Div>
       </Div>
 
       <Div type="col" gap="sm">
-        <p className="text-sm font-semibold">Timetable Grid</p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-muted">
-                <th className="border px-2 py-1 text-left font-medium w-20">Day</th>
+        <P size="sm" weight="semibold">Timetable Grid</P>
+        <Div className="overflow-x-auto rounded-lg border border-border/50">
+          <Table>
+            <TableHead>
+              <TableHeadRow>
+                <TableHeaderCell>Day</TableHeaderCell>
                 {periods.map((p) => (
-                  <th key={p} className="border px-2 py-1 text-center font-medium min-w-[140px]">P{p}</th>
+                  <TableHeaderCell key={p} className="text-center min-w-35">P{p}</TableHeaderCell>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableHeadRow>
+            </TableHead>
+            <TableBody>
               {DAYS_OF_WEEK.map((day) => (
-                <tr key={day}>
-                  <td className="border px-2 py-1 font-medium bg-muted/50">{DAY_LABELS[day]}</td>
+                <TableRow key={day}>
+                  <TableCell weight="semibold" className="bg-muted/50">{DAY_LABELS[day]}</TableCell>
                   {periods.map((p) => (
-                    <td key={p} className="border px-1 py-1">
+                    <TableCell key={p}>
                       <Div type="col" gap="xs">
                         <Select
                           value={grid[day]?.[p]?.subject_id ?? ''}
@@ -157,13 +159,13 @@ function EditTimetablePageInner() {
                           {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </Select>
                       </Div>
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Div>
       </Div>
 
       <Div type="row" gap="md">
@@ -176,7 +178,7 @@ function EditTimetablePageInner() {
 
 export default function EditTimetablePage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<Div type="col" align="center" justify="center" className="py-20"><Spinner /></Div>}>
       <EditTimetablePageInner />
     </Suspense>
   );
