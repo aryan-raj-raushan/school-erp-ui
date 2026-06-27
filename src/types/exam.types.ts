@@ -108,6 +108,8 @@ export interface ExamSchedule {
   school_id: string;
   academic_year_id: string;
   class_id: string;
+  section_id?: string;
+  section_name?: string | null;
   exam_id: string;
   subject_id: string;
   subject_name: string;
@@ -131,12 +133,14 @@ export interface BulkCreateSchedulePayload {
   exam_id: string;
   academic_year_id: string;
   class_id: string;
+  section_id?: string;
   schedules: ExamScheduleItem[];
 }
 
 export interface ScheduleFilters {
   academic_year_id?: string;
   class_id?: string;
+  section_id?: string;
   exam_id?: string;
   subject_id?: string;
   subject_type?: SubjectType;
@@ -171,6 +175,9 @@ export interface ExamAttendance {
   remarks?: string;
   marked_by?: string;
   created_at: string;
+  student_name: string;
+  subject_name: string;
+  exam_date: string;
 }
 
 export interface AttendanceFilters {
@@ -183,35 +190,16 @@ export interface AttendanceFilters {
   limit?: number;
 }
 
-// ── Module 6 – Hall Plans ─────────────────────────────────────────────────────
-
-export interface ExamHallPlan {
-  id: string;
-  school_id: string;
-  plan_name: string;
-  description?: string;
-  is_enabled: boolean;
-  deleted: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface CreateHallPlanPayload {
-  plan_name: string;
-  description?: string;
-  is_enabled?: boolean;
-}
-
-export type UpdateHallPlanPayload = Partial<CreateHallPlanPayload>;
-
 // ── Module 7 – Hall Details ───────────────────────────────────────────────────
 
 export interface ExamHallDetail {
   id: string;
   school_id: string;
-  hall_plan_id: string;
+  hall_plan_id?: string | null;
   room_name: string;
   sitting_capacity: number;
+  grid_rows?: number | null;
+  grid_cols?: number | null;
   is_enabled: boolean;
   deleted: boolean;
   created_at: string;
@@ -219,9 +207,10 @@ export interface ExamHallDetail {
 }
 
 export interface CreateHallDetailPayload {
-  hall_plan_id: string;
   room_name: string;
-  sitting_capacity: number;
+  sitting_capacity?: number;
+  grid_rows?: number;
+  grid_cols?: number;
   is_enabled?: boolean;
 }
 
@@ -239,7 +228,6 @@ export interface SittingPlanEntry {
 export interface BulkCreateSittingPayload {
   exam_id: string;
   academic_year_id: string;
-  hall_plan_id: string;
   entries: SittingPlanEntry[];
 }
 
@@ -248,7 +236,7 @@ export interface ExamSittingPlan {
   school_id: string;
   academic_year_id: string;
   exam_id: string;
-  hall_plan_id: string;
+  hall_plan_id?: string | null;
   hall_detail_id: string;
   student_id: string;
   seat_number?: number;

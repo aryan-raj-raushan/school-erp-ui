@@ -15,9 +15,6 @@ import type {
   ExamAttendance,
   BulkMarkAttendancePayload,
   AttendanceFilters,
-  ExamHallPlan,
-  CreateHallPlanPayload,
-  UpdateHallPlanPayload,
   ExamHallDetail,
   CreateHallDetailPayload,
   UpdateHallDetailPayload,
@@ -167,42 +164,10 @@ export const ExamAttendanceService = {
   },
 };
 
-// ── Hall Plans ────────────────────────────────────────────────────────────────
-
-export const HallPlanService = {
-  async list(filters: { is_enabled?: boolean; page?: number; limit?: number } = {}): Promise<PaginatedResult<ExamHallPlan>> {
-    const params: Record<string, string> = {};
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v !== undefined) params[k] = String(v);
-    });
-    const res = await apiGateway.get<ExamHallPlan[]>(EXAM_ENDPOINTS.hallPlans.list, { params });
-    return { items: res.data, pagination: res.pagination! };
-  },
-
-  async getById(id: string): Promise<ExamHallPlan> {
-    const res = await apiGateway.get<ExamHallPlan>(EXAM_ENDPOINTS.hallPlans.byId(id));
-    return res.data;
-  },
-
-  async create(payload: CreateHallPlanPayload): Promise<ExamHallPlan> {
-    const res = await apiGateway.post<ExamHallPlan>(EXAM_ENDPOINTS.hallPlans.list, payload);
-    return res.data;
-  },
-
-  async update(id: string, payload: UpdateHallPlanPayload): Promise<ExamHallPlan> {
-    const res = await apiGateway.patch<ExamHallPlan>(EXAM_ENDPOINTS.hallPlans.byId(id), payload);
-    return res.data;
-  },
-
-  async remove(id: string): Promise<void> {
-    await apiGateway.delete(EXAM_ENDPOINTS.hallPlans.byId(id));
-  },
-};
-
 // ── Hall Details ──────────────────────────────────────────────────────────────
 
 export const HallDetailService = {
-  async list(filters: { hall_plan_id?: string; is_enabled?: boolean; page?: number } = {}): Promise<PaginatedResult<ExamHallDetail>> {
+  async list(filters: { is_enabled?: boolean; page?: number; limit?: number } = {}): Promise<PaginatedResult<ExamHallDetail>> {
     const params: Record<string, string> = {};
     Object.entries(filters).forEach(([k, v]) => {
       if (v !== undefined) params[k] = String(v);

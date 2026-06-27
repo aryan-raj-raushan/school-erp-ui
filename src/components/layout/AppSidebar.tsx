@@ -13,6 +13,10 @@ import {
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
 import { useAuthStore } from "@/store/auth.store";
+import { Capacitor } from "@capacitor/core";
+
+// Add titles here as mobile screens are built out
+const MOBILE_ENABLED_NAV = ["Dashboard"];
 
 const EXPANDED_W = 272;
 const ICON_W = 76;
@@ -157,6 +161,7 @@ export function AppSidebar() {
   const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
   const isCollapsed = state === "collapsed";
+  const isNative = Capacitor.isNativePlatform();
 
   const navMain = APP_NAV_MAIN
     .map((item) => {
@@ -170,12 +175,15 @@ export function AppSidebar() {
       const roleOk = !item.roles || (user?.role && item.roles.includes(user.role));
       const permOk = !item.permissions || item.permissions.some((p) => permissions.includes(p));
       const hasVisibleChildren = !item.items || item.items.length > 0;
-      return roleOk && permOk && hasVisibleChildren;
+      const mobileOk = !isNative || MOBILE_ENABLED_NAV.includes(item.title);
+      return roleOk && permOk && hasVisibleChildren && mobileOk;
     });
 
-  const navSecondary = APP_NAV_SECONDARY.filter(
-    (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
-  );
+  const navSecondary = isNative
+    ? []
+    : APP_NAV_SECONDARY.filter(
+        (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
+      );
 
   if (isMobile) {
     return (

@@ -1,18 +1,26 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { SittingPlanService, AdmitCardService } from "@/services/exam.service";
+import {
+  SittingPlanService,
+  AdmitCardService,
+  HallDetailService,
+  ExamsService,
+} from "@/services/exam.service";
+import { StudentsService } from "@/services/students.service";
 import type {
   ExamSittingPlan,
   SittingFilters,
   SittingPlanEntry,
   AdmitCardData,
+  ExamHallDetail,
+  Exam,
 } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SITTING_PLAN_PAGE, ADMIT_CARD_PAGE } from "@/constants/exam.constants";
 
-// ── Sitting Plan List ─────────────────────────────────────────────────────────
+// ── Sitting Plan List (legacy, used by other hooks) ───────────────────────────
 
 export function useSittingPlan(initialFilters: SittingFilters = {}) {
   const [entries, setEntries] = useState<ExamSittingPlan[]>([]);
@@ -54,65 +62,275 @@ export function useSittingPlan(initialFilters: SittingFilters = {}) {
   return { entries, pagination, filters, isLoading, updateFilters, remove, refetch: fetch };
 }
 
-// ── Sitting Plan Bulk Assign ──────────────────────────────────────────────────
+// ── Grid view: rooms with occupancy for a given exam ─────────────────────────
 
-export interface SittingRow extends SittingPlanEntry {
-  student_name: string;
+export function useSittingPlanGrid(examId: string, academicYearId: string) {
+  const [rooms, setRooms] = useState<ExamHallDetail[]>([]);
+  const [occupancy, setOccupancy] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!examId || !academicYearId) {
+      setRooms([]);
+      setOccupancy({});
+      return;
+    }
+    setIsLoading(true);
+    Promise.all([
+      HallDetailService.list({ limit: 200 }),
+      SittingPlanService.list({ exam_id: examId, academic_year_id: academicYearId, limit: 1000 }),
+    ])
+      .then(([roomsRes, plansRes]) => {
+        setRooms(roomsRes.items);
+        const occ: Record<string, number> = {};
+        plansRes.items.forEach((p) => {
+          occ[p.hall_detail_id] = (occ[p.hall_detail_id] ?? 0) + 1;
+        });
+        setOccupancy(occ);
+      })
+      .catch(() => toast.error("Failed to load rooms"))
+      .finally(() => setIsLoading(false));
+  }, [examId, academicYearId]);
+
+  return { rooms, occupancy, isLoading };
 }
 
-export function useSittingPlanForm() {
-  const [examId, setExamId] = useState("");
-  const [academicYearId, setAcademicYearId] = useState("");
-  const [hallPlanId, setHallPlanId] = useState("");
-  const [rows, setRows] = useState<SittingRow[]>([]);
+// ── Room Sitting Plan: numbered seats + drag-drop ─────────────────────────────
+
+export interface StudentSlot {
+  student_id: string;
+  name: string;
+  roll_number?: string;
+  admission_number: string;
+  sitting_plan_id?: string; // set if already in DB
+}
+
+type SeatState = {
+  /** Array length = room capacity; null = empty seat */
+  seated: (StudentSlot | null)[];
+  unassigned: StudentSlot[];
+};
+
+type SeatAction =
+  | { type: "INIT"; seated: (StudentSlot | null)[]; unassigned: StudentSlot[] }
+  | { type: "POOL_TO_SEAT"; studentId: string; seatIndex: number }
+  | { type: "SEAT_TO_POOL"; seatIndex: number }
+  | { type: "SEAT_TO_SEAT"; fromIndex: number; toIndex: number }
+  | { type: "MARK_SAVED" };
+
+function seatReducer(state: SeatState, action: SeatAction): SeatState {
+  switch (action.type) {
+    case "INIT":
+      return { seated: action.seated, unassigned: action.unassigned };
+
+    case "POOL_TO_SEAT": {
+      const slot = state.unassigned.find((s) => s.student_id === action.studentId);
+      if (!slot) return state;
+      if (state.seated[action.seatIndex] !== null) return state; // seat occupied
+      const seated = [...state.seated];
+      seated[action.seatIndex] = slot;
+      return {
+        seated,
+        unassigned: state.unassigned.filter((s) => s.student_id !== action.studentId),
+      };
+    }
+
+    case "SEAT_TO_POOL": {
+      const slot = state.seated[action.seatIndex];
+      if (!slot) return state;
+      const seated = [...state.seated];
+      seated[action.seatIndex] = null;
+      return { seated, unassigned: [...state.unassigned, { ...slot, sitting_plan_id: undefined }] };
+    }
+
+    case "SEAT_TO_SEAT": {
+      const { fromIndex, toIndex } = action;
+      if (fromIndex === toIndex) return state;
+      const seated = [...state.seated];
+      const from = seated[fromIndex];
+      if (!from) return state;
+      if (seated[toIndex] !== null) return state; // target occupied
+      seated[toIndex] = from;
+      seated[fromIndex] = null;
+      return { ...state, seated };
+    }
+
+    case "MARK_SAVED": {
+      return {
+        ...state,
+        seated: state.seated.map((s) =>
+          s && !s.sitting_plan_id ? { ...s, sitting_plan_id: "saved" } : s,
+        ),
+      };
+    }
+
+    default:
+      return state;
+  }
+}
+
+export function useRoomSittingPlan(
+  hallDetailId: string,
+  examId: string,
+  academicYearId: string,
+) {
+  const [room, setRoom] = useState<ExamHallDetail | null>(null);
+  const [exam, setExam] = useState<Exam | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [state, dispatch] = useReducer(seatReducer, {
+    seated: [],
+    unassigned: [],
+  });
+  // sitting_plan_ids queued for DELETE on next Save
+  const pendingRemovals = useRef<Set<string>>(new Set());
+  const [removedCount, setRemovedCount] = useState(0);
 
-  function addRow(row: SittingRow) {
-    setRows((prev) => [...prev, row]);
-  }
+  useEffect(() => {
+    if (!hallDetailId || !examId || !academicYearId) return;
+    setIsLoading(true);
 
-  function removeRow(studentId: string) {
-    setRows((prev) => prev.filter((r) => r.student_id !== studentId));
-  }
+    Promise.all([
+      HallDetailService.getById(hallDetailId),
+      ExamsService.getById(examId),
+    ])
+      .then(([roomData, examData]) => {
+        setRoom(roomData);
+        setExam(examData);
+        return Promise.all([
+          StudentsService.list({
+            academic_year_id: academicYearId,
+            class_id: examData.class_id,
+            limit: 500,
+          }),
+          SittingPlanService.list({
+            exam_id: examId,
+            hall_detail_id: hallDetailId,
+            limit: 1000,
+          }),
+        ]).then(([studentsRes, plansRes]) => {
+          const studentMap = Object.fromEntries(
+            studentsRes.items.map((s) => [
+              s.id,
+              {
+                name: [s.first_name, s.last_name].filter(Boolean).join(" "),
+                admission_number: s.admission_number,
+                roll_number: s.roll_number ?? undefined,
+              },
+            ]),
+          );
 
-  function updateRow(studentId: string, changes: Partial<SittingRow>) {
-    setRows((prev) =>
-      prev.map((r) => (r.student_id === studentId ? { ...r, ...changes } : r))
-    );
-  }
+          const assignedIds = new Set(plansRes.items.map((p) => p.student_id));
 
-  async function save() {
-    if (!examId || !academicYearId || !hallPlanId) {
-      toast.error("Select exam, academic year and hall plan");
-      return;
+          // Fill seat slots: capacity slots, existing plans placed in order
+          const seated: (StudentSlot | null)[] = Array(roomData.sitting_capacity).fill(null);
+          plansRes.items.forEach((p, i) => {
+            if (i >= roomData.sitting_capacity) return;
+            const meta = studentMap[p.student_id];
+            seated[p.seat_number ? p.seat_number - 1 : i] = {
+              student_id: p.student_id,
+              name: meta?.name ?? p.student_id,
+              admission_number: meta?.admission_number ?? "",
+              roll_number: p.roll_number ?? meta?.roll_number,
+              sitting_plan_id: p.id,
+            };
+          });
+
+          const unassigned = studentsRes.items
+            .filter((s) => !assignedIds.has(s.id))
+            .map((s) => ({
+              student_id: s.id,
+              name: [s.first_name, s.last_name].filter(Boolean).join(" "),
+              admission_number: s.admission_number,
+              roll_number: s.roll_number ?? undefined,
+            }));
+
+          dispatch({ type: "INIT", seated, unassigned });
+        });
+      })
+      .catch(() => toast.error("Failed to load room data"))
+      .finally(() => setIsLoading(false));
+  }, [hallDetailId, examId, academicYearId]);
+
+  const movePoolToSeat = useCallback((studentId: string, seatIndex: number) => {
+    dispatch({ type: "POOL_TO_SEAT", studentId, seatIndex });
+  }, []);
+
+  /** Synchronous — queues saved-entry deletion for next Save click */
+  const removeSeat = useCallback((seatIndex: number) => {
+    const slot = state.seated[seatIndex];
+    if (!slot) return;
+    if (slot.sitting_plan_id && slot.sitting_plan_id !== "saved") {
+      pendingRemovals.current.add(slot.sitting_plan_id);
+      setRemovedCount(pendingRemovals.current.size);
     }
-    if (rows.length === 0) {
-      toast.error("Add at least one student");
-      return;
-    }
+    dispatch({ type: "SEAT_TO_POOL", seatIndex });
+  }, [state.seated]);
+
+  const moveSeatToSeat = useCallback((fromIndex: number, toIndex: number) => {
+    dispatch({ type: "SEAT_TO_SEAT", fromIndex, toIndex });
+  }, []);
+
+  const newCount = state.seated.filter((s) => s && !s.sitting_plan_id).length;
+  const hasChanges = newCount > 0 || removedCount > 0;
+
+  const save = useCallback(async () => {
+    if (!room || !exam) return;
     setIsSaving(true);
     try {
-      await SittingPlanService.bulkCreate({
-        exam_id: examId,
-        academic_year_id: academicYearId,
-        hall_plan_id: hallPlanId,
-        entries: rows.map(({ student_name: _n, ...r }) => r),
+      // 1. Delete unassigned (saved) entries
+      const toDelete = [...pendingRemovals.current];
+      await Promise.all(toDelete.map((id) => SittingPlanService.remove(id)));
+      pendingRemovals.current.clear();
+
+      // 2. Create new assignments
+      const newEntries: SittingPlanEntry[] = [];
+      state.seated.forEach((slot, i) => {
+        if (slot && !slot.sitting_plan_id) {
+          newEntries.push({
+            student_id: slot.student_id,
+            hall_detail_id: hallDetailId,
+            seat_number: i + 1,
+            roll_number: slot.roll_number,
+          });
+        }
       });
-      toast.success(SITTING_PLAN_PAGE.toasts.createSuccess);
-      setRows([]);
-    } catch (err: unknown) {
+
+      if (newEntries.length > 0) {
+        await SittingPlanService.bulkCreate({
+          exam_id: examId,
+          academic_year_id: academicYearId,
+          entries: newEntries,
+        });
+      }
+
+      const parts: string[] = [];
+      if (newEntries.length) parts.push(`${newEntries.length} assigned`);
+      if (toDelete.length) parts.push(`${toDelete.length} unassigned`);
+      toast.success(parts.join(", "));
+      setRemovedCount(0);
+      dispatch({ type: "MARK_SAVED" });
+    } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setIsSaving(false);
     }
-  }
+  }, [state.seated, room, exam, hallDetailId, examId, academicYearId]);
 
   return {
-    examId, setExamId,
-    academicYearId, setAcademicYearId,
-    hallPlanId, setHallPlanId,
-    rows, addRow, removeRow, updateRow,
-    isSaving, save,
+    room,
+    exam,
+    seated: state.seated,
+    unassigned: state.unassigned,
+    isLoading,
+    isSaving,
+    hasChanges,
+    newCount,
+    removedCount,
+    movePoolToSeat,
+    removeSeat,
+    moveSeatToSeat,
+    save,
   };
 }
 

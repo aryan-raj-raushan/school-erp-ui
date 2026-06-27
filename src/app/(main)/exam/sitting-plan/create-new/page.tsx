@@ -1,13 +1,19 @@
 "use client";
 
-import { Suspense } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { EXAM_ROUTES } from "@/constants/exam.constants";
 import { Div, Spinner } from "@/components/ui";
-import { SittingPlanFormContent } from "../sitting-plan-form";
 
-export default function CreateSittingPlanPage() {
+export default function SittingPlanCreateRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(EXAM_ROUTES.sittingPlan.list);
+  }, [router]);
+
   return (
-    <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
-      <SittingPlanFormContent slug="create-new" />
-    </Suspense>
+    <Div type="row" justify="center" className="py-20">
+      <Spinner size="lg" />
+    </Div>
   );
 }

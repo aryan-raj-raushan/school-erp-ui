@@ -1,17 +1,14 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
-import { useSittingPlan } from "@/hooks/exam/useExamSittingAndAdmit";
+import { useSittingPlanGrid } from "@/hooks/exam/useExamSittingAndAdmit";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
-import { useHallPlans, useHallDetails } from "@/hooks/exam/useExamHall";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   P,
-  Button,
   Select,
   Spinner,
   Table,
@@ -22,41 +19,23 @@ import {
   TableRow,
   TableCell,
   TableEmptyRow,
-  TablePagination,
 } from "@/components/ui";
 import { SITTING_PLAN_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import type { ExamHallDetail } from "@/types/exam.types";
 
 function SittingPlanContent() {
   const router = useRouter();
-  const { entries, pagination, filters, isLoading, updateFilters, remove } =
-    useSittingPlan();
+  const [examId, setExamId] = useState("");
 
-  const {
-    years,
-    selectedAcademicYearId,
-    setSelectedAcademicYearId,
-  } = useAcademicClassSection({ autoSelectCurrentYear: false });
+  const { years, selectedAcademicYearId, setSelectedAcademicYearId } =
+    useAcademicClassSection({ autoSelectCurrentYear: true });
 
-  const { exams } = useExams(
-    selectedAcademicYearId
-      ? { academic_year_id: selectedAcademicYearId }
-      : {}
-  );
-  const { plans } = useHallPlans();
-  const { details: rooms } = useHallDetails(filters.hall_plan_id);
+  const academicYearId = selectedAcademicYearId;
+  const { exams } = useExams(academicYearId ? { academic_year_id: academicYearId } : {});
+  const { rooms, occupancy, isLoading } = useSittingPlanGrid(examId, academicYearId);
 
-  // Build lookup maps for display
-  const planMap = Object.fromEntries(plans.map((p) => [p.id, p.plan_name]));
-  const roomMap = Object.fromEntries(rooms.map((r) => [r.id, r.room_name]));
-  const examMap = Object.fromEntries(exams.map((e) => [e.id, e.exam_name]));
-
-  function handleYearChange(val: string) {
-    setSelectedAcademicYearId(val);
-    updateFilters({
-      academic_year_id: val || undefined,
-      exam_id: undefined,
-      hall_plan_id: undefined,
-    });
+  function openRoom(room: ExamHallDetail) {
+    router.push(EXAM_ROUTES.sittingPlan.roomView(room.id, examId, academicYearId));
   }
 
   return (
@@ -64,151 +43,96 @@ function SittingPlanContent() {
       <PageHeader
         title={SITTING_PLAN_PAGE.pageHeading.title}
         subtitle={SITTING_PLAN_PAGE.pageHeading.subtitle}
-        actions={
-          <Button onClick={() => router.push(EXAM_ROUTES.sittingPlan.create)}>
-            <Plus size={16} /> {SITTING_PLAN_PAGE.buttons.assign}
-          </Button>
-        }
       />
 
       {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <Div type="row" gap="md" wrap>
         <Select
           width="sm"
-          value={selectedAcademicYearId}
-          onChange={(e) => handleYearChange(e.target.value)}
+          value={academicYearId}
+          onChange={(e) => { setSelectedAcademicYearId(e.target.value); setExamId(""); }}
         >
-          <option value="">{SITTING_PLAN_PAGE.filters.allYears}</option>
+          <option value="">Select year</option>
           {years.map((y) => (
             <option key={y.id} value={y.id}>
-              {y.name}
-              {y.is_current ? " (Current)" : ""}
+              {y.name}{y.is_current ? " (Current)" : ""}
             </option>
           ))}
         </Select>
 
         <Select
           width="sm"
-          value={filters.exam_id ?? ""}
-          disabled={!selectedAcademicYearId}
-          onChange={(e) =>
-            updateFilters({ exam_id: e.target.value || undefined })
-          }
+          value={examId}
+          disabled={!academicYearId}
+          onChange={(e) => setExamId(e.target.value)}
         >
-          <option value="">{SITTING_PLAN_PAGE.filters.allExams}</option>
+          <option value="">Select exam</option>
           {exams.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.exam_name}
-            </option>
-          ))}
-        </Select>
-
-        <Select
-          width="sm"
-          value={filters.hall_plan_id ?? ""}
-          onChange={(e) =>
-            updateFilters({ hall_plan_id: e.target.value || undefined })
-          }
-        >
-          <option value="">{SITTING_PLAN_PAGE.filters.allPlans}</option>
-          {plans.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.plan_name}
-            </option>
-          ))}
-        </Select>
-
-        <Select
-          width="sm"
-          value={filters.hall_detail_id ?? ""}
-          disabled={!filters.hall_plan_id}
-          onChange={(e) =>
-            updateFilters({ hall_detail_id: e.target.value || undefined })
-          }
-        >
-          <option value="">{SITTING_PLAN_PAGE.filters.allRooms}</option>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.room_name}
-            </option>
+            <option key={e.id} value={e.id}>{e.exam_name}</option>
           ))}
         </Select>
       </Div>
 
+      {/* Table */}
       <Table>
         <TableHead>
           <TableHeadRow>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.student}</TableHeaderCell>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.rollNo}</TableHeaderCell>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.room}</TableHeaderCell>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.seatNo}</TableHeaderCell>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.hallPlan}</TableHeaderCell>
-            <TableHeaderCell>{SITTING_PLAN_PAGE.table.actions}</TableHeaderCell>
+            <TableHeaderCell>S.No</TableHeaderCell>
+            <TableHeaderCell>Room Name</TableHeaderCell>
+            <TableHeaderCell>Capacity</TableHeaderCell>
+            <TableHeaderCell>Assigned</TableHeaderCell>
+            <TableHeaderCell>Available</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
           </TableHeadRow>
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={7}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : entries.length === 0 ? (
-            <TableEmptyRow colSpan={7}>
-              {SITTING_PLAN_PAGE.table.noEntry}
-            </TableEmptyRow>
+            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
+          ) : !examId ? (
+            <TableEmptyRow colSpan={6}>Select an exam to view rooms</TableEmptyRow>
+          ) : rooms.length === 0 ? (
+            <TableEmptyRow colSpan={6}>No rooms found</TableEmptyRow>
           ) : (
-            entries.map((entry, i) => (
-              <TableRow key={entry.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{entry.student_id}</TableCell>
-                <TableCell>
-                  <P color="muted" className="font-mono text-xs">
-                    {entry.roll_number ?? "—"}
-                  </P>
-                </TableCell>
-                <TableCell>
-                  {roomMap[entry.hall_detail_id] ?? entry.hall_detail_id}
-                </TableCell>
-                <TableCell>{entry.seat_number ?? "—"}</TableCell>
-                <TableCell>
-                  {planMap[entry.hall_plan_id] ?? entry.hall_plan_id}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="icon-sm"
-                    variant="destructive"
-                    title="Remove"
-                    onClick={() => remove(entry.id)}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
+            rooms.map((room, i) => {
+              const occ = occupancy[room.id] ?? 0;
+              const avail = room.sitting_capacity - occ;
+              const isFull = occ >= room.sitting_capacity;
+              return (
+                <TableRow
+                  key={room.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => openRoom(room)}
+                >
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell primary>{room.room_name}</TableCell>
+                  <TableCell>{room.sitting_capacity}</TableCell>
+                  <TableCell>{occ}</TableCell>
+                  <TableCell>{avail}</TableCell>
+                  <TableCell>
+                    <span className={[
+                      "text-xs font-medium px-2 py-0.5 rounded-full",
+                      isFull
+                        ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                        : occ === 0
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+                    ].join(" ")}>
+                      {isFull ? "Full" : occ === 0 ? "Empty" : "Partial"}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
     </Div>
   );
 }
 
 export default function SittingPlanPage() {
   return (
-    <Suspense
-      fallback={
-        <Div type="row" justify="center" className="py-20">
-          <Spinner size="lg" />
-        </Div>
-      }
-    >
+    <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
       <SittingPlanContent />
     </Suspense>
   );

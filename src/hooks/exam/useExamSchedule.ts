@@ -58,6 +58,7 @@ export const scheduleFormSchema = z.object({
   exam_id: z.string().uuid("Select an exam"),
   academic_year_id: z.string().uuid("Required"),
   class_id: z.string().uuid("Required"),
+  section_id: z.string().optional(),
   schedules: z.array(scheduleItemSchema).min(1, "Add at least one subject"),
 });
 
@@ -142,6 +143,7 @@ export function useExamScheduleForm() {
       exam_id: "",
       academic_year_id: "",
       class_id: "",
+      section_id: "",
       schedules: [defaultScheduleItem],
     },
   });
@@ -152,10 +154,23 @@ export function useExamScheduleForm() {
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    console.log("Valyes: ", values);
     setIsSubmitting(true);
     try {
-      await ExamScheduleService.bulkCreate(values);
+      const payload = {
+        ...values,
+        section_id: values.section_id || undefined,
+        schedules: values.schedules.map((s) => ({
+          ...s,
+          exam_invigilator_id: s.exam_invigilator_id || undefined,
+          hall_detail_id: s.hall_detail_id || undefined,
+          sub_schedules: s.sub_schedules?.map((sub) => ({
+            ...sub,
+            exam_invigilator_id: sub.exam_invigilator_id || undefined,
+            hall_detail_id: sub.hall_detail_id || undefined,
+          })),
+        })),
+      };
+      await ExamScheduleService.bulkCreate(payload);
       toast.success(SCHEDULE_PAGE.toasts.createSuccess);
       router.push(EXAM_ROUTES.schedule.list);
     } catch (err: unknown) {
@@ -182,4 +197,86 @@ export function useExamScheduleForm() {
     removeScheduleRow,
     defaultScheduleItem,
   };
+}
+
+// ── View / Edit single schedule ───────────────────────────────────────────────
+
+const singleScheduleSchema = z.object({
+  subject_name: z.string().min(1, "Required"),
+  subject_type: z.enum(["MAIN_EXAM", "SECONDARY_EXAM", "PRACTICAL_EXAM", "ORAL_EXAM"] as const).optional(),
+  exam_date: z.string().min(1, "Required"),
+  start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "HH:mm format"),
+  end_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "HH:mm format"),
+  exam_marks: z.coerce.number().int().min(0),
+  passing_marks: z.coerce.number().int().min(0),
+  hall_detail_id: z.string().optional(),
+  sub_subject_enabled: z.boolean().optional(),
+});
+
+type SingleScheduleInput = z.input<typeof singleScheduleSchema>;
+type SingleScheduleValues = z.infer<typeof singleScheduleSchema>;
+
+export function useExamScheduleEdit(id: string | null) {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [schedule, setSchedule] = useState<ExamSchedule | null>(null);
+  const [subSchedules, setSubSchedules] = useState<ExamSchedule[]>([]);
+
+  const form = useForm<SingleScheduleInput, unknown, SingleScheduleValues>({
+    resolver: zodResolver(singleScheduleSchema) as any,
+    defaultValues: {
+      subject_name: "",
+      subject_type: "MAIN_EXAM",
+      exam_date: "",
+      start_time: "",
+      end_time: "",
+      exam_marks: 100,
+      passing_marks: 35,
+      hall_detail_id: "",
+      sub_subject_enabled: false,
+    },
+  });
+
+  useEffect(() => {
+    if (!id) return;
+    setIsLoading(true);
+    ExamScheduleService.getById(id)
+      .then(({ schedule: s, subSchedules: subs }) => {
+        setSchedule(s);
+        setSubSchedules(subs);
+        form.reset({
+          subject_name: s.subject_name,
+          subject_type: s.subject_type,
+          exam_date: s.exam_date,
+          start_time: s.start_time?.slice(0, 5) ?? "",
+          end_time: s.end_time?.slice(0, 5) ?? "",
+          exam_marks: s.exam_marks,
+          passing_marks: s.passing_marks,
+          hall_detail_id: s.hall_detail_id ?? "",
+          sub_subject_enabled: s.sub_subject_enabled,
+        });
+      })
+      .catch(() => toast.error(SCHEDULE_PAGE.toasts.fetchError))
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    if (!id) return;
+    setIsSubmitting(true);
+    try {
+      await ExamScheduleService.update(id, {
+        ...values,
+        hall_detail_id: values.hall_detail_id || undefined,
+      });
+      toast.success(SCHEDULE_PAGE.toasts.updateSuccess);
+      router.push(EXAM_ROUTES.schedule.list);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
+
+  return { form, schedule, subSchedules, isLoading, isSubmitting, onSubmit };
 }

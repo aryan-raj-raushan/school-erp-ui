@@ -71,6 +71,16 @@ export function ExamFormContent({ slug }: { slug: string }) {
     if (watchedAcademicYearId) setSelectedAcademicYearId(watchedAcademicYearId);
   }, [watchedAcademicYearId, setSelectedAcademicYearId]);
 
+  // Re-apply class_id once classes finish loading.
+  // form.reset() fires before classes are fetched → DOM select has no matching
+  // option → browser resets it to "" → submit would send empty class_id.
+  useEffect(() => {
+    if (!isNew && classes.length > 0 && exam?.class_id) {
+      setValue("class_id", exam.class_id);
+      handleClassChange(exam.class_id);
+    }
+  }, [classes, exam, isNew, setValue, handleClassChange]);
+
   useEffect(() => {
     if (isEditMode) setIsEditing(true);
   }, [isEditMode, setIsEditing]);

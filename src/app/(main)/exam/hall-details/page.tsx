@@ -1,15 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useHallDetails, useHallPlans } from "@/hooks/exam/useExamHall";
+import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  P,
   Button,
-  Select,
   Badge,
   Spinner,
   Table,
@@ -26,14 +24,7 @@ import { HALL_DETAILS_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 
 function HallDetailsContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const defaultPlanId = searchParams.get("hall_plan_id") ?? "";
-
-  const [selectedPlanId, setSelectedPlanId] = useState(defaultPlanId);
-  const { details, pagination, isLoading, remove } = useHallDetails(
-    selectedPlanId || undefined
-  );
-  const { plans } = useHallPlans();
+  const { details, pagination, isLoading, remove } = useHallDetails();
 
   return (
     <Div type="col" gap="lg">
@@ -41,40 +32,11 @@ function HallDetailsContent() {
         title={HALL_DETAILS_PAGE.pageHeading.title}
         subtitle={HALL_DETAILS_PAGE.pageHeading.subtitle}
         actions={
-          <Button
-            onClick={() =>
-              router.push(
-                selectedPlanId
-                  ? `${EXAM_ROUTES.hallDetails.create}?hall_plan_id=${selectedPlanId}`
-                  : EXAM_ROUTES.hallDetails.create
-              )
-            }
-          >
+          <Button onClick={() => router.push(EXAM_ROUTES.hallDetails.create)}>
             <Plus size={16} /> {HALL_DETAILS_PAGE.buttons.add}
           </Button>
         }
       />
-
-      {/* Filter */}
-      <Div type="row" gap="md" align="center">
-        <Select
-          width="sm"
-          value={selectedPlanId}
-          onChange={(e) => setSelectedPlanId(e.target.value)}
-        >
-          <option value="">{HALL_DETAILS_PAGE.filters.allPlans}</option>
-          {plans.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.plan_name}
-            </option>
-          ))}
-        </Select>
-        {selectedPlanId && (
-          <P color="muted" className="text-xs">
-            Showing rooms for selected hall plan
-          </P>
-        )}
-      </Div>
 
       <Table>
         <TableHead>
@@ -101,10 +63,10 @@ function HallDetailsContent() {
                 <TableCell>{i + 1}</TableCell>
                 <TableCell primary>{d.room_name}</TableCell>
                 <TableCell>
-                  <Div type="row" align="center" gap="xs">
-                    <Div className="font-semibold">{d.sitting_capacity}</Div>
-                    <P color="muted" className="text-xs">seats</P>
-                  </Div>
+                  {d.grid_rows && d.grid_cols
+                    ? `${d.grid_rows} × ${d.grid_cols} = ${d.sitting_capacity}`
+                    : d.sitting_capacity}{" "}
+                  seats
                 </TableCell>
                 <TableCell>
                   <Badge variant={d.is_enabled ? "success" : "default"}>
@@ -117,9 +79,7 @@ function HallDetailsContent() {
                       size="icon-sm"
                       variant="ghost"
                       title="Edit"
-                      onClick={() =>
-                        router.push(EXAM_ROUTES.hallDetails.edit(d.id))
-                      }
+                      onClick={() => router.push(EXAM_ROUTES.hallDetails.edit(d.id))}
                     >
                       <Pencil size={14} />
                     </Button>

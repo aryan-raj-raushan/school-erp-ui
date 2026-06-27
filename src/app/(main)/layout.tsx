@@ -2,8 +2,9 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ROUTES } from "@/constants";
+import { ROUTES, STORAGE_KEYS } from "@/constants";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
+import { initAppStorage } from "@/lib/app-storage";
 import { SidebarProvider } from "@/components/ui";
 import dynamic from "next/dynamic";
 
@@ -17,6 +18,15 @@ const AppHeader = dynamic(
   { ssr: false },
 );
 
+const ALL_STORAGE_KEYS = [
+  STORAGE_KEYS.accessToken,
+  STORAGE_KEYS.refreshToken,
+  STORAGE_KEYS.context,
+  STORAGE_KEYS.isAuthenticated,
+  STORAGE_KEYS.user,
+  "auth:permissions",
+];
+
 export default function DashboardLayout({
   children,
 }: {
@@ -25,9 +35,13 @@ export default function DashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (!TokenStorage.isAuthenticated()) {
-      router.replace(ROUTES.login);
-    }
+    // On cold start (native): restore from Preferences into localStorage if needed,
+    // then check auth. localStorage reads are sync so no blank screen.
+    initAppStorage(ALL_STORAGE_KEYS).then(() => {
+      if (!TokenStorage.isAuthenticated()) {
+        router.replace(ROUTES.login);
+      }
+    });
   }, [router]);
 
   return (
