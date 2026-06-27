@@ -221,6 +221,45 @@ export const SittingPlanService = {
   async remove(id: string): Promise<void> {
     await apiGateway.delete(EXAM_ENDPOINTS.sittingPlans.byId(id));
   },
+
+  async autoShuffle(payload: {
+    exam_ids: string[];
+    academic_year_id: string;
+    hall_detail_ids: string[];
+    clear_existing?: boolean;
+  }): Promise<{ total_assigned: number; rooms: { room_name: string; assigned_count: number }[] }> {
+    const res = await apiGateway.post<{ total_assigned: number; rooms: { room_name: string; assigned_count: number }[] }>(
+      EXAM_ENDPOINTS.sittingPlans.autoShuffle,
+      payload,
+    );
+    return res.data;
+  },
+
+  getRoomPdfUrl(params: { hall_detail_id: string; exam_ids: string[]; academic_year_id: string }): string {
+    const q = new URLSearchParams();
+    q.set('hall_detail_id', params.hall_detail_id);
+    q.set('academic_year_id', params.academic_year_id);
+    params.exam_ids.forEach((id) => q.append('exam_ids', id));
+    const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').replace(/\/$/, '');
+    return `${base}${EXAM_ENDPOINTS.sittingPlans.roomPdf}?${q.toString()}`;
+  },
+
+  async downloadRoomPdf(params: { hall_detail_id: string; exam_ids: string[]; academic_year_id: string; room_name?: string }): Promise<void> {
+    const q = new URLSearchParams();
+    q.set('hall_detail_id', params.hall_detail_id);
+    q.set('academic_year_id', params.academic_year_id);
+    params.exam_ids.forEach((id) => q.append('exam_ids', id));
+    const res = await apiGateway.get<ArrayBuffer>(`${EXAM_ENDPOINTS.sittingPlans.roomPdf}?${q.toString()}`, {
+      responseType: 'blob',
+    } as any);
+    const blob = new Blob([res as any], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `seating-${(params.room_name ?? 'room').replace(/\s+/g, '-').toLowerCase()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 // ── Admit Card ────────────────────────────────────────────────────────────────

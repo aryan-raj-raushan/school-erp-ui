@@ -2,11 +2,12 @@
 
 import { Suspense, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Users, X } from "lucide-react";
+import { ArrowLeft, Save, Users, X, Download } from "lucide-react";
 import { useRoomSittingPlan } from "@/hooks/exam/useExamSittingAndAdmit";
+import { SittingPlanService } from "@/services/exam.service";
 import { PageHeader } from "@/components/ui/page-header";
 import { Div, P, Button, Spinner } from "@/components/ui";
-import { EXAM_ROUTES } from "@/constants/exam.constants";
+import { EXAM_ROUTES, SITTING_PLAN_PAGE } from "@/constants/exam.constants";
 import type { StudentSlot } from "@/hooks/exam/useExamSittingAndAdmit";
 
 interface DragPayload {
@@ -32,10 +33,13 @@ function PoolChip({
         draggingRef.current = { studentId: slot.student_id, fromSeatIndex: null };
         onDragStart();
       }}
-      title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}`}
+      title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}${slot.class_label ? ` · ${slot.class_label}` : ""}`}
       className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-card hover:border-primary hover:bg-primary/5 cursor-grab active:cursor-grabbing select-none transition-colors"
     >
-      <span className="text-[11px] font-medium truncate max-w-[110px]">{slot.name}</span>
+      {slot.class_label && (
+        <span className="text-[8px] font-bold bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0 leading-none">{slot.class_label}</span>
+      )}
+      <span className="text-[11px] font-medium truncate max-w-[100px]">{slot.name}</span>
       {slot.roll_number && (
         <span className="text-[9px] text-muted-foreground shrink-0">#{slot.roll_number}</span>
       )}
@@ -74,7 +78,7 @@ function SeatBox({
       onDrop={(e) => { e.preventDefault(); setOver(false); if (canDrop) onDrop(index); }}
       className={[
         "relative rounded flex flex-col items-center justify-center border transition-all select-none overflow-hidden",
-        "w-full h-full min-h-[30px]",
+        "w-full h-full min-h-[38px]",
         slot
           ? saved
             ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 dark:border-emerald-700"
@@ -105,7 +109,7 @@ function SeatBox({
               onDragStart();
             }}
             className="flex flex-col items-center justify-center w-full h-full pt-2 cursor-grab active:cursor-grabbing"
-            title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}`}
+            title={`${slot.name}${slot.roll_number ? ` #${slot.roll_number}` : ""}${slot.class_label ? ` · ${slot.class_label}` : ""}`}
           >
             <span
               className={[
@@ -117,6 +121,9 @@ function SeatBox({
             </span>
             {slot.roll_number && (
               <span className="text-[7px] opacity-50 mt-0.5">{slot.roll_number}</span>
+            )}
+            {slot.class_label && (
+              <span className="text-[7px] opacity-40 mt-0.5 leading-none">{slot.class_label}</span>
             )}
           </div>
         </>
@@ -145,6 +152,7 @@ function RoomSittingContent() {
     isSaving,
     hasChanges,
     newCount,
+    movedCount,
     removedCount,
     movePoolToSeat,
     removeSeat,
@@ -154,6 +162,23 @@ function RoomSittingContent() {
 
   const draggingRef = useRef<DragPayload | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  async function handleDownloadPdf() {
+    setIsDownloadingPdf(true);
+    try {
+      await SittingPlanService.downloadRoomPdf({
+        hall_detail_id: hallDetailId,
+        exam_ids: [examId],
+        academic_year_id: academicYearId,
+        room_name: room?.room_name,
+      });
+    } catch {
+      // toast shown by service on error
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }
 
   function endDrag() { draggingRef.current = null; setIsDragging(false); }
 
@@ -174,9 +199,11 @@ function RoomSittingContent() {
 
   const occupiedCount = seated.filter(Boolean).length;
   const capacity = room?.sitting_capacity ?? 0;
-  const gridCols = room?.grid_cols ?? null;
+  // Use defined grid or derive sensible columns from capacity
+  const gridCols = room?.grid_cols ?? (capacity > 0 ? Math.ceil(Math.sqrt(capacity)) : 5);
+  const gridRows = room?.grid_rows ?? (capacity > 0 ? Math.ceil(capacity / gridCols) : null);
   const pct = capacity > 0 ? Math.round((occupiedCount / capacity) * 100) : 0;
-  const saveLabel = [newCount > 0 && `+${newCount}`, removedCount > 0 && `−${removedCount}`].filter(Boolean).join(" ");
+  const saveLabel = [newCount > 0 && `+${newCount}`, movedCount > 0 && `↔${movedCount}`, removedCount > 0 && `−${removedCount}`].filter(Boolean).join(" ");
 
   if (isLoading) return <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>;
   if (!room) return <Div type="row" justify="center" className="py-20"><P color="muted">Room not found.</P></Div>;
@@ -186,7 +213,7 @@ function RoomSittingContent() {
       {/* Header */}
       <PageHeader
         title={room.room_name}
-        subtitle={exam?.exam_name ?? ""}
+        subtitle={[exam?.exam_name, room.grid_cols && room.grid_rows ? `${room.grid_rows}×${room.grid_cols} grid` : `${capacity} seats`].filter(Boolean).join(" · ")}
         actions={
           <Div type="row" gap="sm">
             {hasChanges && (
@@ -194,6 +221,15 @@ function RoomSittingContent() {
                 <Save size={13} /> Save {saveLabel}
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              loading={isDownloadingPdf}
+              onClick={handleDownloadPdf}
+              disabled={!room || seated.filter(Boolean).length === 0}
+            >
+              <Download size={13} /> {SITTING_PLAN_PAGE.buttons.roomPdf}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => router.push(EXAM_ROUTES.sittingPlan.list)}>
               <ArrowLeft size={13} /> Back
             </Button>
@@ -210,7 +246,7 @@ function RoomSittingContent() {
         <span><strong className="text-foreground">{unassigned.length}</strong> unassigned</span>
         {hasChanges && (
           <span className="text-amber-600 dark:text-amber-400 font-medium">
-            {[newCount > 0 && `+${newCount} new`, removedCount > 0 && `−${removedCount} removed`].filter(Boolean).join(", ")} · unsaved
+            {[newCount > 0 && `+${newCount} new`, movedCount > 0 && `↔${movedCount} moved`, removedCount > 0 && `−${removedCount} removed`].filter(Boolean).join(", ")} · unsaved
           </span>
         )}
         <div className="ml-auto flex items-center gap-2 text-[10px]">
@@ -259,20 +295,14 @@ function RoomSittingContent() {
         </div>
 
         {/* Right — seat grid */}
-        <div className="flex-1 min-h-0 min-w-0">
+        <div className="flex-1 min-h-0 min-w-0 overflow-auto">
           <div
-            className="grid gap-1 h-full w-full"
-            style={
-              gridCols && room.grid_rows
-                ? {
-                    gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-                    gridTemplateRows: `repeat(${room.grid_rows}, minmax(0, 1fr))`,
-                  }
-                : {
-                    gridTemplateColumns: "repeat(auto-fill, minmax(34px, 1fr))",
-                    alignContent: "start",
-                  }
-            }
+            className="grid gap-1 w-full"
+            style={{
+              gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+              ...(gridRows ? { gridTemplateRows: `repeat(${gridRows}, minmax(36px, 1fr))` } : { alignContent: "start" }),
+              minHeight: gridRows ? `${gridRows * 38}px` : undefined,
+            }}
           >
             {seated.map((slot, i) => (
               <SeatBox

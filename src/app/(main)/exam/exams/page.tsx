@@ -1,30 +1,44 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Send, SendHorizonal } from "lucide-react";
 import { useExams } from "@/hooks/exam/useExams";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import {
-  Div, P, Button, Select, Badge, Spinner,
+  Div, Button, Select, Badge, Spinner,
   PageHeader, PageCol, FilterBar,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
 } from "@/components/ui";
 import { EXAMS_PAGE, EXAM_ROUTES, EXAM_TERM_OPTIONS } from "@/constants/exam.constants";
-import type { ExamFilters } from "@/types/exam.types";
+import type { Exam, ExamFilters } from "@/types/exam.types";
 
 function ExamsContent() {
   const router = useRouter();
   const { exams, pagination, filters, isLoading, updateFilters, remove, togglePublish } = useExams();
 
-  console.log("exams: ", exams);
-
   const {
     years, classes,
     selectedAcademicYearId, setSelectedAcademicYearId,
     selectedClassId, handleClassChange,
-  } = useAcademicClassSection({ autoSelectCurrentYear: false });
+  } = useAcademicClassSection({ autoSelectCurrentYear: true });
+
+  const classNameById = useMemo(
+    () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
+    [classes],
+  );
+
+  // Group sibling exams (same name+term+year = one logical exam across classes)
+  const examGroups = useMemo(() => {
+    const groups = new Map<string, Exam[]>();
+    exams.forEach((e) => {
+      const key = `${e.exam_name}||${e.exam_term}||${e.academic_year_id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(e);
+    });
+    return [...groups.values()];
+  }, [exams]);
 
   function handleYearChange(val: string) {
     setSelectedAcademicYearId(val);
@@ -37,11 +51,19 @@ function ExamsContent() {
     updateFilters({ class_id: val || undefined });
   }
 
+  async function removeGroup(group: Exam[]) {
+    for (const e of group) await remove(e.id);
+  }
+
+  async function togglePublishGroup(group: Exam[], publish: boolean) {
+    for (const e of group) await togglePublish(e.id, publish);
+  }
+
   return (
     <PageCol>
       <PageHeader
         title={EXAMS_PAGE.pageHeading.title}
-        subtitle={pagination ? `${pagination.total} exams` : ""}
+        subtitle={examGroups.length ? `${examGroups.length} exam${examGroups.length > 1 ? "s" : ""}` : ""}
         actions={
           <Button onClick={() => router.push(EXAM_ROUTES.exams.create)}>
             <Plus size={16} /> {EXAMS_PAGE.buttons.add}
@@ -83,6 +105,7 @@ function ExamsContent() {
             <TableHeaderCell>{EXAMS_PAGE.table.sno}</TableHeaderCell>
             <TableHeaderCell>{EXAMS_PAGE.table.examName}</TableHeaderCell>
             <TableHeaderCell>{EXAMS_PAGE.table.term}</TableHeaderCell>
+            <TableHeaderCell>Classes</TableHeaderCell>
             <TableHeaderCell>{EXAMS_PAGE.table.startDate}</TableHeaderCell>
             <TableHeaderCell>{EXAMS_PAGE.table.endDate}</TableHeaderCell>
             <TableHeaderCell>{EXAMS_PAGE.table.published}</TableHeaderCell>
@@ -92,50 +115,64 @@ function ExamsContent() {
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={8}><Spinner /></TableEmptyRow>
-          ) : exams.length === 0 ? (
-            <TableEmptyRow colSpan={8}>{EXAMS_PAGE.table.noEntry}</TableEmptyRow>
+            <TableEmptyRow colSpan={9}><Spinner /></TableEmptyRow>
+          ) : examGroups.length === 0 ? (
+            <TableEmptyRow colSpan={9}>{EXAMS_PAGE.table.noEntry}</TableEmptyRow>
           ) : (
-            exams.map((exam, i) => (
-              <TableRow key={exam.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{exam.exam_name}</TableCell>
-                <TableCell>
-                  <Badge variant="info">{exam.exam_term}</Badge>
-                </TableCell>
-                <TableCell>{exam.start_date}</TableCell>
-                <TableCell>{exam.end_date}</TableCell>
-                <TableCell>
-                  <Badge variant={exam.is_published ? "success" : "warning"}>
-                    {exam.is_published ? "Published" : "Draft"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={exam.is_enabled ? "success" : "default"}>
-                    {exam.is_enabled ? "Active" : "Disabled"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="icon-sm" variant="ghost" title="Edit"
-                      onClick={() => router.push(EXAM_ROUTES.exams.edit(exam.id))}>
-                      <Pencil size={14} />
-                    </Button>
-                    <Button size="icon-sm" variant="ghost"
-                      title={exam.is_published ? "Unpublish" : "Publish"}
-                      onClick={() => togglePublish(exam.id, !exam.is_published)}>
-                      {exam.is_published
-                        ? <Send size={14} className="text-amber-500" />
-                        : <SendHorizonal size={14} className="text-emerald-500" />}
-                    </Button>
-                    <Button size="icon-sm" variant="destructive" title="Delete"
-                      onClick={() => remove(exam.id)}>
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
+            examGroups.map((group, i) => {
+              const rep = group[0]; // representative record for shared fields
+              const isPublished = group.every((e) => e.is_published);
+              const isEnabled = group.every((e) => e.is_enabled);
+              return (
+                <TableRow key={rep.id}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell primary>{rep.exam_name}</TableCell>
+                  <TableCell>
+                    <Badge variant="info">{rep.exam_term}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Div type="row" gap="xs" wrap>
+                      {group.map((e) => (
+                        <Badge key={e.id} variant="default">
+                          {classNameById[e.class_id] ?? e.class_id.slice(0, 6)}
+                        </Badge>
+                      ))}
+                    </Div>
+                  </TableCell>
+                  <TableCell>{rep.start_date}</TableCell>
+                  <TableCell>{rep.end_date}</TableCell>
+                  <TableCell>
+                    <Badge variant={isPublished ? "success" : "warning"}>
+                      {isPublished ? "Published" : "Draft"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={isEnabled ? "success" : "default"}>
+                      {isEnabled ? "Active" : "Disabled"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Div type="row" gap="xs">
+                      <Button size="icon-sm" variant="ghost" title="Edit"
+                        onClick={() => router.push(EXAM_ROUTES.exams.edit(rep.id))}>
+                        <Pencil size={14} />
+                      </Button>
+                      <Button size="icon-sm" variant="ghost"
+                        title={isPublished ? "Unpublish" : "Publish"}
+                        onClick={() => togglePublishGroup(group, !isPublished)}>
+                        {isPublished
+                          ? <Send size={14} className="text-amber-500" />
+                          : <SendHorizonal size={14} className="text-emerald-500" />}
+                      </Button>
+                      <Button size="icon-sm" variant="destructive" title="Delete"
+                        onClick={() => removeGroup(group)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </Div>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

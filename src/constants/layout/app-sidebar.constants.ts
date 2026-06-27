@@ -20,6 +20,7 @@ import {
   BanknoteArrowUp,
   Receipt,
   Wifi,
+  BarChart2,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { Role } from "@/types";
@@ -288,7 +289,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         permissions: [PERMISSIONS.exams.view],
       },
       {
-        title: "Exam Hall Details",
+        title: "Exam Room Details",
         url: "/exam/hall-details",
         permissions: [PERMISSIONS.exams.view],
       },
@@ -311,18 +312,18 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
   {
     title: "Result",
     url: "#",
-    icon: CalendarDays,
-    permissions: [PERMISSIONS.leave.view, PERMISSIONS.leave.approve],
+    icon: BarChart2,
+    permissions: [PERMISSIONS.exams.view, PERMISSIONS.exams.create],
     items: [
       {
         title: "Marks",
         url: "/result/marks",
-        permissions: [PERMISSIONS.leave.approve],
+        permissions: [PERMISSIONS.exams.create],
       },
       {
         title: "Report Card",
         url: "/result/report-cards",
-        permissions: [PERMISSIONS.leave.view],
+        permissions: [PERMISSIONS.exams.view],
       },
     ],
   },

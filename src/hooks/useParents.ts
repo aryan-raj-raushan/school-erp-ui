@@ -1,251 +1,155 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { ParentService, type CreateParentPayload, type UpdateParentPayload, type ParentFilters } from '@/services/parent.service';
-import { StudentsService } from '@/services/students.service';
-import { ClassesService } from '@/services/classes.service';
-import type { SchoolParent, Student, Class, Section, PaginationMeta, BulkImportJob } from '@/types';
+import { StudentsService, type GuardianRow, type AddGuardianPayload } from '@/services/students-v2.service';
+import type { StudentListItem } from '@/types/students.types';
 
-const parentSchema = z.object({
+const guardianSchema = z.object({
+  student_id: z.string().min(1, 'Student is required'),
+  relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER']),
   first_name: z.string().min(1, 'First name required'),
   last_name: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  phone_number: z.string().optional(),
+  phone_number: z.string().min(7, 'Valid phone required'),
   dial_code: z.string().optional(),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   occupation: z.string().optional(),
+  is_primary: z.boolean().optional(),
+  can_pickup: z.boolean().optional(),
 });
 
-const linkStudentSchema = z.object({
-  student_id: z.string().min(1, 'Student ID required'),
-});
+export type GuardianFormValues = z.infer<typeof guardianSchema>;
 
-export type ParentFormValues = z.infer<typeof parentSchema>;
-export type LinkStudentFormValues = z.infer<typeof linkStudentSchema>;
+interface GuardianFilters {
+  search?: string;
+}
 
-export function useParents(initialFilters: ParentFilters = {}) {
-  const [parents, setParents] = useState<SchoolParent[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-  const [filters, setFilters] = useState<ParentFilters>(initialFilters);
+export function useParents(initialFilters: GuardianFilters = {}) {
+  const [parents, setParents] = useState<GuardianRow[]>([]);
+  const [filters, setFilters] = useState<GuardianFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingParent, setEditingParent] = useState<SchoolParent | null>(null);
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [linkingParent, setLinkingParent] = useState<SchoolParent | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [linkClasses, setLinkClasses] = useState<Class[]>([]);
-  const [linkSections, setLinkSections] = useState<Section[]>([]);
-  const [showBulkModal, setShowBulkModal] = useState(false);
-  const [bulkJob, setBulkJob] = useState<BulkImportJob | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const bulkFileRef = useRef<HTMLInputElement>(null);
+  const [showEditModal] = useState(false);
+  const [students, setStudents] = useState<StudentListItem[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
 
-  const form = useForm<ParentFormValues>({
-    resolver: zodResolver(parentSchema),
-    defaultValues: { dial_code: '+91' },
+  const form = useForm<GuardianFormValues>({
+    resolver: zodResolver(guardianSchema),
+    defaultValues: { dial_code: '+91', is_primary: true, can_pickup: true, relation: 'FATHER' },
   });
 
-  const editForm = useForm<ParentFormValues>({
-    resolver: zodResolver(parentSchema),
-  });
-
-  const linkForm = useForm<LinkStudentFormValues>({
-    resolver: zodResolver(linkStudentSchema),
-  });
-
-  const fetchParents = useCallback(async (overrideFilters?: ParentFilters) => {
+  const fetchParents = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await ParentService.list(overrideFilters ?? filters);
-      setParents(result.items);
-      setPagination(result.pagination);
+      const data = await StudentsService.listAllGuardians({ search: filters.search });
+      setParents(data);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load parents');
+      toast.error(err instanceof Error ? err.message : 'Failed to load guardians');
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters.search]);
 
-  async function createParent(values: ParentFormValues) {
-    const payload: CreateParentPayload = {
-      first_name: values.first_name,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.email && { email: values.email }),
-      ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
-      ...(values.occupation && { occupation: values.occupation }),
-    };
-    const parent = await ParentService.create(payload);
-    toast.success(`${parent.first_name} added`);
-    await fetchParents();
-    setShowModal(false);
-    form.reset();
-  }
+  const fetchStudents = useCallback(async () => {
+    setStudentsLoading(true);
+    try {
+      const res = await StudentsService.list({ limit: 500 });
+      setStudents(res.items);
+    } catch {
+      // non-critical
+    } finally {
+      setStudentsLoading(false);
+    }
+  }, []);
 
-  async function updateParent(values: ParentFormValues) {
-    if (!editingParent) return;
-    const payload: UpdateParentPayload = {
-      first_name: values.first_name,
-      ...(values.last_name && { last_name: values.last_name }),
-      ...(values.email && { email: values.email }),
-      ...(values.phone_number && { phone_number: values.phone_number, dial_code: values.dial_code ?? '+91' }),
-      ...(values.occupation && { occupation: values.occupation }),
-    };
-    const parent = await ParentService.update(editingParent.id, payload);
-    toast.success(`${parent.first_name} updated`);
-    await fetchParents();
-    setShowEditModal(false);
-    setEditingParent(null);
-    editForm.reset();
+  async function createGuardian(values: GuardianFormValues) {
+    try {
+      const payload: AddGuardianPayload = {
+        relation: values.relation,
+        first_name: values.first_name,
+        phone_number: values.phone_number,
+        dial_code: values.dial_code ?? '+91',
+        ...(values.last_name && { last_name: values.last_name }),
+        ...(values.email && { email: values.email }),
+        ...(values.occupation && { occupation: values.occupation }),
+        is_primary: values.is_primary ?? false,
+        can_pickup: values.can_pickup ?? false,
+      };
+      await StudentsService.addGuardian(values.student_id, payload);
+      toast.success(`${values.first_name} added as guardian`);
+      await fetchParents();
+      setShowModal(false);
+      form.reset({ dial_code: '+91', is_primary: true, can_pickup: true, relation: 'FATHER' });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add guardian');
+    }
   }
 
   async function deleteParent(id: string) {
     try {
-      await ParentService.remove(id);
-      toast.success('Parent deleted');
-      await fetchParents();
+      await StudentsService.removeGuardian(id);
+      toast.success('Guardian removed');
+      setParents((prev) => prev.filter((p) => p.id !== id));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete');
+      toast.error(err instanceof Error ? err.message : 'Failed to remove');
     }
   }
 
-  async function linkStudent(values: LinkStudentFormValues) {
-    if (!linkingParent) return;
-    try {
-      await ParentService.linkStudent(linkingParent.id, values.student_id);
-      toast.success('Student linked');
-      setShowLinkModal(false);
-      setLinkingParent(null);
-      linkForm.reset();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to link student');
-    }
-  }
-
-  function openEditModal(parent: SchoolParent) {
-    setEditingParent(parent);
-    editForm.reset({
-      first_name: parent.first_name,
-      last_name: parent.last_name ?? '',
-      email: parent.email ?? '',
-      phone_number: parent.phone_number ?? '',
-      dial_code: parent.dial_code ?? '+91',
-      occupation: parent.occupation ?? '',
-    });
-    setShowEditModal(true);
-  }
-
-  async function openLinkModal(parent: SchoolParent) {
-    setLinkingParent(parent);
-    linkForm.reset();
-    setShowLinkModal(true);
-    try {
-      const [studentsRes, classesRes] = await Promise.all([
-        StudentsService.list({ limit: 100 }),
-        ClassesService.list(),
-      ]);
-      setStudents(studentsRes.items);
-      setLinkClasses(classesRes.items);
-      setLinkSections(classesRes.sections);
-    } catch {
-      // non-critical; dropdown may be empty
-    }
-  }
-
-  async function downloadTemplate() {
-    try {
-      const blob = await ParentService.downloadBulkTemplate();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'parent-import-template.xlsx';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to download template');
-    }
-  }
-
-  async function bulkImport() {
-    const file = bulkFileRef.current?.files?.[0];
-    if (!file) { toast.error('Select a file first'); return; }
-    setIsImporting(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { jobId } = await ParentService.bulkImport(formData);
-      toast.success(`Import started — Job ID: ${jobId}`);
-      setBulkJob({ jobId, status: 'PENDING' });
-      if (bulkFileRef.current) bulkFileRef.current.value = '';
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Bulk import failed');
-    } finally {
-      setIsImporting(false);
-    }
-  }
-
-  async function checkBulkStatus() {
-    if (!bulkJob?.jobId) return;
-    try {
-      const job = await ParentService.getBulkStatus(bulkJob.jobId);
-      setBulkJob(job);
-      if (job.status === 'COMPLETED') {
-        toast.success(`Import complete — ${job.processed ?? 0} processed`);
-        await fetchParents();
-        setShowBulkModal(false);
-        setBulkJob(null);
-      } else if (job.status === 'FAILED') {
-        toast.error('Import failed');
-      }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to check status');
-    }
-  }
-
-  function updateFilters(next: Partial<ParentFilters>) {
+  function updateFilters(next: Partial<GuardianFilters>) {
     setFilters((prev) => ({ ...prev, ...next }));
+  }
+
+  function openModal() {
+    fetchStudents();
+    setShowModal(true);
   }
 
   useEffect(() => { fetchParents(); }, [fetchParents]);
 
+  // Stub for bulk/link features that don't apply to this new flow
+  const pagination = { total: parents.length, page: 1, totalPages: 1 };
+
   return {
-    parents, pagination, filters, isLoading,
+    parents,
+    pagination,
+    filters,
+    isLoading,
     showModal,
-    openModal: () => setShowModal(true),
+    openModal,
     closeModal: () => { setShowModal(false); form.reset(); },
     form,
-    handleSubmit: form.handleSubmit(createParent),
+    handleSubmit: form.handleSubmit(createGuardian),
     isSubmitting: form.formState.isSubmitting,
     showEditModal,
-    editingParent,
-    openEditModal,
-    closeEditModal: () => { setShowEditModal(false); setEditingParent(null); editForm.reset(); },
-    editForm,
-    handleEditSubmit: editForm.handleSubmit(updateParent),
-    isEditSubmitting: editForm.formState.isSubmitting,
+    openEditModal: () => {},
+    closeEditModal: () => {},
+    editForm: form,
+    handleEditSubmit: form.handleSubmit(createGuardian),
+    isEditSubmitting: false,
     deleteParent,
     students,
-    linkClasses,
-    linkSections,
-    showLinkModal,
-    linkingParent,
-    openLinkModal,
-    closeLinkModal: () => { setShowLinkModal(false); setLinkingParent(null); linkForm.reset(); },
-    linkForm,
-    handleLinkSubmit: linkForm.handleSubmit(linkStudent),
-    isLinkSubmitting: linkForm.formState.isSubmitting,
-    showBulkModal,
-    openBulkModal: () => setShowBulkModal(true),
-    closeBulkModal: () => { setShowBulkModal(false); setBulkJob(null); },
-    bulkJob,
-    bulkFileRef,
-    isImporting,
-    bulkImport,
-    checkBulkStatus,
-    downloadTemplate,
+    studentsLoading,
+    linkClasses: [],
+    linkSections: [],
+    showLinkModal: false,
+    linkingParent: null,
+    openLinkModal: () => {},
+    closeLinkModal: () => {},
+    linkForm: form,
+    handleLinkSubmit: form.handleSubmit(createGuardian),
+    isLinkSubmitting: false,
+    showBulkModal: false,
+    openBulkModal: () => {},
+    closeBulkModal: () => {},
+    bulkJob: null,
+    bulkFileRef: { current: null },
+    isImporting: false,
+    bulkImport: async () => {},
+    checkBulkStatus: async () => {},
+    downloadTemplate: async () => {},
     updateFilters,
     refetch: fetchParents,
   };

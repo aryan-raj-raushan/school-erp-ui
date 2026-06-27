@@ -6,7 +6,7 @@ import {
   Div, Button, H2,
   FormField, Input, Select,
   CheckboxLabel, Spinner,
-  PageHeader, PageCol,
+  PageHeader, PageCol, MultiSelect,
 } from '@/components/ui';
 
 export default function NewSubjectPage() {
@@ -22,6 +22,8 @@ export default function NewSubjectPage() {
       </Div>
     );
   }
+
+  const classOptions = classes.map((c) => ({ value: c.id, label: c.name }));
 
   return (
     <Div type="col" gap="lg" className="max-w-2xl">
@@ -47,15 +49,17 @@ export default function NewSubjectPage() {
               </FormField>
             </Div>
 
-            <FormField label="Class" error={form.formState.errors.class_id?.message}>
-              <Select {...form.register('class_id')} defaultValue="">
-                <option value="">Select Class</option>
-                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
+            <FormField label="Classes">
+              <MultiSelect
+                options={classOptions}
+                value={form.watch('class_ids') ?? []}
+                onChange={(vals) => form.setValue('class_ids', vals)}
+                placeholder="Select classes..."
+              />
             </FormField>
 
             <FormField label="Class (Year / Semester)" error={form.formState.errors.class_detail_id?.message}>
-              <Select {...form.register('class_detail_id')} defaultValue="" disabled={!form.watch('class_id')}>
+              <Select {...form.register('class_detail_id')} defaultValue="" disabled={!(form.watch('class_ids') ?? []).length}>
                 <option value="">Select Year / Semester</option>
                 {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
               </Select>

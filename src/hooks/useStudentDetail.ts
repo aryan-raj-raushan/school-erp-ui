@@ -214,7 +214,7 @@ export function useStudentDetail(id?: string) {
           : undefined,
         address: values.address ? clean(values.address) : undefined,
         hostel_info: values.hostel_info ? clean(values.hostel_info) : undefined,
-        parents: values.parents?.map(clean),
+        parents: values.parents?.filter((p) => p.first_name?.trim() && p.phone_number?.trim()).map(clean),
         documents: values.documents?.map(clean),
       };
 

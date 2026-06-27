@@ -182,6 +182,21 @@ export const SCHEDULE_PAGE = {
     addRow: 'Add Subject',
     addSubSchedule: 'Add Sub-Subject',
     removeRow: 'Remove',
+    loadSubjects: 'Load All Subjects',
+    applyToAll: 'Apply to All',
+  },
+  bulk: {
+    sectionTitle: 'Quick Fill',
+    date: 'Common Date',
+    startTime: 'Common Start',
+    endTime: 'Common End',
+    marks: 'Max Marks',
+    passing: 'Pass Marks',
+  },
+  summary: {
+    title: 'Schedule Summary',
+    empty: 'Load or add subjects to preview',
+    subjectsLabel: 'subjects',
   },
   table: {
     sno: 'S. No.',
@@ -279,7 +294,7 @@ export const ATTENDANCE_PAGE = {
 // ── Hall Details Page ─────────────────────────────────────────────────────────
 
 export const HALL_DETAILS_PAGE = {
-  pageHeading: { title: 'Exam Hall Rooms', subtitle: 'Manage exam rooms and seating capacity' },
+  pageHeading: { title: 'Exam  Rooms', subtitle: 'Manage exam rooms and seating capacity' },
   buttons: {
     add: 'Add Room',
     save: 'Save',
@@ -317,7 +332,20 @@ export const SITTING_PLAN_PAGE = {
     save: 'Save Plan',
     cancel: 'Cancel',
     back: 'Back',
-    autoAssign: 'Auto Assign',
+    autoAssign: 'Auto-Assign',
+    roomPdf: 'Room PDF',
+  },
+  shuffle: {
+    panelTitle: 'Auto-Assign Students (Shuffle)',
+    panelSubtitle: 'Mix students from different classes/sections to prevent cheating',
+    selectExams: 'Select exams to include',
+    selectRooms: 'Select rooms to fill (in order)',
+    clearExisting: 'Clear existing assignments first',
+    assign: 'Shuffle & Assign',
+    resultTitle: 'Assignment Complete',
+    total: 'Total assigned',
+    noExams: 'Select at least one exam',
+    noRooms: 'Select at least one room',
   },
   table: {
     sno: 'S. No.',

@@ -15,7 +15,7 @@ import type { Class } from '@/types';
 const editSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().max(20).optional(),
-  class_id: z.string().optional(),
+  class_ids: z.array(z.string()).optional(),
   class_detail_id: z.string().optional(),
   display_order: z.coerce.number().int().min(0),
   total_marks: z.coerce.number().int().min(0),
@@ -34,15 +34,15 @@ export function useEditSubject(id: string) {
 
   const form = useForm<EditSubjectFormValues>({
     resolver: zodResolver(editSubjectSchema) as any,
-    defaultValues: { display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
+    defaultValues: { class_ids: [], display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
   });
 
-  const watchedClassId = form.watch('class_id');
+  const watchedClassIds = form.watch('class_ids');
 
-  const fetchClassDetails = useCallback(async (classId: string) => {
-    if (!classId) { setClassDetails([]); return; }
+  const fetchClassDetails = useCallback(async (classIds: string[]) => {
+    if (!classIds.length) { setClassDetails([]); return; }
     try {
-      const res = await ClassDetailsService.list({ class_id: classId, limit: 100 });
+      const res = await ClassDetailsService.list({ class_id: classIds[0], limit: 100 });
       setClassDetails(res.items);
     } catch { /* ignore */ }
   }, []);
@@ -58,7 +58,7 @@ export function useEditSubject(id: string) {
       form.reset({
         name: subject.name,
         code: subject.code ?? '',
-        class_id: subject.class_id ?? '',
+        class_ids: subject.class_ids ?? [],
         class_detail_id: subject.class_detail_id ?? '',
         display_order: subject.display_order,
         total_marks: subject.total_marks,
@@ -66,7 +66,7 @@ export function useEditSubject(id: string) {
         is_elective: subject.is_elective,
         is_active: subject.is_active,
       });
-      if (subject.class_id) await fetchClassDetails(subject.class_id);
+      if (subject.class_ids?.length) await fetchClassDetails(subject.class_ids);
     } catch {
       toast.error('Failed to load subject');
       router.push(ROUTES.subjects);
@@ -75,9 +75,9 @@ export function useEditSubject(id: string) {
 
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => {
-    if (watchedClassId !== undefined) fetchClassDetails(watchedClassId ?? '');
+    if (watchedClassIds !== undefined) fetchClassDetails(watchedClassIds ?? []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedClassId]);
+  }, [JSON.stringify(watchedClassIds)]);
 
   function toggleIsElective() { form.setValue('is_elective', !form.getValues('is_elective')); }
   function toggleIsActive() { form.setValue('is_active', !form.getValues('is_active')); }
@@ -87,7 +87,7 @@ export function useEditSubject(id: string) {
       await SubjectsService.update(id, {
         name: values.name,
         code: values.code || undefined,
-        class_id: values.class_id || undefined,
+        class_ids: values.class_ids,
         class_detail_id: values.class_detail_id || undefined,
         display_order: values.display_order,
         total_marks: values.total_marks,

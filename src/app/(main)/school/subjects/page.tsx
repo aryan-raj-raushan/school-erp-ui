@@ -36,10 +36,8 @@ export default function SubjectsPage() {
     removeSubject,
     navigateToNew,
     navigateToEdit,
-    getClassName,
+    getClassNames,
   } = useSubjectsPage();
-
-console.log("subjects: ", subjects);
 
   return (
     <PageCol>
@@ -113,7 +111,7 @@ console.log("subjects: ", subjects);
               <TableRow key={subject.id}>
                 <TableCell primary>{subject.name}</TableCell>
                 <TableCell>{subject.code ?? "—"}</TableCell>
-                <TableCell>{getClassName(subject.class_id)}</TableCell>
+                <TableCell>{getClassNames(subject.class_ids ?? [])}</TableCell>
                 <TableCell>{subject.display_order}</TableCell>
                 <TableCell>{subject.total_marks}</TableCell>
                 <TableCell>{subject.passing_marks}</TableCell>

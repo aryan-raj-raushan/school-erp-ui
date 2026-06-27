@@ -114,11 +114,16 @@ function MarksContent() {
     togglePublish,
   } = useExamResults();
 
-  const { setValue, watch } = filterForm;
-  const watchedExamId = watch("exam_id");
 
-  // ── Student list — driven by ACS selections ───────────────────────────────
-  const { students, isLoading: isLoadingStudents } = useStudents(
+  const { register, setValue, watch } = filterForm;
+  const watchedExamId = watch('exam_id');
+
+  const { exams } = useExams({
+    academic_year_id: selectedAcademicYearId,
+    class_id: selectedClassId,
+  });
+
+  const { students } = useStudents(
     selectedClassId && selectedAcademicYearId
       ? {
           class_id: selectedClassId,
@@ -155,10 +160,16 @@ function MarksContent() {
     setValue("section_id", sId);
   }
 
-  const noSelection = !watchedExamId || !selectedClassId;
-  const isTableBusy =
-    isLoadingSchedules || isLoadingResults || isLoadingStudents;
-  const totalCols = 3 + schedules.length;
+  // Parent schedules only (no sub-subjects as columns — they group under parent)
+  const parentSchedules = schedules.filter((s) => !s.parent_schedule_id);
+
+  const totalCols = 3 + parentSchedules.length; // S.No + Roll + Name + schedules
+
+  // Build a map: student_id → student for subject_id lookup during save
+  const studentSubjectMap = students.map((s) => ({
+    student_id: s.id,
+    subject_id: '',
+  }));
 
   return (
     <Div type="col" gap="lg">
