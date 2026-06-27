@@ -138,7 +138,7 @@ function EditTimetablePageInner() {
             <TableBody>
               {DAYS_OF_WEEK.map((day) => (
                 <TableRow key={day}>
-                  <TableCell weight="semibold" className="bg-muted/50">{DAY_LABELS[day]}</TableCell>
+                  <TableCell className="bg-muted/50"><P weight="semibold">{DAY_LABELS[day]}</P></TableCell>
                   {periods.map((p) => (
                     <TableCell key={p}>
                       <Div type="col" gap="xs">

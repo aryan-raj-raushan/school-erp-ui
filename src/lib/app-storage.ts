@@ -27,6 +27,8 @@ export async function initAppStorage(keys: string[]): Promise<void> {
   if (!needsRestore) return;
 
   const Preferences = await getPreferences();
+  if (!Preferences) return;
+
   await Promise.all(
     keys.map(async (key) => {
       if (localStorage.getItem(key) !== null) return;
@@ -47,7 +49,7 @@ export const AppStorage = {
     localStorage.setItem(key, value);
     // Durable backup on native
     if (Capacitor.isNativePlatform()) {
-      getPreferences().then((p) => p.set({ key, value }));
+      getPreferences().then((p) => p?.set({ key, value }));
     }
   },
 
@@ -55,7 +57,7 @@ export const AppStorage = {
     if (typeof window === "undefined") return;
     localStorage.removeItem(key);
     if (Capacitor.isNativePlatform()) {
-      getPreferences().then((p) => p.remove({ key }));
+      getPreferences().then((p) => p?.remove({ key }));
     }
   },
 };

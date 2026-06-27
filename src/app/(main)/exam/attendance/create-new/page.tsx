@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, CheckCheck, XCircle, Download } from "lucide-react";
 import { useMarkAttendance } from "@/hooks/exam/useExamAttendance";
@@ -16,49 +16,23 @@ import {
   Select,
   Badge,
   Spinner,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
 import {
   ATTENDANCE_PAGE,
   EXAM_ROUTES,
-  ATTENDANCE_STATUS_OPTIONS,
   ATTENDANCE_BADGE,
 } from "@/constants/exam.constants";
 import type { AttendanceStatus } from "@/types/exam.types";
 import { useStudents } from "@/hooks/useStudentV2";
 
-// ── Status Toggle Cell ────────────────────────────────────────────────────────
-
-function StatusCell({
-  status,
-  onChange,
-}: {
-  status: AttendanceStatus;
-  onChange: (s: AttendanceStatus) => void;
-}) {
-  return (
-    <Select
-      width="sm"
-      value={status}
-      onChange={(e) => onChange(e.target.value as AttendanceStatus)}
-    >
-      {ATTENDANCE_STATUS_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </Select>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────────────────────
+type AttendanceRow = {
+  student_id: string;
+  student_name: string;
+  roll_number?: string;
+  entries: Record<string, AttendanceStatus>;
+};
 
 function MarkAttendanceContent() {
   const router = useRouter();
@@ -99,12 +73,10 @@ function MarkAttendanceContent() {
       : {},
   );
 
-  // When year changes, sync to state
   useEffect(() => {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
 
-  // Init rows only after schedules have finished loading
   useEffect(() => {
     if (!examId || !selectedAcademicYearId || !selectedClassId) return;
     if (isLoadingSchedules || schedules.length === 0) return;
@@ -118,7 +90,76 @@ function MarkAttendanceContent() {
     sectionId: selectedSectionId,
   });
 
-  const totalCols = 3 + schedules.length; // roll, name, status-per-schedule
+  // Dynamic columns for each schedule
+  const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
+    const baseCols: ColumnDef<AttendanceRow>[] = [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "roll_number",
+        header: "Roll No.",
+        cell: ({ row }) => row.original.roll_number ?? "—",
+      },
+      {
+        accessorKey: "student_name",
+        header: "Student",
+        meta: { primary: true },
+      },
+    ];
+
+    const scheduleCols = schedules.map(
+      (sc): ColumnDef<AttendanceRow> => ({
+        id: `schedule-${sc.id}`,
+        header: () => (
+          <Div type="col" gap="xs" align="center">
+            <Div className="truncate max-w-[120px] block text-xs font-medium">
+              {sc.subject_name}
+            </Div>
+            {sc.subject_type && sc.subject_type !== "MAIN_EXAM" && (
+              <Badge variant="secondary" className="text-[10px] px-1 py-0 capitalize">
+                {sc.subject_type.replace(/_/g, " ").toLowerCase()}
+              </Badge>
+            )}
+            {sc.section_name && (
+              <Div className="text-[10px] font-normal text-muted-foreground/60">
+                Sec {sc.section_name}
+              </Div>
+            )}
+            <Div className="text-xs font-normal text-muted-foreground/70">
+              {sc.exam_date}
+            </Div>
+          </Div>
+        ),
+        cell: ({ row }) => {
+          const status = row.original.entries[sc.id] ?? "ABSENT";
+          return (
+            <Div type="col" gap="xs" align="center">
+              <Badge variant={ATTENDANCE_BADGE[status]} className="text-xs mb-1">
+                {status}
+              </Badge>
+              <Select
+                width="sm"
+                value={status}
+                onChange={(e) =>
+                  setStatus(row.original.student_id, sc.id, e.target.value as AttendanceStatus)
+                }
+                className="text-xs"
+              >
+                <option value="PRESENT">Present</option>
+                <option value="ABSENT">Absent</option>
+                <option value="LEAVE">Leave</option>
+              </Select>
+            </Div>
+          );
+        },
+      })
+    );
+
+    return [...baseCols, ...scheduleCols];
+  }, [schedules, setStatus]);
 
   return (
     <Div type="col" gap="lg">
@@ -256,100 +297,23 @@ function MarkAttendanceContent() {
                 </Button>
               </Div>
 
-              {/* Scrollable attendance table */}
-              <Div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-sm min-w-[640px]">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">
-                        #
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-28">
-                        Roll No.
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground min-w-[160px]">
-                        Student
-                      </th>
-                      {schedules.map((sc) => (
-                        <th
-                          key={sc.id}
-                          className="px-3 py-3 text-center font-medium text-muted-foreground min-w-[130px]"
-                        >
-                          <Div type="col" gap="xs" align="center">
-                            <Div className="truncate max-w-[120px] block">
-                              {sc.subject_name}
-                            </Div>
-                            {sc.subject_type && sc.subject_type !== "MAIN_EXAM" && (
-                              <Badge variant="secondary" className="text-[10px] px-1 py-0 capitalize">
-                                {sc.subject_type.replace(/_/g, " ").toLowerCase()}
-                              </Badge>
-                            )}
-                            {sc.section_name && (
-                              <Div className="text-[10px] font-normal text-muted-foreground/60">
-                                Sec {sc.section_name}
-                              </Div>
-                            )}
-                            <Div className="text-xs font-normal text-muted-foreground/70">
-                              {sc.exam_date}
-                            </Div>
-                          </Div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={totalCols}
-                          className="px-4 py-12 text-center text-muted-foreground"
-                        >
-                          Load students by selecting a class above
-                        </td>
-                      </tr>
-                    ) : (
-                      rows.map((row, i) => (
-                        <tr
-                          key={row.student_id}
-                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {i + 1}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                            {row.roll_number ?? "—"}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-foreground">
-                            {row.student_name}
-                          </td>
-                          {schedules.map((sc) => (
-                            <td key={sc.id} className="px-3 py-2 text-center">
-                              <Div type="col" gap="xs" align="center">
-                                <Badge
-                                  variant={
-                                    ATTENDANCE_BADGE[
-                                      row.entries[sc.id] ?? "ABSENT"
-                                    ]
-                                  }
-                                  className="text-xs mb-1"
-                                >
-                                  {row.entries[sc.id] ?? "ABSENT"}
-                                </Badge>
-                                <StatusCell
-                                  status={row.entries[sc.id] ?? "ABSENT"}
-                                  onChange={(s) =>
-                                    setStatus(row.student_id, sc.id, s)
-                                  }
-                                />
-                              </Div>
-                            </td>
-                          ))}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </Div>
+              {/* DataTable with dynamic schedule columns */}
+              {rows.length === 0 ? (
+                <Div
+                  type="col"
+                  gap="sm"
+                  align="center"
+                  className="rounded-xl border border-dashed border-border py-16 text-center"
+                >
+                  <P color="muted">Load students by selecting a class above</P>
+                </Div>
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={rows}
+                  emptyText="No students found"
+                />
+              )}
 
               {rows.length > 0 && (
                 <Div type="row" gap="md">

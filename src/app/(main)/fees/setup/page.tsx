@@ -238,8 +238,8 @@ export default function FeeSetupPage() {
                   {builderItems.map((item, idx) => (
                     <TableRow key={item.fee_type_id}>
                       <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
-                      <TableCell weight="semibold">{item.fee_type_name}</TableCell>
-                      <TableCell color="muted">{item.frequency}</TableCell>
+                      <TableCell><P weight="semibold">{item.fee_type_name}</P></TableCell>
+                      <TableCell><P color="muted">{item.frequency}</P></TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {item.frequency === 'Monthly' ? (item.applicable_months?.join(', ') || '—') : 'One-time'}
                       </TableCell>
@@ -313,7 +313,7 @@ export default function FeeSetupPage() {
                             </P>
                           </Div>
                           <Div type="row" className="gap-1.5">
-                            <Badge size="sm" variant={s.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px]">
+                            <Badge variant={s.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px]">
                               {s.frequency}
                             </Badge>
                             {s.frequency === 'Monthly' && s.applicable_months?.length && (
@@ -384,7 +384,7 @@ export default function FeeSetupPage() {
                                   : 'One-time payment'}
                               </P>
                             </Div>
-                            <Badge size="sm" variant={item.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px] w-fit">
+                            <Badge variant={item.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px] w-fit">
                               {item.frequency === 'Monthly'
                                 ? `Monthly · ${item.applicable_months?.length ?? 0} mo`
                                 : 'One-time'}

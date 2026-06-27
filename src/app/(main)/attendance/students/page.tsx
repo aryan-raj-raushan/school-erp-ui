@@ -1,9 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAttendance } from "@/hooks/useAttendance";
 import {
   STUDENT_ATTENDANCE_PAGE,
-  ATTENDANCE_STATUS_OPTIONS,
 } from "@/constants";
 import {
   Div,
@@ -13,18 +13,23 @@ import {
   Input,
   PageHeader,
   PageCol,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
   Spinner,
   MiniStat,
   FilterLabel,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
+
+type StudentAttendanceRow = {
+  id: string;
+  first_name: string;
+  last_name?: string;
+  admission_number: string;
+  roll_number?: string;
+  status?: string;
+  isLate?: boolean;
+  remarks?: string;
+};
 
 export default function StudentAttendancePage() {
   const {
@@ -67,6 +72,94 @@ export default function StudentAttendancePage() {
   const attendancePct = hasStudents
     ? Math.round((presentCount / students.length) * 100)
     : 0;
+
+  const columns = useMemo<ColumnDef<StudentAttendanceRow>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "first_name",
+        header: STUDENT_ATTENDANCE_PAGE.table.student,
+        meta: { primary: true },
+        cell: ({ row }) =>
+          `${row.original.first_name} ${row.original.last_name ?? ""}`,
+      },
+      {
+        accessorKey: "admission_number",
+        header: STUDENT_ATTENDANCE_PAGE.table.admissionNo,
+      },
+      {
+        accessorKey: "roll_number",
+        header: STUDENT_ATTENDANCE_PAGE.table.rollNo,
+        cell: ({ row }) => row.original.roll_number ?? "—",
+      },
+      {
+        id: "status",
+        header: STUDENT_ATTENDANCE_PAGE.table.status,
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          return (
+            <Div type="row" gap="xs">
+              <Button
+                size="sm"
+                variant={
+                  entry.status === "PRESENT" ? "success" : "outline"
+                }
+                onClick={() => setStudentStatus(row.original.id, "PRESENT")}
+              >
+                P
+              </Button>
+              <Button
+                size="sm"
+                variant={
+                  entry.status === "ABSENT" ? "destructive" : "outline"
+                }
+                onClick={() => setStudentStatus(row.original.id, "ABSENT")}
+              >
+                A
+              </Button>
+            </Div>
+          );
+        },
+      },
+      {
+        id: "isLate",
+        header: STUDENT_ATTENDANCE_PAGE.table.isLate,
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          return (
+            <Input
+              type="checkbox"
+              checked={entry.isLate ?? false}
+              onChange={(e) =>
+                setStudentLate(row.original.id, e.target.checked)
+              }
+            />
+          );
+        },
+      },
+      {
+        id: "remarks",
+        header: STUDENT_ATTENDANCE_PAGE.table.remarks,
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          return (
+            <Input
+              placeholder="Optional remarks"
+              value={entry.remarks ?? ""}
+              onChange={(e) =>
+                setStudentRemarks(row.original.id, e.target.value)
+              }
+            />
+          );
+        },
+      },
+    ],
+    [attendanceMap, setStudentStatus, setStudentLate, setStudentRemarks]
+  );
 
   return (
     <PageCol>
@@ -179,126 +272,36 @@ export default function StudentAttendancePage() {
       )}
 
       {/* Attendance table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>
-              {STUDENT_ATTENDANCE_PAGE.table.student}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {STUDENT_ATTENDANCE_PAGE.table.admissionNo}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {STUDENT_ATTENDANCE_PAGE.table.rollNo}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {STUDENT_ATTENDANCE_PAGE.table.status}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {STUDENT_ATTENDANCE_PAGE.table.isLate}
-            </TableHeaderCell>
-
-            <TableHeaderCell>
-              {STUDENT_ATTENDANCE_PAGE.table.remarks}
-            </TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoadingStudents ? (
-            <TableEmptyRow colSpan={7}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : !selectedClassSectionId ? (
-            <TableEmptyRow colSpan={7}>
-              {STUDENT_ATTENDANCE_PAGE.empty}
-            </TableEmptyRow>
-          ) : students.length === 0 ? (
-            <TableEmptyRow colSpan={7}>
-              {STUDENT_ATTENDANCE_PAGE.noStudents}
-            </TableEmptyRow>
-          ) : (
-            students.map((student, i) => {
-              const entry = attendanceMap[student.id] ?? {
-                // status: "PRESENT",
-                remarks: "",
-                isLate: false,
-              };
-              const isAbsent = entry.status === "ABSENT";
-              return (
-                <TableRow
-                  key={student.id}
-                  variant={isAbsent ? "danger" : undefined}
-                >
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>
-                    {student.first_name} {student.last_name ?? ""}
-                  </TableCell>
-                  <TableCell>{student.admission_number}</TableCell>
-                  <TableCell>{student.roll_number ?? "—"}</TableCell>
-                  {/* <TableCell>
-                    <Select
-                      value={entry.status}
-                      onChange={(e) =>
-                        setStudentStatus(student.id, e.target.value as any)
-                      }
-                    >
-                      {ATTENDANCE_STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </TableCell> */}
-                  <TableCell>
-                    <Div type="row" gap="xs">
-                      <Button
-                        size="sm"
-                        variant={
-                          entry.status === "PRESENT" ? "success" : "outline"
-                        }
-                        onClick={() => setStudentStatus(student.id, "PRESENT")}
-                      >
-                        P
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant={
-                          entry.status === "ABSENT" ? "destructive" : "outline"
-                        }
-                        onClick={() => setStudentStatus(student.id, "ABSENT")}
-                      >
-                        A
-                      </Button>
-                    </Div>
-                  </TableCell>
-                  <TableCell>
-                    <TableCell>
-                      <Input
-                        type="checkbox"
-                        checked={entry.isLate}
-                        onChange={(e) =>
-                          setStudentLate(student.id, e.target.checked)
-                        }
-                      />
-                    </TableCell>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      placeholder="Optional remarks"
-                      value={entry.remarks}
-                      onChange={(e) =>
-                        setStudentRemarks(student.id, e.target.value)
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      {!selectedClassSectionId ? (
+        <Div
+          type="col"
+          gap="sm"
+          align="center"
+          className="rounded-xl border border-dashed border-border py-16 text-center"
+        >
+          <P color="muted">{STUDENT_ATTENDANCE_PAGE.empty}</P>
+        </Div>
+      ) : students.length === 0 ? (
+        <Div
+          type="col"
+          gap="sm"
+          align="center"
+          className="rounded-xl border border-dashed border-border py-16 text-center"
+        >
+          <P color="muted">{STUDENT_ATTENDANCE_PAGE.noStudents}</P>
+        </Div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={students.map(s => ({
+            ...s,
+            last_name: s.last_name ?? undefined,
+            roll_number: s.roll_number ?? undefined,
+          }))}
+          isLoading={isLoadingStudents}
+          emptyText={STUDENT_ATTENDANCE_PAGE.noStudents}
+        />
+      )}
 
       {hasStudents && (
         <Div type="row" justify="end">
