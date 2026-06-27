@@ -397,5 +397,6 @@ export const EMP_LEAVE_ENDPOINTS = {
     byId: (id: string) => `/leave-applications/${id}`,
     review: (id: string) => `/leave-applications/${id}/review`,
     cancel: (id: string) => `/leave-applications/${id}/cancel`,
+     adminApply: '/leave-applications/admin-apply',  
   },
 };

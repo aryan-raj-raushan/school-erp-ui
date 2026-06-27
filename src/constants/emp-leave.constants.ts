@@ -210,6 +210,69 @@ export const LEAVE_APPLICATION_PAGE = {
   },
 } as const;
 
+// ─── Leave Apply Page ───────────────────────────────────────────────────
+
+export const LEAVE_APPLY_PAGE = {
+  pageHeading: {
+    title: 'Apply Leave',
+    subtitle: 'Apply leave for yourself or on behalf of an employee',
+  },
+  sections: {
+    selectEmployee: 'Select Employee',
+    leaveDetails: 'Leave Details',
+    summary: 'Summary',
+  },
+  labels: {
+    applyFor: 'Applying For',
+    myself: 'Myself',
+    onBehalf: 'On Behalf of Employee',
+    employee: 'Select Employee',
+    academicYear: 'Academic Year',
+    leaveType: 'Leave Type',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    totalDays: 'Total Days',
+    reason: 'Reason (Optional)',
+    balance: 'Available Balance',
+    used: 'Used',
+    remaining: 'Remaining',
+    payType: 'Pay Type',
+  },
+  placeholders: {
+    searchEmployee: 'Search employee by name…',
+    reason: 'Brief reason for leave (optional)…',
+    selectLeaveType: 'Select leave type',
+    selectYear: 'Select academic year',
+  },
+  buttons: {
+    submit: 'Submit Application',
+    submitting: 'Submitting…',
+    reset: 'Reset Form',
+    selectEmployee: 'Select',
+    changeEmployee: 'Change',
+  },
+  info: {
+    noAssignedLeaves: 'No leave types are assigned to this employee for the selected academic year.',
+    selectYearFirst: 'Select an academic year to see available leave types.',
+    selectEmployeeFirst: 'Select an employee to continue.',
+    daysCalculation: 'Days are calculated inclusively (start and end date both count).',
+  },
+  toasts: {
+    submitSuccess: 'Leave application submitted successfully',
+    submitError: 'Failed to submit leave application',
+    fetchEmployeeLeavesError: 'Failed to fetch leave balance for this employee',
+  },
+  table: {
+    recentTitle: 'Recent Applications',
+    leaveType: 'Leave Type',
+    period: 'Period',
+    days: 'Days',
+    status: 'Status',
+    appliedOn: 'Applied On',
+    noRecent: 'No recent applications',
+  },
+} as const;
+
 // ─── Shared option arrays ─────────────────────────────────────────────────────
 export const LEAVE_VALIDITY_OPTIONS: { value: LeaveValidity | ''; label: string }[] = [
   { value: '', label: 'All Validity' },
