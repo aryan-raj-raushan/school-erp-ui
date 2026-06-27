@@ -12,7 +12,7 @@ export default function SittingPlanDetailPage({
   const { id } = use(params);
   return (
     <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>
-      <SittingPlanFormContent slug={id} />
+      <SittingPlanFormContent />
     </Suspense>
   );
 }

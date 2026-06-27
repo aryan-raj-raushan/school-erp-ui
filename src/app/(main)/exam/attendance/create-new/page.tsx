@@ -280,7 +280,7 @@ function MarkAttendanceContent() {
                               {sc.subject_name}
                             </Div>
                             {sc.subject_type && sc.subject_type !== "MAIN_EXAM" && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0 capitalize">
+                              <Badge variant="secondary" className="text-[10px] px-1 py-0 capitalize">
                                 {sc.subject_type.replace(/_/g, " ").toLowerCase()}
                               </Badge>
                             )}

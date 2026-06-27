@@ -3,8 +3,13 @@
 import { Capacitor } from "@capacitor/core";
 
 async function getPreferences() {
-  const { Preferences } = await import("@capacitor/preferences");
-  return Preferences;
+  try {
+    // @ts-ignore - @capacitor/preferences is optional for native platform only
+    const { Preferences } = await import("@capacitor/preferences");
+    return Preferences;
+  } catch {
+    return null;
+  }
 }
 
 /**
