@@ -109,7 +109,7 @@ function GenerateModal({
                 onClick={() => setValue('scope', 'class')}
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                   scope === 'class'
-                    ? 'border-primary bg-primary/10 text-primary'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border text-muted-foreground hover:bg-muted/50'
                 }`}
               >
@@ -120,7 +120,7 @@ function GenerateModal({
                 onClick={() => setValue('scope', 'student')}
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                   scope === 'student'
-                    ? 'border-primary bg-primary/10 text-primary'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border text-muted-foreground hover:bg-muted/50'
                 }`}
               >
