@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -33,8 +33,8 @@ import {
   type ColumnDef,
   PageCol,
   FilterBar,
+  PageHeader,
 } from "@/components/ui";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   STUDENT_PAGE,
   STUDENT_ROUTES,

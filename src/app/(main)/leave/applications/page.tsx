@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useMemo } from 'react';
 import { CheckCircle2, XCircle, Plus, X } from 'lucide-react';
 import { useLeaveApplications } from '@/hooks/leave/useLeaveApplications';
 import { useAcademicYears } from '@/hooks/useAcademicYears';
@@ -12,21 +12,16 @@ import {
   Button,
   Input,
   Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
   Modal,
   ModalBody,
   ModalFooter,
   FormField,
+  PageCol,
+  FilterBar,
 } from '@/components/ui';
 import {
   LEAVE_APPLICATION_PAGE,
@@ -34,7 +29,7 @@ import {
   LEAVE_STATUS_BADGE,
   LEAVE_PAY_TYPE_LABEL,
 } from '@/constants/emp-leave.constants';
-import type { LeaveApplicationFilters } from '@/types/leave.types';
+import type { LeaveApplicationFilters, LeaveApplication } from '@/types/leave.types';
 import { useLeaveTypes } from '@/hooks/leave/useLeaveTypes';
 
 function LeaveApplicationsContent() {
@@ -88,8 +83,131 @@ function LeaveApplicationsContent() {
     updateFilters(next);
   }
 
+  const columns = useMemo<ColumnDef<LeaveApplication>[]>(
+    () => [
+      {
+        id: 'index',
+        header: LEAVE_APPLICATION_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: 'leave_type_id',
+        header: LEAVE_APPLICATION_PAGE.table.leaveType,
+        meta: { primary: true },
+        cell: ({ row }) => {
+          const leaveType = allLeaveTypes.find(
+            (lt) => lt.id === row.original.leave_type_id,
+          );
+          return leaveType?.leave_name ?? '—';
+        },
+      },
+      {
+        accessorKey: 'start_date',
+        header: LEAVE_APPLICATION_PAGE.table.startDate,
+        cell: ({ row }) =>
+          new Date(row.original.start_date).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }),
+      },
+      {
+        accessorKey: 'end_date',
+        header: LEAVE_APPLICATION_PAGE.table.endDate,
+        cell: ({ row }) =>
+          new Date(row.original.end_date).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }),
+      },
+      {
+        accessorKey: 'total_days',
+        header: LEAVE_APPLICATION_PAGE.table.totalDays,
+        cell: ({ row }) => (
+          <P className="font-medium">{row.original.total_days} days</P>
+        ),
+      },
+      {
+        accessorKey: 'reason',
+        header: LEAVE_APPLICATION_PAGE.table.reason,
+        cell: ({ row }) => row.original.reason ?? '—',
+      },
+      {
+        accessorKey: 'status',
+        header: LEAVE_APPLICATION_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={LEAVE_STATUS_BADGE[row.original.status]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: LEAVE_APPLICATION_PAGE.table.appliedOn,
+        cell: ({ row }) =>
+          new Date(row.original.created_at).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }),
+      },
+      {
+        accessorKey: 'remarks',
+        header: LEAVE_APPLICATION_PAGE.table.remarks,
+        cell: ({ row }) => row.original.remarks ?? '—',
+      },
+      {
+        id: 'actions',
+        header: LEAVE_APPLICATION_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="sm">
+            {/* Admin: approve / reject on PENDING */}
+            {isAdmin && row.original.status === 'PENDING' && (
+              <>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => openReviewModal(row.original, 'APPROVED')}
+                  title={LEAVE_APPLICATION_PAGE.buttons.approve}
+                >
+                  <CheckCircle2
+                    size={14}
+                    className="text-emerald-600"
+                  />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => openReviewModal(row.original, 'REJECTED')}
+                  title={LEAVE_APPLICATION_PAGE.buttons.reject}
+                >
+                  <XCircle size={14} className="text-destructive" />
+                </Button>
+              </>
+            )}
+            {/* Employee: cancel own PENDING application */}
+            {!isAdmin &&
+              row.original.employee_id === employeeId &&
+              row.original.status === 'PENDING' && (
+                <Button
+                  size="icon-sm"
+                  variant="destructive"
+                  onClick={() => cancelLeave(row.original.id)}
+                  title={LEAVE_APPLICATION_PAGE.buttons.cancelApplication}
+                >
+                  <X size={14} />
+                </Button>
+              )}
+          </Div>
+        ),
+      },
+    ],
+    [isAdmin, employeeId, allLeaveTypes, openReviewModal, cancelLeave],
+  );
+
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={LEAVE_APPLICATION_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} applications` : ''}
@@ -103,8 +221,7 @@ function LeaveApplicationsContent() {
         }
       />
 
-      {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Select
           width="sm"
           value={filters.status ?? ''}
@@ -172,130 +289,15 @@ function LeaveApplicationsContent() {
           }
           placeholder="To date"
         />
-      </Div>
+      </FilterBar>
 
-      {/* Table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.leaveType}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.startDate}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.endDate}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.totalDays}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.reason}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.appliedOn}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.remarks}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_APPLICATION_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={10}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : applications.length === 0 ? (
-            <TableEmptyRow colSpan={10}>
-              {LEAVE_APPLICATION_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            applications.map((app, i) => {
-              const leaveType = allLeaveTypes.find(
-                (lt) => lt.id === app.leave_type_id,
-              );
-              return (
-                <TableRow key={app.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>
-                    {leaveType?.leave_name ?? '—'}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(app.start_date).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(app.end_date).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <P className="font-medium">{app.total_days} days</P>
-                  </TableCell>
-                  <TableCell>{app.reason ?? '—'}</TableCell>
-                  <TableCell>
-                    <Badge variant={LEAVE_STATUS_BADGE[app.status]}>
-                      {app.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(app.created_at).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell>{app.remarks ?? '—'}</TableCell>
-                  <TableCell>
-                    <Div type="row" gap="sm">
-                      {/* Admin: approve / reject on PENDING */}
-                      {isAdmin && app.status === 'PENDING' && (
-                        <>
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            onClick={() => openReviewModal(app, 'APPROVED')}
-                            title={LEAVE_APPLICATION_PAGE.buttons.approve}
-                          >
-                            <CheckCircle2
-                              size={14}
-                              className="text-emerald-600"
-                            />
-                          </Button>
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            onClick={() => openReviewModal(app, 'REJECTED')}
-                            title={LEAVE_APPLICATION_PAGE.buttons.reject}
-                          >
-                            <XCircle size={14} className="text-destructive" />
-                          </Button>
-                        </>
-                      )}
-                      {/* Employee: cancel own PENDING application */}
-                      {!isAdmin &&
-                        app.employee_id === employeeId &&
-                        app.status === 'PENDING' && (
-                          <Button
-                            size="icon-sm"
-                            variant="destructive"
-                            onClick={() => cancelLeave(app.id)}
-                            title={LEAVE_APPLICATION_PAGE.buttons.cancelApplication}
-                          >
-                            <X size={14} />
-                          </Button>
-                        )}
-                    </Div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={applications}
+        isLoading={isLoading}
+        emptyText={LEAVE_APPLICATION_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+      />
 
       {/* ─── Apply Leave Modal ────────────────────────────────────────── */}
       {showApplyModal && (
@@ -473,7 +475,7 @@ function LeaveApplicationsContent() {
           </form>
         </Modal>
       )}
-    </Div>
+    </PageCol>
   );
 }
 

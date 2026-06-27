@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useLeaveTypes } from '@/hooks/leave/useLeaveTypes';
@@ -10,17 +10,12 @@ import {
   P,
   Button,
   Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
+  PageCol,
+  FilterBar,
 } from '@/components/ui';
 import {
   LEAVE_TYPE_PAGE,
@@ -29,7 +24,7 @@ import {
   LEAVE_VALIDITY_LABEL,
   LEAVE_PAY_TYPE_LABEL,
 } from '@/constants/emp-leave.constants';
-import type { LeaveTypeFilters } from '@/types/leave.types';
+import type { LeaveTypeFilters, LeaveType } from '@/types/leave.types';
 
 function LeaveTypeContent() {
   const router = useRouter();
@@ -41,8 +36,96 @@ function LeaveTypeContent() {
     updateFilters(next);
   }
 
+  const columns = useMemo<ColumnDef<LeaveType>[]>(
+    () => [
+      {
+        id: 'index',
+        header: LEAVE_TYPE_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: 'leave_name',
+        header: LEAVE_TYPE_PAGE.table.leaveName,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'leave_validity',
+        header: LEAVE_TYPE_PAGE.table.validity,
+        cell: ({ row }) => (
+          <Badge variant="secondary">
+            {LEAVE_VALIDITY_LABEL[row.original.leave_validity]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'leave_pay_type',
+        header: LEAVE_TYPE_PAGE.table.payType,
+        cell: ({ row }) => (
+          <Badge
+            variant={row.original.leave_pay_type === 'PAID' ? 'success' : 'warning'}
+          >
+            {LEAVE_PAY_TYPE_LABEL[row.original.leave_pay_type]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'leave_count_days',
+        header: LEAVE_TYPE_PAGE.table.days,
+        cell: ({ row }) => (
+          <P className="font-medium">{row.original.leave_count_days} days</P>
+        ),
+      },
+      {
+        accessorKey: 'is_enabled',
+        header: LEAVE_TYPE_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? 'success' : 'secondary'}>
+            {row.original.is_enabled ? 'Enabled' : 'Disabled'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: LEAVE_TYPE_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="sm">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() =>
+                router.push(`/leave/type/view?id=${row.original.id}`)
+              }
+              title={LEAVE_TYPE_PAGE.buttons.edit}
+            >
+              <Eye size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() =>
+                router.push(`/leave/type/view?id=${row.original.id}&edit=true`)
+              }
+              title={LEAVE_TYPE_PAGE.buttons.edit}
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              onClick={() => deleteLeaveType(row.original.id)}
+              title={LEAVE_TYPE_PAGE.buttons.delete}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [router, deleteLeaveType],
+  );
+
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={LEAVE_TYPE_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} leave types` : ''}
@@ -54,8 +137,7 @@ function LeaveTypeContent() {
         }
       />
 
-      {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Select
           width="sm"
           value={filters.leave_validity ?? ''}
@@ -104,101 +186,16 @@ function LeaveTypeContent() {
           <option value="true">Enabled</option>
           <option value="false">Disabled</option>
         </Select>
-      </Div>
+      </FilterBar>
 
-      {/* Table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.leaveName}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.validity}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.payType}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.days}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{LEAVE_TYPE_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={7}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : leaveTypes.length === 0 ? (
-            <TableEmptyRow colSpan={7}>
-              {LEAVE_TYPE_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            leaveTypes.map((lt, i) => (
-              <TableRow key={lt.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{lt.leave_name}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {LEAVE_VALIDITY_LABEL[lt.leave_validity]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={lt.leave_pay_type === 'PAID' ? 'success' : 'warning'}
-                  >
-                    {LEAVE_PAY_TYPE_LABEL[lt.leave_pay_type]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <P className="font-medium">{lt.leave_count_days} days</P>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={lt.is_enabled ? 'success' : 'secondary'}>
-                    {lt.is_enabled ? 'Enabled' : 'Disabled'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="sm">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() =>
-                        router.push(`/leave/type/view?id=${lt.id}`)
-                      }
-                      title={LEAVE_TYPE_PAGE.buttons.edit}
-                    >
-                      <Eye size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() =>
-                        router.push(`/leave/type/view?id=${lt.id}&edit=true`)
-                      }
-                      title={LEAVE_TYPE_PAGE.buttons.edit}
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      onClick={() => deleteLeaveType(lt.id)}
-                      title={LEAVE_TYPE_PAGE.buttons.delete}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
-    </Div>
+      <DataTable
+        columns={columns}
+        data={leaveTypes}
+        isLoading={isLoading}
+        emptyText={LEAVE_TYPE_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+      />
+    </PageCol>
   );
 }
 

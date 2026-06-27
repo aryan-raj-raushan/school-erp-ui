@@ -15,8 +15,10 @@ import {
   Spinner,
   DataTable,
   type ColumnDef,
+  PageHeader,
+  PageCol,
+  FilterBar,
 } from "@/components/ui";
-import { PageHeader } from "@/components/ui/page-header";
 
 function AdmissionSourcesContent() {
   const router = useRouter();
@@ -137,7 +139,7 @@ function AdmissionSourcesContent() {
   );
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Admission Sources"
         subtitle={
@@ -152,7 +154,7 @@ function AdmissionSourcesContent() {
         }
       />
 
-      <Div type="row" gap="md" align="center">
+      <FilterBar>
         <Select
           width="sm"
           value={
@@ -169,7 +171,7 @@ function AdmissionSourcesContent() {
           <option value="true">Enabled</option>
           <option value="false">Disabled</option>
         </Select>
-      </Div>
+      </FilterBar>
 
       <DataTable
         columns={columns}
@@ -178,7 +180,7 @@ function AdmissionSourcesContent() {
         emptyText="No admission sources found"
         pagination={pagination ?? undefined}
       />
-    </Div>
+    </PageCol>
   );
 }
 

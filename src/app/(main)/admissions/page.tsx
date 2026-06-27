@@ -22,8 +22,8 @@ import {
   type ColumnDef,
   PageCol,
   FilterBar,
+  PageHeader,
 } from "@/components/ui";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   ADMISSION_PAGE,
   STATUS_BADGE,

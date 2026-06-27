@@ -12,6 +12,7 @@ import {
   Select,
   Spinner,
   DataTable,
+  Badge,
   type ColumnDef,
 } from "@/components/ui";
 import { SITTING_PLAN_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
