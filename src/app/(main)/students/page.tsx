@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState, useEffect } from "react";
+import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -14,7 +14,6 @@ import {
 import { useStudents } from "@/hooks/useStudentV2";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
-import { ClassesService, SectionsService } from "@/services/classes.service";
 import type { Class, Section } from "@/types";
 import type {
   StudentFilters,
@@ -44,11 +43,48 @@ import {
   GENDER_OPTIONS,
 } from "@/constants/students-v2.constants";
 
+function useClassesAndSections(academicYearId: string | undefined, classId: string | undefined) {
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+
+  useEffect(() => {
+    if (!academicYearId) {
+      setClasses([]);
+      setSections([]);
+      return;
+    }
+    (async () => {
+      const { ClassesService } = await import("@/services/classes.service");
+      try {
+        const r = await ClassesService.list({
+          academic_year_id: academicYearId,
+          limit: 100,
+        });
+        setClasses(r.items);
+      } catch {}
+    })();
+  }, [academicYearId]);
+
+  useEffect(() => {
+    if (!classId) {
+      setSections([]);
+      return;
+    }
+    (async () => {
+      const { SectionsService } = await import("@/services/classes.service");
+      try {
+        const r = await SectionsService.list({ class_id: classId, limit: 100 });
+        setSections(r.items);
+      } catch {}
+    })();
+  }, [classId]);
+
+  return { classes, sections };
+}
+
 function StudentsContent() {
   const router = useRouter();
   const { years } = useAcademicYears();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
 
   const [urlFilters, setUrlFilters] = useFilterParams<
     Record<string, string | undefined>
@@ -82,29 +118,10 @@ function StudentsContent() {
     toggleEnabled,
   } = useStudents(initialFilters);
 
-  useEffect(() => {
-    if (!filters.academic_year_id) {
-      setClasses([]);
-      setSections([]);
-      return;
-    }
-    ClassesService.list({
-      academic_year_id: filters.academic_year_id,
-      limit: 100,
-    })
-      .then((r) => setClasses(r.items))
-      .catch(() => {});
-  }, [filters.academic_year_id]);
-
-  useEffect(() => {
-    if (!filters.class_id) {
-      setSections([]);
-      return;
-    }
-    SectionsService.list({ class_id: filters.class_id, limit: 100 })
-      .then((r) => setSections(r.items))
-      .catch(() => {});
-  }, [filters.class_id]);
+  const { classes, sections } = useClassesAndSections(
+    filters.academic_year_id,
+    filters.class_id,
+  );
 
   function handleFilterChange(next: Partial<StudentFilters>) {
     updateFilters(next);
@@ -160,9 +177,9 @@ function StudentsContent() {
                 </P>
               </Div>
             )}
-            <span>
+            <P>
               {row.original.first_name} {row.original.last_name ?? ""}
-            </span>
+            </P>
           </Div>
         ),
       },

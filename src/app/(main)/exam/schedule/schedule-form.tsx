@@ -26,7 +26,7 @@ import {
   SUBJECT_TYPE_OPTIONS,
 } from "@/constants/exam.constants";
 
-function ScheduleViewContent() {
+export function ScheduleFormContent() {
   const router = useRouter();
   const params = useSearchParams();
   const id = params.get("id");
@@ -322,7 +322,7 @@ export default function ScheduleViewPage() {
         </Div>
       }
     >
-      <ScheduleViewContent />
+      <ScheduleFormContent />
     </Suspense>
   );
 }
