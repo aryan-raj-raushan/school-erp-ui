@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",
+    "tsc": "tsc --noEmit",
     "arch": "node scripts/arch.js",
     "prepare": "husky",
     "cap:sync": "npx cap sync",

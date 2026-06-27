@@ -293,6 +293,8 @@ function RoomSittingContent() {
   );
 }
 
+export { RoomSittingContent as SittingPlanFormContent };
+
 export default function RoomSittingPage() {
   return (
     <Suspense fallback={<Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>}>

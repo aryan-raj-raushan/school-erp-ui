@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useId, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Pencil, Grid3x3 } from "lucide-react";
 import { useHallDetailForm } from "@/hooks/exam/useExamHall";
@@ -252,6 +252,8 @@ function HallDetailSlugContent() {
   const slug = searchParams.get("id") ?? "create-new";
   return <HallDetailFormContent slug={slug} />;
 }
+
+export { HallDetailFormContent };
 
 export default function HallDetailSlugPage() {
   return (
