@@ -43,6 +43,15 @@ export interface ReviewLeavePayload {
   remarks?: string;
 }
 
+export interface AdminApplyLeavePayload {
+  employee_id: string;
+  leave_type_id: string;
+  academic_year_id: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+}
+
 // ─── Leave Types Service ──────────────────────────────────────────────────────
 
 export const LeaveTypeService = {
@@ -147,6 +156,14 @@ export const LeaveApplicationService = {
     const res = await apiGateway.patch<LeaveApplication>(
       EMP_LEAVE_ENDPOINTS.leaveApplications.cancel(id),
       {},
+    );
+    return res.data;
+  },
+
+  async adminApply(payload: AdminApplyLeavePayload): Promise<LeaveApplication> {
+    const res = await apiGateway.post<LeaveApplication>(
+      EMP_LEAVE_ENDPOINTS.leaveApplications.adminApply,
+      payload,
     );
     return res.data;
   },

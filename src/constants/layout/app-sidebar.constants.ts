@@ -311,7 +311,7 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
   },
 
   /* ---------------------------------------------------
-  Leave
+  Result
   --------------------------------------------------- */
   {
     title: "Result",
@@ -349,6 +349,11 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       {
         title: "Leave Assigned",
         url: "/leave/assigned",
+        permissions: [PERMISSIONS.leave.view],
+      },
+      {
+        title: "Leave Apply",
+        url: "/leave/apply",
         permissions: [PERMISSIONS.leave.view],
       },
       {
