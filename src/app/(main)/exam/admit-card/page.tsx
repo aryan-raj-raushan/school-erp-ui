@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { Download, FileText, Search } from "lucide-react";
 import { useAdmitCard } from "@/hooks/exam/useExamSittingAndAdmit";
+import { useAdmitCardSelectors } from "@/hooks/exam/useAdmitCardSelectors";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { PageHeader } from "@/components/ui/page-header";
@@ -16,9 +17,6 @@ import {
   Spinner,
 } from "@/components/ui";
 import { ADMIT_CARD_PAGE } from "@/constants/exam.constants";
-import { ExamsService } from "@/services/exam.service";
-import { StudentsService } from "@/services/students.service";
-import type { Student } from "@/types";
 
 // ── Admit Card Preview ────────────────────────────────────────────────────────
 
@@ -177,52 +175,12 @@ function AdmitCardContent() {
     selectedAcademicYearId ? { academic_year_id: selectedAcademicYearId, is_published: true } : {}
   );
 
-  const [examClassId, setExamClassId] = useState("");
-  const [sections, setSections] = useState<{ id: string; name: string }[]>([]);
-  const [sectionId, setSectionId] = useState("");
-  const [allStudents, setAllStudents] = useState<Student[]>([]);
-  const [studentsLoading, setStudentsLoading] = useState(false);
-
   useEffect(() => {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
 
-  // When exam changes: get class_id + sections + all students for that class
-  useEffect(() => {
-    setStudentId("");
-    setSectionId("");
-    setSections([]);
-    setAllStudents([]);
-    setExamClassId("");
-    if (!examId || !selectedAcademicYearId) return;
-    setStudentsLoading(true);
-    ExamsService.getById(examId)
-      .then(async (exam) => {
-        setExamClassId(exam.class_id);
-        const [studentsRes, classesRes] = await Promise.all([
-          StudentsService.list({
-            class_id: exam.class_id,
-            academic_year_id: selectedAcademicYearId,
-            limit: 500,
-          }),
-          import("@/services/classes.service").then((m) =>
-            m.ClassesService.list({ academic_year_id: selectedAcademicYearId })
-          ),
-        ]);
-        setAllStudents(studentsRes.items);
-        const classSections = classesRes.sections.filter(
-          (s: { class_id: string; id: string; name: string }) => s.class_id === exam.class_id
-        );
-        setSections(classSections);
-      })
-      .catch(() => {})
-      .finally(() => setStudentsLoading(false));
-  }, [examId, selectedAcademicYearId, setStudentId]);
-
-  // Filter students by section when section changes
-  const students = sectionId
-    ? allStudents.filter((s) => s.section_id === sectionId)
-    : allStudents;
+  const { sections, sectionId, setSectionId, students, studentsLoading } =
+    useAdmitCardSelectors(examId, selectedAcademicYearId);
 
   return (
     <Div type="col" gap="lg">
@@ -246,9 +204,6 @@ function AdmitCardContent() {
                 onChange={(e) => {
                   setSelectedAcademicYearId(e.target.value);
                   setExamId("");
-                  setAllStudents([]);
-                  setSections([]);
-                  setSectionId("");
                   setStudentId("");
                 }}
               >
