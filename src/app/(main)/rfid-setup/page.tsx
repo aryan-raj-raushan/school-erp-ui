@@ -101,7 +101,7 @@ function AssignModal({
               </FormField>
 
               <FormField label="Student">
-                <Select value={studentId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStudentId(e.target.value)} disabled={!sectionId}>
+                <Select value={studentId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStudentId(e.target.value)} disabled={!classId}>
                   <option value="">Select student</option>
                   {studentList.map((s) => (
                     <option key={s.id} value={s.id}>

@@ -134,7 +134,10 @@ export const ClassesService = {
 
 export const SectionsService = {
   async list(filters: SectionFilters = {}): Promise<{ items: Section[]; pagination: PaginationMeta }> {
-    const res = await apiGateway.get<Section[]>(ENDPOINTS.sections.list, { params: filters });
+    // Backend expects camelCase `classId`, not snake_case `class_id`
+    const { class_id, ...rest } = filters;
+    const params = { ...rest, ...(class_id ? { classId: class_id } : {}) };
+    const res = await apiGateway.get<Section[]>(ENDPOINTS.sections.list, { params });
     return { items: res.data, pagination: res.pagination! };
   },
 

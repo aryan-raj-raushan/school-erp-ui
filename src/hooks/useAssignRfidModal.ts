@@ -38,9 +38,12 @@ export function useAssignRfidModal() {
 
   useEffect(() => {
     setStudentId(''); setStudentList([]);
-    if (!sectionId) return;
-    StudentsService.list({ section_id: sectionId, limit: 200 }).then((r) => setStudentList(r.items)).catch(() => {});
-  }, [sectionId]);
+    if (!classId) return;
+    const params = sectionId
+      ? { section_id: sectionId, limit: 200 }
+      : { class_id: classId, limit: 200 };
+    StudentsService.list(params).then((r) => setStudentList(r.items)).catch(() => {});
+  }, [classId, sectionId]);
 
   return {
     years, classes, sections, studentList, staffList,
