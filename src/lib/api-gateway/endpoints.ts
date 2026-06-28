@@ -14,12 +14,23 @@ export const ENDPOINTS = {
   schools: {
     list: "/schools",
     byId: (id: string) => `/schools/${id}`,
+    profile: "/schools/profile",
+  },
+  schoolSettings: {
+    settings: "/school-settings",
+    timings: "/school-settings/timings",
+    timingById: (id: string) => `/school-settings/timings/${id}`,
+    classTimings: "/school-settings/class-timings",
+    classTimingByClass: (classId: string) => `/school-settings/class-timings/${classId}`,
   },
   academicYears: {
     list: "/academic-years",
     current: "/academic-years/current",
     byId: (id: string) => `/academic-years/${id}`,
     setCurrent: (id: string) => `/academic-years/${id}/set-current`,
+    freeze: (id: string) => `/academic-years/${id}/freeze`,
+    unfreeze: (id: string) => `/academic-years/${id}/unfreeze`,
+    rollover: "/academic-years/rollover",
   },
   classes: {
     list: "/classes",
@@ -74,7 +85,31 @@ export const ENDPOINTS = {
     bySection: (sectionId: string) => `/attendance/classSection/${sectionId}`,
     bySectionDate: (sectionId: string, date: string) =>
       `/attendance/classSection/${sectionId}/date/${date}`,
+    auditLog: (id: string) => `/attendance/${id}/audit`,
+    missingPunches: '/attendance/missing-punches',
+    resolvePunch: (punchId: string) => `/attendance/missing-punches/${punchId}/resolve`,
+    dashboard: '/attendance/dashboard/today',
+    heatmap: '/attendance/heatmap',
+    lateTrend: '/attendance/late-trend',
+    conflicts: '/attendance/conflicts',
+    resolveConflict: (id: string) => `/attendance/conflicts/${id}/resolve`,
   },
+  earlyExits: {
+    base: '/early-exits',
+    approve: (id: string) => `/early-exits/${id}/approve`,
+    reject: (id: string) => `/early-exits/${id}/reject`,
+    byId: (id: string) => `/early-exits/${id}`,
+  },
+  gatePasses: {
+    base: '/gate-passes',
+    approve: (id: string) => `/gate-passes/${id}/approve`,
+    reject: (id: string) => `/gate-passes/${id}/reject`,
+    use: (qr: string) => `/gate-passes/use/${qr}`,
+    byId: (id: string) => `/gate-passes/${id}`,
+  },
+  notificationRules: { base: '/notification-rules' },
+  calendar: { unified: '/school-events/calendar' },
+  auditLogs: { base: '/audit-logs' },
   staffAttendance: {
     base: "/staff-attendance",
     staff: "/staff-attendance/staff",
@@ -88,6 +123,12 @@ export const ENDPOINTS = {
     byId: (id: string) => `/staff/${id}`,
     offboard: (id: string) => `/staff/${id}/offboard`,
     reonboard: (id: string) => `/staff/${id}/reonboard`,
+  },
+  staffShifts: {
+    list: '/staff-shifts',
+    byStaff: (staffId: string) => `/staff-shifts/staff/${staffId}`,
+    activeByStaff: (staffId: string) => `/staff-shifts/staff/${staffId}/active`,
+    byId: (id: string) => `/staff-shifts/${id}`,
   },
   invite: {
     verifyToken: "/invite/verify-token",
@@ -155,6 +196,12 @@ export const ENDPOINTS = {
     parentMyRequests: "/leave/parent/my-requests",
     parentStudentSummary: (studentId: string) =>
       `/leave/parent/student/${studentId}/summary`,
+    workflows: "/leave/workflows",
+    workflowSteps: (requestId: string) => `/leave/workflows/steps/${requestId}`,
+    reviewStep: (stepId: string) => `/leave/workflows/steps/${stepId}/review`,
+    studentMovements: "/student-movements",
+    studentMovementsByStudent: (studentId: string, date: string) =>
+      `/student-movements?student_id=${studentId}&date=${date}`,
   },
   exams: {
     list: "/exams",

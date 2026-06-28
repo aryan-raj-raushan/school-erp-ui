@@ -53,4 +53,22 @@ export const AcademicYearsService = {
     const res = await apiGateway.post<AcademicYear>(ENDPOINTS.academicYears.setCurrent(id), {});
     return res.data;
   },
+
+  async freeze(id: string): Promise<AcademicYear> {
+    const res = await apiGateway.post<AcademicYear>(ENDPOINTS.academicYears.freeze(id), {});
+    return res.data;
+  },
+
+  async unfreeze(id: string): Promise<AcademicYear> {
+    const res = await apiGateway.post<AcademicYear>(ENDPOINTS.academicYears.unfreeze(id), {});
+    return res.data;
+  },
+
+  async rollover(fromId: string, toId: string): Promise<{ message: string }> {
+    const res = await apiGateway.post<{ message: string }>(ENDPOINTS.academicYears.rollover, {
+      from_id: fromId,
+      to_id: toId,
+    });
+    return res.data;
+  },
 };

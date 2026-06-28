@@ -24,4 +24,6 @@ export interface SchoolEventFilters {
   type?: SchoolEventType;
   academic_year_id?: string;
   search?: string;
+  from_date?: string;
+  to_date?: string;
 }

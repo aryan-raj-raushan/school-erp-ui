@@ -15,9 +15,11 @@ import type {
   Section,
   Class,
   MonthlyAttendanceReport,
+  HeatmapEntry,
+  LateTrendEntry,
 } from "@/types";
 
-type ReportTab = "daily" | "monthly" | "defaulters" | "studentHistory";
+type ReportTab = "daily" | "monthly" | "defaulters" | "studentHistory" | "missingPunch" | "heatmap" | "lateTrend";
 
 function todayISO() {
   return new Date().toISOString().split("T")[0];
@@ -70,6 +72,22 @@ export function useAttendanceReports() {
   const [historyPagination, setHistoryPagination] =
     useState<PaginationMeta | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Audit
+  const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
+
+  // Heatmap
+  const [heatmapStudentId, setHeatmapStudentId] = useState("");
+  const [heatmapYear, setHeatmapYear] = useState(currentYear());
+  const [heatmapData, setHeatmapData] = useState<HeatmapEntry[]>([]);
+  const [isLoadingHeatmap, setIsLoadingHeatmap] = useState(false);
+
+  // Late trend
+  const [lateTrendSectionId, setLateTrendSectionId] = useState("");
+  const [lateTrendMonth, setLateTrendMonth] = useState(currentMonth());
+  const [lateTrendYear, setLateTrendYear] = useState(currentYear());
+  const [lateTrendData, setLateTrendData] = useState<LateTrendEntry[]>([]);
+  const [isLoadingLateTrend, setIsLoadingLateTrend] = useState(false);
 
   // Export
   const [exportSectionId, setExportSectionId] = useState("");
@@ -195,6 +213,32 @@ export function useAttendanceReports() {
     }
   }
 
+  async function fetchHeatmap() {
+    if (!heatmapStudentId) { toast.error('Select a student'); return; }
+    setIsLoadingHeatmap(true);
+    try {
+      const data = await AttendanceService.getHeatmap(heatmapStudentId, heatmapYear);
+      setHeatmapData(data);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load heatmap');
+    } finally {
+      setIsLoadingHeatmap(false);
+    }
+  }
+
+  async function fetchLateTrend() {
+    if (!lateTrendSectionId) { toast.error('Select a section'); return; }
+    setIsLoadingLateTrend(true);
+    try {
+      const data = await AttendanceService.getLateTrend(lateTrendSectionId, lateTrendMonth, lateTrendYear);
+      setLateTrendData(data);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load late trend');
+    } finally {
+      setIsLoadingLateTrend(false);
+    }
+  }
+
   async function exportAttendance() {
     setIsExporting(true);
     try {
@@ -274,6 +318,30 @@ export function useAttendanceReports() {
     historyPagination,
     isLoadingHistory,
     fetchStudentHistory,
+
+    // Audit
+    selectedAuditId,
+    setSelectedAuditId,
+
+    // Heatmap
+    heatmapStudentId,
+    setHeatmapStudentId,
+    heatmapYear,
+    setHeatmapYear,
+    heatmapData,
+    isLoadingHeatmap,
+    fetchHeatmap,
+
+    // Late Trend
+    lateTrendSectionId,
+    setLateTrendSectionId,
+    lateTrendMonth,
+    setLateTrendMonth,
+    lateTrendYear,
+    setLateTrendYear,
+    lateTrendData,
+    isLoadingLateTrend,
+    fetchLateTrend,
 
     // Export
     exportSectionId,

@@ -161,12 +161,12 @@ export default function TeacherLeaveView() {
               myBalances.map((bal) => (
                 <TableRow key={bal.id}>
                   <TableCell primary>{bal.leave_type?.name ?? "—"}</TableCell>
-                  <TableCell>{bal.total_days}</TableCell>
+                  <TableCell>{bal.allocated}</TableCell>
                   <TableCell>
-                    <P color={bal.used_days > 0 ? "red" : "muted"}>{bal.used_days}</P>
+                    <P color={bal.used > 0 ? "red" : "muted"}>{bal.used}</P>
                   </TableCell>
                   <TableCell>
-                    <P color={bal.remaining_days <= 2 ? "red" : "green"}>{bal.remaining_days}</P>
+                    <P color={(bal.allocated - bal.used) <= 2 ? "red" : "green"}>{bal.allocated - bal.used}</P>
                   </TableCell>
                 </TableRow>
               ))

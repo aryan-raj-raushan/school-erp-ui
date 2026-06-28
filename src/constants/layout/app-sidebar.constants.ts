@@ -21,6 +21,8 @@ import {
   Receipt,
   Wifi,
   BarChart2,
+  Bell,
+  ScrollText,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { Role } from "@/types";
@@ -114,6 +116,11 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     ],
     items: [
       {
+        title: "Dashboard",
+        url: "/attendance/dashboard",
+        permissions: [PERMISSIONS.attendance.view],
+      },
+      {
         title: "Students Attendance",
         url: "/attendance/students",
         permissions: [
@@ -128,6 +135,26 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
           PERMISSIONS.attendance.view,
           PERMISSIONS.attendance.create,
         ],
+      },
+      {
+        title: "Early Exits",
+        url: "/attendance/early-exit",
+        permissions: [PERMISSIONS.attendance.view],
+      },
+      {
+        title: "Gate Passes",
+        url: "/attendance/gate-pass",
+        permissions: [PERMISSIONS.attendance.view],
+      },
+      {
+        title: "Conflicts",
+        url: "/attendance/conflicts",
+        permissions: [PERMISSIONS.attendance.update],
+      },
+      {
+        title: "Movement Timeline",
+        url: "/attendance/movements",
+        permissions: [PERMISSIONS.attendance.view],
       },
     ],
   },
@@ -357,6 +384,26 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         url: "/leave/applications",
         permissions: [PERMISSIONS.leave.view],
       },
+      {
+        title: "Student Leave",
+        url: "/leave/student",
+        permissions: [PERMISSIONS.leave.approve],
+      },
+      {
+        title: "Teacher Leave",
+        url: "/leave/teacher",
+        permissions: [PERMISSIONS.leave.approve],
+      },
+      {
+        title: "Leave Policy",
+        url: "/leave/policy",
+        permissions: [PERMISSIONS.leave.approve],
+      },
+      {
+        title: "Leave Balances",
+        url: "/leave/balance",
+        permissions: [PERMISSIONS.leave.approve],
+      },
     ],
   },
 
@@ -413,6 +460,11 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         url: "/school/holidays-events",
         permissions: [PERMISSIONS.holidays.create, PERMISSIONS.events.create],
       },
+      {
+        title: "School Calendar",
+        url: "/school/calendar",
+        permissions: [PERMISSIONS.holidays.view],
+      },
     ],
   },
 
@@ -457,8 +509,51 @@ export const APP_NAV_SECONDARY: NavItemConfig[] = [
   },
   {
     title: "Settings",
-    url: "/settings",
+    url: "#",
     icon: Settings,
+    permissions: [PERMISSIONS.settings.view],
+    items: [
+      {
+        title: "School Profile",
+        url: "/settings/school-profile",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "School Config",
+        url: "/settings/school-config",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "Timing Schedules",
+        url: "/settings/timings",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "Class Timings",
+        url: "/settings/class-timings",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "Academic Year",
+        url: "/settings/academic-year",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "Class & Section",
+        url: "/settings/class-section",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "Notification Rules",
+        url: "/settings/notification-rules",
+        permissions: [PERMISSIONS.settings.view],
+      },
+      {
+        title: "Audit Log",
+        url: "/settings/audit-log",
+        permissions: [PERMISSIONS.settings.view],
+      },
+    ],
   },
   {
     title: "Get Help",
