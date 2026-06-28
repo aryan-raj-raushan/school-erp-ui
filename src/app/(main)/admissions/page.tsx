@@ -1,40 +1,29 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, Pencil, Trash2, UserCheck } from "lucide-react";
-import { useAdmissionEnquiries } from "@/hooks/useAdmissions";
+import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
-import { ClassesService } from "@/services/classes.service";
-import { useEffect, useState } from "react";
-import type { Class, Staff } from "@/types";
 import type {
   AdmissionEnquiryFilters,
   EnquiryStatus,
+  AdmissionEnquiry,
 } from "@/types/admissions.types";
 import {
   Div,
-  P,
   Button,
   Input,
   Select,
-  PageHeader,
-  PageCol,
-  FilterBar,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
+  PageCol,
+  FilterBar,
+  PageHeader,
 } from "@/components/ui";
-import { StaffService } from "@/services/staff.service";
 import {
   ADMISSION_PAGE,
   STATUS_BADGE,
@@ -44,16 +33,7 @@ import {
 function AdmissionsContent() {
   const router = useRouter();
   const { years } = useAcademicYears();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [teachers, setTeachers] = useState<Staff[]>([]);
-
-  useEffect(() => {
-    ClassesService.list()
-      .then((r) => setClasses(r.items))
-      .catch(() => {});
-
-    StaffService.list().then((r) => setTeachers(r.items));
-  }, []);
+  const { classes, teachers } = useAdmissionLookups();
 
   const [urlFilters, setUrlFilters] = useFilterParams<
     Record<string, string | undefined>
@@ -96,6 +76,123 @@ function AdmissionsContent() {
     setUrlFilters(urlNext);
   }
 
+  const columns = useMemo<ColumnDef<AdmissionEnquiry>[]>(
+    () => [
+      {
+        accessorKey: "student_name",
+        header: ADMISSION_PAGE.table.studentName,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant={STATUS_BADGE[row.original.status]}>
+            {row.original.status.replace("_", " ")}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "father_name",
+        header: ADMISSION_PAGE.table.fatherName,
+      },
+      {
+        accessorKey: "mother_name",
+        header: ADMISSION_PAGE.table.motherName,
+      },
+      {
+        accessorKey: "phone",
+        header: ADMISSION_PAGE.table.phone,
+        cell: ({ row }) =>
+          `${row.original.dial_code} ${row.original.phone}`,
+      },
+      {
+        accessorKey: "applying_academic_year_id",
+        header: ADMISSION_PAGE.table.applyingAcadYear,
+        cell: ({ row }) =>
+          years.find((y) => y.id === row.original.applying_academic_year_id)
+            ?.name ?? "-",
+      },
+      {
+        accessorKey: "applying_class_id",
+        header: ADMISSION_PAGE.table.applyingClass,
+        cell: ({ row }) =>
+          classes.find((c) => c.id === row.original.applying_class_id)?.name ??
+          "—",
+      },
+      {
+        accessorKey: "created_at",
+        header: ADMISSION_PAGE.table.createdDate,
+        cell: ({ row }) =>
+          new Date(row.original.created_at).toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }),
+      },
+      {
+        accessorKey: "next_followup_date",
+        header: ADMISSION_PAGE.table.followUpDate,
+        cell: ({ row }) =>
+          row.original.next_followup_date
+            ? new Date(row.original.next_followup_date).toLocaleDateString(
+                "en-IN",
+                {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                },
+              )
+            : "—",
+      },
+      {
+        accessorKey: "assigned_teacher_id",
+        header: ADMISSION_PAGE.table.teacherAssigned,
+        cell: ({ row }) =>
+          teachers.find((t) => t.id === row.original.assigned_teacher_id)
+            ?.first_name ?? "—",
+      },
+      {
+        id: "actions",
+        header: ADMISSION_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="sm">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => router.push(`/admissions/${row.original.id}`)}
+              title="View"
+            >
+              <Eye size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() =>
+                router.push(`/admissions/${row.original.id}?edit=true`)
+              }
+              title="Edit"
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              onClick={() => deleteEnquiry(row.original.id)}
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [router, years, classes, teachers, deleteEnquiry],
+  );
+
   return (
     <PageCol>
       <PageHeader
@@ -116,7 +213,6 @@ function AdmissionsContent() {
         }
       />
 
-      {/* Filters */}
       <FilterBar>
         <Input
           width="md"
@@ -175,146 +271,13 @@ function AdmissionsContent() {
         </Select>
       </FilterBar>
 
-      {/* Table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{ADMISSION_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.studentName}
-            </TableHeaderCell>
-            <TableHeaderCell>{ADMISSION_PAGE.table.fatherName}</TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.motherName}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>{ADMISSION_PAGE.table.phone} </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.applyingAcadYear}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {" "}
-              {ADMISSION_PAGE.table.applyingClass}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.createdDate}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.followUpDate}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {ADMISSION_PAGE.table.teacherAssigned}{" "}
-            </TableHeaderCell>
-            <TableHeaderCell>{ADMISSION_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={6}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : enquiries.length === 0 ? (
-            <TableEmptyRow colSpan={6}>
-              {ADMISSION_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            enquiries.map((enq, i) => (
-              <TableRow key={enq.id}>
-                <TableCell>{i + 1} </TableCell>
-                <TableCell primary>
-                  <Div type="col" gap="xs">
-                    <span>{enq.student_name}</span>
-                  </Div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={STATUS_BADGE[enq.status]}>
-                    {enq.status.replace("_", " ")}
-                  </Badge>
-                </TableCell>
-                <TableCell>{enq.father_name} </TableCell>
-                <TableCell>{enq.mother_name} </TableCell>
-                <TableCell>
-                  {enq.dial_code} {enq.phone}
-                </TableCell>
-                <TableCell>
-                  {years.find((y) => y.id === enq.applying_academic_year_id)
-                    ?.name ?? "-"}
-                </TableCell>
-                <TableCell>
-                  {classes.find((c) => c.id === enq.applying_class_id)?.name ??
-                    "—"}
-                </TableCell>
-                <TableCell>
-                  {new Date(enq.created_at).toLocaleString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
-                </TableCell>
-                <TableCell>
-                  {enq.next_followup_date
-                    ? new Date(enq.next_followup_date).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        },
-                      )
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  {teachers.find((t) => t.id === enq.assigned_teacher_id)
-                    ?.first_name ?? "—"}
-                </TableCell>
-
-                <TableCell>
-                  <Div type="row" gap="sm">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() =>
-                        router.push(`/admissions/view?id=${enq.id}`)
-                      }
-                      title="View"
-                    >
-                      <Eye size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() =>
-                        router.push(`/admissions/view?id=${enq.id}&edit=true`)
-                      }
-                      title="Edit"
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      onClick={() => deleteEnquiry(enq.id)}
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={enquiries}
+        isLoading={isLoading}
+        emptyText={ADMISSION_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+      />
     </PageCol>
   );
 }

@@ -1,30 +1,83 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useHallDetails } from "@/hooks/exam/useExamHall";
-import { PageHeader } from "@/components/ui/page-header";
+import type { ExamHallDetail } from "@/types/exam.types";
 import {
   Div,
   Button,
   Badge,
   Spinner,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
+import { PageHeader } from "@/components/ui/page-header";
 import { HALL_DETAILS_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 
 function HallDetailsContent() {
   const router = useRouter();
   const { details, pagination, isLoading, remove } = useHallDetails();
+
+  const columns = useMemo<ColumnDef<ExamHallDetail>[]>(
+    () => [
+      {
+        id: "index",
+        header: HALL_DETAILS_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "room_name",
+        header: HALL_DETAILS_PAGE.table.roomName,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "sitting_capacity",
+        header: HALL_DETAILS_PAGE.table.capacity,
+        cell: ({ row }) =>
+          row.original.grid_rows && row.original.grid_cols
+            ? `${row.original.grid_rows} × ${row.original.grid_cols} = ${row.original.sitting_capacity} seats`
+            : `${row.original.sitting_capacity} seats`,
+      },
+      {
+        accessorKey: "is_enabled",
+        header: HALL_DETAILS_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? "success" : "default"}>
+            {row.original.is_enabled ? "Active" : "Disabled"}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: HALL_DETAILS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="Edit"
+              onClick={() =>
+                router.push(EXAM_ROUTES.hallDetails.edit(row.original.id))
+              }
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              title="Delete"
+              onClick={() => remove(row.original.id)}
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [router, remove],
+  );
 
   return (
     <Div type="col" gap="lg">
@@ -38,74 +91,13 @@ function HallDetailsContent() {
         }
       />
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{HALL_DETAILS_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{HALL_DETAILS_PAGE.table.roomName}</TableHeaderCell>
-            <TableHeaderCell>{HALL_DETAILS_PAGE.table.capacity}</TableHeaderCell>
-            <TableHeaderCell>{HALL_DETAILS_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{HALL_DETAILS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={5}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : details.length === 0 ? (
-            <TableEmptyRow colSpan={5}>
-              {HALL_DETAILS_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            details.map((d, i) => (
-              <TableRow key={d.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{d.room_name}</TableCell>
-                <TableCell>
-                  {d.grid_rows && d.grid_cols
-                    ? `${d.grid_rows} × ${d.grid_cols} = ${d.sitting_capacity}`
-                    : d.sitting_capacity}{" "}
-                  seats
-                </TableCell>
-                <TableCell>
-                  <Badge variant={d.is_enabled ? "success" : "default"}>
-                    {d.is_enabled ? "Active" : "Disabled"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title="Edit"
-                      onClick={() => router.push(EXAM_ROUTES.hallDetails.edit(d.id))}
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      title="Delete"
-                      onClick={() => remove(d.id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={details}
+        isLoading={isLoading}
+        emptyText={HALL_DETAILS_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+      />
     </Div>
   );
 }

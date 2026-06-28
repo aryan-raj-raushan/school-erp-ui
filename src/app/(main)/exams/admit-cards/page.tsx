@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAdmitCards } from "@/hooks/useExams";
 import { ADMIT_CARDS_PAGE } from "@/constants";
 import {
@@ -8,22 +9,24 @@ import {
   P,
   Button,
   Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
+  DataTable,
   Badge,
   Spinner,
   Modal,
   MiniStat,
   FilterLabel,
   Icon,
+  type ColumnDef,
 } from "@/components/ui";
 import { Eye, FileText } from "lucide-react";
+
+type AdmitCardRow = {
+  id: string;
+  student_id: string;
+  student_name: string;
+  roll_number?: string;
+  is_issued: boolean;
+};
 
 export default function AdmitCardsPage() {
   const {
@@ -59,6 +62,50 @@ export default function AdmitCardsPage() {
   const registeredInSection = examStudents.filter((es) =>
     students.some((s) => s.id === es.student_id)
   ).length;
+
+  const columns = useMemo<ColumnDef<AdmitCardRow>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        id: "student_name",
+        header: ADMIT_CARDS_PAGE.table.student,
+        meta: { primary: true },
+        cell: ({ row }) => getStudentName(row.original.student_id),
+      },
+      {
+        id: "roll_number",
+        header: ADMIT_CARDS_PAGE.table.rollNo,
+        cell: ({ row }) => {
+          const es = examStudents.find((e) => e.student_id === row.original.student_id);
+          return es?.roll_number ?? "—";
+        },
+      },
+      {
+        accessorKey: "is_issued",
+        header: ADMIT_CARDS_PAGE.table.issued,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_issued ? "success" : "default"}>
+            {row.original.is_issued ? "Issued" : "Not Issued"}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: ADMIT_CARDS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Button size="sm" variant="ghost" onClick={() => previewCard(row.original.student_id)}>
+            <Icon icon={Eye} type="sm-inline" />
+            {ADMIT_CARDS_PAGE.previewButton}
+          </Button>
+        ),
+      },
+    ],
+    [examStudents, previewCard]
+  );
 
   return (
     <Div type="col" gap="lg">
@@ -140,49 +187,21 @@ export default function AdmitCardsPage() {
         </Div>
       )}
 
-      {/* Table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>{ADMIT_CARDS_PAGE.table.student}</TableHeaderCell>
-            <TableHeaderCell>{ADMIT_CARDS_PAGE.table.rollNo}</TableHeaderCell>
-            <TableHeaderCell>{ADMIT_CARDS_PAGE.table.issued}</TableHeaderCell>
-            <TableHeaderCell>{ADMIT_CARDS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
-          ) : !selectedSectionId ? (
-            <TableEmptyRow colSpan={5}>{ADMIT_CARDS_PAGE.empty}</TableEmptyRow>
-          ) : admitCards.length === 0 ? (
-            <TableEmptyRow colSpan={5}>{ADMIT_CARDS_PAGE.noCards}</TableEmptyRow>
-          ) : (
-            admitCards.map((card, i) => {
-              const es = examStudents.find((e) => e.student_id === card.student_id);
-              return (
-                <TableRow key={card.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>{getStudentName(card.student_id)}</TableCell>
-                  <TableCell>{es?.roll_number ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={card.is_issued ? "success" : "default"}>
-                      {card.is_issued ? "Issued" : "Not Issued"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => previewCard(card.student_id)}>
-                      <Icon icon={Eye} type="sm-inline" />
-                      {ADMIT_CARDS_PAGE.previewButton}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={
+          !selectedSectionId ? [] :
+          admitCards.map((card) => ({
+            id: card.id,
+            student_id: card.student_id,
+            student_name: getStudentName(card.student_id),
+            roll_number: examStudents.find((e) => e.student_id === card.student_id)?.roll_number ?? undefined,
+            is_issued: card.is_issued,
+          }))
+        }
+        isLoading={isLoading}
+        emptyText={!selectedSectionId ? ADMIT_CARDS_PAGE.empty : ADMIT_CARDS_PAGE.noCards}
+      />
 
       {/* Preview Modal */}
       {showPreviewModal && (

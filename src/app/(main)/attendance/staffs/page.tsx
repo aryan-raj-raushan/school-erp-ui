@@ -1,7 +1,16 @@
 "use client";
 
+import { useMemo } from "react";
 import { useStaffAttendance } from "@/hooks/useStaffAttendance";
-import { Div, Button, Input, Table, PageHeader, PageCol, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, Spinner, MiniStat, FilterLabel } from "@/components/ui";
+import { Div, P, Button, Input, PageHeader, PageCol, Spinner, MiniStat, FilterLabel, DataTable, type ColumnDef } from "@/components/ui";
+
+type StaffAttendanceRow = {
+  id: string;
+  first_name: string;
+  last_name?: string;
+  employee_code?: string;
+  role?: string;
+};
 
 export default function StaffAttendancePage() {
   const {
@@ -24,6 +33,91 @@ export default function StaffAttendancePage() {
   const hasStaff = staff.length > 0;
   const attendancePct = hasStaff ? Math.round((presentCount / staff.length) * 100) : 0;
   const isLoading = isLoadingStaff || isLoadingAttendance;
+
+  const columns = useMemo<ColumnDef<StaffAttendanceRow>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "first_name",
+        header: "Staff Member",
+        meta: { primary: true },
+        cell: ({ row }) =>
+          `${row.original.first_name} ${row.original.last_name ?? ""}`,
+      },
+      {
+        accessorKey: "employee_code",
+        header: "Employee Code",
+        cell: ({ row }) => row.original.employee_code ?? "—",
+      },
+      {
+        accessorKey: "role",
+        header: "Role",
+        cell: ({ row }) => row.original.role?.replace(/_/g, " "),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          return (
+            <Div type="row" gap="xs">
+              <Button
+                size="sm"
+                variant={
+                  entry.status === "PRESENT" ? "success" : "outline"
+                }
+                onClick={() => setStatus(row.original.id, "PRESENT")}
+              >
+                P
+              </Button>
+              <Button
+                size="sm"
+                variant={
+                  entry.status === "ABSENT" ? "destructive" : "outline"
+                }
+                onClick={() => setStatus(row.original.id, "ABSENT")}
+              >
+                A
+              </Button>
+            </Div>
+          );
+        },
+      },
+      {
+        id: "isLate",
+        header: "Late",
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          return (
+            <Input
+              type="checkbox"
+              checked={entry.is_late ?? false}
+              onChange={(e) => setLate(row.original.id, e.target.checked)}
+            />
+          );
+        },
+      },
+      {
+        id: "remarks",
+        header: "Remarks",
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          return (
+            <Input
+              placeholder="Optional remarks"
+              value={entry.remarks ?? ""}
+              onChange={(e) => setRemarks(row.original.id, e.target.value)}
+            />
+          );
+        },
+      },
+    ],
+    [attendanceMap, setStatus, setLate, setRemarks]
+  );
 
   return (
     <PageCol>
@@ -77,73 +171,33 @@ export default function StaffAttendancePage() {
         </Div>
       )}
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>Staff Member</TableHeaderCell>
-            <TableHeaderCell>Employee Code</TableHeaderCell>
-            <TableHeaderCell>Role</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Late</TableHeaderCell>
-            <TableHeaderCell>Remarks</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-          ) : staff.length === 0 ? (
-            <TableEmptyRow colSpan={7}>No staff found</TableEmptyRow>
-          ) : (
-            staff.map((member, i) => {
-              const entry = attendanceMap[member.id] ?? { is_late: false, remarks: "" };
-              const isAbsent = entry.status === "ABSENT";
-              return (
-                <TableRow key={member.id} variant={isAbsent ? "danger" : undefined}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>
-                    {member.first_name} {member.last_name ?? ""}
-                  </TableCell>
-                  <TableCell>{member.employee_code ?? "—"}</TableCell>
-                  <TableCell>{member.role?.replace(/_/g, " ")}</TableCell>
-                  <TableCell>
-                    <Div type="row" gap="xs">
-                      <Button
-                        size="sm"
-                        variant={entry.status === "PRESENT" ? "success" : "outline"}
-                        onClick={() => setStatus(member.id, "PRESENT")}
-                      >
-                        P
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={entry.status === "ABSENT" ? "destructive" : "outline"}
-                        onClick={() => setStatus(member.id, "ABSENT")}
-                      >
-                        A
-                      </Button>
-                    </Div>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="checkbox"
-                      checked={entry.is_late ?? false}
-                      onChange={(e) => setLate(member.id, e.target.checked)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      placeholder="Optional remarks"
-                      value={entry.remarks ?? ""}
-                      onChange={(e) => setRemarks(member.id, e.target.value)}
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      {/* Staff attendance table */}
+      {isLoading ? (
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      ) : staff.length === 0 ? (
+        <Div
+          type="col"
+          gap="sm"
+          align="center"
+          className="rounded-xl border border-dashed border-border py-16 text-center"
+        >
+          <P color="muted">No staff found</P>
+        </Div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={staff.map(s => ({
+            ...s,
+            last_name: s.last_name ?? undefined,
+            employee_code: s.employee_code ?? undefined,
+            role: s.role ?? undefined,
+          }))}
+          isLoading={isLoading}
+          emptyText="No staff found"
+        />
+      )}
 
       {hasStaff && (
         <Div type="row" justify="end">

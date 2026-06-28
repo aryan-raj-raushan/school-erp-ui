@@ -3,8 +3,8 @@
 export const STUDENT_ROUTES = {
   list: "/students",
   createNew: "/students/create-new",
-  view: (id: string) => `/students/view?id=${id}`,
-  edit: (id: string) => `/students/view?id=${id}&edit=true`,
+  view: (id: string) => `/students/${id}`,
+  edit: (id: string) => `/students/${id}?edit=true`,
   generate: "/students/generate",
 } as const;
 

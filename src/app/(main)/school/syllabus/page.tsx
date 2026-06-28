@@ -1,14 +1,23 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useSyllabusPage } from '@/hooks/useSyllabusPage';
 import { SYLLABUS_PAGE } from '@/constants';
 import {
   Div, Button,
   PageHeader, PageCol,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
+  DataTable,
   Badge, Spinner, Icon, Select, FilterLabel,
+  type ColumnDef,
 } from '@/components/ui';
 import { Pencil, Trash2 } from 'lucide-react';
+
+type SyllabusRow = {
+  id: string;
+  title: string;
+  class_id: string;
+  is_enabled: boolean;
+};
 
 export default function SyllabusPage() {
   const {
@@ -18,6 +27,45 @@ export default function SyllabusPage() {
     removeSyllabus, navigateToNew, navigateToEdit,
     getClassName,
   } = useSyllabusPage();
+
+  const columns = useMemo<ColumnDef<SyllabusRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: SYLLABUS_PAGE.table.title,
+        meta: { primary: true },
+      },
+      {
+        id: "class",
+        header: SYLLABUS_PAGE.table.class,
+        cell: ({ row }) => getClassName(row.original.class_id),
+      },
+      {
+        accessorKey: "is_enabled",
+        header: SYLLABUS_PAGE.table.enabled,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? 'success' : 'default'}>
+            {row.original.is_enabled ? 'Enabled' : 'Disabled'}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: SYLLABUS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Div type="row" gap="xs">
+            <Button size="sm" variant="ghost" onClick={() => navigateToEdit(row.original.id)}>
+              <Icon icon={Pencil} type="sm" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => removeSyllabus(row.original.id)}>
+              <Icon icon={Trash2} type="sm-danger" />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [getClassName, navigateToEdit, removeSyllabus]
+  );
 
   return (
     <PageCol>
@@ -43,45 +91,12 @@ export default function SyllabusPage() {
         </Div>
       </Div>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{SYLLABUS_PAGE.table.title}</TableHeaderCell>
-            <TableHeaderCell>{SYLLABUS_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{SYLLABUS_PAGE.table.enabled}</TableHeaderCell>
-            <TableHeaderCell>{SYLLABUS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={4}><Spinner /></TableEmptyRow>
-          ) : syllabi.length === 0 ? (
-            <TableEmptyRow colSpan={4}>{SYLLABUS_PAGE.empty}</TableEmptyRow>
-          ) : (
-            syllabi.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell primary>{s.title}</TableCell>
-                <TableCell>{getClassName(s.class_id)}</TableCell>
-                <TableCell>
-                  <Badge variant={s.is_enabled ? 'success' : 'default'}>
-                    {s.is_enabled ? 'Enabled' : 'Disabled'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => navigateToEdit(s.id)}>
-                      <Icon icon={Pencil} type="sm" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => removeSyllabus(s.id)}>
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={syllabi}
+        isLoading={isLoading}
+        emptyText={SYLLABUS_PAGE.empty}
+      />
     </PageCol>
   );
 }

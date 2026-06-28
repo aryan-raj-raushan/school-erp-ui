@@ -3,8 +3,13 @@
 import { Capacitor } from "@capacitor/core";
 
 async function getPreferences() {
-  const { Preferences } = await import("@capacitor/preferences");
-  return Preferences;
+  try {
+    // @ts-ignore - @capacitor/preferences is optional for native platform only
+    const { Preferences } = await import("@capacitor/preferences");
+    return Preferences;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -22,6 +27,8 @@ export async function initAppStorage(keys: string[]): Promise<void> {
   if (!needsRestore) return;
 
   const Preferences = await getPreferences();
+  if (!Preferences) return;
+
   await Promise.all(
     keys.map(async (key) => {
       if (localStorage.getItem(key) !== null) return;
@@ -42,7 +49,7 @@ export const AppStorage = {
     localStorage.setItem(key, value);
     // Durable backup on native
     if (Capacitor.isNativePlatform()) {
-      getPreferences().then((p) => p.set({ key, value }));
+      getPreferences().then((p) => p?.set({ key, value }));
     }
   },
 
@@ -50,7 +57,7 @@ export const AppStorage = {
     if (typeof window === "undefined") return;
     localStorage.removeItem(key);
     if (Capacitor.isNativePlatform()) {
-      getPreferences().then((p) => p.remove({ key }));
+      getPreferences().then((p) => p?.remove({ key }));
     }
   },
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAttendanceReports } from "@/hooks/useAttendanceReports";
 import { ATTENDANCE_REPORT_PAGE, ATTENDANCE_STATUS_BADGE } from "@/constants";
 import {
@@ -11,18 +12,11 @@ import {
   Select,
   PageHeader,
   PageCol,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
   MiniStat,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
 
 const MONTHS = [
@@ -43,6 +37,51 @@ const MONTHS = [
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
 type Tab = "daily" | "monthly" | "defaulters" | "studentHistory";
+
+type DailyReportRow = {
+  id: string;
+  student_name: string;
+  admission_number: string;
+  roll_number: string;
+  status: string;
+  is_late: boolean;
+  remarks?: string;
+  marked_by_username: string;
+};
+
+type MonthlyReportRow = {
+  student_id?: string;
+  student_name?: string;
+  admission_number: string;
+  roll_number: string;
+  total_days: number;
+  present: number;
+  absent: number;
+  percentage: number;
+};
+
+type DefaulterRow = {
+  student_id?: string;
+  student_name?: string;
+  studentName?: string;
+  admission_number?: string;
+  admissionNo?: string;
+  roll_number?: string;
+  rollNo?: string;
+  class_name?: string;
+  section_name?: string;
+  total_days: number;
+  total_present: number;
+  total_absent: number;
+  percentage: number;
+};
+
+type HistoryRow = {
+  id: string;
+  date: string;
+  status: string;
+  remarks?: string;
+};
 
 export default function StudentAttendanceReportPage() {
   const {
@@ -114,6 +153,168 @@ export default function StudentAttendanceReportPage() {
       label: ATTENDANCE_REPORT_PAGE.tabs.studentHistory,
     },
   ];
+
+  // Daily report columns
+  const dailyColumns = useMemo<ColumnDef<DailyReportRow>[]>(
+    () => [
+      {
+        accessorKey: "student_name",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.studentName,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "admission_number",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.admissionNumber,
+      },
+      {
+        accessorKey: "roll_number",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.rollNumber,
+      },
+      {
+        accessorKey: "status",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.status,
+        cell: ({ row }) => (
+          <Badge variant={ATTENDANCE_STATUS_BADGE[row.original.status as keyof typeof ATTENDANCE_STATUS_BADGE]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "is_late",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.isLate,
+        cell: ({ row }) => (row.original.is_late ? "Yes" : "No"),
+      },
+      {
+        accessorKey: "remarks",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.remarks,
+        cell: ({ row }) => row.original.remarks ?? "—",
+      },
+      {
+        accessorKey: "marked_by_username",
+        header: ATTENDANCE_REPORT_PAGE.daily.table.markedBy,
+      },
+    ],
+    []
+  );
+
+  // Monthly report columns
+  const monthlyColumns = useMemo<ColumnDef<MonthlyReportRow>[]>(
+    () => [
+      {
+        accessorKey: "student_name",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.student,
+        meta: { primary: true },
+        cell: ({ row }) => row.original.student_name ?? row.original.student_id,
+      },
+      {
+        accessorKey: "admission_number",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.admissionNumber,
+      },
+      {
+        accessorKey: "roll_number",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.rollNumber,
+      },
+      {
+        accessorKey: "total_days",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.totalDays,
+      },
+      {
+        accessorKey: "present",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.present,
+      },
+      {
+        accessorKey: "absent",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.absent,
+      },
+      {
+        accessorKey: "percentage",
+        header: ATTENDANCE_REPORT_PAGE.monthly.table.percentage,
+        cell: ({ row }) => (
+          <Badge variant={row.original.percentage >= 75 ? "success" : "danger"}>
+            {Math.round(row.original.percentage)}%
+          </Badge>
+        ),
+      },
+    ],
+    []
+  );
+
+  // Defaulter columns
+  const defaulterColumns = useMemo<ColumnDef<DefaulterRow>[]>(
+    () => [
+      {
+        accessorKey: "student_name",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.student,
+        meta: { primary: true },
+        cell: ({ row }) =>
+          row.original.student_name ?? row.original.studentName ?? row.original.student_id,
+      },
+      {
+        accessorKey: "admission_number",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.admissionNo,
+        cell: ({ row }) => row.original.admission_number ?? row.original.admissionNo ?? "—",
+      },
+      {
+        accessorKey: "roll_number",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.rollNo,
+        cell: ({ row }) => row.original.roll_number ?? row.original.rollNo ?? "—",
+      },
+      {
+        id: "class",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.class,
+        cell: ({ row }) =>
+          `${row.original.class_name ?? "—"}${
+            row.original.section_name ? ` / ${row.original.section_name}` : ""
+          }`,
+      },
+      {
+        accessorKey: "total_present",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.present,
+      },
+      {
+        accessorKey: "total_days",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.totalDays,
+      },
+      {
+        accessorKey: "total_absent",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.absent,
+      },
+      {
+        accessorKey: "percentage",
+        header: ATTENDANCE_REPORT_PAGE.defaulters.table.percentage,
+        cell: ({ row }) => (
+          <Badge variant="danger">{Math.round(row.original.percentage)}%</Badge>
+        ),
+      },
+    ],
+    []
+  );
+
+  // History columns
+  const historyColumns = useMemo<ColumnDef<HistoryRow>[]>(
+    () => [
+      {
+        accessorKey: "date",
+        header: ATTENDANCE_REPORT_PAGE.studentHistory.table.date,
+        cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
+      },
+      {
+        accessorKey: "status",
+        header: ATTENDANCE_REPORT_PAGE.studentHistory.table.status,
+        cell: ({ row }) => (
+          <Badge variant={ATTENDANCE_STATUS_BADGE[row.original.status as keyof typeof ATTENDANCE_STATUS_BADGE]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "remarks",
+        header: ATTENDANCE_REPORT_PAGE.studentHistory.table.remarks,
+        cell: ({ row }) => row.original.remarks ?? "—",
+      },
+    ],
+    []
+  );
 
   return (
     <PageCol>
@@ -238,59 +439,15 @@ export default function StudentAttendanceReportPage() {
                 />
               </Div>
 
-              <Table>
-                <TableHead>
-                  <TableHeadRow>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.studentName}
-                    </TableHeaderCell>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.admissionNumber}
-                    </TableHeaderCell>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.rollNumber}
-                    </TableHeaderCell>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.status}
-                    </TableHeaderCell>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.isLate}
-                    </TableHeaderCell>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.remarks}
-                    </TableHeaderCell>
-                    <TableHeaderCell>
-                      {ATTENDANCE_REPORT_PAGE.daily.table.markedBy}
-                    </TableHeaderCell>
-                  </TableHeadRow>
-                </TableHead>
-                <TableBody>
-                  {dailyReport.records.length === 0 ? (
-                    <TableEmptyRow colSpan={7}>
-                      {ATTENDANCE_REPORT_PAGE.daily.empty}
-                    </TableEmptyRow>
-                  ) : (
-                    dailyReport.records.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell primary>{r.student_name}</TableCell>
-                        <TableCell primary>{r.admission_number}</TableCell>
-                        <TableCell primary>{r.roll_number}</TableCell>
-                        <TableCell>
-                          <Badge variant={ATTENDANCE_STATUS_BADGE[r.status]}>
-                            {r.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell primary>
-                          {r.is_late ? "Yes" : "No"}
-                        </TableCell>
-
-                        <TableCell>{r.remarks ?? "—"}</TableCell>
-                        <TableCell>{r.marked_by_username}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={dailyColumns}
+                data={dailyReport.records.map(r => ({
+                  ...r,
+                  remarks: r.remarks ?? undefined,
+                  marked_by_username: r.marked_by_username || "—",
+                }))}
+                emptyText={ATTENDANCE_REPORT_PAGE.daily.empty}
+              />
             </Div>
           )}
         </Div>
@@ -342,64 +499,26 @@ export default function StudentAttendanceReportPage() {
             </Button>
           </Div>
 
-          <Table>
-            <TableHead>
-              <TableHeadRow>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.student}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.admissionNumber}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.rollNumber}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.totalDays}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.present}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.absent}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.monthly.table.percentage}
-                </TableHeaderCell>
-              </TableHeadRow>
-            </TableHead>
-            <TableBody>
-              {isLoadingMonthly ? (
-                <TableEmptyRow colSpan={6}>
-                  <Spinner />
-                </TableEmptyRow>
-              ) : !monthlyReport?.student_summaries?.length ? (
-                <TableEmptyRow colSpan={7}>
-                  {ATTENDANCE_REPORT_PAGE.monthly.empty}
-                </TableEmptyRow>
-              ) : (
-                monthlyReport?.student_summaries.map((r, i) => (
-                  <TableRow key={r.student_id ?? i}>
-                    <TableCell primary>
-                      {r.student_name ?? r.student_id}
-                    </TableCell>
-                    <TableCell>{r.admission_number}</TableCell>
-                    <TableCell>{r.roll_number}</TableCell>
-                    <TableCell>{r.total_days}</TableCell>
-                    <TableCell>{r.present}</TableCell>
-                    <TableCell>{r.absent}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={r.percentage >= 75 ? "success" : "danger"}
-                      >
-                        {Math.round(r.percentage)}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          {isLoadingMonthly ? (
+            <Div type="row" justify="center" className="py-20">
+              <Spinner size="lg" />
+            </Div>
+          ) : !monthlyReport?.student_summaries?.length ? (
+            <Div
+              type="col"
+              gap="sm"
+              align="center"
+              className="rounded-xl border border-dashed border-border py-16 text-center"
+            >
+              <P color="muted">{ATTENDANCE_REPORT_PAGE.monthly.empty}</P>
+            </Div>
+          ) : (
+            <DataTable
+              columns={monthlyColumns}
+              data={monthlyReport.student_summaries}
+              emptyText={ATTENDANCE_REPORT_PAGE.monthly.empty}
+            />
+          )}
         </Div>
       )}
 
@@ -439,69 +558,30 @@ export default function StudentAttendanceReportPage() {
             </Button>
           </Div>
 
-          <Table>
-            <TableHead>
-              <TableHeadRow>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.student}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.admissionNo}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.rollNo}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.class}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.present}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.totalDays}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.absent}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.table.percentage}
-                </TableHeaderCell>
-              </TableHeadRow>
-            </TableHead>
-            <TableBody>
-              {isLoadingDefaulters ? (
-                <TableEmptyRow colSpan={6}>
-                  <Spinner />
-                </TableEmptyRow>
-              ) : defaulters.length === 0 ? (
-                <TableEmptyRow colSpan={6}>
-                  {ATTENDANCE_REPORT_PAGE.defaulters.empty}
-                </TableEmptyRow>
-              ) : (
-                defaulters.map((d, i) => (
-                  <TableRow key={d.student_id ?? i}>
-                    <TableCell primary>
-                      {d.student_name ?? d?.studentName ?? d.student_id}
-                    </TableCell>
-                    <TableCell>{d.admission_number ?? d?.admissionNo ?? "—"}</TableCell>
-                    <TableCell>{d.roll_number ?? d?.rollNo ?? "—"}</TableCell>
-                    <TableCell>
-                      {d.class_name ?? "—"}
-                      {d.section_name ? ` / ${d.section_name}` : ""}
-                    </TableCell>
-                    <TableCell>{d.total_days}</TableCell>
-                    <TableCell>{d.total_present}</TableCell>
-                    <TableCell>{d.total_absent}</TableCell>
-                    <TableCell>
-                      <Badge variant="danger">
-                        {Math.round(d.percentage)}%
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          {isLoadingDefaulters ? (
+            <Div type="row" justify="center" className="py-20">
+              <Spinner size="lg" />
+            </Div>
+          ) : defaulters.length === 0 ? (
+            <Div
+              type="col"
+              gap="sm"
+              align="center"
+              className="rounded-xl border border-dashed border-border py-16 text-center"
+            >
+              <P color="muted">{ATTENDANCE_REPORT_PAGE.defaulters.empty}</P>
+            </Div>
+          ) : (
+            <DataTable
+              columns={defaulterColumns}
+              data={defaulters.map(d => ({
+                ...d,
+                total_present: Number(d.total_present) || 0,
+                total_absent: Number(d.total_absent) || 0,
+              }))}
+              emptyText={ATTENDANCE_REPORT_PAGE.defaulters.empty}
+            />
+          )}
         </Div>
       )}
 
@@ -545,53 +625,50 @@ export default function StudentAttendanceReportPage() {
             </Button>
           </Div>
 
-          <Table>
-            <TableHead>
-              <TableHeadRow>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.studentHistory.table.date}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.studentHistory.table.status}
-                </TableHeaderCell>
-                <TableHeaderCell>
-                  {ATTENDANCE_REPORT_PAGE.studentHistory.table.remarks}
-                </TableHeaderCell>
-              </TableHeadRow>
-            </TableHead>
-            <TableBody>
-              {isLoadingHistory ? (
-                <TableEmptyRow colSpan={3}>
-                  <Spinner />
-                </TableEmptyRow>
-              ) : historyRecords.length === 0 ? (
-                <TableEmptyRow colSpan={3}>
-                  {ATTENDANCE_REPORT_PAGE.studentHistory.empty}
-                </TableEmptyRow>
-              ) : (
-                historyRecords.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell primary>
-                      {new Date(r.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={ATTENDANCE_STATUS_BADGE[r.status]}>
-                        {r.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{r.remarks ?? "—"}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          {isLoadingHistory ? (
+            <Div type="row" justify="center" className="py-20">
+              <Spinner size="lg" />
+            </Div>
+          ) : historyRecords.length === 0 ? (
+            <Div
+              type="col"
+              gap="sm"
+              align="center"
+              className="rounded-xl border border-dashed border-border py-16 text-center"
+            >
+              <P color="muted">{ATTENDANCE_REPORT_PAGE.studentHistory.empty}</P>
+            </Div>
+          ) : (
+            <>
+              <DataTable
+                columns={historyColumns}
+                data={historyRecords.map(r => ({
+                  ...r,
+                  remarks: r.remarks ?? undefined,
+                }))}
+                emptyText={ATTENDANCE_REPORT_PAGE.studentHistory.empty}
+              />
 
-          {historyPagination && historyPagination.totalPages > 1 && (
-            <TablePagination
-              total={historyPagination.total}
-              page={historyPagination.page}
-              totalPages={historyPagination.totalPages}
-            />
+              {historyPagination && historyPagination.totalPages > 1 && (
+                <Div type="row" justify="between" align="center">
+                  <P size="sm" color="muted">
+                    Page {historyPagination.page} of {historyPagination.totalPages} ({historyPagination.total} records)
+                  </P>
+                  <Div type="row" gap="sm">
+                    {Array.from({ length: historyPagination.totalPages }, (_, i) => (
+                      <Button
+                        key={i + 1}
+                        variant={historyPagination.page === i + 1 ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => fetchStudentHistory(i + 1)}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                  </Div>
+                </Div>
+              )}
+            </>
           )}
         </Div>
       )}

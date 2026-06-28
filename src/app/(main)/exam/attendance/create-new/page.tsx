@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, CheckCheck, XCircle, Download } from "lucide-react";
 import { useMarkAttendance, type AttendanceSource } from "@/hooks/exam/useExamAttendance";
@@ -14,51 +14,25 @@ import {
   P,
   Button,
   Select,
+  Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
-import { ATTENDANCE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import {
+  ATTENDANCE_PAGE,
+  EXAM_ROUTES,
+  ATTENDANCE_BADGE,
+} from "@/constants/exam.constants";
 import type { AttendanceStatus } from "@/types/exam.types";
 import { useStudents } from "@/hooks/useStudentV2";
 
-// ── Status pill — click cycles P → A → L ─────────────────────────────────────
-
-const STATUS_COLORS: Record<AttendanceStatus, string> = {
-  PRESENT: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-  ABSENT: "bg-red-100 text-red-700 hover:bg-red-200",
-  LATE: "bg-amber-100 text-amber-700 hover:bg-amber-200",
+type AttendanceRow = {
+  student_id: string;
+  student_name: string;
+  roll_number?: string;
+  entries: Record<string, { status: AttendanceStatus; source: AttendanceSource }>;
 };
-
-const STATUS_LABEL: Record<AttendanceStatus, string> = {
-  PRESENT: "P",
-  ABSENT: "A",
-  LATE: "L",
-};
-
-function AttendanceCell({
-  status,
-  source,
-  onClick,
-}: {
-  status: AttendanceStatus;
-  source: AttendanceSource;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={`${status}${source === "rfid-auto" ? " (RFID)" : ""} — click to change`}
-      className={`relative w-10 h-8 rounded-md text-xs font-semibold transition-colors ${STATUS_COLORS[status]}`}
-    >
-      {STATUS_LABEL[status]}
-      {source === "rfid-auto" && (
-        <span className="absolute -top-1.5 -right-1.5 text-[9px] leading-none">
-          📡
-        </span>
-      )}
-    </button>
-  );
-}
 
 function fmtDate(iso: string) {
   const d = new Date(iso + "T00:00:00");
@@ -79,6 +53,7 @@ function MarkAttendanceContent() {
     rows,
     initRows,
     cycleStatus,
+    setDateStatus,
     markAllPresent,
     markAllAbsent,
     isSaving,
@@ -123,6 +98,67 @@ function MarkAttendanceContent() {
     academicYearId,
     sectionId: selectedSectionId,
   });
+
+  // Dynamic columns: one per available date
+  const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
+    const baseCols: ColumnDef<AttendanceRow>[] = [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "roll_number",
+        header: "Roll No.",
+        cell: ({ row }) => row.original.roll_number ?? "—",
+      },
+      {
+        accessorKey: "student_name",
+        header: "Student",
+        meta: { primary: true },
+      },
+    ];
+
+    const dateCols = availableDates.map(
+      (date): ColumnDef<AttendanceRow> => ({
+        id: `date-${date}`,
+        header: fmtDate(date),
+        cell: ({ row }) => {
+          const entry = row.original.entries[date] ?? {
+            status: "PRESENT" as AttendanceStatus,
+            source: "manual" as AttendanceSource,
+          };
+          return (
+            <Div type="col" gap="xs" align="center">
+              <Badge
+                variant={ATTENDANCE_BADGE[entry.status]}
+                className="text-xs cursor-pointer select-none"
+                onClick={() => cycleStatus(row.original.student_id, date)}
+                title={`${entry.status}${entry.source === "rfid-auto" ? " (RFID)" : ""} — click to change`}
+              >
+                {entry.status.charAt(0)}
+                {entry.source === "rfid-auto" && " 📡"}
+              </Badge>
+              <Select
+                width="sm"
+                value={entry.status}
+                onChange={(e) =>
+                  setDateStatus(row.original.student_id, date, e.target.value as AttendanceStatus)
+                }
+                className="text-xs"
+              >
+                <option value="PRESENT">Present</option>
+                <option value="ABSENT">Absent</option>
+                <option value="LATE">Late</option>
+              </Select>
+            </Div>
+          );
+        },
+      })
+    );
+
+    return [...baseCols, ...dateCols];
+  }, [availableDates, cycleStatus, setDateStatus]);
 
   return (
     <Div type="col" gap="lg">
@@ -255,79 +291,22 @@ function MarkAttendanceContent() {
                 </Button>
               </Div>
 
-              <Div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-sm min-w-[520px]">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-10">
-                        #
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground w-20">
-                        Roll
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground min-w-[150px]">
-                        Student
-                      </th>
-                      {availableDates.map((date) => (
-                        <th
-                          key={date}
-                          className="px-3 py-3 text-center font-medium text-muted-foreground w-20"
-                        >
-                          {fmtDate(date)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={3 + availableDates.length}
-                          className="px-4 py-12 text-center text-muted-foreground"
-                        >
-                          Select a class to load students
-                        </td>
-                      </tr>
-                    ) : (
-                      rows.map((row, i) => (
-                        <tr
-                          key={row.student_id}
-                          className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-muted-foreground text-xs">
-                            {i + 1}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                            {row.roll_number ?? "—"}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-foreground">
-                            {row.student_name}
-                          </td>
-                          {availableDates.map((date) => {
-                            const entry = row.entries[date] ?? {
-                              status: "PRESENT" as AttendanceStatus,
-                              source: "manual" as AttendanceSource,
-                            };
-                            return (
-                              <td key={date} className="px-3 py-2 text-center">
-                                <Div type="row" justify="center">
-                                  <AttendanceCell
-                                    status={entry.status}
-                                    source={entry.source}
-                                    onClick={() =>
-                                      cycleStatus(row.student_id, date)
-                                    }
-                                  />
-                                </Div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </Div>
+              {rows.length === 0 ? (
+                <Div
+                  type="col"
+                  gap="sm"
+                  align="center"
+                  className="rounded-xl border border-dashed border-border py-16 text-center"
+                >
+                  <P color="muted">Load students by selecting a class above</P>
+                </Div>
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={rows}
+                  emptyText="No students found"
+                />
+              )}
 
               {rows.length > 0 && (
                 <Div type="row" gap="md">

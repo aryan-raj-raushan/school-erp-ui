@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { Search, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { useLeaveAssigned } from "@/hooks/leave/useLeaveAssigned";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import type { Staff } from "@/types";
+import type { EmployeeLeaveView } from "@/types/leave.types";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
@@ -12,21 +13,15 @@ import {
   Button,
   Input,
   Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
   Modal,
   ModalBody,
   ModalFooter,
   FormField,
+  FilterBar,
 } from "@/components/ui";
 import {
   LEAVE_ASSIGNED_PAGE,
@@ -34,6 +29,123 @@ import {
   LEAVE_PAY_TYPE_LABEL,
 } from "@/constants/emp-leave.constants";
 import { useStaffsPage } from "@/hooks/useStaffsPage";
+
+// ─── Assignments DataTable Component ──────────────────────────────────────────
+interface AssignmentsDataTableProps {
+  data: EmployeeLeaveView[];
+  isLoading: boolean;
+  pagination: any;
+  onRevoke: (id: string) => void;
+  years: any[];
+}
+
+function AssignmentsDataTable({
+  data,
+  isLoading,
+  pagination,
+  onRevoke,
+  years,
+}: AssignmentsDataTableProps) {
+  const columns = useMemo<ColumnDef<EmployeeLeaveView>[]>(
+    () => [
+      {
+        id: "index",
+        header: LEAVE_ASSIGNED_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "leave_type",
+        header: LEAVE_ASSIGNED_PAGE.table.leaveName,
+        meta: { primary: true },
+        cell: ({ row }) => row.original.leave_type.leave_name,
+      },
+      {
+        accessorKey: "leave_type",
+        header: LEAVE_ASSIGNED_PAGE.table.validity,
+        cell: ({ row }) => (
+          <Badge variant="secondary">
+            {LEAVE_VALIDITY_LABEL[row.original.leave_type.leave_validity]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "leave_type",
+        header: LEAVE_ASSIGNED_PAGE.table.payType,
+        cell: ({ row }) => (
+          <Badge
+            variant={
+              row.original.leave_type.leave_pay_type === "PAID"
+                ? "success"
+                : "warning"
+            }
+          >
+            {LEAVE_PAY_TYPE_LABEL[row.original.leave_type.leave_pay_type]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "leave_type.leave_count_days",
+        header: LEAVE_ASSIGNED_PAGE.table.totalDays,
+        cell: ({ row }) => row.original.leave_type.leave_count_days,
+      },
+      {
+        accessorKey: "used_days",
+        header: LEAVE_ASSIGNED_PAGE.table.usedDays,
+        cell: ({ row }) => (
+          <P className={row.original.used_days > 0 ? "font-medium text-orange-600" : ""}>
+            {row.original.used_days}
+          </P>
+        ),
+      },
+      {
+        accessorKey: "remaining_days",
+        header: LEAVE_ASSIGNED_PAGE.table.remainingDays,
+        cell: ({ row }) => (
+          <P
+            className={
+              row.original.remaining_days <= 0
+                ? "font-semibold text-destructive"
+                : "font-semibold text-emerald-600"
+            }
+          >
+            {row.original.remaining_days}
+          </P>
+        ),
+      },
+      {
+        accessorKey: "academic_year_id",
+        header: LEAVE_ASSIGNED_PAGE.table.academicYear,
+        cell: ({ row }) =>
+          years.find((y) => y.id === row.original.academic_year_id)?.name ?? "—",
+      },
+      {
+        id: "actions",
+        header: LEAVE_ASSIGNED_PAGE.table.actions,
+        cell: ({ row }) => (
+          <Button
+            size="icon-sm"
+            variant="destructive"
+            onClick={() => onRevoke(row.original.id)}
+            title={LEAVE_ASSIGNED_PAGE.buttons.revoke}
+          >
+            <Trash2 size={14} />
+          </Button>
+        ),
+      },
+    ],
+    [onRevoke, years],
+  );
+
+  return (
+    <DataTable
+      columns={columns}
+      data={data}
+      isLoading={isLoading}
+      emptyText={LEAVE_ASSIGNED_PAGE.table.noEntry}
+      pagination={pagination ?? undefined}
+    />
+  );
+}
 
 // ─── Step 1: Employee picker ──────────────────────────────────────────────────
 interface EmployeePickerProps {
@@ -205,7 +317,7 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
       </Div>
 
       {/* Filter by academic year */}
-      <Div type="row" gap="md" align="center" wrap>
+      <FilterBar>
         <Select
           width="sm"
           value={filters.academic_year_id ?? ""}
@@ -220,116 +332,16 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
             </option>
           ))}
         </Select>
-      </Div>
+      </FilterBar>
 
-      {/* Assignments table */}
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{LEAVE_ASSIGNED_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.leaveName}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.validity}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.payType}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.totalDays}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.usedDays}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.remainingDays}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.academicYear}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {LEAVE_ASSIGNED_PAGE.table.actions}
-            </TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={9}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : assignedLeaves.length === 0 ? (
-            <TableEmptyRow colSpan={9}>
-              {LEAVE_ASSIGNED_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            assignedLeaves.map((al, i) => (
-              <TableRow key={al.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{al.leave_type.leave_name}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {LEAVE_VALIDITY_LABEL[al.leave_type.leave_validity]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      al.leave_type.leave_pay_type === "PAID"
-                        ? "success"
-                        : "warning"
-                    }
-                  >
-                    {LEAVE_PAY_TYPE_LABEL[al.leave_type.leave_pay_type]}
-                  </Badge>
-                </TableCell>
-                <TableCell>{al.leave_type.leave_count_days}</TableCell>
-                <TableCell>
-                  <P
-                    className={
-                      al.used_days > 0 ? "font-medium text-orange-600" : ""
-                    }
-                  >
-                    {al.used_days}
-                  </P>
-                </TableCell>
-                <TableCell>
-                  <P
-                    className={
-                      al.remaining_days <= 0
-                        ? "font-semibold text-destructive"
-                        : "font-semibold text-emerald-600"
-                    }
-                  >
-                    {al.remaining_days}
-                  </P>
-                </TableCell>
-                <TableCell>
-                  {years.find((y) => y.id === al.academic_year_id)?.name ?? "—"}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="icon-sm"
-                    variant="destructive"
-                    onClick={() => revokeLeave(al.id)}
-                    title={LEAVE_ASSIGNED_PAGE.buttons.revoke}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      {/* Assignments table - using DataTable with custom columns */}
+      <AssignmentsDataTable
+        data={assignedLeaves}
+        isLoading={isLoading}
+        pagination={pagination}
+        onRevoke={revokeLeave}
+        years={years}
+      />
 
       {/* Assign Leave Modal */}
       {showAssignModal && (

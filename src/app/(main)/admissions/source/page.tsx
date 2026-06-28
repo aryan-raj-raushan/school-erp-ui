@@ -1,28 +1,23 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { useAdmissionSources } from "@/hooks/useAdmissions";
 import { useFilterParams } from "@/hooks/useFilterParams";
 import type { AdmissionSourceFilters } from "@/types/admissions.types";
-import { PageHeader } from "@/components/ui/page-header";
+import type { AdmissionSource } from "@/types/admissions.types";
 import {
   Div,
-  P,
   Button,
   Select,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
+  DataTable,
+  type ColumnDef,
+  PageHeader,
+  PageCol,
+  FilterBar,
 } from "@/components/ui";
 
 function AdmissionSourcesContent() {
@@ -63,8 +58,88 @@ function AdmissionSourcesContent() {
     setUrlFilters(urlNext);
   }
 
+  const columns = useMemo<ColumnDef<AdmissionSource>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "start_date",
+        header: "Start Date",
+        cell: ({ row }) =>
+          row.original.start_date
+            ? new Date(row.original.start_date).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "—",
+      },
+      {
+        accessorKey: "end_date",
+        header: "End Date",
+        cell: ({ row }) =>
+          row.original.end_date
+            ? new Date(row.original.end_date).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "—",
+      },
+      {
+        accessorKey: "is_enabled",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? "success" : "default"}>
+            {row.original.is_enabled ? "Enabled" : "Disabled"}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <Div type="row" gap="sm">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() =>
+                router.push(`/admissions/source/${row.original.id}`)
+              }
+              title="View"
+            >
+              <Eye size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() =>
+                router.push(`/admissions/source/${row.original.id}?edit=true`)
+              }
+              title="Edit"
+            >
+              <Pencil size={14} />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="destructive"
+              onClick={() => deleteSource(row.original.id)}
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </Button>
+          </Div>
+        ),
+      },
+    ],
+    [router, deleteSource],
+  );
+
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title="Admission Sources"
         subtitle={
@@ -79,7 +154,7 @@ function AdmissionSourcesContent() {
         }
       />
 
-      <Div type="row" gap="md" align="center">
+      <FilterBar>
         <Select
           width="sm"
           value={
@@ -96,102 +171,16 @@ function AdmissionSourcesContent() {
           <option value="true">Enabled</option>
           <option value="false">Disabled</option>
         </Select>
-      </Div>
+      </FilterBar>
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>Name</TableHeaderCell>
-            <TableHeaderCell>Start Date</TableHeaderCell>
-            <TableHeaderCell>End Date</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Actions</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={5}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : sources.length === 0 ? (
-            <TableEmptyRow colSpan={5}>
-              No admission sources found
-            </TableEmptyRow>
-          ) : (
-            sources.map((src) => (
-              <TableRow key={src.id}>
-                <TableCell primary>{src.name}</TableCell>
-                <TableCell>
-                  {src.start_date
-                    ? new Date(src.start_date).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  {src.end_date
-                    ? new Date(src.end_date).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={src.is_enabled ? "success" : "default"}>
-                    {src.is_enabled ? "Enabled" : "Disabled"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="sm">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() =>
-                        router.push(`/admissions/source/view?id=${src.id}`)
-                      }
-                      title="View"
-                    >
-                      <Eye size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() =>
-                        router.push(
-                          `/admissions/source/view?id=${src.id}&edit=true`,
-                        )
-                      }
-                      title="Edit"
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      onClick={() => deleteSource(src.id)}
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
-    </Div>
+      <DataTable
+        columns={columns}
+        data={sources}
+        isLoading={isLoading}
+        emptyText="No admission sources found"
+        pagination={pagination ?? undefined}
+      />
+    </PageCol>
   );
 }
 
