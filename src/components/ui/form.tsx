@@ -19,18 +19,31 @@ export const inputBase =
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement> & { error?: string; width?: InputWidth }
->(({ className, error, width = 'full', ...props }, ref) => (
-  <input
-    ref={ref}
-    className={cn(
-      inputBase,
-      widthMap[width],
-      error && 'border-destructive focus:ring-destructive/40 focus:border-destructive',
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, type, error, width = 'full', ...props }, ref) => {
+  if (type === 'checkbox') {
+    return (
+      <input
+        ref={ref}
+        type="checkbox"
+        className={cn('h-4 w-4 cursor-pointer accent-primary', className)}
+        {...props}
+      />
+    );
+  }
+  return (
+    <input
+      ref={ref}
+      type={type}
+      className={cn(
+        inputBase,
+        widthMap[width],
+        error && 'border-destructive focus:ring-destructive/40 focus:border-destructive',
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 Input.displayName = 'Input';
 
 export const Select = React.forwardRef<

@@ -3,6 +3,17 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  if (type === "checkbox") {
+    return (
+      <input
+        type="checkbox"
+        data-slot="input"
+        className={cn("h-4 w-4 cursor-pointer accent-primary", className)}
+        {...props}
+      />
+    )
+  }
+
   return (
     <input
       type={type}

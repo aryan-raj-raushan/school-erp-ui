@@ -78,11 +78,13 @@ export default function StudentAttendancePage() {
       {
         id: "index",
         header: "#",
+        size: 48,
         cell: ({ row }) => row.index + 1,
       },
       {
         accessorKey: "first_name",
         header: STUDENT_ATTENDANCE_PAGE.table.student,
+        size: 200,
         meta: { primary: true },
         cell: ({ row }) =>
           `${row.original.first_name} ${row.original.last_name ?? ""}`,
@@ -90,15 +92,18 @@ export default function StudentAttendancePage() {
       {
         accessorKey: "admission_number",
         header: STUDENT_ATTENDANCE_PAGE.table.admissionNo,
+        size: 140,
       },
       {
         accessorKey: "roll_number",
         header: STUDENT_ATTENDANCE_PAGE.table.rollNo,
+        size: 100,
         cell: ({ row }) => row.original.roll_number ?? "—",
       },
       {
         id: "status",
         header: STUDENT_ATTENDANCE_PAGE.table.status,
+        size: 120,
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
@@ -128,6 +133,7 @@ export default function StudentAttendancePage() {
       {
         id: "isLate",
         header: STUDENT_ATTENDANCE_PAGE.table.isLate,
+        size: 72,
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
@@ -153,6 +159,7 @@ export default function StudentAttendancePage() {
               onChange={(e) =>
                 setStudentRemarks(row.original.id, e.target.value)
               }
+              className="max-w-xs"
             />
           );
         },
