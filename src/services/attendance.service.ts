@@ -2,6 +2,8 @@ import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
 import type {
   AttendanceRecord,
+  AttendanceAuditEntry,
+  MissingPunchRecord,
   MarkAttendancePayload,
   DailyAttendanceReport,
   MonthlyAttendanceSummary,
@@ -11,7 +13,12 @@ import type {
   AttendanceStatus,
   PaginationMeta,
   MonthlyAttendanceReport,
+  AttendanceDashboardStats,
+  HeatmapEntry,
+  LateTrendEntry,
 } from '@/types';
+
+export type { AttendanceAuditEntry, MissingPunchRecord };
 
 export interface AttendanceFilters {
   date?: string;
@@ -125,6 +132,43 @@ export const AttendanceService = {
     const res = await apiGateway.get<AttendanceRecord[]>(
       ENDPOINTS.attendance.bySectionDate(sectionId, date),
     );
+    return res.data;
+  },
+
+  async getAuditLog(attendanceId: string): Promise<AttendanceAuditEntry[]> {
+    const res = await apiGateway.get<AttendanceAuditEntry[]>(
+      ENDPOINTS.attendance.auditLog(attendanceId),
+    );
+    return res.data;
+  },
+
+  async getMissingPunches(date: string): Promise<MissingPunchRecord[]> {
+    const res = await apiGateway.get<MissingPunchRecord[]>(ENDPOINTS.attendance.missingPunches, {
+      params: { date },
+    });
+    return res.data;
+  },
+
+  async resolveMissingPunch(punchId: string, status: 'PRESENT' | 'HALF_DAY'): Promise<void> {
+    await apiGateway.put(ENDPOINTS.attendance.resolvePunch(punchId), { status });
+  },
+
+  async getTodayDashboard(): Promise<AttendanceDashboardStats> {
+    const res = await apiGateway.get<AttendanceDashboardStats>(ENDPOINTS.attendance.dashboard);
+    return res.data;
+  },
+
+  async getHeatmap(studentId: string, year: number): Promise<HeatmapEntry[]> {
+    const res = await apiGateway.get<HeatmapEntry[]>(ENDPOINTS.attendance.heatmap, {
+      params: { studentId, year },
+    });
+    return res.data;
+  },
+
+  async getLateTrend(classSectionId: string, month: number, year: number): Promise<LateTrendEntry[]> {
+    const res = await apiGateway.get<LateTrendEntry[]>(ENDPOINTS.attendance.lateTrend, {
+      params: { class_section_id: classSectionId, month, year },
+    });
     return res.data;
   },
 };

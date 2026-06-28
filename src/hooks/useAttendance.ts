@@ -5,8 +5,11 @@ import { toast } from "sonner";
 import { AttendanceService } from "@/services/attendance.service";
 import { ClassesService, SectionsService } from "@/services/classes.service";
 import { StudentsService } from "@/services/students.service";
+import { SchoolEventsService } from "@/services/school-events.service";
 import { useAcademicYears } from "./useAcademicYears";
 import type { AttendanceStatus, Student, Section, Class } from "@/types";
+import type { SchoolEvent } from "@/types/setting/school-events.types";
+import type { AttendanceSession } from "@/constants/attendance.constants";
 
 type AttendanceMap = Record<
   string,
@@ -40,6 +43,8 @@ export function useAttendance() {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [session, setSession] = useState<AttendanceSession>('MORNING');
+  const [holidayEvent, setHolidayEvent] = useState<SchoolEvent | null>(null);
 
   // Set default academic year from current year
   useEffect(() => {
@@ -216,6 +221,7 @@ export function useAttendance() {
 
       await AttendanceService.mark({
         date,
+        session,
         academic_year_id: selectedAcademicYearId,
         class_section_id: selectedClassSectionId,
         entries,
@@ -231,6 +237,21 @@ export function useAttendance() {
       setIsSaving(false);
     }
   }
+
+  // Holiday check — runs whenever date changes
+  useEffect(() => {
+    let cancelled = false;
+    async function checkHoliday() {
+      try {
+        const res = await SchoolEventsService.list({ from_date: date, to_date: date, type: 'HOLIDAY' });
+        if (!cancelled) setHolidayEvent(res.items.length > 0 ? res.items[0] : null);
+      } catch {
+        if (!cancelled) setHolidayEvent(null);
+      }
+    }
+    checkHoliday();
+    return () => { cancelled = true; };
+  }, [date]);
 
   useEffect(() => {
     fetchClasses();
@@ -267,5 +288,9 @@ export function useAttendance() {
     markAll,
     saveAttendance,
     setStudentLate,
+    session,
+    setSession,
+    holidayEvent,
+    isHoliday: holidayEvent !== null,
   };
 }

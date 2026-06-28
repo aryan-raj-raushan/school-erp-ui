@@ -8,20 +8,30 @@ export const ATTENDANCE_STATUS_BADGE: Record<AttendanceStatus, BadgeVariant> = {
   HALF_DAY: 'info',
   EXCUSED: 'default',
   HOLIDAY: 'default',
+  LEAVE: 'info',
+  MISSING_PUNCH: 'warning',
+  EARLY_EXIT: 'warning',
 };
 
 export const ATTENDANCE_STATUS_OPTIONS = [
   { value: 'PRESENT', label: 'Present' },
   { value: 'ABSENT', label: 'Absent' },
-  // { value: 'LATE', label: 'Late' },
-  // { value: 'HALF_DAY', label: 'Half Day' },
-  // { value: 'EXCUSED', label: 'Excused' },
-  // { value: 'HOLIDAY', label: 'Holiday' },
+  { value: 'LATE', label: 'Late' },
+  { value: 'HALF_DAY', label: 'Half Day' },
+  { value: 'EXCUSED', label: 'Excused' },
 ] as const;
 
 export const ATTENDANCE_STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All Status' },
-  ...ATTENDANCE_STATUS_OPTIONS,
+  { value: 'PRESENT', label: 'Present' },
+  { value: 'ABSENT', label: 'Absent' },
+  { value: 'LATE', label: 'Late' },
+  { value: 'HALF_DAY', label: 'Half Day' },
+  { value: 'EXCUSED', label: 'Excused' },
+  { value: 'LEAVE', label: 'On Leave' },
+  { value: 'HOLIDAY', label: 'Holiday' },
+  { value: 'MISSING_PUNCH', label: 'Missing Punch' },
+  { value: 'EARLY_EXIT', label: 'Early Exit' },
 ] as const;
 
 export const STUDENT_ATTENDANCE_PAGE = {
@@ -120,3 +130,19 @@ export const ATTENDANCE_REPORT_PAGE = {
   },
   export: 'Export',
 } as const;
+
+export const STAFF_REPORT_TAB_OPTIONS = [
+  { value: 'daily', label: 'Daily Report' },
+  { value: 'history', label: 'History' },
+] as const;
+
+export type AttendanceSession = 'MORNING' | 'AFTERNOON' | 'EXAM' | 'BUS' | 'HOSTEL' | 'LIBRARY';
+
+export const ATTENDANCE_SESSION_OPTIONS = [
+  { value: 'MORNING', label: 'Morning' },
+  { value: 'AFTERNOON', label: 'Afternoon' },
+  { value: 'EXAM', label: 'Exam' },
+  { value: 'BUS', label: 'Bus' },
+  { value: 'HOSTEL', label: 'Hostel' },
+  { value: 'LIBRARY', label: 'Library' },
+] as const;

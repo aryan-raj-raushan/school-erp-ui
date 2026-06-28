@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useAttendance } from "@/hooks/useAttendance";
 import {
   STUDENT_ATTENDANCE_PAGE,
+  ATTENDANCE_SESSION_OPTIONS,
 } from "@/constants";
 import {
   Div,
@@ -57,6 +58,10 @@ export default function StudentAttendancePage() {
     markAll,
     saveAttendance,
     setStudentLate,
+    session,
+    setSession,
+    holidayEvent,
+    isHoliday,
   } = useAttendance();
 
   const hasStudents = students.length > 0;
@@ -106,26 +111,13 @@ export default function StudentAttendancePage() {
         size: 120,
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
+          const readOnly = isHoliday || entry.status === 'LEAVE' || entry.status === 'HOLIDAY';
           return (
             <Div type="row" gap="xs">
-              <Button
-                size="sm"
-                variant={
-                  entry.status === "PRESENT" ? "success" : "outline"
-                }
-                onClick={() => setStudentStatus(row.original.id, "PRESENT")}
-              >
-                P
-              </Button>
-              <Button
-                size="sm"
-                variant={
-                  entry.status === "ABSENT" ? "destructive" : "outline"
-                }
-                onClick={() => setStudentStatus(row.original.id, "ABSENT")}
-              >
-                A
-              </Button>
+              <Button size="sm" variant={entry.status === "PRESENT" ? "success" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "PRESENT")}>P</Button>
+              <Button size="sm" variant={entry.status === "ABSENT" ? "destructive" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "ABSENT")}>A</Button>
+              <Button size="sm" variant={entry.status === "LATE" ? "secondary" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "LATE")}>L</Button>
+              <Button size="sm" variant={entry.status === "HALF_DAY" ? "secondary" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "HALF_DAY")}>HD</Button>
             </Div>
           );
         },
@@ -185,7 +177,7 @@ export default function StudentAttendancePage() {
 
       {/* Filters */}
       <Div variant="card" padding="p-4">
-        <Div type="grid" cols={4} gap="md">
+        <Div type="grid" cols={3} gap="md">
           <Div type="col" gap="xs">
             <FilterLabel>Academic Year</FilterLabel>
             <Select
@@ -242,11 +234,30 @@ export default function StudentAttendancePage() {
               onChange={(e) => setDate(e.target.value)}
             />
           </Div>
+
+          <Div type="col" gap="xs">
+            <FilterLabel>Session</FilterLabel>
+            <Select
+              value={session}
+              onChange={(e) => setSession(e.target.value as typeof session)}
+            >
+              {ATTENDANCE_SESSION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+          </Div>
         </Div>
       </Div>
 
+      {/* Holiday Banner */}
+      {isHoliday && holidayEvent && (
+        <Div variant="inset" type="row" align="center" gap="sm" padding="p-3">
+          <P color="yellow">Holiday: {holidayEvent.name} — Attendance marking is disabled for this date.</P>
+        </Div>
+      )}
+
       {/* Stats + quick actions */}
-      {hasStudents && (
+      {hasStudents && !isHoliday && (
         <Div type="row" justify="between" align="center">
           <Div type="row" gap="sm">
             <MiniStat label="Total" value={students.length} />
@@ -310,7 +321,7 @@ export default function StudentAttendancePage() {
         />
       )}
 
-      {hasStudents && (
+      {hasStudents && !isHoliday && (
         <Div type="row" justify="end">
           <Button loading={isSaving} onClick={saveAttendance}>
             {STUDENT_ATTENDANCE_PAGE.save}

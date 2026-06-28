@@ -66,6 +66,14 @@ export interface School {
   marking_system?: string | null;
   lat?: number | null;
   lng?: number | null;
+  // School Profile fields
+  timezone?: string | null;
+  udise_code?: string | null;
+  affiliation_number?: string | null;
+  established_year?: number | null;
+  principal_name?: string | null;
+  principal_email?: string | null;
+  principal_phone?: string | null;
   is_active: boolean;
   deleted: boolean;
   created_at: string;
@@ -265,7 +273,16 @@ export interface BulkImportJob {
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'EXCUSED' | 'HOLIDAY';
+export type AttendanceStatus =
+  | 'PRESENT'
+  | 'ABSENT'
+  | 'LATE'
+  | 'HALF_DAY'
+  | 'EXCUSED'
+  | 'HOLIDAY'
+  | 'LEAVE'
+  | 'MISSING_PUNCH'
+  | 'EARLY_EXIT';
 
 export interface AttendanceRecord {
   id: string;
@@ -285,6 +302,29 @@ export interface AttendanceRecord {
   updated_at?: string | null;
 }
 
+export interface MissingPunchRecord {
+  punch_id: string;
+  student_id: string;
+  student_name: string;
+  admission_number: string | null;
+  entry_tap: string;
+  date: string;
+}
+
+export interface AttendanceAuditEntry {
+  id: string;
+  attendance_id: string;
+  school_id: string;
+  changed_by: string;
+  changed_at: string;
+  old_status: string | null;
+  new_status: string | null;
+  old_remarks: string | null;
+  new_remarks: string | null;
+  reason: string | null;
+  ip_address: string | null;
+}
+
 export interface MarkAttendanceEntry {
   student_id: string;
   status: AttendanceStatus;
@@ -293,6 +333,7 @@ export interface MarkAttendanceEntry {
 
 export interface MarkAttendancePayload {
   date: string;
+  session?: string;
   academic_year_id: string;
   class_section_id: string;
   entries: MarkAttendanceEntry[];
@@ -689,10 +730,48 @@ export interface LeaveBalance {
   staff_id: string;
   leave_type_id: string;
   academic_year_id: string;
-  total_days: number;
-  used_days: number;
-  remaining_days: number;
+  allocated: number;
+  used: number;
+  carried_forward: number;
+  expires_at?: string | null;
+  auto_credited_at?: string | null;
+  can_go_negative: boolean;
+  created_at: string;
+  updated_at?: string | null;
   leave_type?: LeaveType;
+}
+
+export interface LeaveApprovalStep {
+  id: string;
+  school_id: string;
+  leave_request_id: string;
+  leave_type: 'TEACHER' | 'STUDENT';
+  step_order: number;
+  approver_id?: string | null;
+  approver_role: 'HOD' | 'PRINCIPAL' | 'HR' | 'CLASS_TEACHER' | 'ADMIN';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  remarks?: string | null;
+  decided_at?: string | null;
+  created_at: string;
+}
+
+export interface LeaveWorkflow {
+  id: string;
+  school_id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  steps?: { step_order: number; approver_role: string }[];
+}
+
+export interface StudentMovement {
+  id: string;
+  school_id: string;
+  student_id: string;
+  date: string;
+  tapped_at: string;
+  location: 'CAMPUS' | 'LIBRARY' | 'MEDICAL_ROOM' | 'SPORTS' | 'CANTEEN' | 'GATE' | 'HOSTEL' | 'LAB';
+  device_id?: string | null;
 }
 
 export interface TeacherLeaveRequest {
@@ -790,3 +869,138 @@ export type GatewayResponse<T> = ApiEnvelope<T>;
 export type RefreshTokenFn = () => Promise<{ accessToken: string; refreshToken: string }>;
 
 export type { AxiosRequestConfig };
+
+// ─── Early Exit ──────────────────────────────────────────────────────────────
+export type EarlyExitReason = 'MEDICAL' | 'PARENT_PICKUP' | 'EMERGENCY' | 'OFFICIAL' | 'OTHER';
+export type EarlyExitStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export interface EarlyExitRecord {
+  id: string;
+  student_id: string;
+  student_name: string;
+  date: string;
+  exit_time: string;
+  reason: EarlyExitReason;
+  remarks: string | null;
+  status: EarlyExitStatus;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+export interface CreateEarlyExitPayload {
+  student_id: string;
+  date: string;
+  exit_time: string;
+  reason: EarlyExitReason;
+  remarks?: string;
+}
+
+// ─── Gate Pass ───────────────────────────────────────────────────────────────
+export type GatePassStatus = 'PENDING' | 'APPROVED' | 'USED' | 'EXPIRED' | 'REJECTED';
+export interface GatePassRecord {
+  id: string;
+  student_id: string;
+  student_name: string;
+  date: string;
+  reason: string;
+  exit_time: string | null;
+  return_time: string | null;
+  qr_code: string | null;
+  status: GatePassStatus;
+  approved_by: string | null;
+  approved_at: string | null;
+  used_at: string | null;
+  created_at: string;
+}
+export interface CreateGatePassPayload {
+  student_id: string;
+  date: string;
+  reason: string;
+  exit_time?: string;
+  return_time?: string;
+  parent_consent_required?: boolean;
+}
+
+// ─── Notification Rules ───────────────────────────────────────────────────────
+export type NotificationEvent = 'ABSENT' | 'LATE' | 'HOLIDAY' | 'LEAVE_APPROVED' | 'LEAVE_REJECTED' | 'EARLY_EXIT' | 'MISSING_PUNCH' | 'GATE_PASS_APPROVED';
+export type NotificationChannel = 'EMAIL' | 'SMS' | 'PUSH' | 'ALL';
+export interface NotificationRule {
+  id: string;
+  school_id: string;
+  event_type: NotificationEvent;
+  notify_parent: boolean;
+  notify_student: boolean;
+  notify_teacher: boolean;
+  channel: NotificationChannel;
+  delay_minutes: number;
+  is_active: boolean;
+}
+
+// ─── Attendance Dashboard ─────────────────────────────────────────────────────
+export interface AttendanceDashboardStats {
+  date: string;
+  total_students: number;
+  present: number;
+  absent: number;
+  late: number;
+  half_day: number;
+  leave: number;
+  holiday: number;
+  missing_punch: number;
+  total: number;
+  pending_conflicts: number;
+  pending_leave_requests: number;
+}
+
+// ─── Attendance Conflict ──────────────────────────────────────────────────────
+export interface AttendanceConflict {
+  id: string;
+  school_id: string;
+  attendance_id: string | null;
+  student_id: string;
+  date: string;
+  rfid_status: string | null;
+  rfid_tap_time: string | null;
+  manual_status: string | null;
+  manual_marked_by: string | null;
+  manual_marked_at: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution: 'RFID_WON' | 'MANUAL_WON' | 'ADMIN_SET' | null;
+  notes: string | null;
+}
+
+// ─── Calendar Event ───────────────────────────────────────────────────────────
+export interface CalendarEvent {
+  id: string;
+  name: string;
+  title?: string;
+  type: string;
+  date?: string;
+  start_date?: string;
+  from_date: string;
+  to_date: string;
+  description?: string | null;
+  color?: string | null;
+}
+
+// ─── Heatmap / Trend ─────────────────────────────────────────────────────────
+export interface HeatmapEntry { date: string; status: string; }
+export interface LateTrendEntry { date: string; late_count: number; }
+
+// ─── Audit Log ───────────────────────────────────────────────────────────────
+export type AuditEntity = 'ATTENDANCE' | 'LEAVE' | 'HOLIDAY' | 'TIMING' | 'SETTINGS' | 'GATE_PASS' | 'EARLY_EXIT' | 'USER';
+export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE';
+
+export interface AuditLogRecord {
+  id: string;
+  school_id: string;
+  entity: AuditEntity;
+  entity_id: string;
+  action: AuditAction;
+  changed_by: string;
+  ip_address: string | null;
+  old_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown> | null;
+  created_at: string;
+}
+

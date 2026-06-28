@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { useAttendanceReports } from "@/hooks/useAttendanceReports";
+import { useAttendanceAudit } from "@/hooks/useAttendanceAudit";
+import { useMissingPunches } from "@/hooks/useMissingPunches";
 import { ATTENDANCE_REPORT_PAGE, ATTENDANCE_STATUS_BADGE } from "@/constants";
 import {
   Div,
@@ -16,6 +18,8 @@ import {
   Spinner,
   MiniStat,
   DataTable,
+  Modal,
+  ModalBody,
   type ColumnDef,
 } from "@/components/ui";
 
@@ -36,7 +40,7 @@ const MONTHS = [
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
-type Tab = "daily" | "monthly" | "defaulters" | "studentHistory";
+type Tab = "daily" | "monthly" | "defaulters" | "studentHistory" | "missingPunch" | "heatmap" | "lateTrend";
 
 type DailyReportRow = {
   id: string;
@@ -137,7 +141,30 @@ export default function StudentAttendanceReportPage() {
     setExportEndDate,
     isExporting,
     exportAttendance,
+    selectedAuditId,
+    setSelectedAuditId,
+
+    heatmapStudentId,
+    setHeatmapStudentId,
+    heatmapYear,
+    setHeatmapYear,
+    heatmapData,
+    isLoadingHeatmap,
+    fetchHeatmap,
+
+    lateTrendSectionId,
+    setLateTrendSectionId,
+    lateTrendMonth,
+    setLateTrendMonth,
+    lateTrendYear,
+    setLateTrendYear,
+    lateTrendData,
+    isLoadingLateTrend,
+    fetchLateTrend,
   } = useAttendanceReports();
+
+  const { log: auditLog, isLoading: isLoadingAudit } = useAttendanceAudit(selectedAuditId);
+  const { date: mpDate, setDate: setMpDate, records: missingPunches, isLoading: isLoadingMp, fetch: fetchMp, resolve: resolvePunch, resolvingId } = useMissingPunches();
 
   const sectionOptions = sections.map((s) => ({
     id: s.id,
@@ -148,10 +175,10 @@ export default function StudentAttendanceReportPage() {
     { key: "daily", label: ATTENDANCE_REPORT_PAGE.tabs.daily },
     { key: "monthly", label: ATTENDANCE_REPORT_PAGE.tabs.monthly },
     { key: "defaulters", label: ATTENDANCE_REPORT_PAGE.tabs.defaulters },
-    {
-      key: "studentHistory",
-      label: ATTENDANCE_REPORT_PAGE.tabs.studentHistory,
-    },
+    { key: "studentHistory", label: ATTENDANCE_REPORT_PAGE.tabs.studentHistory },
+    { key: "missingPunch", label: "Missing Punch" },
+    { key: "heatmap", label: "Heatmap" },
+    { key: "lateTrend", label: "Late Trend" },
   ];
 
   // Daily report columns
@@ -193,8 +220,18 @@ export default function StudentAttendanceReportPage() {
         accessorKey: "marked_by_username",
         header: ATTENDANCE_REPORT_PAGE.daily.table.markedBy,
       },
+      {
+        id: "audit",
+        header: "Audit",
+        size: 72,
+        cell: ({ row }) => (
+          <Button size="xs" variant="ghost" onClick={() => setSelectedAuditId(row.original.id)}>
+            History
+          </Button>
+        ),
+      },
     ],
-    []
+    [setSelectedAuditId]
   );
 
   // Monthly report columns
@@ -671,6 +708,198 @@ export default function StudentAttendanceReportPage() {
             </>
           )}
         </Div>
+      )}
+      {/* ── Missing Punch ── */}
+      {activeTab === "missingPunch" && (
+        <Div type="col" gap="md">
+          <Div type="row" gap="md" align="center" wrap>
+            <Input
+              type="date"
+              width="sm"
+              value={mpDate}
+              onChange={(e) => setMpDate(e.target.value)}
+            />
+            <Button onClick={fetchMp} loading={isLoadingMp}>
+              Fetch
+            </Button>
+          </Div>
+          {isLoadingMp ? (
+            <Div type="row" justify="center" className="py-20">
+              <Spinner size="lg" />
+            </Div>
+          ) : missingPunches.length === 0 ? (
+            <Div
+              type="col"
+              align="center"
+              className="rounded-xl border border-dashed border-border py-16 text-center"
+            >
+              <P color="muted">No missing punches for this date.</P>
+            </Div>
+          ) : (
+            <DataTable
+              columns={[
+                { accessorKey: 'student_name', header: 'Student', meta: { primary: true } },
+                {
+                  accessorKey: 'admission_number',
+                  header: 'Admission No.',
+                  cell: ({ row }) => row.original.admission_number ?? '—',
+                },
+                {
+                  accessorKey: 'entry_tap',
+                  header: 'Entry Time',
+                  cell: ({ row }) => new Date(row.original.entry_tap).toLocaleTimeString(),
+                },
+                {
+                  id: 'resolve',
+                  header: 'Resolve',
+                  cell: ({ row }) => (
+                    <Div type="row" gap="xs">
+                      <Button
+                        size="xs"
+                        variant="success"
+                        loading={resolvingId === row.original.punch_id}
+                        onClick={() => resolvePunch(row.original.punch_id, 'PRESENT')}
+                      >
+                        Present
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        loading={resolvingId === row.original.punch_id}
+                        onClick={() => resolvePunch(row.original.punch_id, 'HALF_DAY')}
+                      >
+                        Half Day
+                      </Button>
+                    </Div>
+                  ),
+                },
+              ]}
+              data={missingPunches}
+              emptyText="No missing punches"
+            />
+          )}
+        </Div>
+      )}
+
+      {/* ── Heatmap ── */}
+      {activeTab === "heatmap" && (
+        <Div type="col" gap="md">
+          <Div type="row" gap="md" align="center" wrap>
+            <Input
+              placeholder="Student ID"
+              width="md"
+              value={heatmapStudentId}
+              onChange={(e) => setHeatmapStudentId(e.target.value)}
+            />
+            <Select
+              width="sm"
+              value={heatmapYear}
+              onChange={(e) => setHeatmapYear(Number(e.target.value))}
+            >
+              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+            </Select>
+            <Button onClick={fetchHeatmap} loading={isLoadingHeatmap}>Load Heatmap</Button>
+          </Div>
+          {isLoadingHeatmap ? (
+            <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>
+          ) : heatmapData.length === 0 ? (
+            <P color="muted">Enter a student ID and load the heatmap.</P>
+          ) : (
+            <Div type="row" wrap gap="xs">
+              {heatmapData.map((entry) => (
+                <Div
+                  key={entry.date}
+                  title={`${entry.date}: ${entry.status}`}
+                  className={`w-4 h-4 rounded-sm ${entry.status === 'PRESENT' ? 'bg-green-500' : entry.status === 'ABSENT' ? 'bg-red-500' : entry.status === 'LATE' ? 'bg-yellow-500' : 'bg-gray-300'}`}
+                />
+              ))}
+            </Div>
+          )}
+        </Div>
+      )}
+
+      {/* ── Late Trend ── */}
+      {activeTab === "lateTrend" && (
+        <Div type="col" gap="md">
+          <Div type="row" gap="md" align="center" wrap>
+            <Select
+              width="md"
+              value={lateTrendSectionId}
+              onChange={(e) => setLateTrendSectionId(e.target.value)}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Section</option>
+              {sectionOptions.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </Select>
+            <Select
+              width="sm"
+              value={lateTrendMonth}
+              onChange={(e) => setLateTrendMonth(Number(e.target.value))}
+            >
+              {MONTHS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </Select>
+            <Select
+              width="sm"
+              value={lateTrendYear}
+              onChange={(e) => setLateTrendYear(Number(e.target.value))}
+            >
+              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+            </Select>
+            <Button onClick={fetchLateTrend} loading={isLoadingLateTrend}>Load Trend</Button>
+          </Div>
+          {isLoadingLateTrend ? (
+            <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>
+          ) : lateTrendData.length === 0 ? (
+            <P color="muted">Select a section and load the late trend data.</P>
+          ) : (
+            <DataTable
+              columns={[
+                { accessorKey: 'date', header: 'Date' },
+                { accessorKey: 'late_count', header: 'Late Count' },
+              ]}
+              data={lateTrendData}
+              emptyText="No late arrivals in this period"
+            />
+          )}
+        </Div>
+      )}
+
+      {selectedAuditId && (
+        <Modal title="Attendance Change History" onClose={() => setSelectedAuditId(null)}>
+          <ModalBody>
+            {isLoadingAudit ? (
+              <Div type="row" justify="center" padding="p-8">
+                <Spinner />
+              </Div>
+            ) : auditLog.length === 0 ? (
+              <P color="muted">No changes recorded for this record.</P>
+            ) : (
+              <Div type="col" gap="sm">
+                {auditLog.map((entry) => (
+                  <Div key={entry.id} variant="inset" padding="p-3" type="col" gap="xs">
+                    <Div type="row" justify="between" align="center">
+                      <P size="xs" color="muted">{new Date(entry.changed_at).toLocaleString()}</P>
+                      {entry.ip_address && <P size="xs" color="muted">IP: {entry.ip_address}</P>}
+                    </Div>
+                    <Div type="row" gap="sm" align="center">
+                      {entry.old_status && <Badge variant={ATTENDANCE_STATUS_BADGE[entry.old_status as keyof typeof ATTENDANCE_STATUS_BADGE] ?? 'default'}>{entry.old_status}</Badge>}
+                      <P size="xs" color="muted">→</P>
+                      {entry.new_status && <Badge variant={ATTENDANCE_STATUS_BADGE[entry.new_status as keyof typeof ATTENDANCE_STATUS_BADGE] ?? 'default'}>{entry.new_status}</Badge>}
+                    </Div>
+                    {(entry.old_remarks || entry.new_remarks) && (
+                      <P size="xs" color="muted">
+                        Remarks: {entry.old_remarks ?? '—'} → {entry.new_remarks ?? '—'}
+                      </P>
+                    )}
+                    <P size="xs" color="muted">Changed by: {entry.changed_by}</P>
+                  </Div>
+                ))}
+              </Div>
+            )}
+          </ModalBody>
+        </Modal>
       )}
     </PageCol>
   );
