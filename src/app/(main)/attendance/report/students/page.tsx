@@ -87,10 +87,15 @@ type HistoryRow = {
   remarks?: string;
 };
 
+const today = new Date().toISOString().split("T")[0];
+
 export default function StudentAttendanceReportPage() {
   const {
     activeTab,
     setActiveTab,
+    academicYears,
+    selectedAcademicYearId,
+    setSelectedAcademicYearId,
     classSection,
     sections,
     isLoadingSections,
@@ -144,6 +149,10 @@ export default function StudentAttendanceReportPage() {
     selectedAuditId,
     setSelectedAuditId,
 
+    heatmapSectionId,
+    setHeatmapSectionId,
+    heatmapStudents,
+    isLoadingHeatmapStudents,
     heatmapStudentId,
     setHeatmapStudentId,
     heatmapYear,
@@ -376,13 +385,26 @@ export default function StudentAttendanceReportPage() {
               type="date"
               width="sm"
               value={exportStartDate}
-              onChange={(e) => setExportStartDate(e.target.value)}
+              max={today}
+              onChange={(e) => {
+                const val = e.target.value;
+                setExportStartDate(val);
+                // if start moved past end, pull end forward
+                if (val > exportEndDate) setExportEndDate(val);
+              }}
             />
             <Input
               type="date"
               width="sm"
               value={exportEndDate}
-              onChange={(e) => setExportEndDate(e.target.value)}
+              min={exportStartDate}
+              max={today}
+              onChange={(e) => {
+                const val = e.target.value;
+                setExportEndDate(val);
+                // if end moved before start, pull start back
+                if (val < exportStartDate) setExportStartDate(val);
+              }}
             />
             <Button
               variant="outline"
@@ -395,8 +417,25 @@ export default function StudentAttendanceReportPage() {
         }
       />
 
+      {/* Academic Year selector */}
+      <Div variant="card" padding="p-3" type="row" align="center" gap="sm">
+        <P size="sm" color="muted" noWrap>Academic Year</P>
+        <Select
+          width="sm"
+          value={selectedAcademicYearId}
+          onChange={(e) => setSelectedAcademicYearId(e.target.value)}
+        >
+          <option value="">All years</option>
+          {academicYears.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}{y.is_current ? " (Current)" : ""}
+            </option>
+          ))}
+        </Select>
+      </Div>
+
       {/* Tabs */}
-      <Div type="row" gap="sm">
+      <Div type="row" gap="sm" wrap>
         {tabs.map((tab) => (
           <Button
             key={tab.key}
@@ -785,12 +824,32 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "heatmap" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Input
-              placeholder="Student ID"
+            <Select
+              width="md"
+              value={heatmapSectionId}
+              onChange={(e) => setHeatmapSectionId(e.target.value)}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Section</option>
+              {sectionOptions.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </Select>
+            <Select
               width="md"
               value={heatmapStudentId}
               onChange={(e) => setHeatmapStudentId(e.target.value)}
-            />
+              disabled={!heatmapSectionId || isLoadingHeatmapStudents}
+            >
+              <option value="">
+                {isLoadingHeatmapStudents ? "Loading students…" : "Select Student"}
+              </option>
+              {heatmapStudents.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.first_name} {s.last_name ?? ""} {s.admission_number ? `(${s.admission_number})` : ""}
+                </option>
+              ))}
+            </Select>
             <Select
               width="sm"
               value={heatmapYear}
@@ -803,16 +862,36 @@ export default function StudentAttendanceReportPage() {
           {isLoadingHeatmap ? (
             <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>
           ) : heatmapData.length === 0 ? (
-            <P color="muted">Enter a student ID and load the heatmap.</P>
+            <P color="muted">Select a section and student, then load the heatmap.</P>
           ) : (
-            <Div type="row" wrap gap="xs">
-              {heatmapData.map((entry) => (
-                <Div
-                  key={entry.date}
-                  title={`${entry.date}: ${entry.status}`}
-                  className={`w-4 h-4 rounded-sm ${entry.status === 'PRESENT' ? 'bg-green-500' : entry.status === 'ABSENT' ? 'bg-red-500' : entry.status === 'LATE' ? 'bg-yellow-500' : 'bg-gray-300'}`}
-                />
-              ))}
+            <Div type="col" gap="sm">
+              <Div type="row" gap="md" align="center">
+                <Div type="row" gap="xs" align="center">
+                  <Div className="w-4 h-4 rounded-sm bg-green-500" />
+                  <P size="xs" color="muted">Present</P>
+                </Div>
+                <Div type="row" gap="xs" align="center">
+                  <Div className="w-4 h-4 rounded-sm bg-red-500" />
+                  <P size="xs" color="muted">Absent</P>
+                </Div>
+                <Div type="row" gap="xs" align="center">
+                  <Div className="w-4 h-4 rounded-sm bg-yellow-500" />
+                  <P size="xs" color="muted">Late</P>
+                </Div>
+                <Div type="row" gap="xs" align="center">
+                  <Div className="w-4 h-4 rounded-sm bg-gray-300" />
+                  <P size="xs" color="muted">Other</P>
+                </Div>
+              </Div>
+              <Div type="row" wrap gap="xs">
+                {heatmapData.map((entry) => (
+                  <Div
+                    key={entry.date}
+                    title={`${entry.date}: ${entry.status}`}
+                    className={`w-4 h-4 rounded-sm ${entry.status === 'PRESENT' ? 'bg-green-500' : entry.status === 'ABSENT' ? 'bg-red-500' : entry.status === 'LATE' ? 'bg-yellow-500' : 'bg-gray-300'}`}
+                  />
+                ))}
+              </Div>
             </Div>
           )}
         </Div>

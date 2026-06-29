@@ -15,6 +15,7 @@ import {
   ModalFooter,
   FormField,
   Input,
+  Select,
   EmptyState,
 } from '@/components/ui';
 import type { CreateLeavePolicyPayload } from '@/services/leave.service';
@@ -29,7 +30,7 @@ const EMPTY_FORM: CreateLeavePolicyPayload = {
 export default function LeavePolicyPage() {
   const {
     policies, isLoading, isSaving, isDialogOpen, editingPolicy,
-    openCreate, openEdit, closeDialog, submit,
+    openCreate, openEdit, closeDialog, submit, academicYears,
   } = useLeavePolicies();
 
   const [form, setForm] = useState<CreateLeavePolicyPayload>(EMPTY_FORM);
@@ -126,8 +127,18 @@ export default function LeavePolicyPage() {
                 <Input value={form.name} onChange={(e) => updateForm('name', e.target.value)} placeholder="Staff Leave Policy 2024-25" />
               </FormField>
               {!editingPolicy && (
-                <FormField label="Academic Year ID">
-                  <Input value={form.academic_year_id} onChange={(e) => updateForm('academic_year_id', e.target.value)} placeholder="Paste academic year UUID" />
+                <FormField label="Academic Year">
+                  <Select
+                    value={form.academic_year_id}
+                    onChange={(e) => updateForm('academic_year_id', e.target.value)}
+                  >
+                    <option value="">Select academic year</option>
+                    {academicYears.map((y) => (
+                      <option key={y.id} value={y.id}>
+                        {y.name}{y.is_current ? ' (Current)' : ''}
+                      </option>
+                    ))}
+                  </Select>
                 </FormField>
               )}
               <FormField label="Description (optional)">

@@ -186,7 +186,9 @@ export function useAttendance() {
     setAttendanceMap((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
-        next[id] = { ...next[id], status };
+        if (next[id].status !== 'LEAVE' && next[id].status !== 'HOLIDAY') {
+          next[id] = { ...next[id], status };
+        }
       });
       return next;
     });
@@ -210,14 +212,19 @@ export function useAttendance() {
     }
     setIsSaving(true);
     try {
-      const entries = students.map((s) => ({
-        student_id: s.id,
-        status: attendanceMap[s.id].status!,
-        is_late: attendanceMap[s.id].isLate ?? false,
-        ...(attendanceMap[s.id].remarks && {
-          remarks: attendanceMap[s.id].remarks,
-        }),
-      }));
+      const entries = students
+        .filter((s) => {
+          const st = attendanceMap[s.id]?.status;
+          return st !== 'LEAVE' && st !== 'HOLIDAY';
+        })
+        .map((s) => ({
+          student_id: s.id,
+          status: attendanceMap[s.id].status!,
+          is_late: attendanceMap[s.id].isLate ?? false,
+          ...(attendanceMap[s.id].remarks && {
+            remarks: attendanceMap[s.id].remarks,
+          }),
+        }));
 
       await AttendanceService.mark({
         date,

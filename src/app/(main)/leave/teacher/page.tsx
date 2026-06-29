@@ -44,7 +44,7 @@ export default function TeacherLeavePage() {
     {
       accessorKey: 'staff_id',
       header: 'Staff',
-      cell: ({ row }) => row.original.staff_id,
+      cell: ({ row }) => row.original.staff_name ?? row.original.staff_id,
     },
     {
       accessorKey: 'from_date',

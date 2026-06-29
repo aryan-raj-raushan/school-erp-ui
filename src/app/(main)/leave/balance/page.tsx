@@ -9,7 +9,7 @@ import {
   Badge,
   Spinner,
   DataTable,
-  Input,
+  Select,
   FilterBar,
   FilterLabel,
   EmptyState,
@@ -18,10 +18,10 @@ import {
 import type { LeaveBalance } from '@/types';
 
 export default function LeaveBalancePage() {
-  const { balances, isLoading, academicYearId, setAcademicYearId, load } = useLeaveBalance();
+  const { balances, isLoading, academicYearId, setAcademicYearId, academicYears, load } = useLeaveBalance();
 
   const columns: ColumnDef<LeaveBalance>[] = [
-    { header: 'Staff ID', accessorKey: 'staff_id', cell: ({ row }) => <span>{row.original.staff_id.slice(0, 8)}…</span> },
+    { header: 'Staff', accessorKey: 'staff_id', cell: ({ row }) => <span>{row.original.staff_name ?? row.original.staff_id.slice(0, 8) + '…'}</span> },
     { header: 'Leave Type', accessorKey: 'leave_type_id', cell: ({ row }) => <span>{row.original.leave_type?.name ?? row.original.leave_type_id.slice(0, 8)}</span> },
     { header: 'Allocated', accessorKey: 'allocated' },
     { header: 'Used', accessorKey: 'used' },
@@ -55,12 +55,19 @@ export default function LeaveBalancePage() {
       <PageHeader title="Leave Balances" subtitle="Staff leave balance summary with carry-forward and expiry" />
 
       <FilterBar>
-        <FilterLabel>Academic Year ID</FilterLabel>
-        <Input
+        <FilterLabel>Academic Year</FilterLabel>
+        <Select
           value={academicYearId}
           onChange={(e) => setAcademicYearId(e.target.value)}
-          placeholder="Paste academic year ID"
-        />
+          width="sm"
+        >
+          <option value="">Select year</option>
+          {academicYears.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}{y.is_current ? ' (Current)' : ''}
+            </option>
+          ))}
+        </Select>
       </FilterBar>
 
       {!academicYearId ? (

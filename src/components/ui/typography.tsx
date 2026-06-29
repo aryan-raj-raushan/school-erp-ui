@@ -67,7 +67,7 @@ export function H1({ color = 'default', className, ...props }: TypographyProps) 
 export function PageTitle({ color = 'default', className, ...props }: TypographyProps) {
   return (
     <h1
-      className={cn('text-[32px] font-bold tracking-tight leading-tight', colorMap[color], className)}
+      className={cn('text-2xl sm:text-[28px] md:text-[32px] font-bold tracking-tight leading-tight', colorMap[color], className)}
       {...props}
     />
   );
