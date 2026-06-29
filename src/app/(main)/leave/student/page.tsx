@@ -15,11 +15,14 @@ import {
   ModalFooter,
   FormField,
   Input,
+  Select,
   EmptyState,
   type ColumnDef,
 } from '@/components/ui';
 import { LEAVE_STATUS_BADGE } from '@/constants/leave.constants';
 import type { StudentLeaveRequest } from '@/types';
+
+const today = new Date().toISOString().split('T')[0];
 
 export default function StudentLeavePage() {
   const {
@@ -32,6 +35,24 @@ export default function StudentLeavePage() {
     openReview,
     closeReview,
     review,
+    isApplyOpen,
+    isApplying,
+    sectionOptions,
+    applySectionId,
+    setApplySectionId,
+    applyStudents,
+    applyStudentId,
+    setApplyStudentId,
+    isLoadingApplyStudents,
+    applyFromDate,
+    setApplyFromDate,
+    applyToDate,
+    setApplyToDate,
+    applyReason,
+    setApplyReason,
+    openApply,
+    closeApply,
+    applyLeave,
   } = useStudentLeave();
 
   const columns: ColumnDef<StudentLeaveRequest>[] = [
@@ -44,7 +65,8 @@ export default function StudentLeavePage() {
     {
       accessorKey: 'student_id',
       header: 'Student',
-      cell: ({ row }) => row.original.student_id,
+      meta: { primary: true },
+      cell: ({ row }) => row.original.student_name ?? row.original.student_id,
     },
     {
       accessorKey: 'from_date',
@@ -99,24 +121,114 @@ export default function StudentLeavePage() {
       <PageHeader
         title="Student Leave Requests"
         subtitle="Review and approve leave requests for students"
+        actions={<Button onClick={openApply}>Apply on Behalf</Button>}
       />
 
       {requests.length === 0 ? (
-        <EmptyState title="No leave requests" description="No student leave requests found" />
+        <EmptyState
+          title="No leave requests"
+          description="No student leave requests found"
+          action={{ label: 'Apply on Behalf', onClick: openApply }}
+        />
       ) : (
         <DataTable columns={columns} data={requests} isLoading={isLoading} />
       )}
 
+      {/* ── Apply on Behalf Modal ── */}
+      {isApplyOpen && (
+        <Modal onClose={closeApply} title="Apply Leave on Behalf of Student">
+          <ModalBody>
+            <Div type="col" gap="md">
+              <FormField label="Section">
+                <Select
+                  value={applySectionId}
+                  onChange={(e) => setApplySectionId(e.target.value)}
+                >
+                  <option value="">Select section</option>
+                  {sectionOptions.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label="Student">
+                <Select
+                  value={applyStudentId}
+                  onChange={(e) => setApplyStudentId(e.target.value)}
+                  disabled={!applySectionId || isLoadingApplyStudents}
+                >
+                  <option value="">
+                    {isLoadingApplyStudents ? 'Loading students…' : 'Select student'}
+                  </option>
+                  {applyStudents.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.first_name} {s.last_name ?? ''} {s.admission_number ? `(${s.admission_number})` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <Div type="grid" cols={2} gap="sm">
+                <FormField label="From Date">
+                  <Input
+                    type="date"
+                    value={applyFromDate}
+                    max={today}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setApplyFromDate(val);
+                      if (val > applyToDate) setApplyToDate(val);
+                    }}
+                  />
+                </FormField>
+                <FormField label="To Date">
+                  <Input
+                    type="date"
+                    value={applyToDate}
+                    min={applyFromDate}
+                    max={today}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setApplyToDate(val);
+                      if (val < applyFromDate) setApplyFromDate(val);
+                    }}
+                  />
+                </FormField>
+              </Div>
+
+              <FormField label="Reason">
+                <Input
+                  value={applyReason}
+                  onChange={(e) => setApplyReason(e.target.value)}
+                  placeholder="e.g. Fever, Family function, Medical appointment"
+                />
+              </FormField>
+            </Div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" onClick={closeApply}>Cancel</Button>
+            <Button loading={isApplying} onClick={applyLeave}>Submit Request</Button>
+          </ModalFooter>
+        </Modal>
+      )}
+
+      {/* ── Review Modal ── */}
       {selectedRequest && (
         <Modal onClose={closeReview} title="Review Student Leave Request">
           <ModalBody>
-            <Div type="grid" cols={2} gap="sm">
-              <Div type="col" gap="xs">
-                <P size="xs">Period</P>
-                <P color="default">{selectedRequest.from_date} → {selectedRequest.to_date} ({selectedRequest.total_days} days)</P>
+            <Div type="col" gap="sm">
+              <Div type="grid" cols={2} gap="sm">
+                <Div type="col" gap="xs">
+                  <P size="xs" color="muted">Student</P>
+                  <P color="default">{selectedRequest.student_name ?? selectedRequest.student_id}</P>
+                </Div>
+                <Div type="col" gap="xs">
+                  <P size="xs" color="muted">Period</P>
+                  <P color="default">{selectedRequest.from_date} → {selectedRequest.to_date} ({selectedRequest.total_days} days)</P>
+                </Div>
               </Div>
               <Div type="col" gap="xs">
-                <P size="xs">Reason</P>
+                <P size="xs" color="muted">Reason</P>
                 <P color="default">{selectedRequest.reason}</P>
               </Div>
             </Div>

@@ -728,6 +728,7 @@ export interface LeaveBalance {
   id: string;
   school_id: string;
   staff_id: string;
+  staff_name?: string | null;
   leave_type_id: string;
   academic_year_id: string;
   allocated: number;
@@ -778,6 +779,7 @@ export interface TeacherLeaveRequest {
   id: string;
   school_id: string;
   staff_id: string;
+  staff_name?: string | null;
   leave_type_id: string;
   from_date: string;
   to_date: string;
@@ -795,6 +797,7 @@ export interface StudentLeaveRequest {
   id: string;
   school_id: string;
   student_id: string;
+  student_name?: string | null;
   applied_by?: string | null;
   from_date: string;
   to_date: string;

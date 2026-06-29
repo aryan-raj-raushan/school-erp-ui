@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { AttendanceService } from "@/services/attendance.service";
 import { ClassesService } from "@/services/classes.service";
 import { StudentsService } from "@/services/students.service";
-import type { Student } from "@/types";
+import { AcademicYearsService } from "@/services/academic-years.service";
+import type { Student, AcademicYear } from "@/types";
 import type {
   DailyAttendanceReport,
   MonthlyAttendanceSummary,
@@ -25,6 +26,12 @@ function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
+function firstOfMonthISO() {
+  const d = new Date();
+  d.setDate(1);
+  return d.toISOString().split("T")[0];
+}
+
 function currentMonth() {
   return new Date().getMonth() + 1;
 }
@@ -35,10 +42,15 @@ function currentYear() {
 
 export function useAttendanceReports() {
   const [activeTab, setActiveTab] = useState<ReportTab>("daily");
+
+  // Academic Year
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState("");
+
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoadingSections, setIsLoadingSections] = useState(false);
 
-  const [classSection, setClassSection]= useState<Class[]>([]);
+  const [classSection, setClassSection] = useState<Class[]>([]);
   const [isLoadingClassSection, setIsLoadingClassSection] = useState(false);
 
 
@@ -77,6 +89,9 @@ export function useAttendanceReports() {
   const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
 
   // Heatmap
+  const [heatmapSectionId, setHeatmapSectionId] = useState("");
+  const [heatmapStudents, setHeatmapStudents] = useState<Student[]>([]);
+  const [isLoadingHeatmapStudents, setIsLoadingHeatmapStudents] = useState(false);
   const [heatmapStudentId, setHeatmapStudentId] = useState("");
   const [heatmapYear, setHeatmapYear] = useState(currentYear());
   const [heatmapData, setHeatmapData] = useState<HeatmapEntry[]>([]);
@@ -91,14 +106,28 @@ export function useAttendanceReports() {
 
   // Export
   const [exportSectionId, setExportSectionId] = useState("");
-  const [exportStartDate, setExportStartDate] = useState("");
-  const [exportEndDate, setExportEndDate] = useState("");
+  const [exportStartDate, setExportStartDate] = useState(firstOfMonthISO);
+  const [exportEndDate, setExportEndDate] = useState(todayISO);
   const [isExporting, setIsExporting] = useState(false);
+
+  const fetchAcademicYears = useCallback(async () => {
+    try {
+      const res = await AcademicYearsService.list();
+      setAcademicYears(res.items);
+      const current = res.items.find((y) => y.is_current);
+      if (current) setSelectedAcademicYearId(current.id);
+    } catch {
+      // non-fatal — page still usable without year filter
+    }
+  }, []);
 
   const fetchClasses = useCallback(async () => {
     setIsLoadingClassSection(true);
     try {
-      const res = await ClassesService.list();
+      const params = selectedAcademicYearId
+        ? { academic_year_id: selectedAcademicYearId }
+        : {};
+      const res = await ClassesService.list(params);
       setClassSection(res.items);
       setSections(res.sections);
     } catch (err: unknown) {
@@ -106,7 +135,7 @@ export function useAttendanceReports() {
     } finally {
       setIsLoadingClassSection(false);
     }
-  }, []);
+  }, [selectedAcademicYearId]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchSections = useCallback(async () => {
@@ -161,6 +190,7 @@ export function useAttendanceReports() {
     try {
       const data = await AttendanceService.getDefaulters({
         ...(defaulterSectionId && { class_section_id: defaulterSectionId }),
+        ...(selectedAcademicYearId && { academic_year_id: selectedAcademicYearId }),
         threshold: defaulterThreshold,
       });
       setDefaulters(data);
@@ -188,6 +218,24 @@ export function useAttendanceReports() {
       toast.error(err instanceof Error ? err.message : "Failed to load students");
     } finally {
       setIsLoadingHistoryStudents(false);
+    }
+  }, []);
+
+  const fetchHeatmapStudents = useCallback(async (sectionId: string) => {
+    if (!sectionId) {
+      setHeatmapStudents([]);
+      setHeatmapStudentId("");
+      return;
+    }
+    setIsLoadingHeatmapStudents(true);
+    try {
+      const result = await StudentsService.list({ section_id: sectionId, limit: 100 });
+      setHeatmapStudents(result.items);
+      setHeatmapStudentId("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to load students");
+    } finally {
+      setIsLoadingHeatmapStudents(false);
     }
   }, []);
 
@@ -259,6 +307,10 @@ export function useAttendanceReports() {
   }
 
   useEffect(() => {
+    fetchAcademicYears();
+  }, [fetchAcademicYears]);
+
+  useEffect(() => {
     fetchSections();
   }, [fetchSections]);
 
@@ -270,9 +322,16 @@ export function useAttendanceReports() {
     fetchHistoryStudents(historySectionId);
   }, [historySectionId, fetchHistoryStudents]);
 
+  useEffect(() => {
+    fetchHeatmapStudents(heatmapSectionId);
+  }, [heatmapSectionId, fetchHeatmapStudents]);
+
   return {
     activeTab,
     setActiveTab,
+    academicYears,
+    selectedAcademicYearId,
+    setSelectedAcademicYearId,
     classSection,
     sections,
     isLoadingSections,
@@ -324,6 +383,10 @@ export function useAttendanceReports() {
     setSelectedAuditId,
 
     // Heatmap
+    heatmapSectionId,
+    setHeatmapSectionId,
+    heatmapStudents,
+    isLoadingHeatmapStudents,
     heatmapStudentId,
     setHeatmapStudentId,
     heatmapYear,

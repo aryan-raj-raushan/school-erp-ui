@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { LeavePoliciesService, type CreateLeavePolicyPayload } from '@/services/leave.service';
-import type { LeavePolicy, LeaveType } from '@/types';
+import { AcademicYearsService } from '@/services/academic-years.service';
+import type { LeavePolicy, LeaveType, AcademicYear } from '@/types';
 
 export function useLeavePolicies() {
   const [policies, setPolicies] = useState<LeavePolicy[]>([]);
@@ -12,6 +13,16 @@ export function useLeavePolicies() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<LeavePolicy | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<LeavePolicy | null>(null);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+
+  const fetchAcademicYears = useCallback(async () => {
+    try {
+      const res = await AcademicYearsService.list();
+      setAcademicYears(res.items);
+    } catch {
+      // non-fatal
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -25,6 +36,7 @@ export function useLeavePolicies() {
     }
   }, []);
 
+  useEffect(() => { fetchAcademicYears(); }, [fetchAcademicYears]);
   useEffect(() => { load(); }, [load]);
 
   const openCreate = useCallback(() => {
@@ -93,5 +105,6 @@ export function useLeavePolicies() {
   return {
     policies, isLoading, isSaving, isDialogOpen, editingPolicy, selectedPolicy,
     setSelectedPolicy, openCreate, openEdit, closeDialog, submit, updateLeaveType, provision, load,
+    academicYears,
   };
 }

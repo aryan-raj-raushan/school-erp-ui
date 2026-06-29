@@ -116,11 +116,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     ],
     items: [
       {
-        title: "Dashboard",
-        url: "/attendance/dashboard",
-        permissions: [PERMISSIONS.attendance.view],
-      },
-      {
         title: "Students Attendance",
         url: "/attendance/students",
         permissions: [
@@ -392,11 +387,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       {
         title: "Teacher Leave",
         url: "/leave/teacher",
-        permissions: [PERMISSIONS.leave.approve],
-      },
-      {
-        title: "Leave Policy",
-        url: "/leave/policy",
         permissions: [PERMISSIONS.leave.approve],
       },
       {
