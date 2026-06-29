@@ -58,6 +58,9 @@ export function NavSecondary({ items, isCollapsed }: NavSecondaryProps) {
 
   const [openItem, setOpenItem] = useState<string | null>(initialOpen);
 
+  const isItemOpen = (title: string, isParentActive: boolean) =>
+    openItem === null ? isParentActive : openItem === title;
+
   return (
     <SidebarGroup>
       <div
@@ -80,9 +83,7 @@ export function NavSecondary({ items, isCollapsed }: NavSecondaryProps) {
               ? (item.items?.some((sub) => pathname.startsWith(sub.url)) ?? false)
               : pathname.startsWith(item.url ?? "");
 
-            const isOpen =
-              openItem === item.title ||
-              (isParentActive && openItem === null);
+            const isOpen = isItemOpen(item.title, isParentActive);
 
             return (
               <SidebarMenuItem key={item.title}>
@@ -106,7 +107,7 @@ export function NavSecondary({ items, isCollapsed }: NavSecondaryProps) {
                       ) : (
                         <SidebarMenuButton
                           isActive={isParentActive}
-                          onClick={() => setOpenItem(isOpen ? null : item.title)}
+                          onClick={() => setOpenItem(isOpen ? "" : item.title)}
                         >
                           <item.icon />
                           <span style={labelStyle(false)}>{item.title}</span>

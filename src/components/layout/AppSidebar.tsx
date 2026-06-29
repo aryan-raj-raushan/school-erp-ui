@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import { GraduationCap } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { NavMain } from "./NavMain";
@@ -13,6 +15,8 @@ import {
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
 import { useAuthStore } from "@/store/auth.store";
+import { useSchoolBrandStore } from "@/store/school.store";
+import { SchoolProfileService } from "@/services/school-profile.service";
 import { Capacitor } from "@capacitor/core";
 
 // Add titles here as mobile screens are built out
@@ -31,7 +35,22 @@ interface SidebarPanelProps {
   navSecondary: SecondaryItem[];
 }
 
+function useSchoolLogo() {
+  const { brand, setBrand } = useSchoolBrandStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  useEffect(() => {
+    if (brand || !isAuthenticated) return;
+    SchoolProfileService.get()
+      .then((data) => setBrand({ name: data.name, logo_url: data.logo_url ?? null }))
+      .catch(() => {});
+  }, [brand, isAuthenticated, setBrand]);
+
+  return brand;
+}
+
 function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps) {
+  const brand = useSchoolLogo();
   return (
     <div
       data-sidebar-collapsed={isCollapsed}
@@ -100,9 +119,21 @@ function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps)
                 justifyContent: "center",
                 flexShrink: 0,
                 color: "var(--theme-active-text)",
+                overflow: "hidden",
               }}
             >
-              <GraduationCap size={18} />
+              {brand?.logo_url ? (
+                <Image
+                  src={brand.logo_url}
+                  alt={brand.name}
+                  width={36}
+                  height={36}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  unoptimized
+                />
+              ) : (
+                <GraduationCap size={18} />
+              )}
             </div>
 
             <div
@@ -124,7 +155,7 @@ function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps)
                   whiteSpace: "nowrap",
                 }}
               >
-                {APP.name}
+                {brand?.name ?? APP.name}
               </div>
               <div
                 style={{ fontSize: 10, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}

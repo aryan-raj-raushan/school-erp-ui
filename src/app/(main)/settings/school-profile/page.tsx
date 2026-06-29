@@ -1,6 +1,7 @@
 'use client';
 
 import { useSchoolProfile } from '@/hooks/useSchoolProfile';
+import { ImageUpload } from '@/components/shared/ImageUpload';
 import {
   Div,
   H3,
@@ -20,7 +21,7 @@ import {
 } from '@/constants/school-profile.constants';
 
 export default function SchoolProfilePage() {
-  const { form, isLoading, isSaving, updateField, save } = useSchoolProfile();
+  const { form, isLoading, isSaving, updateField, save, uploadLogo } = useSchoolProfile();
 
   if (isLoading) {
     return (
@@ -154,10 +155,12 @@ export default function SchoolProfilePage() {
               />
             </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.logo_url}>
-              <Input
-                value={form.logo_url ?? ''}
-                onChange={(e) => updateField('logo_url', e.target.value)}
-                placeholder="https://cdn.example.com/logo.png"
+              <ImageUpload
+                currentUrl={form.logo_url}
+                onUpload={uploadLogo}
+                shape="square"
+                size={88}
+                label="Click to upload (JPG, PNG, WebP)"
               />
             </FormField>
           </Div>
@@ -199,7 +202,7 @@ export default function SchoolProfilePage() {
               <Input
                 type="number"
                 value={form.lat ?? ''}
-                onChange={(e) => updateField('lat', Number(e.target.value))}
+                onChange={(e) => updateField('lat', e.target.value)}
                 placeholder="28.6139"
               />
             </FormField>
@@ -207,7 +210,7 @@ export default function SchoolProfilePage() {
               <Input
                 type="number"
                 value={form.lng ?? ''}
-                onChange={(e) => updateField('lng', Number(e.target.value))}
+                onChange={(e) => updateField('lng', e.target.value)}
                 placeholder="77.2090"
               />
             </FormField>

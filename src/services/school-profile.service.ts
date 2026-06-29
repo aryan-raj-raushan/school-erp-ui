@@ -17,8 +17,8 @@ export interface UpdateSchoolProfilePayload {
   logo_url?: string;
   board_type?: string;
   marking_system?: string;
-  lat?: number;
-  lng?: number;
+  lat?: string;
+  lng?: string;
   timezone?: string;
   udise_code?: string;
   affiliation_number?: string;

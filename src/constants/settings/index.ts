@@ -51,24 +51,6 @@ export const SETTINGS_ITEMS: SettingItem[] = [
     icon: CalendarDays,
   },
   {
-    slug: "class-section",
-    label: "Class & Section",
-    description: "Configure classes, sections, and their assignments.",
-    icon: BookOpen,
-  },
-  {
-    slug: "room-name",
-    label: "Room Name",
-    description: "Add and organise rooms used for scheduling and allocation.",
-    icon: DoorOpen,
-  },
-  {
-    slug: "academic-configuration",
-    label: "Academic Configuration",
-    description: "Set grading policies, promotion rules, and global defaults.",
-    icon: Settings2,
-  },
-  {
     slug: "notification-rules",
     label: "Notification Rules",
     description: "Configure which events trigger parent, student, and teacher notifications.",
