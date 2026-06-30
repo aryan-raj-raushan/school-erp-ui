@@ -290,17 +290,24 @@ export function useAttendanceReports() {
   async function exportAttendance() {
     setIsExporting(true);
     try {
-      const job = await AttendanceService.enqueueExport({
+      const buffer = await AttendanceService.exportToFile({
         ...(exportSectionId && { class_section_id: exportSectionId }),
         ...(exportStartDate && { start_date: exportStartDate }),
         ...(exportEndDate && { end_date: exportEndDate }),
         format: "xlsx",
       });
-      toast.success(`Export job started — ID: ${job.jobId}`);
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance_${exportStartDate ?? "all"}_to_${exportEndDate ?? "all"}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Attendance exported successfully");
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to start export",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to export attendance");
     } finally {
       setIsExporting(false);
     }
