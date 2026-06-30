@@ -388,99 +388,100 @@ export default function StudentAttendanceReportPage() {
     <PageCol>
       <PageHeader title={ATTENDANCE_REPORT_PAGE.title} />
 
-      {/* Academic Year selector */}
-      <Div variant="card" padding="p-3" type="col" gap="xs" width="fit">
-        <P size="sm" color="muted">Academic Year</P>
-        <Select
-          width="sm"
-          value={selectedAcademicYearId}
-          onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-        >
-          <option value="">All years</option>
-          {academicYears.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}{y.is_current ? " (Current)" : ""}
-            </option>
-          ))}
-        </Select>
-      </Div>
-
-      {/* Export options card */}
+      {/* Academic Year + Export options in one card */}
       <Div variant="card" className="p-4">
         <Div type="col" gap="md">
-          <H2 size="sm">{ATTENDANCE_REPORT_PAGE.export}</H2>
-          <Div type="row" gap="md" align="end" wrap>
-            <Div type="col" gap="xs">
-              <P size="xs" color="muted">Class</P>
-              <Select
-                width="sm"
-                value={exportClassId}
-                onChange={(e) => {
-                  setExportClassId(e.target.value);
-                  setExportSectionId("");
-                }}
-                disabled={isLoadingClassSection}
-              >
-                <option value="">Select Class</option>
-                {classOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </Select>
-            </Div>
-            <Div type="col" gap="xs">
-              <P size="xs" color="muted">Section</P>
-              <Select
-                width="sm"
-                value={exportSectionId}
-                onChange={(e) => setExportSectionId(e.target.value)}
-                disabled={!exportClassId || isLoadingClassSection}
-              >
-                <option value="">Select Section</option>
-                {getFilteredSections(exportClassId).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </Select>
-            </Div>
-            <Div type="col" gap="xs">
-              <P size="xs" color="muted">From</P>
-              <Input
-                type="date"
-                width="sm"
-                value={exportStartDate}
-                max={today}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setExportStartDate(val);
-                  if (val > exportEndDate) setExportEndDate(val);
-                }}
-              />
-            </Div>
-            <Div type="col" gap="xs">
-              <P size="xs" color="muted">To</P>
-              <Input
-                type="date"
-                width="sm"
-                value={exportEndDate}
-                min={exportStartDate}
-                max={today}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setExportEndDate(val);
-                  if (val < exportStartDate) setExportStartDate(val);
-                }}
-              />
-            </Div>
-            <Button
-              variant="outline"
-              loading={isExporting}
-              onClick={exportAttendance}
+          <Div type="col" gap="xs" width="fit">
+            <P size="sm" color="muted">Academic Year</P>
+            <Select
+              width="sm"
+              value={selectedAcademicYearId}
+              onChange={(e) => setSelectedAcademicYearId(e.target.value)}
             >
-              {ATTENDANCE_REPORT_PAGE.export}
-            </Button>
+              <option value="">All years</option>
+              {academicYears.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}{y.is_current ? " (Current)" : ""}
+                </option>
+              ))}
+            </Select>
+          </Div>
+
+          <Div type="col" gap="sm">
+            <P size="sm" color="muted">{ATTENDANCE_REPORT_PAGE.export}</P>
+            <Div type="row" gap="md" align="end" wrap>
+              <Div type="col" gap="xs">
+                <P size="xs" color="muted">Class</P>
+                <Select
+                  width="sm"
+                  value={exportClassId}
+                  onChange={(e) => {
+                    setExportClassId(e.target.value);
+                    setExportSectionId("");
+                  }}
+                  disabled={isLoadingClassSection}
+                >
+                  <option value="">Select Class</option>
+                  {classOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </Select>
+              </Div>
+              <Div type="col" gap="xs">
+                <P size="xs" color="muted">Section</P>
+                <Select
+                  width="sm"
+                  value={exportSectionId}
+                  onChange={(e) => setExportSectionId(e.target.value)}
+                  disabled={!exportClassId || isLoadingClassSection}
+                >
+                  <option value="">Select Section</option>
+                  {getFilteredSections(exportClassId).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </Select>
+              </Div>
+              <Div type="col" gap="xs">
+                <P size="xs" color="muted">From</P>
+                <Input
+                  type="date"
+                  width="sm"
+                  value={exportStartDate}
+                  max={today}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setExportStartDate(val);
+                    if (val > exportEndDate) setExportEndDate(val);
+                  }}
+                />
+              </Div>
+              <Div type="col" gap="xs">
+                <P size="xs" color="muted">To</P>
+                <Input
+                  type="date"
+                  width="sm"
+                  value={exportEndDate}
+                  min={exportStartDate}
+                  max={today}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setExportEndDate(val);
+                    if (val < exportStartDate) setExportStartDate(val);
+                  }}
+                />
+              </Div>
+              <Button
+                variant="outline"
+                loading={isExporting}
+                onClick={exportAttendance}
+              >
+                {ATTENDANCE_REPORT_PAGE.export}
+              </Button>
+            </Div>
           </Div>
         </Div>
       </Div>
