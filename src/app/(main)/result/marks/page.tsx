@@ -201,7 +201,7 @@ function MarksContent() {
               disabled={!selectedClassId}
             >
               <option value="">{RESULT_MARKS_PAGE.filters.selectExam}</option>
-              {deduplicatedExams.map((e) => (
+              {exams.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.exam_name} — {EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}
                 </option>
