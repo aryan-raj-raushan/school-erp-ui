@@ -338,6 +338,16 @@ function ScheduleCreateContent() {
 
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
 
+  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
+  const deduplicatedExams = useMemo(() => {
+    const seen = new Set<string>();
+    return exams.filter((e) => {
+      if (seen.has(e.exam_name)) return false;
+      seen.add(e.exam_name);
+      return true;
+    });
+  }, [exams]);
+
   const currentYear = useMemo(() => years?.find((year) => year.is_current), [years]);
   useEffect(() => {
     if (currentYear && !watchedYearId) {
@@ -445,7 +455,7 @@ function ScheduleCreateContent() {
                 <FormField label={SCHEDULE_PAGE.labels.exam + " *"} error={errors.exam_id?.message}>
                   <Select {...register("exam_id")} disabled={!watchedClassId}>
                     <option value="">Select exam</option>
-                    {exams.map((e) => (
+                    {deduplicatedExams.map((e) => (
                       <option key={e.id} value={e.id}>{e.exam_name}</option>
                     ))}
                   </Select>
