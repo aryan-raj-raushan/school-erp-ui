@@ -5,4 +5,6 @@ export const REGEX = {
   date: /^\d{4}-\d{2}-\d{2}$/,
   url: /^https?:\/\/.+\..+/,
   uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  /** Partial numeric entry: allows digits, optional single dot, more digits (e.g. "9", "9.", "9.5") */
+  numericPartial: /^\d*\.?\d*$/,
 } as const;

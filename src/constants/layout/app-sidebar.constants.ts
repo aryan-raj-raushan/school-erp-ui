@@ -435,11 +435,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         url: "/school/holidays-events",
         permissions: [PERMISSIONS.holidays.create, PERMISSIONS.events.create],
       },
-      {
-        title: "School Calendar",
-        url: "/school/calendar",
-        permissions: [PERMISSIONS.holidays.view],
-      },
     ],
   },
 

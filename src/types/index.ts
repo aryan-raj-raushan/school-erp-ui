@@ -972,20 +972,6 @@ export interface AttendanceConflict {
   notes: string | null;
 }
 
-// ─── Calendar Event ───────────────────────────────────────────────────────────
-export interface CalendarEvent {
-  id: string;
-  name: string;
-  title?: string;
-  type: string;
-  date?: string;
-  start_date?: string;
-  from_date: string;
-  to_date: string;
-  description?: string | null;
-  color?: string | null;
-}
-
 // ─── Heatmap / Trend ─────────────────────────────────────────────────────────
 export interface HeatmapEntry { date: string; status: string; }
 export interface LateTrendEntry { date: string; late_count: number; }

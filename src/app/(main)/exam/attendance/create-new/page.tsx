@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, CheckCheck, XCircle, Download } from "lucide-react";
 import { useMarkAttendance, type AttendanceSource } from "@/hooks/exam/useExamAttendance";
@@ -25,7 +25,6 @@ import {
   ATTENDANCE_BADGE,
 } from "@/constants/exam.constants";
 import type { AttendanceStatus } from "@/types/exam.types";
-import { useStudents } from "@/hooks/useStudentV2";
 
 type AttendanceRow = {
   student_id: string;
@@ -43,24 +42,6 @@ function fmtDate(iso: string) {
 
 function MarkAttendanceContent() {
   const router = useRouter();
-  const {
-    examId,
-    setExamId,
-    academicYearId,
-    setAcademicYearId,
-    availableDates,
-    isLoadingSchedules,
-    rows,
-    initRows,
-    cycleStatus,
-    setDateStatus,
-    markAllPresent,
-    markAllAbsent,
-    isSaving,
-    save,
-  } = useMarkAttendance();
-
-  const { students } = useStudents();
 
   const {
     years,
@@ -75,37 +56,34 @@ function MarkAttendanceContent() {
     isLoadingClasses,
   } = useAcademicClassSection({ autoSelectCurrentYear: true });
 
+  const {
+    examId,
+    setExamId,
+    availableDates,
+    isLoadingSchedules,
+    rows,
+    cycleStatus,
+    setDateStatus,
+    markAllPresent,
+    markAllAbsent,
+    isSaving,
+    save,
+  } = useMarkAttendance({
+    classId: selectedClassId,
+    sectionId: selectedSectionId,
+    academicYearId: selectedAcademicYearId,
+  });
+
   const { exams } = useExams(
     selectedAcademicYearId && selectedClassId
       ? { academic_year_id: selectedAcademicYearId, class_id: selectedClassId }
       : {}
   );
 
-  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
-  const deduplicatedExams = useMemo(() => {
-    const seen = new Set<string>();
-    return exams.filter((e) => {
-      if (seen.has(e.exam_name)) return false;
-      seen.add(e.exam_name);
-      return true;
-    });
-  }, [exams]);
-
-  useEffect(() => {
-    if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
-  }, [selectedAcademicYearId, setAcademicYearId]);
-
-  useEffect(() => {
-    if (!examId || !selectedAcademicYearId || !selectedClassId) return;
-    if (isLoadingSchedules || availableDates.length === 0) return;
-    initRows(students);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, availableDates, isLoadingSchedules]);
-
   const { attendanceCardUrl } = useExamAttendanceCard({
     examId,
     classId: selectedClassId,
-    academicYearId,
+    academicYearId: selectedAcademicYearId,
     sectionId: selectedSectionId,
   });
 

@@ -5,15 +5,23 @@ export function Table({
   className,
   children,
   scrollRef,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement> & { scrollRef?: React.RefObject<HTMLDivElement | null> }) {
+  maxHeight,
+}: React.HTMLAttributes<HTMLDivElement> & {
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+  maxHeight?: string;
+}) {
   return (
-    <div ref={scrollRef} className={cn('w-full overflow-x-auto', scrollRef && '[&::-webkit-scrollbar]:hidden scrollbar-none')}>
+    <div className={cn('rounded-2xl border border-border bg-background overflow-hidden shadow-sm', className)}>
       <div
-        className={cn('inline-block min-w-full rounded-2xl border border-border/50 bg-card backdrop-blur-sm overflow-hidden glass-card', className)}
-        {...props}
+        ref={scrollRef}
+        style={maxHeight ? { maxHeight } : undefined}
+        className={cn(
+          'w-full',
+          maxHeight ? 'overflow-auto' : 'overflow-x-auto',
+          !maxHeight && '[&::-webkit-scrollbar]:hidden scrollbar-none',
+        )}
       >
-        <table className="w-full text-sm">{children}</table>
+        <table className="w-full min-w-max text-sm">{children}</table>
       </div>
     </div>
   );
@@ -24,14 +32,14 @@ export function TableHead({ className, ...props }: React.HTMLAttributes<HTMLTabl
 }
 
 export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('', className)} {...props} />;
+  return <tbody className={cn('divide-y divide-border/40', className)} {...props} />;
 }
 
 export function TableHeadRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
       className={cn(
-        'border-b border-border/60 bg-white/80 dark:bg-white/5 backdrop-blur-sm sticky top-0',
+        'sticky top-0 z-20 border-b-2 border-border bg-muted dark:bg-muted',
         className,
       )}
       {...props}
@@ -43,7 +51,7 @@ type TableRowVariant = 'default' | 'danger' | 'muted';
 
 const rowVariantMap: Record<TableRowVariant, string> = {
   default: '',
-  danger: 'bg-red-50/50 dark:bg-red-950/10',
+  danger: 'bg-red-50/60 dark:bg-red-950/10',
   muted: 'bg-muted/20',
 };
 
@@ -54,9 +62,8 @@ export function TableRow({
 }: React.HTMLAttributes<HTMLTableRowElement> & { variant?: TableRowVariant }) {
   return (
     <tr
-      /* table-row-hover applies var(--theme-glow-soft) on hover — theme-aware */
       className={cn(
-        'border-b border-border/40 last:border-0 table-row-hover transition-colors duration-150',
+        'transition-colors duration-100 hover:bg-accent/60 dark:hover:bg-accent/30',
         rowVariantMap[variant],
         className,
       )}
@@ -72,7 +79,7 @@ export function TableHeaderCell({
   return (
     <th
       className={cn(
-        'px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground',
+        'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap select-none',
         className,
       )}
       {...props}
@@ -88,7 +95,7 @@ export function TableCell({
   return (
     <td
       className={cn(
-        'px-5 py-3.5',
+        'px-4 py-2.5',
         primary ? 'font-medium text-foreground' : 'text-muted-foreground',
         className,
       )}
@@ -100,7 +107,7 @@ export function TableCell({
 export function TableEmptyRow({ colSpan, children }: { colSpan: number; children: React.ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-5 py-16 text-center text-muted-foreground">
+      <td colSpan={colSpan} className="px-4 py-16 text-center text-sm text-muted-foreground">
         {children}
       </td>
     </tr>
@@ -109,7 +116,7 @@ export function TableEmptyRow({ colSpan, children }: { colSpan: number; children
 
 export function TablePagination({ total, page, totalPages }: { total: number; page: number; totalPages: number }) {
   return (
-    <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between bg-white/50 dark:bg-white/3">
+    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
       <p className="text-xs text-muted-foreground font-medium">{total} total</p>
       <p className="text-xs text-muted-foreground font-medium">
         Page {page} / {totalPages}

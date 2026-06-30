@@ -108,7 +108,6 @@ export const ENDPOINTS = {
     byId: (id: string) => `/gate-passes/${id}`,
   },
   notificationRules: { base: '/notification-rules' },
-  calendar: { unified: '/school-events/calendar' },
   auditLogs: { base: '/audit-logs' },
   staffAttendance: {
     base: "/staff-attendance",
