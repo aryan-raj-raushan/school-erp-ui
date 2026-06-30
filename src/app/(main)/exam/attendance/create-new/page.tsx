@@ -242,7 +242,7 @@ function MarkAttendanceContent() {
               disabled={!selectedClassId}
             >
               <option value="">Select exam</option>
-              {deduplicatedExams.map((e) => (
+              {exams.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.exam_name}
                 </option>
