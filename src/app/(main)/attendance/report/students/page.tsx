@@ -386,10 +386,30 @@ export default function StudentAttendanceReportPage() {
 
   return (
     <PageCol>
-      <PageHeader
-        title={ATTENDANCE_REPORT_PAGE.title}
-        actions={
-          <Div type="row" gap="md" align="end">
+      <PageHeader title={ATTENDANCE_REPORT_PAGE.title} />
+
+      {/* Academic Year selector */}
+      <Div variant="card" padding="p-3" type="col" gap="xs" width="fit">
+        <P size="sm" color="muted">Academic Year</P>
+        <Select
+          width="sm"
+          value={selectedAcademicYearId}
+          onChange={(e) => setSelectedAcademicYearId(e.target.value)}
+        >
+          <option value="">All years</option>
+          {academicYears.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}{y.is_current ? " (Current)" : ""}
+            </option>
+          ))}
+        </Select>
+      </Div>
+
+      {/* Export options card */}
+      <Div variant="card" className="p-4">
+        <Div type="col" gap="md">
+          <H2 size="sm">{ATTENDANCE_REPORT_PAGE.export}</H2>
+          <Div type="row" gap="md" align="end" wrap>
             <Div type="col" gap="xs">
               <P size="xs" color="muted">Class</P>
               <Select
@@ -435,7 +455,6 @@ export default function StudentAttendanceReportPage() {
                 onChange={(e) => {
                   const val = e.target.value;
                   setExportStartDate(val);
-                  // if start moved past end, pull end forward
                   if (val > exportEndDate) setExportEndDate(val);
                 }}
               />
@@ -451,7 +470,6 @@ export default function StudentAttendanceReportPage() {
                 onChange={(e) => {
                   const val = e.target.value;
                   setExportEndDate(val);
-                  // if end moved before start, pull start back
                   if (val < exportStartDate) setExportStartDate(val);
                 }}
               />
@@ -464,24 +482,7 @@ export default function StudentAttendanceReportPage() {
               {ATTENDANCE_REPORT_PAGE.export}
             </Button>
           </Div>
-        }
-      />
-
-      {/* Academic Year selector */}
-      <Div variant="card" padding="p-3" type="col" gap="xs" width="fit">
-        <P size="sm" color="muted">Academic Year</P>
-        <Select
-          width="sm"
-          value={selectedAcademicYearId}
-          onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-        >
-          <option value="">All years</option>
-          {academicYears.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}{y.is_current ? " (Current)" : ""}
-            </option>
-          ))}
-        </Select>
+        </Div>
       </Div>
 
       {/* Tabs */}
