@@ -81,6 +81,16 @@ function MarkAttendanceContent() {
       : {}
   );
 
+  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
+  const deduplicatedExams = useMemo(() => {
+    const seen = new Set<string>();
+    return exams.filter((e) => {
+      if (seen.has(e.exam_name)) return false;
+      seen.add(e.exam_name);
+      return true;
+    });
+  }, [exams]);
+
   useEffect(() => {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
@@ -254,7 +264,7 @@ function MarkAttendanceContent() {
               disabled={!selectedClassId}
             >
               <option value="">Select exam</option>
-              {exams.map((e) => (
+              {deduplicatedExams.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.exam_name}
                 </option>

@@ -83,6 +83,16 @@ function ScheduleContent() {
       : {}
   );
 
+  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
+  const deduplicatedExams = useMemo(() => {
+    const seen = new Set<string>();
+    return exams.filter((e) => {
+      if (seen.has(e.exam_name)) return false;
+      seen.add(e.exam_name);
+      return true;
+    });
+  }, [exams]);
+
   function handleFilterChange(next: Partial<Record<string, string | undefined>>) {
     updateFilters(next as any);
     setUrlFilters(next);
@@ -270,7 +280,7 @@ function ScheduleContent() {
           }
         >
           <option value="">{SCHEDULE_PAGE.filters.allExams}</option>
-          {exams.map((e) => (
+          {deduplicatedExams.map((e) => (
             <option key={e.id} value={e.id}>
               {e.exam_name}
             </option>
