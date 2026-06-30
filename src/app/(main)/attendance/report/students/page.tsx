@@ -389,61 +389,73 @@ export default function StudentAttendanceReportPage() {
       <PageHeader
         title={ATTENDANCE_REPORT_PAGE.title}
         actions={
-          <>
-            <Select
-              width="sm"
-              value={exportClassId}
-              onChange={(e) => {
-                setExportClassId(e.target.value);
-                setExportSectionId("");
-              }}
-              disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={exportSectionId}
-              onChange={(e) => setExportSectionId(e.target.value)}
-              disabled={!exportClassId || isLoadingClassSection}
-            >
-              <option value="">Select Section</option>
-              {getFilteredSections(exportClassId).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
-            <Input
-              type="date"
-              width="sm"
-              value={exportStartDate}
-              max={today}
-              onChange={(e) => {
-                const val = e.target.value;
-                setExportStartDate(val);
-                // if start moved past end, pull end forward
-                if (val > exportEndDate) setExportEndDate(val);
-              }}
-            />
-            <Input
-              type="date"
-              width="sm"
-              value={exportEndDate}
-              min={exportStartDate}
-              max={today}
-              onChange={(e) => {
-                const val = e.target.value;
-                setExportEndDate(val);
-                // if end moved before start, pull start back
-                if (val < exportStartDate) setExportStartDate(val);
-              }}
-            />
+          <Div type="row" gap="md" align="end">
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">Class</P>
+              <Select
+                width="sm"
+                value={exportClassId}
+                onChange={(e) => {
+                  setExportClassId(e.target.value);
+                  setExportSectionId("");
+                }}
+                disabled={isLoadingClassSection}
+              >
+                <option value="">Select Class</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </Div>
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">Section</P>
+              <Select
+                width="sm"
+                value={exportSectionId}
+                onChange={(e) => setExportSectionId(e.target.value)}
+                disabled={!exportClassId || isLoadingClassSection}
+              >
+                <option value="">Select Section</option>
+                {getFilteredSections(exportClassId).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </Select>
+            </Div>
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">From</P>
+              <Input
+                type="date"
+                width="sm"
+                value={exportStartDate}
+                max={today}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setExportStartDate(val);
+                  // if start moved past end, pull end forward
+                  if (val > exportEndDate) setExportEndDate(val);
+                }}
+              />
+            </Div>
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">To</P>
+              <Input
+                type="date"
+                width="sm"
+                value={exportEndDate}
+                min={exportStartDate}
+                max={today}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setExportEndDate(val);
+                  // if end moved before start, pull start back
+                  if (val < exportStartDate) setExportStartDate(val);
+                }}
+              />
+            </Div>
             <Button
               variant="outline"
               loading={isExporting}
@@ -451,7 +463,7 @@ export default function StudentAttendanceReportPage() {
             >
               {ATTENDANCE_REPORT_PAGE.export}
             </Button>
-          </>
+          </Div>
         }
       />
 
