@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { Download, FileText, Search } from "lucide-react";
 import { useAdmitCard } from "@/hooks/exam/useExamSittingAndAdmit";
 import { useAdmitCardSelectors } from "@/hooks/exam/useAdmitCardSelectors";
@@ -175,6 +175,16 @@ function AdmitCardContent() {
     selectedAcademicYearId ? { academic_year_id: selectedAcademicYearId, is_published: true } : {}
   );
 
+  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
+  const deduplicatedExams = useMemo(() => {
+    const seen = new Set<string>();
+    return exams.filter((e) => {
+      if (seen.has(e.exam_name)) return false;
+      seen.add(e.exam_name);
+      return true;
+    });
+  }, [exams]);
+
   useEffect(() => {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
@@ -226,7 +236,7 @@ function AdmitCardContent() {
                 disabled={!selectedAcademicYearId}
               >
                 <option value="">Select exam</option>
-                {exams.map((e) => (
+                {deduplicatedExams.map((e) => (
                   <option key={e.id} value={e.id}>{e.exam_name}</option>
                 ))}
               </Select>

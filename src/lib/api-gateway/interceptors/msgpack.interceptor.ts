@@ -10,7 +10,7 @@ export function applyMsgpackInterceptors(axiosInstance: AxiosInstance): void {
 
     if (config.data !== undefined && config.data !== null) {
       const encoded = encode(config.data);
-      config.data = Buffer.from(encoded);
+      config.data = new Uint8Array(encoded);
       config.headers['Content-Type'] = 'application/msgpack';
     }
 

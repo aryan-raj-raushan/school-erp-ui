@@ -21,14 +21,18 @@ export const examSchema = z
       .min(1, "Select at least one class"),
     exam_name: z.string().min(1, "Exam name is required").max(150),
     exam_term: z.enum(["TERM1", "TERM2", "TERM3", "ANNUAL"] as const),
-    start_date: z.string().min(1, "Start date required"),
-    end_date: z.string().min(1, "End date required"),
+    start_date: z.string().min(1, "Start date required").date("Start date must be valid"),
+    end_date: z.string().min(1, "End date required").date("End date must be valid"),
     include_in_marks: z.boolean().optional(),
     is_enabled: z.boolean().optional(),
   })
-  .refine((d) => d.end_date >= d.start_date, {
+  .refine((d) => d.end_date > d.start_date, {
     message: "End date must be after start date",
     path: ["end_date"],
+  })
+  .refine((d) => new Date(d.start_date) >= new Date(), {
+    message: "Start date cannot be in the past",
+    path: ["start_date"],
   });
 
 export type ExamFormValues = z.infer<typeof examSchema>;

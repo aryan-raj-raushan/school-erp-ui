@@ -101,6 +101,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingSections,
     isLoadingClassSection,
 
+    dailyClassId,
+    setDailyClassId,
     dailySectionId,
     setDailySectionId,
     dailyDate,
@@ -109,6 +111,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingDaily,
     fetchDailyReport,
 
+    monthlyClassId,
+    setMonthlyClassId,
     monthlySectionId,
     setMonthlySectionId,
     monthlyMonth,
@@ -119,6 +123,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingMonthly,
     fetchMonthlyReport,
 
+    defaulterClassId,
+    setDefaulterClassId,
     defaulterSectionId,
     setDefaulterSectionId,
     defaulterThreshold,
@@ -127,6 +133,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingDefaulters,
     fetchDefaulters,
 
+    historyClassId,
+    setHistoryClassId,
     historySectionId,
     setHistorySectionId,
     historyStudents,
@@ -138,6 +146,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingHistory,
     fetchStudentHistory,
 
+    exportClassId,
+    setExportClassId,
     exportSectionId,
     setExportSectionId,
     exportStartDate,
@@ -149,6 +159,8 @@ export default function StudentAttendanceReportPage() {
     selectedAuditId,
     setSelectedAuditId,
 
+    heatmapClassId,
+    setHeatmapClassId,
     heatmapSectionId,
     setHeatmapSectionId,
     heatmapStudents,
@@ -161,6 +173,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingHeatmap,
     fetchHeatmap,
 
+    lateTrendClassId,
+    setLateTrendClassId,
     lateTrendSectionId,
     setLateTrendSectionId,
     lateTrendMonth,
@@ -175,6 +189,14 @@ export default function StudentAttendanceReportPage() {
   const { log: auditLog, isLoading: isLoadingAudit } = useAttendanceAudit(selectedAuditId);
   const { date: mpDate, setDate: setMpDate, records: missingPunches, isLoading: isLoadingMp, fetch: fetchMp, resolve: resolvePunch, resolvingId } = useMissingPunches();
 
+  const classOptions = classSection.map((c) => ({ id: c.id, label: c.name }));
+
+  const getFilteredSections = (classId: string) =>
+    sections
+      .filter((s) => s.class_id === classId)
+      .map((s) => ({ id: s.id, label: `Section ${s.name}` }));
+
+  // Fallback for tabs not yet updated to use class filtering
   const sectionOptions = sections.map((s) => ({
     id: s.id,
     label: `${classSection.find((c) => c.id === s.class_id)?.name ?? ''} - Section ${s.name}`,
@@ -364,23 +386,64 @@ export default function StudentAttendanceReportPage() {
 
   return (
     <PageCol>
-      <PageHeader
-        title={ATTENDANCE_REPORT_PAGE.title}
-        actions={
-          <>
+      <PageHeader title={ATTENDANCE_REPORT_PAGE.title} />
+
+      {/* Academic Year + Export options in one row card */}
+      <Div variant="card" className="p-4">
+        <Div type="row" gap="md" align="end" wrap>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">Academic Year</P>
+            <Select
+              width="sm"
+              value={selectedAcademicYearId}
+              onChange={(e) => setSelectedAcademicYearId(e.target.value)}
+            >
+              <option value="">All years</option>
+              {academicYears.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}{y.is_current ? " (Current)" : ""}
+                </option>
+              ))}
+            </Select>
+          </Div>
+
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">Class</P>
+            <Select
+              width="sm"
+              value={exportClassId}
+              onChange={(e) => {
+                setExportClassId(e.target.value);
+                setExportSectionId("");
+              }}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+          </Div>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">Section</P>
             <Select
               width="sm"
               value={exportSectionId}
               onChange={(e) => setExportSectionId(e.target.value)}
-              disabled={isLoadingClassSection}
+              disabled={!exportClassId || isLoadingClassSection}
             >
-              <option value="">All Sections</option>
-              {sectionOptions.map((s) => (
+              <option value="">Select Section</option>
+              {getFilteredSections(exportClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
               ))}
             </Select>
+          </Div>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">From</P>
             <Input
               type="date"
               width="sm"
@@ -389,10 +452,12 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => {
                 const val = e.target.value;
                 setExportStartDate(val);
-                // if start moved past end, pull end forward
                 if (val > exportEndDate) setExportEndDate(val);
               }}
             />
+          </Div>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">To</P>
             <Input
               type="date"
               width="sm"
@@ -402,36 +467,18 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => {
                 const val = e.target.value;
                 setExportEndDate(val);
-                // if end moved before start, pull start back
                 if (val < exportStartDate) setExportStartDate(val);
               }}
             />
-            <Button
-              variant="outline"
-              loading={isExporting}
-              onClick={exportAttendance}
-            >
-              {ATTENDANCE_REPORT_PAGE.export}
-            </Button>
-          </>
-        }
-      />
-
-      {/* Academic Year selector */}
-      <Div variant="card" padding="p-3" type="row" align="center" gap="sm">
-        <P size="sm" color="muted" noWrap>Academic Year</P>
-        <Select
-          width="sm"
-          value={selectedAcademicYearId}
-          onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-        >
-          <option value="">All years</option>
-          {academicYears.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}{y.is_current ? " (Current)" : ""}
-            </option>
-          ))}
-        </Select>
+          </Div>
+          <Button
+            variant="outline"
+            loading={isExporting}
+            onClick={exportAttendance}
+          >
+            {ATTENDANCE_REPORT_PAGE.export}
+          </Button>
+        </Div>
       </Div>
 
       {/* Tabs */}
@@ -454,14 +501,30 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
+              value={dailyClassId}
+              onChange={(e) => {
+                setDailyClassId(e.target.value);
+                setDailySectionId("");
+              }}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
               value={dailySectionId}
               onChange={(e) => setDailySectionId(e.target.value)}
-              disabled={isLoadingClassSection}
+              disabled={!dailyClassId || isLoadingClassSection}
             >
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.daily.selectSection}
               </option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(dailyClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
@@ -535,14 +598,30 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
+              value={monthlyClassId}
+              onChange={(e) => {
+                setMonthlyClassId(e.target.value);
+                setMonthlySectionId("");
+              }}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
               value={monthlySectionId}
               onChange={(e) => setMonthlySectionId(e.target.value)}
-              disabled={isLoadingClassSection}
+              disabled={!monthlyClassId || isLoadingClassSection}
             >
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.monthly.selectSection}
               </option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(monthlyClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
@@ -604,14 +683,30 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
+              value={defaulterClassId}
+              onChange={(e) => {
+                setDefaulterClassId(e.target.value);
+                setDefaulterSectionId("");
+              }}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
               value={defaulterSectionId}
               onChange={(e) => setDefaulterSectionId(e.target.value)}
-              disabled={isLoadingClassSection}
+              disabled={!defaulterClassId || isLoadingClassSection}
             >
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
               </option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(defaulterClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
@@ -667,12 +762,28 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
-              value={historySectionId}
-              onChange={(e) => setHistorySectionId(e.target.value)}
+              value={historyClassId}
+              onChange={(e) => {
+                setHistoryClassId(e.target.value);
+                setHistorySectionId("");
+              }}
               disabled={isLoadingClassSection}
             >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
+              value={historySectionId}
+              onChange={(e) => setHistorySectionId(e.target.value)}
+              disabled={!historyClassId || isLoadingClassSection}
+            >
               <option value="">Select Section</option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(historyClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
@@ -826,12 +937,28 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
-              value={heatmapSectionId}
-              onChange={(e) => setHeatmapSectionId(e.target.value)}
+              value={heatmapClassId}
+              onChange={(e) => {
+                setHeatmapClassId(e.target.value);
+                setHeatmapSectionId("");
+              }}
               disabled={isLoadingClassSection}
             >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
+              value={heatmapSectionId}
+              onChange={(e) => setHeatmapSectionId(e.target.value)}
+              disabled={!heatmapClassId || isLoadingClassSection}
+            >
               <option value="">Select Section</option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(heatmapClassId).map((s) => (
                 <option key={s.id} value={s.id}>{s.label}</option>
               ))}
             </Select>
@@ -903,12 +1030,28 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
-              value={lateTrendSectionId}
-              onChange={(e) => setLateTrendSectionId(e.target.value)}
+              value={lateTrendClassId}
+              onChange={(e) => {
+                setLateTrendClassId(e.target.value);
+                setLateTrendSectionId("");
+              }}
               disabled={isLoadingClassSection}
             >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
+              value={lateTrendSectionId}
+              onChange={(e) => setLateTrendSectionId(e.target.value)}
+              disabled={!lateTrendClassId || isLoadingClassSection}
+            >
               <option value="">Select Section</option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(lateTrendClassId).map((s) => (
                 <option key={s.id} value={s.id}>{s.label}</option>
               ))}
             </Select>

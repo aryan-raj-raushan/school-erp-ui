@@ -280,7 +280,7 @@ function ExamsContent() {
         data={examGroups}
         isLoading={isLoading}
         emptyText={EXAMS_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, total: examGroups.length, totalPages: Math.ceil(examGroups.length / (pagination.limit || 1)) } : undefined}
       />
     </PageCol>
   );

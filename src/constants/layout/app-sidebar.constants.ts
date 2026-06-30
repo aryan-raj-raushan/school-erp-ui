@@ -132,23 +132,8 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         ],
       },
       {
-        title: "Early Exits",
-        url: "/attendance/early-exit",
-        permissions: [PERMISSIONS.attendance.view],
-      },
-      {
         title: "Gate Passes",
         url: "/attendance/gate-pass",
-        permissions: [PERMISSIONS.attendance.view],
-      },
-      {
-        title: "Conflicts",
-        url: "/attendance/conflicts",
-        permissions: [PERMISSIONS.attendance.update],
-      },
-      {
-        title: "Movement Timeline",
-        url: "/attendance/movements",
         permissions: [PERMISSIONS.attendance.view],
       },
     ],

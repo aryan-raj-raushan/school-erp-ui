@@ -96,9 +96,9 @@ export const AttendanceService = {
     return res.data;
   },
 
-  async enqueueExport(filters: ExportFilters = {}): Promise<AttendanceExportJob> {
-    const res = await apiGateway.get<AttendanceExportJob>(ENDPOINTS.attendance.export, { params: filters });
-    return res.data;
+  async exportToFile(filters: ExportFilters = {}): Promise<ArrayBuffer> {
+    const response = await apiGateway.axiosInstance.get(ENDPOINTS.attendance.export, { params: filters });
+    return response.data as ArrayBuffer;
   },
 
   async getStudentHistory(

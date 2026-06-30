@@ -105,6 +105,16 @@ function MarksContent() {
     class_id: selectedClassId || undefined,
   });
 
+  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
+  const deduplicatedExams = useMemo(() => {
+    const seen = new Set<string>();
+    return exams.filter((e) => {
+      if (seen.has(e.exam_name)) return false;
+      seen.add(e.exam_name);
+      return true;
+    });
+  }, [exams]);
+
   // ── Mark-entry hook (schedules + saved marks + grid state) ────────────────
   const {
     results,
@@ -318,15 +328,14 @@ function MarksContent() {
       <Div
         className="rounded-xl border border-border bg-card p-5"
         type="col"
-        gap="md"
+        gap="sm"
       >
         <H3 className="text-xs font-semibold uppercase tracking-wider">
           Select Exam &amp; Class
         </H3>
-        <Div type="row" gap="md" wrap align="end">
+        <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <FormField label="Academic Year">
             <Select
-              width="sm"
               value={selectedAcademicYearId}
               onChange={(e) => onYearChange(e.target.value)}
             >
@@ -341,7 +350,6 @@ function MarksContent() {
 
           <FormField label="Class">
             <Select
-              width="sm"
               value={selectedClassId}
               onChange={(e) => onClassChange(e.target.value)}
               disabled={!selectedAcademicYearId || isLoadingClasses}
@@ -357,7 +365,6 @@ function MarksContent() {
 
           <FormField label="Section">
             <Select
-              width="sm"
               value={selectedSectionId}
               onChange={(e) => onSectionChange(e.target.value)}
               disabled={!selectedClassId}
@@ -375,13 +382,12 @@ function MarksContent() {
 
           <FormField label="Exam">
             <Select
-              width="md"
               value={watchedExamId}
               onChange={(e) => setValue("exam_id", e.target.value)}
               disabled={!selectedClassId}
             >
               <option value="">{RESULT_MARKS_PAGE.filters.selectExam}</option>
-              {exams.map((e) => (
+              {deduplicatedExams.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.exam_name} — {EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}
                 </option>

@@ -52,6 +52,16 @@ function AttendanceListContent() {
       : {}
   );
 
+  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
+  const deduplicatedExams = useMemo(() => {
+    const seen = new Set<string>();
+    return exams.filter((e) => {
+      if (seen.has(e.exam_name)) return false;
+      seen.add(e.exam_name);
+      return true;
+    });
+  }, [exams]);
+
   const { schedules } = useExamSchedules(
     filters.exam_id ? { exam_id: filters.exam_id, limit: 100 } : {}
   );
@@ -103,7 +113,7 @@ function AttendanceListContent() {
           }
         >
           <option value="">{ATTENDANCE_PAGE.filters.allExams}</option>
-          {exams.map((e) => (
+          {deduplicatedExams.map((e) => (
             <option key={e.id} value={e.id}>
               {e.exam_name}
             </option>
