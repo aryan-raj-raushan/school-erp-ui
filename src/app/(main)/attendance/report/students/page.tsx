@@ -101,6 +101,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingSections,
     isLoadingClassSection,
 
+    dailyClassId,
+    setDailyClassId,
     dailySectionId,
     setDailySectionId,
     dailyDate,
@@ -109,6 +111,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingDaily,
     fetchDailyReport,
 
+    monthlyClassId,
+    setMonthlyClassId,
     monthlySectionId,
     setMonthlySectionId,
     monthlyMonth,
@@ -119,6 +123,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingMonthly,
     fetchMonthlyReport,
 
+    defaulterClassId,
+    setDefaulterClassId,
     defaulterSectionId,
     setDefaulterSectionId,
     defaulterThreshold,
@@ -127,6 +133,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingDefaulters,
     fetchDefaulters,
 
+    historyClassId,
+    setHistoryClassId,
     historySectionId,
     setHistorySectionId,
     historyStudents,
@@ -138,6 +146,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingHistory,
     fetchStudentHistory,
 
+    exportClassId,
+    setExportClassId,
     exportSectionId,
     setExportSectionId,
     exportStartDate,
@@ -149,6 +159,8 @@ export default function StudentAttendanceReportPage() {
     selectedAuditId,
     setSelectedAuditId,
 
+    heatmapClassId,
+    setHeatmapClassId,
     heatmapSectionId,
     setHeatmapSectionId,
     heatmapStudents,
@@ -161,6 +173,8 @@ export default function StudentAttendanceReportPage() {
     isLoadingHeatmap,
     fetchHeatmap,
 
+    lateTrendClassId,
+    setLateTrendClassId,
     lateTrendSectionId,
     setLateTrendSectionId,
     lateTrendMonth,
@@ -175,6 +189,14 @@ export default function StudentAttendanceReportPage() {
   const { log: auditLog, isLoading: isLoadingAudit } = useAttendanceAudit(selectedAuditId);
   const { date: mpDate, setDate: setMpDate, records: missingPunches, isLoading: isLoadingMp, fetch: fetchMp, resolve: resolvePunch, resolvingId } = useMissingPunches();
 
+  const classOptions = classSection.map((c) => ({ id: c.id, label: c.name }));
+
+  const getFilteredSections = (classId: string) =>
+    sections
+      .filter((s) => s.class_id === classId)
+      .map((s) => ({ id: s.id, label: `Section ${s.name}` }));
+
+  // Fallback for tabs not yet updated to use class filtering
   const sectionOptions = sections.map((s) => ({
     id: s.id,
     label: `${classSection.find((c) => c.id === s.class_id)?.name ?? ''} - Section ${s.name}`,
@@ -370,12 +392,28 @@ export default function StudentAttendanceReportPage() {
           <>
             <Select
               width="sm"
-              value={exportSectionId}
-              onChange={(e) => setExportSectionId(e.target.value)}
+              value={exportClassId}
+              onChange={(e) => {
+                setExportClassId(e.target.value);
+                setExportSectionId("");
+              }}
               disabled={isLoadingClassSection}
             >
-              <option value="">All Sections</option>
-              {sectionOptions.map((s) => (
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="sm"
+              value={exportSectionId}
+              onChange={(e) => setExportSectionId(e.target.value)}
+              disabled={!exportClassId || isLoadingClassSection}
+            >
+              <option value="">Select Section</option>
+              {getFilteredSections(exportClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
@@ -604,14 +642,30 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <Select
               width="md"
+              value={defaulterClassId}
+              onChange={(e) => {
+                setDefaulterClassId(e.target.value);
+                setDefaulterSectionId("");
+              }}
+              disabled={isLoadingClassSection}
+            >
+              <option value="">Select Class</option>
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="md"
               value={defaulterSectionId}
               onChange={(e) => setDefaulterSectionId(e.target.value)}
-              disabled={isLoadingClassSection}
+              disabled={!defaulterClassId || isLoadingClassSection}
             >
               <option value="">
                 {ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
               </option>
-              {sectionOptions.map((s) => (
+              {getFilteredSections(defaulterClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
                 </option>
