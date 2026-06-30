@@ -456,8 +456,8 @@ export default function StudentAttendanceReportPage() {
       />
 
       {/* Academic Year selector */}
-      <Div variant="card" padding="p-3" type="row" align="center" gap="sm">
-        <P size="sm" color="muted" noWrap>Academic Year</P>
+      <Div variant="card" padding="p-3" type="col" gap="xs" width="fit">
+        <P size="sm" color="muted">Academic Year</P>
         <Select
           width="sm"
           value={selectedAcademicYearId}
