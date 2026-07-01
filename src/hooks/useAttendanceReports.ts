@@ -74,6 +74,8 @@ export function useAttendanceReports() {
   // Defaulters
   const [defaulterClassId, setDefaulterClassId] = useState("");
   const [defaulterSectionId, setDefaulterSectionId] = useState("");
+  const [defaulterMonth, setDefaulterMonth] = useState(currentMonth());
+  const [defaulterYear, setDefaulterYear] = useState(currentYear());
   const [defaulterThreshold, setDefaulterThreshold] = useState(75);
   const [defaulters, setDefaulters] = useState<AttendanceDefaulter[]>([]);
   const [isLoadingDefaulters, setIsLoadingDefaulters] = useState(false);
@@ -113,8 +115,8 @@ export function useAttendanceReports() {
   // Export
   const [exportClassId, setExportClassId] = useState("");
   const [exportSectionId, setExportSectionId] = useState("");
-  const [exportStartDate, setExportStartDate] = useState(firstOfMonthISO);
-  const [exportEndDate, setExportEndDate] = useState(todayISO);
+  const [exportStartDate, setExportStartDate] = useState(firstOfMonthISO());
+  const [exportEndDate, setExportEndDate] = useState(todayISO());
   const [isExporting, setIsExporting] = useState(false);
 
   const fetchAcademicYears = useCallback(async () => {
@@ -193,11 +195,16 @@ export function useAttendanceReports() {
   }
 
   async function fetchDefaulters() {
+    if (!defaulterSectionId) {
+      toast.error("Select a section");
+      return;
+    }
     setIsLoadingDefaulters(true);
     try {
       const data = await AttendanceService.getDefaulters({
-        ...(defaulterSectionId && { class_section_id: defaulterSectionId }),
-        ...(selectedAcademicYearId && { academic_year_id: selectedAcademicYearId }),
+        class_section_id: defaulterSectionId,
+        month: defaulterMonth,
+        year: defaulterYear,
         threshold: defaulterThreshold,
       });
       setDefaulters(data);
@@ -380,6 +387,10 @@ export function useAttendanceReports() {
     setDefaulterClassId,
     defaulterSectionId,
     setDefaulterSectionId,
+    defaulterMonth,
+    setDefaulterMonth,
+    defaulterYear,
+    setDefaulterYear,
     defaulterThreshold,
     setDefaulterThreshold,
     defaulters,

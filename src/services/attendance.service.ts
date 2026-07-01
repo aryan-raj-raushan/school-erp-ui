@@ -40,8 +40,9 @@ export interface MonthlyReportFilters {
 
 export interface DefaulterFilters {
   class_section_id?: string;
+  month?: number;
+  year?: number;
   threshold?: number;
-  academic_year_id?: string;
 }
 
 export interface ExportFilters {
