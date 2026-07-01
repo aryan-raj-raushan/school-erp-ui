@@ -10,7 +10,6 @@ import {
   type TimetableEntryDto,
 } from '@/services/timetable.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES, DAYS_OF_WEEK, MAX_PERIODS_OPTIONS } from '@/constants';
@@ -35,7 +34,6 @@ export function useCreateTimetable() {
   const [name, setName] = useState('');
   const [academicYearId, setAcademicYearId] = useState('');
   const [classId, setClassId] = useState('');
-  const [classDetailId, setClassDetailId] = useState('');
   const [maxPeriods, setMaxPeriods] = useState(8);
   const [classTeacherId, setClassTeacherId] = useState('');
 
@@ -43,7 +41,6 @@ export function useCreateTimetable() {
   const [grid, setGrid] = useState<GridState>({});
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -66,30 +63,19 @@ export function useCreateTimetable() {
   const loadStaticData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [clsRes, staffRes] = await Promise.all([
+      const [clsRes, staffRes, subRes] = await Promise.all([
         ClassesService.list({ limit: 100 }),
         import('@/services/staff.service').then((m) => m.StaffService.list({ limit: 100 })),
+        SubjectsService.list({ limit: 100 }),
       ]);
       setClasses(clsRes.items);
       setStaff(staffRes.items.map((s: any) => ({ id: s.id, name: `${s.first_name} ${s.last_name}` })));
+      setSubjects(subRes.items);
     } catch { toast.error('Failed to load form data'); }
     finally { setIsLoadingData(false); }
   }, []);
 
-  const loadClassDetails = useCallback(async (cid: string) => {
-    if (!cid) { setClassDetails([]); setSubjects([]); return; }
-    try {
-      const [cdRes, subRes] = await Promise.all([
-        ClassDetailsService.list({ class_id: cid, limit: 100 }),
-        SubjectsService.list({ class_id: cid, limit: 100 }),
-      ]);
-      setClassDetails(cdRes.items);
-      setSubjects(subRes.items);
-    } catch { /* ignore */ }
-  }, []);
-
   useEffect(() => { loadStaticData(); }, [loadStaticData]);
-  useEffect(() => { loadClassDetails(classId); setClassDetailId(''); }, [classId, loadClassDetails]);
 
   function setCellValue(day: DayOfWeek, period: number, field: 'subject_id' | 'teacher_id', value: string) {
     setGrid((prev) => ({
@@ -133,7 +119,6 @@ export function useCreateTimetable() {
         name,
         academic_year_id: academicYearId || undefined,
         class_id: classId || undefined,
-        class_detail_id: classDetailId || undefined,
         max_periods: maxPeriods,
         period_times: periodTimes.map((pt) => ({
           period_number: pt.period_number,
@@ -157,11 +142,10 @@ export function useCreateTimetable() {
   const periods = Array.from({ length: maxPeriods }, (_, i) => i + 1);
 
   return {
-    years, classes, classDetails, subjects, staff,
+    years, classes, subjects, staff,
     name, setName,
     academicYearId, setAcademicYearId,
     classId, setClassId,
-    classDetailId, setClassDetailId,
     maxPeriods, setMaxPeriods,
     classTeacherId, setClassTeacherId,
     periodTimes, setPeriodTime,

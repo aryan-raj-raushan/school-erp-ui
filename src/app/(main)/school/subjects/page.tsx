@@ -10,10 +10,7 @@ import {
   PageCol,
   DataTable,
   Badge,
-  Spinner,
   Icon,
-  Select,
-  FilterLabel,
   type ColumnDef,
 } from "@/components/ui";
 import { Pencil, Trash2 } from "lucide-react";
@@ -22,17 +19,10 @@ import type { Subject } from "@/services/subjects.service";
 export default function SubjectsPage() {
   const {
     subjects,
-    classes,
-    classDetails,
     isLoading,
-    filterClassId,
-    setFilterClassId,
-    filterClassDetailId,
-    setFilterClassDetailId,
     removeSubject,
     navigateToNew,
     navigateToEdit,
-    getClassNames,
   } = useSubjectsPage();
 
   const columns = useMemo<ColumnDef<Subject>[]>(
@@ -46,11 +36,6 @@ export default function SubjectsPage() {
         accessorKey: "code",
         header: SUBJECTS_PAGE.table.code,
         cell: ({ row }) => row.original.code ?? "—",
-      },
-      {
-        id: "class",
-        header: "Class",
-        cell: ({ row }) => getClassNames(row.original.class_ids ?? []),
       },
       {
         accessorKey: "display_order",
@@ -96,7 +81,7 @@ export default function SubjectsPage() {
         ),
       },
     ],
-    [getClassNames, navigateToEdit, removeSubject]
+    [navigateToEdit, removeSubject]
   );
 
   return (
@@ -107,40 +92,6 @@ export default function SubjectsPage() {
           <Button onClick={navigateToNew}>{SUBJECTS_PAGE.addButton}</Button>
         }
       />
-
-      <Div type="row" gap="md" align="end" wrap>
-        <Div type="col" gap="xs">
-          <FilterLabel>Class</FilterLabel>
-          <Select
-            value={filterClassId}
-            onChange={(e) => setFilterClassId(e.target.value)}
-            width="md"
-          >
-            <option value="">All Classes</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
-        </Div>
-        <Div type="col" gap="xs">
-          <FilterLabel>Class (Year / Semester)</FilterLabel>
-          <Select
-            value={filterClassDetailId}
-            onChange={(e) => setFilterClassDetailId(e.target.value)}
-            width="md"
-            disabled={!filterClassId}
-          >
-            <option value="">All</option>
-            {classDetails.map((cd) => (
-              <option key={cd.id} value={cd.id}>
-                {cd.name}
-              </option>
-            ))}
-          </Select>
-        </Div>
-      </Div>
 
       <DataTable
         columns={columns}

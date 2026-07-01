@@ -470,7 +470,7 @@ function ScheduleCreateContent() {
                   variant="outline"
                   disabled={!canLoadSubjects || isLoadingSubjects}
                   loading={isLoadingSubjects}
-                  onClick={() => loadAllSubjects(watchedClassId)}
+                  onClick={() => loadAllSubjects()}
                 >
                   <Wand2 size={13} />
                   {SCHEDULE_PAGE.buttons.loadSubjects}

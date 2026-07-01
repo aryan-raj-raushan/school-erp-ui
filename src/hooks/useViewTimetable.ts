@@ -36,6 +36,17 @@ export function useViewTimetable(id: string) {
     return timetable?.period_times.find((pt) => pt.period_number === period) ?? null;
   }
 
+  async function togglePublish() {
+    if (!timetable) return;
+    try {
+      const updated = await TimetableService.update(id, { is_complete: !timetable.is_complete });
+      setTimetable(updated);
+      toast.success(updated.is_complete ? 'Timetable published' : 'Timetable moved back to draft');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update timetable status');
+    }
+  }
+
   function handlePrint() { window.print(); }
   function goToEdit() { router.push(ROUTES.timetableEdit(id)); }
   function handleBack() { router.push(ROUTES.timetable); }
@@ -48,6 +59,6 @@ export function useViewTimetable(id: string) {
     timetable, isLoading, periods,
     days: DAYS_OF_WEEK,
     getCell, getPeriodTime,
-    handlePrint, goToEdit, handleBack,
+    handlePrint, goToEdit, handleBack, togglePublish,
   };
 }

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { HomeworkService, type SubmissionEntry } from '@/services/homework.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { StudentsService } from '@/services/students.service';
 import { useAcademicYears } from './useAcademicYears';
@@ -17,12 +16,10 @@ export function useHomework() {
   const { years, currentYear } = useAcademicYears();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedClassDetailId, setSelectedClassDetailId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
 
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
@@ -40,29 +37,21 @@ export function useHomework() {
 
   const loadInitialData = useCallback(async () => {
     try {
-      const clsRes = await ClassesService.list({ limit: 100 });
+      const [clsRes, subRes] = await Promise.all([
+        ClassesService.list({ limit: 100 }),
+        SubjectsService.list({ limit: 100 }),
+      ]);
       setClasses(clsRes.items);
+      setSubjects(subRes.items);
     } catch { /* ignore */ }
   }, []);
 
   useEffect(() => { loadInitialData(); }, [loadInitialData]);
 
-  async function handleClassChange(classId: string) {
+  function handleClassChange(classId: string) {
     setSelectedClassId(classId);
-    setSelectedClassDetailId('');
     setSelectedSubjectId('');
-    setClassDetails([]);
-    setSubjects([]);
     setHomeworkList([]);
-    if (!classId) return;
-    try {
-      const [cdRes, subRes] = await Promise.all([
-        ClassDetailsService.list({ class_id: classId, limit: 100 }),
-        SubjectsService.list({ class_id: classId, limit: 100 }),
-      ]);
-      setClassDetails(cdRes.items);
-      setSubjects(subRes.items);
-    } catch { /* ignore */ }
   }
 
   const fetchHomework = useCallback(async () => {
@@ -71,7 +60,6 @@ export function useHomework() {
     try {
       const data = await HomeworkService.list({
         class_id: selectedClassId,
-        class_detail_id: selectedClassDetailId || undefined,
         subject_id: selectedSubjectId || undefined,
         academic_year_id: selectedAcademicYearId,
       });
@@ -81,7 +69,7 @@ export function useHomework() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedClassId, selectedClassDetailId, selectedSubjectId, selectedAcademicYearId]);
+  }, [selectedClassId, selectedSubjectId, selectedAcademicYearId]);
 
   useEffect(() => { fetchHomework(); }, [fetchHomework]);
 
@@ -145,10 +133,9 @@ export function useHomework() {
 
   return {
     years, currentYear,
-    classes, classDetails, subjects,
+    classes, subjects,
     selectedAcademicYearId, setSelectedAcademicYearId,
     selectedClassId,
-    selectedClassDetailId, setSelectedClassDetailId,
     selectedSubjectId, setSelectedSubjectId,
     handleClassChange,
     homeworkList,

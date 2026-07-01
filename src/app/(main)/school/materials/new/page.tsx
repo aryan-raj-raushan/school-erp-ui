@@ -14,7 +14,7 @@ const CONTENT_TYPE_OPTIONS = [
 
 export default function NewStudyMaterialPage() {
   const {
-    form, years, classes, classDetails, subjects,
+    form, years, classes, subjects,
     isLoadingData, isSubmitting, isUploading,
     contentType, fileRef,
     handleSubmit, handleBack,
@@ -57,13 +57,6 @@ export default function NewStudyMaterialPage() {
               <Select {...register('class_id')} defaultValue="">
                 <option value="">Select class</option>
                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
-            </FormField>
-
-            <FormField label="Class (Year/Semester)">
-              <Select {...register('class_detail_id')} defaultValue="" disabled={!watch('class_id')}>
-                <option value="">Select year/semester</option>
-                {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
               </Select>
             </FormField>
 

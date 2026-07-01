@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { ExamScheduleService, ExamsService } from "@/services/exam.service";
-import { ClassSubjectsService } from "@/services/class-subject.service";
+import { SubjectsService } from "@/services/subjects.service";
 import type { ExamSchedule, ScheduleFilters } from "@/types/exam.types";
 import type { Exam } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
@@ -225,8 +225,8 @@ export function useExamScheduleForm() {
           const siblingExam = pendingSiblings.find((t) => t.exam.id === siblingExamId)?.exam;
           if (!siblingExam) return;
 
-          // Fetch sibling class subjects to remap subject_ids by name
-          const subjectsRes = await ClassSubjectsService.list({ class_id: siblingExam.class_id, limit: 100 });
+          // Remap subject_ids by name against the school's subject list
+          const subjectsRes = await SubjectsService.list({ limit: 100 });
           const subjectByName: Record<string, string> = {};
           subjectsRes.items.forEach((s) => { subjectByName[s.name.toLowerCase()] = s.id; });
 
@@ -267,18 +267,17 @@ export function useExamScheduleForm() {
 
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
 
-  async function loadAllSubjects(classId: string) {
-    if (!classId) return 0;
+  async function loadAllSubjects() {
     setIsLoadingSubjects(true);
     try {
-      const res = await ClassSubjectsService.list({ class_id: classId, limit: 100 });
+      const res = await SubjectsService.list({ limit: 100 });
       const rows = res.items.map((s) => ({
         ...defaultScheduleItem,
         subject_id: s.id,
         subject_name: s.name,
       }));
       if (rows.length === 0) {
-        toast.error("No subjects found for this class");
+        toast.error("No subjects found");
         return 0;
       }
       schedulesField.replace(rows);

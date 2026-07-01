@@ -4,26 +4,16 @@ import { useCreateSubject } from '@/hooks/useCreateSubject';
 import { SUBJECTS_PAGE } from '@/constants';
 import {
   Div, Button, H2,
-  FormField, Input, Select,
-  CheckboxLabel, Spinner,
-  PageHeader, PageCol, MultiSelect,
+  FormField, Input,
+  CheckboxLabel,
+  PageHeader,
 } from '@/components/ui';
 
 export default function NewSubjectPage() {
   const {
-    form, classes, classDetails, isLoadingData, isSubmitting,
+    form, isSubmitting,
     handleSubmit, handleBack, toggleIsElective, toggleIsActive,
   } = useCreateSubject();
-
-  if (isLoadingData) {
-    return (
-      <Div type="col" align="center" justify="center" className="py-20">
-        <Spinner />
-      </Div>
-    );
-  }
-
-  const classOptions = classes.map((c) => ({ value: c.id, label: c.name }));
 
   return (
     <Div type="col" gap="lg" className="max-w-2xl">
@@ -48,22 +38,6 @@ export default function NewSubjectPage() {
                 <Input placeholder={SUBJECTS_PAGE.placeholders.code} {...form.register('code')} />
               </FormField>
             </Div>
-
-            <FormField label="Classes">
-              <MultiSelect
-                options={classOptions}
-                value={form.watch('class_ids') ?? []}
-                onChange={(vals) => form.setValue('class_ids', vals)}
-                placeholder="Select classes..."
-              />
-            </FormField>
-
-            <FormField label="Class (Year / Semester)" error={form.formState.errors.class_detail_id?.message}>
-              <Select {...form.register('class_detail_id')} defaultValue="" disabled={!(form.watch('class_ids') ?? []).length}>
-                <option value="">Select Year / Semester</option>
-                {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
-              </Select>
-            </FormField>
           </Div>
 
           <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5">

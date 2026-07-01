@@ -18,10 +18,9 @@ import { Plus, Pencil, Trash2, ListChecks } from 'lucide-react';
 
 export default function HomeworkPage() {
   const {
-    years, classes, classDetails, subjects,
+    years, classes, subjects,
     selectedAcademicYearId, setSelectedAcademicYearId,
     selectedClassId,
-    selectedClassDetailId, setSelectedClassDetailId,
     selectedSubjectId, setSelectedSubjectId,
     handleClassChange,
     homeworkList,
@@ -66,19 +65,6 @@ export default function HomeworkPage() {
               <option value="">Select Class</option>
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Class (Year / Semester)</FilterLabel>
-            <Select
-              value={selectedClassDetailId}
-              onChange={(e) => setSelectedClassDetailId(e.target.value)}
-              disabled={!selectedClassId}
-            >
-              <option value="">All</option>
-              {classDetails.map((cd) => (
-                <option key={cd.id} value={cd.id}>{cd.name}</option>
               ))}
             </Select>
           </Div>

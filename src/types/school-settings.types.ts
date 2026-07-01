@@ -27,6 +27,9 @@ export interface SchoolTiming {
   half_day_cutoff_time: string | null;
   absent_cutoff_time: string | null;
   working_days: string;
+  period_duration_minutes: number;
+  lunch_start_time: string | null;
+  lunch_end_time: string | null;
   effective_from: string;
   effective_to: string;
   priority: number;
@@ -63,6 +66,9 @@ export interface CreateSchoolTimingPayload {
   half_day_cutoff_time?: string;
   absent_cutoff_time?: string;
   working_days?: string;
+  period_duration_minutes?: number;
+  lunch_start_time?: string;
+  lunch_end_time?: string;
   effective_from: string;
   effective_to: string;
   priority?: number;

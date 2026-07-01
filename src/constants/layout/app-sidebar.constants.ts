@@ -168,12 +168,18 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       PERMISSIONS.homework.view,
       PERMISSIONS.syllabus.view,
       PERMISSIONS.timetable.view,
+      PERMISSIONS.classSubjectTeachers.view,
     ],
     items: [
       {
         title: "Homework",
         url: "/school/homework",
         permissions: [PERMISSIONS.homework.view],
+      },
+      {
+        title: "Subject-Teacher Map",
+        url: "/school/subject-teacher-map",
+        permissions: [PERMISSIONS.classSubjectTeachers.view],
       },
       {
         title: "Study Materials",

@@ -21,7 +21,7 @@ function EditHomeworkPageInner() {
   const id = _searchParams.get('id') ?? '';
 
   const {
-    form, years, classes, classDetails, subjects,
+    form, years, classes, subjects,
     isLoadingData, savedAttachments, newAttachments, fileInputRef,
     isSubmitting,
     handleSubmit, handleFileChange, removeSavedAttachment, removeNewAttachment,
@@ -56,13 +56,6 @@ function EditHomeworkPageInner() {
               <Select {...register('class_id')} defaultValue="">
                 <option value="">{HOMEWORK_PAGE.placeholders.selectClass}</option>
                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
-            </FormField>
-
-            <FormField label={HOMEWORK_PAGE.form.classDetail}>
-              <Select {...register('class_detail_id')} defaultValue="" disabled={!watch('class_id')}>
-                <option value="">{HOMEWORK_PAGE.placeholders.selectClassDetail}</option>
-                {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
               </Select>
             </FormField>
 

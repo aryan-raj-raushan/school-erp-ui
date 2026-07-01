@@ -5,13 +5,13 @@ import { use, Suspense } from 'react';
 import { useViewTimetable } from '@/hooks/useViewTimetable';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS } from '@/constants';
 import { Div, Button, Spinner, Badge, PageHeader, PageCol } from '@/components/ui';
-import { Pencil, Printer } from 'lucide-react';
+import { Pencil, Printer, Send, Undo2 } from 'lucide-react';
 
 function ViewTimetableContent({ id }: { id: string }) {
   const {
     timetable, isLoading, periods, days,
     getCell, getPeriodTime,
-    handlePrint, goToEdit, handleBack,
+    handlePrint, goToEdit, handleBack, togglePublish,
   } = useViewTimetable(id);
 
   if (isLoading) {
@@ -24,7 +24,7 @@ function ViewTimetableContent({ id }: { id: string }) {
     <Div type="col" gap="lg">
       <PageHeader
         title={timetable.name}
-        subtitle={[timetable.class_name, timetable.class_detail_name].filter(Boolean).join(' / ') || undefined}
+        subtitle={timetable.class_name ?? undefined}
         actions={
           <Div type="row" gap="sm">
             <Button variant="outline" onClick={handleBack}>Back</Button>
@@ -36,13 +36,26 @@ function ViewTimetableContent({ id }: { id: string }) {
               <Pencil className="w-4 h-4 mr-1" />
               Edit
             </Button>
+            <Button variant={timetable.is_complete ? 'outline' : 'success'} onClick={togglePublish}>
+              {timetable.is_complete ? (
+                <>
+                  <Undo2 className="w-4 h-4 mr-1" />
+                  Move to Draft
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-1" />
+                  Publish
+                </>
+              )}
+            </Button>
           </Div>
         }
       />
 
       <Div type="row" gap="md" align="center">
         <Badge variant={timetable.is_complete ? 'success' : 'default'}>
-          {timetable.is_complete ? 'Complete' : 'Draft'}
+          {timetable.is_complete ? 'Published' : 'Draft'}
         </Badge>
         <span className="text-sm text-muted-foreground">{timetable.max_periods} periods</span>
         {timetable.class_teacher_name && (
@@ -59,7 +72,7 @@ function ViewTimetableContent({ id }: { id: string }) {
                 const pt = getPeriodTime(p);
                 return (
                   <th key={p} className="border border-border px-2 py-2 text-center font-medium min-w-[120px]">
-                    <div>P{p}</div>
+                    <div>{pt?.is_break ? <Badge variant="warning">Break</Badge> : `P${p}`}</div>
                     {pt?.start_time && (
                       <div className="text-xs text-muted-foreground font-normal">
                         {pt.start_time}{pt.end_time ? `–${pt.end_time}` : ''}
@@ -75,10 +88,13 @@ function ViewTimetableContent({ id }: { id: string }) {
               <tr key={day}>
                 <td className="border border-border px-3 py-2 font-medium bg-muted/30">{DAY_LABELS[day]}</td>
                 {periods.map((p) => {
+                  const isBreak = getPeriodTime(p)?.is_break ?? false;
                   const cell = getCell(day, p);
                   return (
-                    <td key={p} className="border border-border px-2 py-2 text-center align-top">
-                      {cell ? (
+                    <td key={p} className={`border border-border px-2 py-2 text-center align-top ${isBreak ? 'bg-muted/30' : ''}`}>
+                      {isBreak ? (
+                        <span className="text-muted-foreground text-xs">Break</span>
+                      ) : cell ? (
                         <Div type="col" gap="xs" align="center">
                           {cell.subject_name && (
                             <span className="font-medium text-sm">{cell.subject_name}</span>

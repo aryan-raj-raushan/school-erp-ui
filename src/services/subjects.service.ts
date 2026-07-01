@@ -5,9 +5,6 @@ import type { PaginationMeta } from '@/types';
 export interface Subject {
   id: string;
   school_id: string;
-  class_id?: string | null;
-  class_detail_id?: string | null;
-  class_ids: string[];
   name: string;
   code?: string | null;
   display_order: number;
@@ -22,16 +19,12 @@ export interface Subject {
 export interface SubjectFilters {
   page?: number;
   limit?: number;
-  class_id?: string;
-  class_detail_id?: string;
   search?: string;
 }
 
 export interface CreateSubjectPayload {
   name: string;
   code?: string;
-  class_ids?: string[];
-  class_detail_id?: string;
   display_order?: number;
   total_marks?: number;
   passing_marks?: number;

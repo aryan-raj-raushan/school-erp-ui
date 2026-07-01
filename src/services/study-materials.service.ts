@@ -7,7 +7,6 @@ export type StudyMaterialContentType = 'text' | 'file' | 'youtube';
 export interface CreateStudyMaterialPayload {
   academic_year_id: string;
   class_id?: string;
-  class_detail_id?: string;
   subject_id?: string;
   title: string;
   description?: string;
@@ -20,7 +19,6 @@ export interface CreateStudyMaterialPayload {
 
 export interface StudyMaterialFilters {
   class_id?: string;
-  class_detail_id?: string;
   subject_id?: string;
   academic_year_id?: string;
 }

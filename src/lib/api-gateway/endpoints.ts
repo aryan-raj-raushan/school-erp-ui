@@ -48,6 +48,10 @@ export const ENDPOINTS = {
     list: "/class-subjects",
     byId: (id: string) => `/class-subjects/${id}`,
   },
+  classSubjectTeachers: {
+    list: "/class-subject-teachers",
+    byId: (id: string) => `/class-subject-teachers/${id}`,
+  },
   masterData: {
     subjects: "/master-data/subjects",
   },
@@ -239,10 +243,7 @@ export const ENDPOINTS = {
     byId: (id: string) => `/timetable/${id}`,
     employeeView: (teacherId: string) => `/timetable/employee/${teacherId}`,
     sessionView: "/timetable/session-view",
-  },
-  classDetails: {
-    list: "/class-details",
-    byId: (id: string) => `/class-details/${id}`,
+    autoGenerate: "/timetable/auto-generate",
   },
   syllabus: {
     list: "/syllabi",

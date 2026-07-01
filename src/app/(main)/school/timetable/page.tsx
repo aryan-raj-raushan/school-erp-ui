@@ -8,15 +8,14 @@ import {
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon, Select, FilterLabel,
 } from '@/components/ui';
-import { Pencil, Eye, Trash2, Users, Calendar } from 'lucide-react';
+import { Pencil, Eye, Trash2, Users, Calendar, Send, Undo2 } from 'lucide-react';
 
 export default function TimetablePage() {
   const {
-    years, timetables, classes, classDetails, isLoading,
+    years, timetables, classes, isLoading,
     filterAcademicYearId, setFilterAcademicYearId,
     filterClassId, setFilterClassId,
-    filterClassDetailId, setFilterClassDetailId,
-    removeTimetable, goToNew, goToView, goToEdit, goToEmployee, goToSession,
+    removeTimetable, togglePublish, goToNew, goToView, goToEdit, goToEmployee, goToSession,
   } = useTimetablePage();
 
   return (
@@ -55,13 +54,6 @@ export default function TimetablePage() {
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
         </Div>
-        <Div type="col" gap="xs">
-          <FilterLabel>Class Detail</FilterLabel>
-          <Select value={filterClassDetailId} onChange={(e) => setFilterClassDetailId(e.target.value)} width="md" disabled={!filterClassId}>
-            <option value="">All</option>
-            {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
-          </Select>
-        </Div>
       </Div>
 
       <Table>
@@ -69,7 +61,6 @@ export default function TimetablePage() {
           <TableHeadRow>
             <TableHeaderCell>{SCHOOL_TIMETABLE_PAGE.table.name}</TableHeaderCell>
             <TableHeaderCell>{SCHOOL_TIMETABLE_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{SCHOOL_TIMETABLE_PAGE.table.classDetail}</TableHeaderCell>
             <TableHeaderCell>{SCHOOL_TIMETABLE_PAGE.table.maxPeriods}</TableHeaderCell>
             <TableHeaderCell>{SCHOOL_TIMETABLE_PAGE.table.status}</TableHeaderCell>
             <TableHeaderCell>{SCHOOL_TIMETABLE_PAGE.table.actions}</TableHeaderCell>
@@ -77,19 +68,18 @@ export default function TimetablePage() {
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
+            <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
           ) : timetables.length === 0 ? (
-            <TableEmptyRow colSpan={6}>{SCHOOL_TIMETABLE_PAGE.empty}</TableEmptyRow>
+            <TableEmptyRow colSpan={5}>{SCHOOL_TIMETABLE_PAGE.empty}</TableEmptyRow>
           ) : (
             timetables.map((tt) => (
               <TableRow key={tt.id}>
                 <TableCell primary>{tt.name}</TableCell>
                 <TableCell>{tt.class_name ?? '—'}</TableCell>
-                <TableCell>{tt.class_detail_name ?? '—'}</TableCell>
                 <TableCell>{tt.max_periods}</TableCell>
                 <TableCell>
                   <Badge variant={tt.is_complete ? 'success' : 'default'}>
-                    {tt.is_complete ? 'Complete' : 'Draft'}
+                    {tt.is_complete ? 'Published' : 'Draft'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -99,6 +89,14 @@ export default function TimetablePage() {
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => goToEdit(tt.id)}>
                       <Icon icon={Pencil} type="sm" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => togglePublish(tt)}
+                      title={tt.is_complete ? 'Move back to draft' : 'Publish'}
+                    >
+                      <Icon icon={tt.is_complete ? Undo2 : Send} type="sm" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => removeTimetable(tt.id)}>
                       <Icon icon={Trash2} type="sm-danger" />

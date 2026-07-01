@@ -62,7 +62,6 @@ export const HOMEWORK_PAGE = {
     editTitle: 'Edit Homework',
     session: 'Session',
     class: 'Class *',
-    classDetail: 'Class (Year / Semester)',
     subject: 'Subject *',
     title: 'Title *',
     homeworkDate: 'Date of Homework',
@@ -80,7 +79,6 @@ export const HOMEWORK_PAGE = {
   placeholders: {
     selectSession: 'Select Session',
     selectClass: 'Select Class',
-    selectClassDetail: 'Select Year / Semester',
     selectSubject: 'Select Subject',
     selectStatus: 'Select Status',
     title: 'Enter Title',

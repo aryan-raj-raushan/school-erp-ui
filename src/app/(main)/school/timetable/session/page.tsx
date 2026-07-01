@@ -122,8 +122,7 @@ export default function SessionTimetablePage() {
               </TableHead>
               <TableBody>
                 {rows.map((row, idx) => {
-                  const label = [row.class_name, row.class_detail_name].filter(Boolean).join(' / ')
-                    || row.timetable_name;
+                  const label = row.class_name || row.timetable_name;
                   return (
                     <TableRow key={row.timetable_id}>
                       <TableCell primary>{label}</TableCell>

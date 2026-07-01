@@ -24,9 +24,8 @@ export default function StudyMaterialsPage() {
 
   const {
     years, selectedAcademicYearId, setSelectedAcademicYearId,
-    classes, classDetails, subjects,
-    selectedClassId, selectedClassDetailId, selectedSubjectId,
-    setSelectedClassDetailId,
+    classes, subjects,
+    selectedClassId, selectedSubjectId,
     setSelectedSubjectId,
     handleClassChange,
     materials,
@@ -48,7 +47,7 @@ export default function StudyMaterialsPage() {
 
       {/* Filters */}
       <Div variant="card" padding="p-4">
-        <Div type="grid" cols={4} gap="md">
+        <Div type="grid" cols={3} gap="md">
           <Div type="col" gap="xs">
             <FilterLabel>Academic Year</FilterLabel>
             <Select value={selectedAcademicYearId} onChange={(e) => setSelectedAcademicYearId(e.target.value)}>
@@ -61,13 +60,6 @@ export default function StudyMaterialsPage() {
             <Select value={selectedClassId} onChange={(e) => handleClassChange(e.target.value)} disabled={!selectedAcademicYearId}>
               <option value="">Select class</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Year / Semester</FilterLabel>
-            <Select value={selectedClassDetailId} onChange={(e) => setSelectedClassDetailId(e.target.value)} disabled={!selectedClassId}>
-              <option value="">All</option>
-              {classDetails.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </Select>
           </Div>
           <Div type="col" gap="xs">

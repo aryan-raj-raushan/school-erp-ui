@@ -12,7 +12,6 @@ export interface AttachmentPayload {
 export interface CreateHomeworkPayload {
   academic_year_id: string;
   class_id: string;
-  class_detail_id?: string;
   subject_id?: string;
   title: string;
   description?: string;
@@ -26,7 +25,6 @@ export interface CreateHomeworkPayload {
 
 export interface HomeworkFilters {
   class_id?: string;
-  class_detail_id?: string;
   subject_id?: string;
   academic_year_id?: string;
 }

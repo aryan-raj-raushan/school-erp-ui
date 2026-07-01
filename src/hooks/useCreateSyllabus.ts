@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { SyllabusService } from '@/services/syllabus.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
 
@@ -33,7 +32,6 @@ const ALLOWED_EXT_MAP: Record<string, string> = {
 
 const schema = z.object({
   class_id: z.string().min(1, 'Class is required'),
-  class_detail_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
   content: z.string().optional(),
   is_enabled: z.boolean(),
@@ -44,7 +42,6 @@ export type CreateSyllabusFormValues = z.infer<typeof schema>;
 export function useCreateSyllabus() {
   const router = useRouter();
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,8 +50,6 @@ export function useCreateSyllabus() {
     resolver: zodResolver(schema) as any,
     defaultValues: { is_enabled: true, content: '' },
   });
-
-  const watchedClassId = form.watch('class_id');
 
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
@@ -65,20 +60,7 @@ export function useCreateSyllabus() {
     finally { setIsLoadingData(false); }
   }, []);
 
-  const fetchClassDetails = useCallback(async (classId: string) => {
-    if (!classId) { setClassDetails([]); return; }
-    try {
-      const res = await ClassDetailsService.list({ class_id: classId, limit: 100 });
-      setClassDetails(res.items);
-    } catch { /* ignore */ }
-  }, []);
-
   useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => {
-    fetchClassDetails(watchedClassId ?? '');
-    form.setValue('class_detail_id', '');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedClassId]);
 
   function toggleIsEnabled() { form.setValue('is_enabled', !form.getValues('is_enabled')); }
 
@@ -129,7 +111,6 @@ export function useCreateSyllabus() {
     try {
       await SyllabusService.create({
         class_id: values.class_id,
-        class_detail_id: values.class_detail_id || undefined,
         title: values.title,
         content: values.content || undefined,
         is_enabled: values.is_enabled,
@@ -152,7 +133,7 @@ export function useCreateSyllabus() {
   function handleBack() { router.push(ROUTES.syllabus); }
 
   return {
-    form, classes, classDetails, isLoadingData,
+    form, classes, isLoadingData,
     attachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(createSyllabus),

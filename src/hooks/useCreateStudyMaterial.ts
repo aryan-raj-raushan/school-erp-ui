@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { StudyMaterialsService } from '@/services/study-materials.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
@@ -19,7 +18,6 @@ import type { Class } from '@/types';
 const schema = z.object({
   academic_year_id: z.string().min(1, 'Session is required'),
   class_id: z.string().min(1, 'Class is required'),
-  class_detail_id: z.string().optional(),
   subject_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
   content_type: z.enum(['text', 'file', 'youtube']),
@@ -34,7 +32,6 @@ export function useCreateStudyMaterial() {
   const { years, currentYear } = useAcademicYears();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,32 +57,27 @@ export function useCreateStudyMaterial() {
     }
   }, [currentYear, watchedAcademicYearId, setValue]);
 
-  // Load classes when academic year changes
+  // Load classes + subjects when academic year changes
   useEffect(() => {
     if (!watchedAcademicYearId) return;
     setIsLoadingData(true);
-    ClassesService.list({ academic_year_id: watchedAcademicYearId, limit: 100 })
-      .then((res) => setClasses(res.items))
+    Promise.all([
+      ClassesService.list({ academic_year_id: watchedAcademicYearId, limit: 100 }),
+      SubjectsService.list({ limit: 100 }),
+    ])
+      .then(([clsRes, subRes]) => {
+        setClasses(clsRes.items);
+        setSubjects(subRes.items);
+      })
       .catch(() => {})
       .finally(() => setIsLoadingData(false));
   }, [watchedAcademicYearId]);
 
-  // Load class details + subjects when class changes
+  // Reset subject when class changes
   useEffect(() => {
     if (!watchedClassId) {
-      setClassDetails([]);
-      setSubjects([]);
-      setValue('class_detail_id', '');
       setValue('subject_id', '');
-      return;
     }
-    Promise.all([
-      ClassDetailsService.list({ class_id: watchedClassId, limit: 100 }),
-      SubjectsService.list({ class_id: watchedClassId, limit: 100 }),
-    ]).then(([detailsRes, subjectsRes]) => {
-      setClassDetails(detailsRes.items);
-      setSubjects(subjectsRes.items);
-    }).catch(() => {});
   }, [watchedClassId, setValue]);
 
   async function handleSubmit(values: CreateStudyMaterialFormValues) {
@@ -118,7 +110,6 @@ export function useCreateStudyMaterial() {
       await StudyMaterialsService.create({
         academic_year_id: values.academic_year_id,
         class_id: values.class_id,
-        class_detail_id: values.class_detail_id || undefined,
         subject_id: values.subject_id || undefined,
         title: values.title,
         content_type: values.content_type,
@@ -146,7 +137,6 @@ export function useCreateStudyMaterial() {
     form,
     years,
     classes,
-    classDetails,
     subjects,
     isLoadingData,
     isSubmitting,

@@ -586,7 +586,6 @@ export interface Homework {
   school_id: string;
   academic_year_id: string;
   class_id?: string | null;
-  class_detail_id?: string | null;
   subject_id?: string | null;
   title: string;
   description?: string | null;
@@ -600,7 +599,6 @@ export interface Homework {
   created_at: string;
   updated_at?: string | null;
   class_name?: string | null;
-  class_detail_name?: string | null;
   subject_name?: string | null;
   session_name?: string | null;
   created_by_name?: string | null;
@@ -625,7 +623,6 @@ export interface StudyMaterial {
   school_id: string;
   academic_year_id: string;
   class_id?: string | null;
-  class_detail_id?: string | null;
   subject_id?: string | null;
   title: string;
   description?: string | null;

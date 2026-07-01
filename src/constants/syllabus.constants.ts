@@ -14,7 +14,6 @@ export const SYLLABUS_PAGE = {
     editTitle: 'Edit Syllabus',
     session: 'Session',
     class: 'Class *',
-    classDetail: 'Class (Year / Semester) *',
     title: 'Title *',
     content: 'Syllabus Content',
     isEnabled: 'Enabled',
@@ -29,7 +28,6 @@ export const SYLLABUS_PAGE = {
     content: 'Type something',
     selectSession: 'Select Session',
     selectClass: 'Select Class',
-    selectClassDetail: 'Select Year / Semester',
   },
   attachmentTable: {
     fileName: 'File Name',

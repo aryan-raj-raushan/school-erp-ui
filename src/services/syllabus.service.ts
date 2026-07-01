@@ -14,7 +14,6 @@ export interface Syllabus {
   id: string;
   school_id: string;
   class_id: string;
-  class_detail_id?: string | null;
   title: string;
   content?: string | null;
   is_enabled: boolean;
@@ -26,7 +25,6 @@ export interface SyllabusFilters {
   page?: number;
   limit?: number;
   class_id?: string;
-  class_detail_id?: string;
 }
 
 export interface SyllabusAttachmentPayload {
@@ -38,7 +36,6 @@ export interface SyllabusAttachmentPayload {
 
 export interface CreateSyllabusPayload {
   class_id: string;
-  class_detail_id?: string;
   title: string;
   content?: string;
   is_enabled?: boolean;
