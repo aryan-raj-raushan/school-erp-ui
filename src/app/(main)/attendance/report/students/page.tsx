@@ -127,6 +127,10 @@ export default function StudentAttendanceReportPage() {
     setDefaulterClassId,
     defaulterSectionId,
     setDefaulterSectionId,
+    defaulterMonth,
+    setDefaulterMonth,
+    defaulterYear,
+    setDefaulterYear,
     defaulterThreshold,
     setDefaulterThreshold,
     defaulters,
@@ -709,6 +713,28 @@ export default function StudentAttendanceReportPage() {
               {getFilteredSections(defaulterClassId).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="sm"
+              value={defaulterMonth}
+              onChange={(e) => setDefaulterMonth(Number(e.target.value))}
+            >
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              width="sm"
+              value={defaulterYear}
+              onChange={(e) => setDefaulterYear(Number(e.target.value))}
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
                 </option>
               ))}
             </Select>
