@@ -37,7 +37,7 @@ export const Input = React.forwardRef<
       className={cn(
         inputBase,
         widthMap[width],
-        error && 'border-destructive focus:ring-destructive/40 focus:border-destructive',
+        error && 'border-destructive focus:ring-destructive/40 focus:border-destructive bg-destructive/5',
         className,
       )}
       {...props}
@@ -56,7 +56,7 @@ export const Select = React.forwardRef<
       inputBase,
       widthMap[width],
       'cursor-pointer appearance-none',
-      error && 'border-destructive focus:ring-destructive/40',
+      error && 'border-destructive focus:ring-destructive/40 focus:border-destructive bg-destructive/5',
       className,
     )}
     {...props}
@@ -76,7 +76,7 @@ export const Textarea = React.forwardRef<
       inputBase,
       'h-auto min-h-[100px] resize-none',
       widthMap[width],
-      error && 'border-destructive focus:ring-destructive/40',
+      error && 'border-destructive focus:ring-destructive/40 focus:border-destructive bg-destructive/5',
       className,
     )}
     {...props}
@@ -113,15 +113,17 @@ interface FormFieldProps {
 
 export function FormField({ label, error, hint, htmlFor, required, children }: FormFieldProps) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn('space-y-1.5', error && 'space-y-2')}>
       {label && (
-        <Label htmlFor={htmlFor}>
+        <Label htmlFor={htmlFor} className={error ? 'text-destructive font-medium' : ''}>
           {label}{required && <span className="text-destructive ml-0.5">*</span>}
         </Label>
       )}
       {children}
       {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
-      {error && <ErrorText>{error}</ErrorText>}
+      {error && (
+        <ErrorText className="bg-destructive/10 px-2 py-1 rounded-md">{error}</ErrorText>
+      )}
     </div>
   );
 }

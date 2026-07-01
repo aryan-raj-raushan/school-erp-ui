@@ -1,5 +1,6 @@
 "use client";
 
+import { FileDown } from "lucide-react";
 import { useMemo } from "react";
 import { useAttendanceReports } from "@/hooks/useAttendanceReports";
 import { useAttendanceAudit } from "@/hooks/useAttendanceAudit";
@@ -480,6 +481,7 @@ export default function StudentAttendanceReportPage() {
             loading={isExporting}
             onClick={exportAttendance}
           >
+            <FileDown size={16} className="mr-2" />
             {ATTENDANCE_REPORT_PAGE.export}
           </Button>
         </Div>

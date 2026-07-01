@@ -1,5 +1,6 @@
 'use client';
 
+import { FileDown } from 'lucide-react';
 import { useStaffAttendanceReports } from '@/hooks/useStaffAttendanceReports';
 import {
   Div,
@@ -8,15 +9,33 @@ import {
   PageCol,
   Spinner,
   Input,
+  Select,
   Badge,
+  Button,
   MiniStat,
   DataTable,
-  Tabs,
   FilterLabel,
   type ColumnDef,
 } from '@/components/ui';
-import { ATTENDANCE_STATUS_BADGE, STAFF_REPORT_TAB_OPTIONS } from '@/constants/attendance.constants';
+import { ATTENDANCE_STATUS_BADGE } from '@/constants/attendance.constants';
 import type { AttendanceStatus } from '@/types';
+
+const MONTHS = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+];
+
+const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
 export default function StaffAttendanceReportPage() {
   const {
@@ -24,14 +43,30 @@ export default function StaffAttendanceReportPage() {
     setTab,
     date,
     setDate,
+    month,
+    setMonth,
+    year,
+    setYear,
+    roleFilter,
+    setRoleFilter,
+    roles,
     staff,
     records,
+    monthlyRecords,
     isLoading,
+    isExporting,
+    exportStartDate,
+    setExportStartDate,
+    exportEndDate,
+    setExportEndDate,
     getRecordForStaff,
+    getFilteredStaff,
     presentCount,
     absentCount,
     lateCount,
     totalStaff,
+    exportAttendance,
+    loadMonthlyReport,
   } = useStaffAttendanceReports();
 
   const columns: ColumnDef<{ id: string; first_name: string; last_name: string | null; employee_code: string | null; role: string }>[] = [
@@ -78,32 +113,98 @@ export default function StaffAttendanceReportPage() {
     },
   ];
 
+  const tabButtons = [
+    { key: 'daily' as const, label: 'Daily Report' },
+    { key: 'monthly' as const, label: 'Monthly Summary' },
+    { key: 'history' as const, label: 'Export' },
+  ];
+
+  const filteredStaff = getFilteredStaff();
+
   return (
     <PageCol>
       <PageHeader
         title="Staff Attendance Report"
-        subtitle="View daily attendance records for all staff members"
+        subtitle="View attendance records for all staff members"
       />
 
-      <Tabs
-        options={STAFF_REPORT_TAB_OPTIONS}
-        value={tab}
-        onChange={(v) => setTab(v)}
-      />
+      {/* Export Card - Always visible */}
+      <Div variant="card" padding="p-4" gap="md">
+        <P size="sm" color="muted" className="font-semibold">Export Attendance</P>
+        <Div type="row" gap="md" align="center" wrap>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">From</P>
+            <Input
+              type="date"
+              width="sm"
+              value={exportStartDate}
+              onChange={(e) => setExportStartDate(e.target.value)}
+            />
+          </Div>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">To</P>
+            <Input
+              type="date"
+              width="sm"
+              value={exportEndDate}
+              onChange={(e) => setExportEndDate(e.target.value)}
+            />
+          </Div>
+          <Div type="col" gap="xs">
+            <P size="xs" color="muted">Role</P>
+            <Select width="sm" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+              <option value="">All Roles</option>
+              {roles.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </Select>
+          </Div>
+          <Button variant="outline" loading={isExporting} onClick={exportAttendance} className="mt-5">
+            <FileDown size={16} className="mr-2" />
+            Export Excel
+          </Button>
+        </Div>
+      </Div>
 
+      {/* Tabs */}
+      <Div type="row" gap="sm" wrap>
+        {tabButtons.map((t) => (
+          <Button
+            key={t.key}
+            variant={tab === t.key ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </Div>
+
+      {/* Daily Tab */}
       {tab === 'daily' && (
         <Div type="col" gap="md">
-          <Div variant="card" padding="p-4">
-            <Div type="grid" cols={2} gap="md">
-              <Div type="col" gap="xs">
-                <FilterLabel>Date</FilterLabel>
-                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-              </Div>
+          <Div type="row" gap="md" align="center" wrap>
+            <Div type="col" gap="xs">
+              <FilterLabel>Date</FilterLabel>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Div>
+            <Div type="col" gap="xs">
+              <FilterLabel>Role</FilterLabel>
+              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                <option value="">All Roles</option>
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </Select>
             </Div>
           </Div>
 
           <Div type="row" gap="sm">
-            <MiniStat label="Total Staff" value={totalStaff} />
+            <MiniStat label="Total Staff" value={filteredStaff.length} />
             <MiniStat label="Present" value={presentCount} color="green" />
             <MiniStat label="Absent" value={absentCount} color="red" />
             <MiniStat label="Late" value={lateCount} color="yellow" />
@@ -114,15 +215,67 @@ export default function StaffAttendanceReportPage() {
               <Spinner />
             </Div>
           ) : (
-            <DataTable columns={columns} data={staff} isLoading={isLoading} />
+            <DataTable columns={columns} data={filteredStaff} isLoading={isLoading} />
           )}
         </Div>
       )}
 
+      {/* Monthly Tab */}
+      {tab === 'monthly' && (
+        <Div type="col" gap="md">
+          <Div type="row" gap="md" align="center" wrap>
+            <Select width="sm" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </Select>
+            <Select width="sm" value={year} onChange={(e) => setYear(Number(e.target.value))}>
+              {YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </Select>
+            <Div type="col" gap="xs">
+              <FilterLabel>Role</FilterLabel>
+              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                <option value="">All Roles</option>
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </Select>
+            </Div>
+            <Button onClick={loadMonthlyReport} loading={isLoading}>
+              Load Summary
+            </Button>
+          </Div>
+
+          {isLoading ? (
+            <Div type="row" justify="center" padding="p-12">
+              <Spinner />
+            </Div>
+          ) : monthlyRecords.length === 0 ? (
+            <P color="muted">No records found for this period.</P>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredStaff.filter((s) => monthlyRecords.some((r) => r.staff_id === s.id))}
+              isLoading={isLoading}
+            />
+          )}
+        </Div>
+      )}
+
+      {/* Export Tab */}
       {tab === 'history' && (
         <Div type="col" gap="md">
           <Div variant="card" padding="p-4">
-            <P>Select a staff member from the daily report to view their attendance history.</P>
+            <P size="sm" color="muted">Use the Export section above to export staff attendance data in Excel format.</P>
+            <P size="xs" color="muted" className="mt-2">You can filter by date range and role to customize your export.</P>
           </Div>
         </Div>
       )}

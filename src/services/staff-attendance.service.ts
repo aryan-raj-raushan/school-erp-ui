@@ -42,4 +42,24 @@ export const StaffAttendanceService = {
   async mark(date: string, entries: MarkStaffAttendanceEntry[]): Promise<void> {
     await apiGateway.post(ENDPOINTS.staffAttendance.base, { date, entries });
   },
+
+  async getDateRange(startDate: string, endDate: string): Promise<StaffAttendanceRecord[]> {
+    const res = await apiGateway.get<StaffAttendanceRecord[]>(ENDPOINTS.staffAttendance.base, {
+      params: { start_date: startDate, end_date: endDate },
+    });
+    return res.data ?? [];
+  },
+
+  async exportToFile(filters: {
+    start_date?: string;
+    end_date?: string;
+    role?: string;
+    format?: 'xlsx' | 'csv';
+  }): Promise<ArrayBuffer> {
+    const res = await apiGateway.get<ArrayBuffer>(ENDPOINTS.staffAttendance.export, {
+      params: filters,
+      responseType: 'arraybuffer',
+    });
+    return res.data;
+  },
 };
