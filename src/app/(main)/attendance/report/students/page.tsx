@@ -1017,33 +1017,64 @@ export default function StudentAttendanceReportPage() {
           ) : heatmapData.length === 0 ? (
             <P color="muted">Select a section and student, then load the heatmap.</P>
           ) : (
-            <Div type="col" gap="sm">
-              <Div type="row" gap="md" align="center">
-                <Div type="row" gap="xs" align="center">
-                  <Div className="w-4 h-4 rounded-sm bg-green-500" />
-                  <P size="xs" color="muted">Present</P>
-                </Div>
-                <Div type="row" gap="xs" align="center">
-                  <Div className="w-4 h-4 rounded-sm bg-red-500" />
-                  <P size="xs" color="muted">Absent</P>
-                </Div>
-                <Div type="row" gap="xs" align="center">
-                  <Div className="w-4 h-4 rounded-sm bg-yellow-500" />
-                  <P size="xs" color="muted">Late</P>
-                </Div>
-                <Div type="row" gap="xs" align="center">
-                  <Div className="w-4 h-4 rounded-sm bg-gray-300" />
-                  <P size="xs" color="muted">Other</P>
+            <Div type="col" gap="lg">
+              <Div type="col" gap="md">
+                <P size="sm" color="muted" className="font-semibold">Legend</P>
+                <Div type="row" gap="lg" wrap>
+                  <Div type="row" gap="xs" align="center">
+                    <Div className="w-6 h-6 rounded-md bg-green-500" />
+                    <P size="sm">Present</P>
+                  </Div>
+                  <Div type="row" gap="xs" align="center">
+                    <Div className="w-6 h-6 rounded-md bg-red-500" />
+                    <P size="sm">Absent</P>
+                  </Div>
+                  <Div type="row" gap="xs" align="center">
+                    <Div className="w-6 h-6 rounded-md bg-yellow-500" />
+                    <P size="sm">Late</P>
+                  </Div>
+                  <Div type="row" gap="xs" align="center">
+                    <Div className="w-6 h-6 rounded-md bg-gray-300" />
+                    <P size="sm">No Entry</P>
+                  </Div>
                 </Div>
               </Div>
-              <Div type="row" wrap gap="xs">
-                {heatmapData.map((entry) => (
-                  <Div
-                    key={entry.date}
-                    title={`${entry.date}: ${entry.status}`}
-                    className={`w-4 h-4 rounded-sm ${entry.status === 'PRESENT' ? 'bg-green-500' : entry.status === 'ABSENT' ? 'bg-red-500' : entry.status === 'LATE' ? 'bg-yellow-500' : 'bg-gray-300'}`}
-                  />
-                ))}
+
+              <Div type="col" gap="sm">
+                <P size="sm" color="muted" className="font-semibold">Year View</P>
+                <Div className="overflow-x-auto pb-4">
+                  <Div className="min-w-full">
+                    {Array.from({ length: 53 }).map((_, week) => (
+                      <Div key={week} type="col" gap="xs" className="mb-4">
+                        <P size="xs" color="muted" className="text-center">
+                          {week === 0 ? 'Week' : `W${week}`}
+                        </P>
+                        <Div type="row" gap="xs">
+                          {Array.from({ length: 7 }).map((_, day) => {
+                            const dayIndex = week * 7 + day;
+                            const entry = heatmapData[dayIndex];
+                            const statusColor = entry
+                              ? entry.status === 'PRESENT'
+                                ? 'bg-green-500 hover:bg-green-600'
+                                : entry.status === 'ABSENT'
+                                  ? 'bg-red-500 hover:bg-red-600'
+                                  : entry.status === 'LATE'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600'
+                                    : 'bg-gray-300 hover:bg-gray-400'
+                              : 'bg-gray-200';
+                            return (
+                              <Div
+                                key={`${week}-${day}`}
+                                title={entry ? `${entry.date}: ${entry.status}` : 'No data'}
+                                className={`w-8 h-8 rounded-md ${statusColor} cursor-pointer transition-colors`}
+                              />
+                            );
+                          })}
+                        </Div>
+                      </Div>
+                    ))}
+                  </Div>
+                </Div>
               </Div>
             </Div>
           )}
@@ -1102,14 +1133,55 @@ export default function StudentAttendanceReportPage() {
           ) : lateTrendData.length === 0 ? (
             <P color="muted">Select a section and load the late trend data.</P>
           ) : (
-            <DataTable
-              columns={[
-                { accessorKey: 'date', header: 'Date' },
-                { accessorKey: 'late_count', header: 'Late Count' },
-              ]}
-              data={lateTrendData}
-              emptyText="No late arrivals in this period"
-            />
+            <Div type="col" gap="lg">
+              <Div type="col" gap="sm">
+                <P size="sm" color="muted" className="font-semibold">
+                  Late Arrivals Trend - {MONTHS.find(m => m.value === lateTrendMonth)?.label} {lateTrendYear}
+                </P>
+                <P size="xs" color="muted">
+                  Total late arrivals this month: {lateTrendData.reduce((sum, d) => sum + (d.late_count || 0), 0)}
+                </P>
+              </Div>
+
+              <Div className="overflow-x-auto">
+                <Div className="min-w-full flex gap-2 items-flex-end pb-4 px-2" style={{ minHeight: '200px' }}>
+                  {lateTrendData.map((entry) => {
+                    const maxCount = Math.max(...lateTrendData.map(d => d.late_count || 0), 1);
+                    const heightPercent = ((entry.late_count || 0) / maxCount) * 100;
+                    const dayName = new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' });
+                    const dayNum = new Date(entry.date).getDate();
+
+                    return (
+                      <Div key={entry.date} type="col" align="center" gap="xs" className="flex-1">
+                        <P size="xs" color="muted">{entry.late_count || 0}</P>
+                        <Div
+                          className="w-full bg-blue-500 rounded-t-md hover:bg-blue-600 transition-colors cursor-pointer"
+                          style={{
+                            height: `${heightPercent}%`,
+                            minHeight: entry.late_count ? '20px' : '2px',
+                          }}
+                          title={`${entry.date}: ${entry.late_count || 0} late arrivals`}
+                        />
+                        <P size="xs" color="muted">{dayName}</P>
+                        <P size="xs" className="font-semibold">{dayNum}</P>
+                      </Div>
+                    );
+                  })}
+                </Div>
+              </Div>
+
+              <Div type="col" gap="sm" className="border-t pt-4">
+                <P size="sm" color="muted" className="font-semibold">Details</P>
+                <DataTable
+                  columns={[
+                    { accessorKey: 'date', header: 'Date', cell: ({ row }) => new Date(row.original.date).toLocaleDateString() },
+                    { accessorKey: 'late_count', header: 'Late Count', cell: ({ row }) => row.original.late_count || '0' },
+                  ]}
+                  data={lateTrendData}
+                  emptyText="No late arrivals in this period"
+                />
+              </Div>
+            </Div>
           )}
         </Div>
       )}
