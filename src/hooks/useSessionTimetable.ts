@@ -11,7 +11,6 @@ export interface SessionRow {
   timetable_id: string;
   timetable_name: string;
   class_name: string | null;
-  class_detail_name: string | null;
 }
 
 export function useSessionTimetable() {
@@ -69,7 +68,6 @@ export function useSessionTimetable() {
         timetable_id: e.timetable_id,
         timetable_name: e.timetable_name,
         class_name: e.class_name ?? null,
-        class_detail_name: e.class_detail_name ?? null,
       });
     }
   }

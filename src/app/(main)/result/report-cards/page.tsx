@@ -368,7 +368,7 @@ function ReportCardsContent() {
       </Div>
 
       {/* Table */}
-      <Table>
+      <Table maxHeight="calc(100vh - 280px)">
         <TableHead>
           <TableHeadRow>
             <TableHeaderCell>{REPORT_CARD_PAGE.table.sno}</TableHeaderCell>

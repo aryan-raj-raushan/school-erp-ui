@@ -10,6 +10,7 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
+  type Column,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -56,6 +57,35 @@ export interface DataTableProps<TData> {
   sorting?: SortingState;
   /** Optional: setter for server-side sorting (must pair with sorting) */
   onSortingChange?: React.Dispatch<React.SetStateAction<SortingState>>;
+  /**
+   * Column IDs to pin to the left (sticky). Each column should declare a
+   * `size` in its definition so offsets are computed correctly.
+   */
+  pinnedColumns?: string[];
+  /**
+   * Fixed height for the table scroll container.
+   * Enables internal vertical scroll — the page itself won't scroll.
+   * Example: "calc(100vh - 400px)"
+   */
+  maxHeight?: string;
+  /**
+   * Dynamically size the table to reach the bottom of the viewport,
+   * measured live so it adapts to any screen size instead of a guessed
+   * pixel offset. Ignored if maxHeight is also set.
+   */
+  fillViewport?: boolean;
+}
+
+function getPinnedStyle(column: Column<any>): React.CSSProperties | undefined {
+  if (!column.getIsPinned()) return undefined;
+  return { left: column.getStart('left') };
+}
+
+function getPinnedClass(column: Column<any>, isHeader: boolean): string {
+  if (!column.getIsPinned()) return '';
+  return isHeader
+    ? 'sticky z-30 bg-muted shadow-[1px_0_0_0_hsl(var(--border))]'
+    : 'sticky z-10 bg-background shadow-[1px_0_0_0_hsl(var(--border))]';
 }
 
 export function DataTable<TData>({
@@ -68,8 +98,12 @@ export function DataTable<TData>({
   onRowClick,
   sorting,
   onSortingChange,
+  pinnedColumns,
+  maxHeight,
+  fillViewport,
 }: DataTableProps<TData>) {
   const manualSort = sorting !== undefined && onSortingChange !== undefined;
+  const showsPaginationFooter = !!pagination && pagination.totalPages > 1;
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const stickyBarRef = React.useRef<HTMLDivElement>(null);
@@ -105,24 +139,35 @@ export function DataTable<TData>({
   const table = useReactTable<TData>({
     data,
     columns,
+    enableColumnPinning: true,
     getCoreRowModel: getCoreRowModel(),
-    ...(manualSort
-      ? {
-          state: { sorting },
-          onSortingChange,
-          manualSorting: true,
-          getSortedRowModel: getSortedRowModel(),
-        }
-      : {}),
+    state: {
+      columnPinning: { left: pinnedColumns ?? [] },
+      ...(manualSort && { sorting }),
+    },
+    ...(manualSort && {
+      onSortingChange,
+      manualSorting: true,
+      getSortedRowModel: getSortedRowModel(),
+    }),
   });
 
   return (
     <>
-      <Table scrollRef={scrollRef}>
+      <Table
+        scrollRef={scrollRef}
+        maxHeight={maxHeight}
+        fillViewport={fillViewport}
+        bottomOffset={showsPaginationFooter ? 72 : 8}
+      >
         <TableHead>
           <TableHeadRow>
             {table.getHeaderGroups()[0]?.headers.map((header) => (
-              <TableHeaderCell key={header.id}>
+              <TableHeaderCell
+                key={header.id}
+                style={getPinnedStyle(header.column)}
+                className={getPinnedClass(header.column, true)}
+              >
                 {header.isPlaceholder
                   ? null
                   : flexRender(header.column.columnDef.header, header.getContext())}
@@ -149,6 +194,8 @@ export function DataTable<TData>({
                   <TableCell
                     key={cell.id}
                     primary={cell.column.columnDef.meta?.primary}
+                    style={getPinnedStyle(cell.column)}
+                    className={getPinnedClass(cell.column, false)}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
@@ -158,13 +205,15 @@ export function DataTable<TData>({
           )}
         </TableBody>
       </Table>
-      {/* Sticky scrollbar — sticks to bottom of viewport so it's always accessible */}
-      <div
-        ref={stickyBarRef}
-        className="sticky bottom-0 overflow-x-auto overflow-y-hidden"
-      >
-        <div ref={stickyInnerRef} className="h-px" />
-      </div>
+      {/* Sticky scrollbar — only useful when the table has no fixed/auto height */}
+      {!maxHeight && !fillViewport && (
+        <div
+          ref={stickyBarRef}
+          className="sticky bottom-0 overflow-x-auto overflow-y-hidden"
+        >
+          <div ref={stickyInnerRef} className="h-px" />
+        </div>
+      )}
       {pagination && pagination.totalPages > 1 && (
         <TablePagination
           total={pagination.total}

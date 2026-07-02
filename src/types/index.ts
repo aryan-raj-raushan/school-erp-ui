@@ -108,7 +108,6 @@ export interface Class {
   name: string;
   display_name: string;
   class_id: string;
-  department?: string | null;
   class_type?: string | null;
   class_sequence?: number | null;
   no_of_sessions?: number | null;
@@ -225,7 +224,6 @@ export interface Staff {
   city?: string | null;
   joining_date?: string | null;
   employee_code?: string | null;
-  department_id?: string | null;
   custom_role_id?: string | null;
   father_name?: string | null;
   husband_name?: string | null;
@@ -586,7 +584,6 @@ export interface Homework {
   school_id: string;
   academic_year_id: string;
   class_id?: string | null;
-  class_detail_id?: string | null;
   subject_id?: string | null;
   title: string;
   description?: string | null;
@@ -600,7 +597,6 @@ export interface Homework {
   created_at: string;
   updated_at?: string | null;
   class_name?: string | null;
-  class_detail_name?: string | null;
   subject_name?: string | null;
   session_name?: string | null;
   created_by_name?: string | null;
@@ -625,7 +621,6 @@ export interface StudyMaterial {
   school_id: string;
   academic_year_id: string;
   class_id?: string | null;
-  class_detail_id?: string | null;
   subject_id?: string | null;
   title: string;
   description?: string | null;
@@ -970,20 +965,6 @@ export interface AttendanceConflict {
   resolved_at: string | null;
   resolution: 'RFID_WON' | 'MANUAL_WON' | 'ADMIN_SET' | null;
   notes: string | null;
-}
-
-// ─── Calendar Event ───────────────────────────────────────────────────────────
-export interface CalendarEvent {
-  id: string;
-  name: string;
-  title?: string;
-  type: string;
-  date?: string;
-  start_date?: string;
-  from_date: string;
-  to_date: string;
-  description?: string | null;
-  color?: string | null;
 }
 
 // ─── Heatmap / Trend ─────────────────────────────────────────────────────────

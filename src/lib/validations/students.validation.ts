@@ -1,5 +1,14 @@
 import { z } from 'zod';
-
+import {
+  requiredNameSchema,
+  optionalNameSchema,
+  indianPhoneSchema,
+  optionalIndianPhoneSchema,
+  dialCodeSchema,
+  optionalDialCodeSchema,
+  optionalEmailSchema,
+  optionalAadhaarSchema,
+} from './common.validation';
 
 export const studentAcademicInfoSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
@@ -29,39 +38,37 @@ export const studentAddressSchema = z.object({
   country: z.string().max(100).optional(),
 });
 
-export const studentHostelInfoSchema = z.object({
-  hostel_required: z.boolean().optional(),
-  hostel_name: z.string().max(150).optional(),
-  room_number: z.string().max(20).optional(),
-});
+export const studentHostelInfoSchema = z
+  .object({
+    hostel_required: z.boolean().optional(),
+    hostel_name: z.string().max(150).optional(),
+    room_number: z.string().max(20).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.hostel_required && !data.hostel_name?.trim()) {
+      ctx.addIssue({ code: 'custom', message: 'Hostel name is required', path: ['hostel_name'] });
+    }
+  });
 
 export const studentParentSchema = z.object({
-  relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER']),
-  first_name: z.string().max(100).optional(),
-  last_name: z.string().max(100).optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  dial_code: z.string().optional(),
-  phone_number: z.string().max(15).optional(),
-  alternate_phone: z.string().max(15).optional(),
+  relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER'], {
+    message: 'Relation is required',
+  }),
+  first_name: requiredNameSchema(100),
+  last_name: optionalNameSchema(100),
+  email: optionalEmailSchema,
+  dial_code: dialCodeSchema,
+  phone_number: indianPhoneSchema,
+  alternate_phone: optionalIndianPhoneSchema,
   occupation: z.string().max(100).optional(),
   qualification: z.enum([
     'BELOW_10TH', 'CLASS_10TH', 'CLASS_12TH', 'UNDERGRADUATE',
     'POSTGRADUATE', 'MASTERS', 'DOCTORATE', 'OTHER',
   ]).optional(),
   annual_income: z.string().max(50).optional(),
-  aadhaar_number: z.string().max(12).optional(),
+  aadhaar_number: optionalAadhaarSchema,
   is_primary: z.boolean().optional(),
   can_pickup: z.boolean().optional(),
-}).superRefine((data, ctx) => {
-  const hasData = data.first_name?.trim() || data.phone_number?.trim();
-  if (hasData) {
-    if (!data.first_name?.trim()) {
-      ctx.addIssue({ code: 'custom', message: 'First name is required', path: ['first_name'] });
-    }
-    if (!data.phone_number?.trim() || data.phone_number.length < 7) {
-      ctx.addIssue({ code: 'custom', message: 'Valid phone number required (min 7 digits)', path: ['phone_number'] });
-    }
-  }
 });
 
 export const studentDocumentSchema = z.object({
@@ -80,10 +87,10 @@ export const studentDocumentSchema = z.object({
 
 export const studentFormSchema = z.object({
   // Basic Info
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().max(100).optional(),
-  date_of_birth: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  first_name: requiredNameSchema(100),
+  last_name: optionalNameSchema(100),
+  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Gender is required' }),
   blood_group: z.enum([
     'A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE',
     'O_POSITIVE', 'O_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE',
@@ -92,24 +99,32 @@ export const studentFormSchema = z.object({
   category: z.enum(['GENERAL', 'OBC', 'SC', 'ST', 'OTHER']).optional(),
   caste: z.string().max(50).optional(),
   nationality: z.string().max(50).optional(),
-  aadhaar_number: z.string().max(12).optional(),
+  aadhaar_number: optionalAadhaarSchema,
   id_card_number: z.string().max(50).optional(),
   height_cm: z.string().optional(),
   weight_kg: z.string().optional(),
   profile_image: z.string().url('Invalid URL').optional().or(z.literal('')),
-  dial_code: z.string().optional(),
-  phone_number: z.string().max(15).optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  dial_code: optionalDialCodeSchema,
+  phone_number: optionalIndianPhoneSchema,
+  email: optionalEmailSchema,
   status: z.enum(['ACTIVE', 'INACTIVE', 'TRANSFERRED', 'GRADUATED', 'DROPPED']).optional(),
   is_enabled: z.boolean().optional(),
 
   // Sub sections
-  academic_info: studentAcademicInfoSchema.optional(),
+  academic_info: studentAcademicInfoSchema,
   previous_academics: studentPreviousAcademicsSchema.optional(),
   address: studentAddressSchema.optional(),
   hostel_info: studentHostelInfoSchema.optional(),
-  parents: z.array(studentParentSchema).optional(),
+  parents: z.array(studentParentSchema),
   documents: z.array(studentDocumentSchema).optional(),
+}).superRefine((data, ctx) => {
+  if (!data.parents || data.parents.length === 0) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'At least one parent/guardian is required',
+      path: ['parents'],
+    });
+  }
 });
 
 export type StudentFormValues = z.infer<typeof studentFormSchema>;

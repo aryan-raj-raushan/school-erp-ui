@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { SyllabusService } from '@/services/syllabus.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
 import type { PendingAttachment } from './useCreateSyllabus';
@@ -32,7 +31,6 @@ export interface SavedAttachment {
 
 const schema = z.object({
   class_id: z.string().min(1, 'Class is required'),
-  class_detail_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
   content: z.string().optional(),
   is_enabled: z.boolean(),
@@ -43,7 +41,6 @@ export type EditSyllabusFormValues = z.infer<typeof schema>;
 export function useEditSyllabus(id: string) {
   const router = useRouter();
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [savedAttachments, setSavedAttachments] = useState<SavedAttachment[]>([]);
   const [newAttachments, setNewAttachments] = useState<PendingAttachment[]>([]);
@@ -54,16 +51,6 @@ export function useEditSyllabus(id: string) {
     defaultValues: { is_enabled: true, content: '' },
   });
 
-  const watchedClassId = form.watch('class_id');
-
-  const fetchClassDetails = useCallback(async (classId: string) => {
-    if (!classId) { setClassDetails([]); return; }
-    try {
-      const res = await ClassDetailsService.list({ class_id: classId, limit: 100 });
-      setClassDetails(res.items);
-    } catch { /* ignore */ }
-  }, []);
-
   const loadData = useCallback(async () => {
     setIsLoadingData(true);
     try {
@@ -72,11 +59,9 @@ export function useEditSyllabus(id: string) {
         ClassesService.list({ limit: 100 }),
       ]);
       setClasses(clsRes.items);
-      if (syllabus.class_id) await fetchClassDetails(syllabus.class_id);
       setSavedAttachments(syllabus.attachments ?? []);
       form.reset({
         class_id: syllabus.class_id,
-        class_detail_id: syllabus.class_detail_id ?? '',
         title: syllabus.title,
         content: syllabus.content ?? '',
         is_enabled: syllabus.is_enabled,
@@ -85,13 +70,9 @@ export function useEditSyllabus(id: string) {
       toast.error('Failed to load syllabus');
       router.push(ROUTES.syllabus);
     } finally { setIsLoadingData(false); }
-  }, [id, form, router, fetchClassDetails]);
+  }, [id, form, router]);
 
   useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => {
-    if (watchedClassId !== undefined) fetchClassDetails(watchedClassId ?? '');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedClassId]);
 
   function toggleIsEnabled() { form.setValue('is_enabled', !form.getValues('is_enabled')); }
 
@@ -144,7 +125,6 @@ export function useEditSyllabus(id: string) {
       ];
       await SyllabusService.update(id, {
         class_id: values.class_id,
-        class_detail_id: values.class_detail_id || undefined,
         title: values.title,
         content: values.content || undefined,
         is_enabled: values.is_enabled,
@@ -160,7 +140,7 @@ export function useEditSyllabus(id: string) {
   function handleBack() { router.push(ROUTES.syllabus); }
 
   return {
-    form, classes, classDetails, isLoadingData,
+    form, classes, isLoadingData,
     savedAttachments, newAttachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateSyllabus),

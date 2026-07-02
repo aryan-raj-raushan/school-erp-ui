@@ -21,7 +21,7 @@ function EditSyllabusPageInner() {
   const id = _searchParams.get('id') ?? '';
 
   const {
-    form, classes, classDetails, isLoadingData,
+    form, classes, isLoadingData,
     savedAttachments, newAttachments, fileInputRef,
     isSubmitting,
     handleSubmit, handleFileChange, removeSavedAttachment, removeNewAttachment,
@@ -54,13 +54,6 @@ function EditSyllabusPageInner() {
               <Select {...form.register('class_id')}>
                 <option value="">{SYLLABUS_PAGE.placeholders.selectClass}</option>
                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
-            </FormField>
-
-            <FormField label={SYLLABUS_PAGE.form.classDetail} error={form.formState.errors.class_detail_id?.message}>
-              <Select {...form.register('class_detail_id')} disabled={!form.watch('class_id')}>
-                <option value="">{SYLLABUS_PAGE.placeholders.selectClassDetail}</option>
-                {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
               </Select>
             </FormField>
 

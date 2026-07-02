@@ -1,7 +1,6 @@
 'use client';
 
 import { useCreateClass } from '@/hooks/useCreateClass';
-import { useDepartmentCrudSelect } from '@/hooks/useDepartmentCrudSelect';
 import { useClassTypeCrudSelect } from '@/hooks/useClassTypeCrudSelect';
 import { CLASSES_PAGE, CLASS_SEQUENCE_OPTIONS } from '@/constants';
 import {
@@ -18,7 +17,6 @@ export default function NewClassPage() {
     allSectionNames, watchedSections,
     handleSubmit, handleBack, toggleSection, toggleIsActive,
   } = useCreateClass();
-  const { departmentItems, isDepartmentsLoading, addDepartment, updateDepartment, deleteDepartment } = useDepartmentCrudSelect();
   const { classTypeItems, isClassTypesLoading, addClassType, updateClassType, deleteClassType } = useClassTypeCrudSelect();
 
   if (isLoadingData) {
@@ -55,19 +53,6 @@ export default function NewClassPage() {
 
             <FormField label={CLASSES_PAGE.form.name} error={form.formState.errors.name?.message}>
               <Input placeholder={CLASSES_PAGE.placeholders.name} {...form.register('name')} />
-            </FormField>
-
-            <FormField label={CLASSES_PAGE.form.department} error={form.formState.errors.department?.message}>
-              <CrudDropdown
-                items={departmentItems}
-                isLoading={isDepartmentsLoading}
-                value={form.watch('department') ?? ''}
-                onChange={(val) => form.setValue('department', val, { shouldValidate: true })}
-                onAdd={addDepartment}
-                onUpdate={updateDepartment}
-                onDelete={deleteDepartment}
-                placeholder={CLASSES_PAGE.placeholders.department}
-              />
             </FormField>
           </Div>
 

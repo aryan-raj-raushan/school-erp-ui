@@ -7,6 +7,7 @@ export interface PeriodTimeDto {
   period_number: number;
   start_time?: string;
   end_time?: string;
+  is_break?: boolean;
 }
 
 export interface TimetableEntryDto {
@@ -19,18 +20,17 @@ export interface TimetableEntryDto {
 export interface CreateTimetablePayload {
   academic_year_id?: string;
   class_id?: string;
-  class_detail_id?: string;
   name: string;
   max_periods: number;
   period_times?: PeriodTimeDto[];
   entries?: TimetableEntryDto[];
   class_teacher_id?: string;
+  is_complete?: boolean;
 }
 
 export interface TimetableFilters {
   academic_year_id?: string;
   class_id?: string;
-  class_detail_id?: string;
   limit?: number;
   offset?: number;
 }
@@ -40,7 +40,6 @@ export interface TimetableSummary {
   school_id: string;
   academic_year_id?: string | null;
   class_id?: string | null;
-  class_detail_id?: string | null;
   name: string;
   max_periods: number;
   is_complete: boolean;
@@ -48,7 +47,6 @@ export interface TimetableSummary {
   created_at: string;
   updated_at: string;
   class_name?: string | null;
-  class_detail_name?: string | null;
 }
 
 export interface TimetableFull extends TimetableSummary {
@@ -67,7 +65,6 @@ export interface EmployeeTimetableEntry {
   timetable_id: string;
   timetable_name: string;
   class_name?: string | null;
-  class_detail_name?: string | null;
   day_of_week: DayOfWeek;
   period_number: number;
   subject_name?: string | null;
@@ -77,12 +74,57 @@ export interface SessionViewEntry {
   timetable_id: string;
   timetable_name: string;
   class_name?: string | null;
-  class_detail_name?: string | null;
   period_number: number;
   subject_name?: string | null;
   teacher_name?: string | null;
   start_time?: string | null;
   end_time?: string | null;
+}
+
+export interface AutoGenerateTimetablePayload {
+  name?: string;
+  academic_year_id: string;
+  class_id: string;
+  school_timing_id: string;
+  lunch_after_period?: number;
+  lunch_duration_minutes?: number;
+}
+
+export interface AutoGenerateConflict {
+  day_of_week: DayOfWeek;
+  period_number: number;
+  subject_name: string;
+  teacher_name: string;
+}
+
+export interface AutoGenerateResult {
+  timetable: TimetableFull;
+  conflicts: AutoGenerateConflict[];
+}
+
+type TimetableApiEntry = TimetableEntryDto & {
+  id: string;
+  subject_name?: string | null;
+  subject_code?: string | null;
+  teacher_name?: string | null;
+};
+
+interface TimetableApiResponse {
+  timetable: TimetableSummary;
+  period_times: PeriodTimeDto[];
+  entries: TimetableApiEntry[];
+  class_teacher?: { teacher_id: string; teacher_name: string | null } | null;
+}
+
+function mapTimetableResponse(res: TimetableApiResponse): TimetableFull {
+  const { timetable, period_times, entries, class_teacher } = res;
+  return {
+    ...timetable,
+    period_times: period_times ?? [],
+    entries: entries ?? [],
+    class_teacher_id: class_teacher?.teacher_id ?? null,
+    class_teacher_name: class_teacher?.teacher_name ?? null,
+  };
 }
 
 export const TimetableService = {
@@ -92,27 +134,18 @@ export const TimetableService = {
   },
 
   async getById(id: string): Promise<TimetableFull> {
-    const res = await apiGateway.get<{ timetable: TimetableSummary; period_times: PeriodTimeDto[]; entries: (TimetableEntryDto & { id: string; subject_name?: string | null; subject_code?: string | null; teacher_name?: string | null })[]; class_teacher?: { teacher_id: string; teacher_name: string | null } | null }>(ENDPOINTS.timetable.byId(id));
-    const { timetable, period_times, entries, class_teacher } = res.data;
-    return {
-      ...timetable,
-      period_times: period_times ?? [],
-      entries: entries ?? [],
-      class_teacher_id: class_teacher?.teacher_id ?? null,
-      class_teacher_name: class_teacher?.teacher_name ?? null,
-    };
+    const res = await apiGateway.get<TimetableApiResponse>(ENDPOINTS.timetable.byId(id));
+    return mapTimetableResponse(res.data);
   },
 
   async create(payload: CreateTimetablePayload): Promise<TimetableFull> {
-    const res = await apiGateway.post<{ timetable: TimetableSummary; period_times: PeriodTimeDto[]; entries: (TimetableEntryDto & { id: string; subject_name?: string | null; subject_code?: string | null; teacher_name?: string | null })[]; class_teacher?: { teacher_id: string; teacher_name: string | null } | null }>(ENDPOINTS.timetable.list, payload);
-    const { timetable, period_times, entries, class_teacher } = res.data;
-    return { ...timetable, period_times: period_times ?? [], entries: entries ?? [], class_teacher_id: class_teacher?.teacher_id ?? null, class_teacher_name: class_teacher?.teacher_name ?? null };
+    const res = await apiGateway.post<TimetableApiResponse>(ENDPOINTS.timetable.list, payload);
+    return mapTimetableResponse(res.data);
   },
 
   async update(id: string, payload: Partial<CreateTimetablePayload>): Promise<TimetableFull> {
-    const res = await apiGateway.put<{ timetable: TimetableSummary; period_times: PeriodTimeDto[]; entries: (TimetableEntryDto & { id: string; subject_name?: string | null; subject_code?: string | null; teacher_name?: string | null })[]; class_teacher?: { teacher_id: string; teacher_name: string | null } | null }>(ENDPOINTS.timetable.byId(id), payload);
-    const { timetable, period_times, entries, class_teacher } = res.data;
-    return { ...timetable, period_times: period_times ?? [], entries: entries ?? [], class_teacher_id: class_teacher?.teacher_id ?? null, class_teacher_name: class_teacher?.teacher_name ?? null };
+    const res = await apiGateway.put<TimetableApiResponse>(ENDPOINTS.timetable.byId(id), payload);
+    return mapTimetableResponse(res.data);
   },
 
   async remove(id: string): Promise<void> {
@@ -127,5 +160,13 @@ export const TimetableService = {
   async getSessionView(day: DayOfWeek, filters: { academic_year_id?: string; timetable_name?: string } = {}): Promise<SessionViewEntry[]> {
     const res = await apiGateway.get<SessionViewEntry[]>(ENDPOINTS.timetable.sessionView, { params: { day, ...filters } });
     return res.data;
+  },
+
+  async autoGenerate(payload: AutoGenerateTimetablePayload): Promise<AutoGenerateResult> {
+    const res = await apiGateway.post<{ timetable: TimetableApiResponse; conflicts: AutoGenerateConflict[] }>(
+      ENDPOINTS.timetable.autoGenerate,
+      payload,
+    );
+    return { timetable: mapTimetableResponse(res.data.timetable), conflicts: res.data.conflicts };
   },
 };

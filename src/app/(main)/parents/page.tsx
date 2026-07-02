@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useParents } from "@/hooks/useParents";
 import {
   Div,
@@ -22,10 +23,11 @@ import {
   ModalBody,
   ModalFooter,
   FormField,
+  PhoneField,
   Badge,
   Spinner,
 } from "@/components/ui";
-import { PARENT_RELATION_OPTIONS } from "@/constants/students-v2.constants";
+import { PARENT_RELATION_OPTIONS } from "@/constants/students.constants";
 
 const RELATION_LABEL: Record<string, string> = {
   FATHER: "Father", MOTHER: "Mother", GUARDIAN: "Guardian",
@@ -45,6 +47,15 @@ export default function ParentsPage() {
     handleSubmit,
     isSubmitting,
     deleteParent,
+    years,
+    classes,
+    sections,
+    selectedYearId,
+    selectedClassId,
+    selectedSectionId,
+    handleYearChange,
+    handleClassChange,
+    handleSectionChange,
     students,
     studentsLoading,
     updateFilters,
@@ -56,6 +67,7 @@ export default function ParentsPage() {
   return (
     <PageCol>
       <PageHeader
+        sticky
         title="Parents & Guardians"
         subtitle={`${pagination.total} guardian records`}
         actions={
@@ -70,9 +82,37 @@ export default function ParentsPage() {
           value={filters.search ?? ""}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
+        <Select
+          width="sm"
+          value={filters.relation ?? ""}
+          onChange={(e) => updateFilters({ relation: e.target.value || undefined })}
+        >
+          <option value="">All Relations</option>
+          {PARENT_RELATION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </Select>
+        <Select
+          width="sm"
+          value={filters.is_primary ?? ""}
+          onChange={(e) => updateFilters({ is_primary: e.target.value || undefined })}
+        >
+          <option value="">All Guardians</option>
+          <option value="true">Primary only</option>
+          <option value="false">Non-primary</option>
+        </Select>
+        <Select
+          width="sm"
+          value={filters.can_pickup ?? ""}
+          onChange={(e) => updateFilters({ can_pickup: e.target.value || undefined })}
+        >
+          <option value="">Pickup: All</option>
+          <option value="true">Can pickup</option>
+          <option value="false">Cannot pickup</option>
+        </Select>
       </FilterBar>
 
-      <Table>
+      <Table fillViewport>
         <TableHead>
           <TableHeadRow>
             <TableHeaderCell>Guardian Name</TableHeaderCell>
@@ -111,11 +151,11 @@ export default function ParentsPage() {
                 </TableCell>
                 <TableCell>
                   <Button
-                    size="sm"
-                    variant="ghost"
+                    size="icon-sm"
+                    variant="destructive"
                     onClick={() => deleteParent(g.id)}
                   >
-                    Remove
+                    <Trash2 size={14} />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -130,43 +170,95 @@ export default function ParentsPage() {
           <form onSubmit={handleSubmit}>
             <ModalBody>
               <Div type="col" gap="md">
-                {/* Student selection first */}
-                <FormField
-                  label="Student *"
-                  error={errors.student_id?.message}
-                >
-                  <Select {...register("student_id")} defaultValue="">
-                    <option value="">{studentsLoading ? "Loading students…" : "Select student"}</option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.first_name} {s.last_name ?? ""} — {s.admission_number}
+                {/* Narrow down to a student via Year → Class → Section, then pick the student */}
+                <Div type="grid" cols={2} gap="md">
+                  <FormField label="Academic Year" required>
+                    <Select
+                      value={selectedYearId}
+                      onChange={(e) => handleYearChange(e.target.value)}
+                    >
+                      <option value="">Select academic year</option>
+                      {years.map((y) => (
+                        <option key={y.id} value={y.id}>
+                          {y.name}
+                          {y.is_current ? " (Current)" : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField label="Class" required>
+                    <Select
+                      value={selectedClassId}
+                      onChange={(e) => handleClassChange(e.target.value)}
+                      disabled={!selectedYearId}
+                    >
+                      <option value="">Select class</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField label="Section" hint="Optional — narrows the student list">
+                    <Select
+                      value={selectedSectionId}
+                      onChange={(e) => handleSectionChange(e.target.value)}
+                      disabled={!selectedClassId}
+                    >
+                      <option value="">All sections</option>
+                      {sections.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label="Student"
+                    required
+                    error={errors.student_id?.message}
+                  >
+                    <Select
+                      {...register("student_id")}
+                      disabled={!selectedClassId}
+                      defaultValue=""
+                    >
+                      <option value="">
+                        {studentsLoading
+                          ? "Loading students…"
+                          : selectedClassId
+                            ? "Select student"
+                            : "Select a class first"}
                       </option>
-                    ))}
-                  </Select>
-                </FormField>
+                      {students.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.first_name} {s.last_name ?? ""} — {s.admission_number}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                </Div>
 
                 {watchedStudentId && (
                   <>
                     <Div type="grid" cols={2} gap="md">
-                      <FormField label="Relation *" error={errors.relation?.message}>
+                      <FormField label="Relation" required error={errors.relation?.message}>
                         <Select {...register("relation")} defaultValue="FATHER">
                           {PARENT_RELATION_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
                         </Select>
                       </FormField>
-                      <FormField label="First Name *" error={errors.first_name?.message}>
+                      <FormField label="First Name" required error={errors.first_name?.message}>
                         <Input placeholder="First name" {...register("first_name")} />
                       </FormField>
                       <FormField label="Last Name" error={errors.last_name?.message}>
                         <Input placeholder="Last name" {...register("last_name")} />
                       </FormField>
-                      <FormField label="Phone *" error={errors.phone_number?.message}>
-                        <Div type="row" gap="xs">
-                          <Input width="xs" placeholder="+91" {...register("dial_code")} />
-                          <Input placeholder="Phone number" {...register("phone_number")} />
-                        </Div>
-                      </FormField>
+                      <PhoneField
+                        label="Phone"
+                        required
+                        dialCodeProps={register("dial_code")}
+                        phoneProps={register("phone_number")}
+                        phoneError={errors.phone_number?.message}
+                      />
                       <FormField label="Email" error={errors.email?.message}>
                         <Input type="email" placeholder="Email" {...register("email")} />
                       </FormField>

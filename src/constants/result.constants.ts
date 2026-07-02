@@ -129,8 +129,6 @@ export const REPORT_CARD_PAGE = {
 export const RESULT_ROUTES = {
   marks: {
     list: '/result/marks',
-    detail: (id: string) => `/result/marks/view?id=${id}`,
-    create: '/result/marks/create-new',
   },
   reportCards: {
     list: '/result/report-cards',

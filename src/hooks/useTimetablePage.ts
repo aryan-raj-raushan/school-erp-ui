@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { TimetableService, type TimetableSummary } from '@/services/timetable.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
@@ -16,12 +15,10 @@ export function useTimetablePage() {
 
   const [timetables, setTimetables] = useState<TimetableSummary[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const [filterAcademicYearId, setFilterAcademicYearId] = useState('');
   const [filterClassId, setFilterClassId] = useState('');
-  const [filterClassDetailId, setFilterClassDetailId] = useState('');
 
   useEffect(() => {
     if (currentYear && !filterAcademicYearId) setFilterAcademicYearId(currentYear.id);
@@ -34,21 +31,12 @@ export function useTimetablePage() {
     } catch { /* ignore */ }
   }, []);
 
-  const loadClassDetails = useCallback(async (classId: string) => {
-    if (!classId) { setClassDetails([]); return; }
-    try {
-      const res = await ClassDetailsService.list({ class_id: classId, limit: 100 });
-      setClassDetails(res.items);
-    } catch { /* ignore */ }
-  }, []);
-
   const fetchTimetables = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await TimetableService.list({
         academic_year_id: filterAcademicYearId || undefined,
         class_id: filterClassId || undefined,
-        class_detail_id: filterClassDetailId || undefined,
         limit: 100,
       });
       setTimetables(res.items);
@@ -57,10 +45,9 @@ export function useTimetablePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filterAcademicYearId, filterClassId, filterClassDetailId]);
+  }, [filterAcademicYearId, filterClassId]);
 
   useEffect(() => { loadClasses(); }, [loadClasses]);
-  useEffect(() => { loadClassDetails(filterClassId); setFilterClassDetailId(''); }, [filterClassId, loadClassDetails]);
   useEffect(() => { fetchTimetables(); }, [fetchTimetables]);
 
   async function removeTimetable(id: string) {
@@ -74,6 +61,16 @@ export function useTimetablePage() {
     }
   }
 
+  async function togglePublish(tt: TimetableSummary) {
+    try {
+      await TimetableService.update(tt.id, { is_complete: !tt.is_complete });
+      toast.success(tt.is_complete ? 'Timetable moved back to draft' : 'Timetable published');
+      await fetchTimetables();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update timetable status');
+    }
+  }
+
   function goToNew() { router.push(ROUTES.timetableNew); }
   function goToView(id: string) { router.push(ROUTES.timetableView(id)); }
   function goToEdit(id: string) { router.push(ROUTES.timetableEdit(id)); }
@@ -81,10 +78,9 @@ export function useTimetablePage() {
   function goToSession() { router.push(ROUTES.timetableSession); }
 
   return {
-    years, timetables, classes, classDetails, isLoading,
+    years, timetables, classes, isLoading,
     filterAcademicYearId, setFilterAcademicYearId,
     filterClassId, setFilterClassId,
-    filterClassDetailId, setFilterClassDetailId,
-    removeTimetable, goToNew, goToView, goToEdit, goToEmployee, goToSession,
+    removeTimetable, togglePublish, goToNew, goToView, goToEdit, goToEmployee, goToSession,
   };
 }

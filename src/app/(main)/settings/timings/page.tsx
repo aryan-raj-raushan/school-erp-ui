@@ -53,6 +53,9 @@ const EMPTY_FORM: CreateSchoolTimingPayload = {
   half_day_cutoff_time: '10:30',
   absent_cutoff_time: '12:00',
   working_days: DEFAULT_WORKING_DAYS,
+  period_duration_minutes: 45,
+  lunch_start_time: '',
+  lunch_end_time: '',
   effective_from: '',
   effective_to: '',
   priority: 0,
@@ -78,6 +81,9 @@ export default function TimingsPage() {
       half_day_cutoff_time: fmtTime(t.half_day_cutoff_time) ?? '',
       absent_cutoff_time: fmtTime(t.absent_cutoff_time) ?? '',
       working_days: t.working_days,
+      period_duration_minutes: t.period_duration_minutes,
+      lunch_start_time: fmtTime(t.lunch_start_time) ?? '',
+      lunch_end_time: fmtTime(t.lunch_end_time) ?? '',
       effective_from: t.effective_from,
       effective_to: t.effective_to,
       priority: t.priority,
@@ -152,8 +158,17 @@ export default function TimingsPage() {
                 Grace {t.grace_period_minutes}m
               </span>
               <span className="text-muted-foreground/50">·</span>
+              <span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
+                {t.period_duration_minutes}m/period
+              </span>
+              <span className="text-muted-foreground/50">·</span>
               <span className="text-[11px]">P{t.priority}</span>
             </span>
+            {t.lunch_start_time && t.lunch_end_time && (
+              <span className="text-[11px] text-muted-foreground">
+                Lunch {fmtTime(t.lunch_start_time)} – {fmtTime(t.lunch_end_time)}
+              </span>
+            )}
           </div>
         );
       },
@@ -293,6 +308,15 @@ export default function TimingsPage() {
                 </FormField>
                 <FormField label="Absent Cutoff">
                   <Input type="time" value={form.absent_cutoff_time ?? ''} onChange={(e) => updateForm('absent_cutoff_time', e.target.value)} />
+                </FormField>
+                <FormField label="Period Duration (min)">
+                  <Input type="number" value={form.period_duration_minutes ?? ''} onChange={(e) => updateForm('period_duration_minutes', Number(e.target.value))} />
+                </FormField>
+                <FormField label="Lunch Start">
+                  <Input type="time" value={form.lunch_start_time ?? ''} onChange={(e) => updateForm('lunch_start_time', e.target.value)} />
+                </FormField>
+                <FormField label="Lunch End">
+                  <Input type="time" value={form.lunch_end_time ?? ''} onChange={(e) => updateForm('lunch_end_time', e.target.value)} />
                 </FormField>
                 <FormField label="Effective From">
                   <Input type="date" value={form.effective_from} onChange={(e) => updateForm('effective_from', e.target.value)} />

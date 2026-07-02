@@ -5,44 +5,14 @@ import { usePlatformFilePicker } from './usePlatformFilePicker';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { StaffService } from '@/services/staff.service';
-import { DepartmentsService, type Department } from '@/services/departments.service';
 import { RolesService, type Role } from '@/services/roles.service';
 import { ROUTES, REGEX } from '@/constants';
 import type { Staff } from '@/types';
+import { createStaffSchema, updateStaffSchema, type StaffFormValues } from '@/lib/validations/staff.validation';
 
-const schema = z.object({
-  first_name: z.string().min(1, 'First name is required').max(100),
-  last_name: z.string().optional(),
-  dial_code: z.string().min(1, 'Dial code is required').max(10),
-  phone_number: z.string().min(7, 'Valid phone required').regex(/^\d+$/, 'Numbers only'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  role: z.string().min(1, 'Role is required'),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  date_of_birth: z.string().optional(),
-  blood_group: z.enum(['A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE', 'O_POSITIVE', 'O_NEGATIVE']).optional().or(z.literal('')),
-  address: z.string().optional(),
-  permanent_address: z.string().optional(),
-  city: z.string().max(100).optional(),
-  joining_date: z.string().optional(),
-  employee_code: z.string().max(50).optional(),
-  department_id: z.string().optional(),
-  custom_role_id: z.string().optional(),
-  father_name: z.string().max(100).optional(),
-  husband_name: z.string().max(100).optional(),
-  reporting_to_id: z.string().optional(),
-  rfid_card_number: z.string().max(50).optional(),
-  qualification: z.string().max(255).optional(),
-  previous_employer: z.string().max(255).optional(),
-  previous_role: z.string().max(100).optional(),
-  total_experience: z.string().max(100).optional(),
-  password: z.string().min(6, 'Min 6 characters').optional().or(z.literal('')),
-  is_active: z.boolean().optional(),
-});
-
-export type StaffFormValues = z.infer<typeof schema>;
+export type { StaffFormValues };
 
 export function useStaffDetail(id: string | undefined) {
   const router = useRouter();
@@ -53,7 +23,6 @@ export function useStaffDetail(id: string | undefined) {
   const [staffId, setStaffId] = useState<string | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(isNew);
   const [isLoadingData, setIsLoadingData] = useState(!isNew);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [allRoles, setAllRoles] = useState<Role[]>([]);
   const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -62,18 +31,16 @@ export function useStaffDetail(id: string | undefined) {
   const { isNative, pickImage } = usePlatformFilePicker();
 
   const form = useForm<StaffFormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(isNew ? createStaffSchema : updateStaffSchema) as any,
     defaultValues: { dial_code: '+91', is_active: true },
   });
 
   const fetchDropdownData = useCallback(async () => {
     try {
-      const [depts, rolesList, staffList] = await Promise.all([
-        DepartmentsService.list({ limit: 100, is_active: true }),
+      const [rolesList, staffList] = await Promise.all([
         RolesService.list({ limit: 100 }),
         StaffService.list({ limit: 100 }),
       ]);
-      setDepartments(depts.items);
       setAllRoles(rolesList.items);
       setStaffMembers(staffList.items);
     } catch {
@@ -167,10 +134,6 @@ export function useStaffDetail(id: string | undefined) {
   }
 
   async function onSubmit(values: StaffFormValues) {
-    if (isNew && !values.password) {
-      form.setError('password', { message: 'Password is required' });
-      return;
-    }
     try {
       const payload = {
         ...values,
@@ -185,7 +148,6 @@ export function useStaffDetail(id: string | undefined) {
         city: values.city || undefined,
         joining_date: values.joining_date || undefined,
         employee_code: values.employee_code || undefined,
-        department_id: values.department_id || undefined,
         custom_role_id: values.custom_role_id || undefined,
         father_name: values.father_name || undefined,
         husband_name: values.husband_name || undefined,
@@ -236,7 +198,6 @@ export function useStaffDetail(id: string | undefined) {
       city: data.city ?? '',
       joining_date: toDate(data.joining_date),
       employee_code: data.employee_code ?? '',
-      department_id: data.department_id ?? '',
       custom_role_id: data.custom_role_id ?? '',
       father_name: data.father_name ?? '',
       husband_name: data.husband_name ?? '',
@@ -259,7 +220,6 @@ export function useStaffDetail(id: string | undefined) {
   const customRoles = allRoles.filter((r) => !r.is_system);
 
   const fullName = staff ? `${staff.first_name ?? ''} ${staff.last_name ?? ''}`.trim() : 'New Employee';
-  const departmentName = departments.find((d) => d.id === staff?.department_id)?.name ?? staff?.department_id ?? undefined;
   const reportingToName = (() => {
     const m = staffMembers.find((s) => s.id === staff?.reporting_to_id);
     return m ? `${m.first_name ?? ''} ${m.last_name ?? ''}`.trim() : (staff?.reporting_to_id ?? undefined);
@@ -270,8 +230,8 @@ export function useStaffDetail(id: string | undefined) {
     form, isLoadingData,
     profileImageUrl, isUploadingImage, imageInputRef, onImageChange, handleNativeImagePick,
     isNative,
-    departments, systemRoles, staffMembers,
-    fullName, departmentName, reportingToName,
+    systemRoles, staffMembers,
+    fullName, reportingToName,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(onSubmit),
     handleBack, handleCancelEdit,

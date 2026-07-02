@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { StudyMaterialsService, type CreateStudyMaterialPayload } from '@/services/study-materials.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService } from '@/services/class-details.service';
 import { UploadsService } from '@/services/uploads.service';
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
@@ -32,10 +31,8 @@ export function useStudyMaterials() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [allSections, setAllSections] = useState<Section[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
-  const [classDetails, setClassDetails] = useState<{ id: string; name: string }[]>([]);
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [selectedClassDetailId, setSelectedClassDetailId] = useState('');
   const [selectedSectionId, setSelectedSectionId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
@@ -70,19 +67,13 @@ export function useStudyMaterials() {
 
   async function handleClassChange(classId: string) {
     setSelectedClassId(classId);
-    setSelectedClassDetailId('');
     setSelectedSectionId('');
     setSelectedSubjectId('');
-    setClassDetails([]);
     setSections(classId ? allSections.filter((s) => s.class_id === classId) : []);
     setSubjects([]);
     if (!classId) return;
     try {
-      const [detailsRes, subjectItems] = await Promise.all([
-        ClassDetailsService.list({ class_id: classId, limit: 100 }),
-        ClassesService.listSubjects(classId),
-      ]);
-      setClassDetails(detailsRes.items.map((d) => ({ id: d.id, name: d.name })));
+      const subjectItems = await ClassesService.listSubjects(classId);
       if (subjectItems.length > 0) {
         setSubjects(subjectItems.map((s) => ({ id: s.id, name: s.name })));
       } else {
@@ -115,7 +106,6 @@ export function useStudyMaterials() {
       const data = await StudyMaterialsService.list({
         academic_year_id: selectedAcademicYearId,
         class_id: selectedClassId,
-        class_detail_id: selectedClassDetailId || undefined,
         subject_id: selectedSubjectId || undefined,
       });
       setMaterials(data);
@@ -124,7 +114,7 @@ export function useStudyMaterials() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedAcademicYearId, selectedClassId, selectedClassDetailId, selectedSubjectId]);
+  }, [selectedAcademicYearId, selectedClassId, selectedSubjectId]);
 
   useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
 
@@ -184,7 +174,6 @@ export function useStudyMaterials() {
       const payload: CreateStudyMaterialPayload = {
         academic_year_id: selectedAcademicYearId,
         class_id: selectedClassId,
-        class_detail_id: selectedClassDetailId || undefined,
         subject_id: selectedSubjectId || undefined,
         title: values.title,
         description: values.description,
@@ -225,9 +214,8 @@ export function useStudyMaterials() {
   return {
     years,
     selectedAcademicYearId, setSelectedAcademicYearId,
-    classes, sections, classDetails, subjects,
-    selectedClassId, selectedClassDetailId, selectedSectionId, selectedSubjectId,
-    setSelectedClassDetailId,
+    classes, sections, subjects,
+    selectedClassId, selectedSectionId, selectedSubjectId,
     setSelectedSubjectId,
     handleClassChange,
     handleSectionChange,

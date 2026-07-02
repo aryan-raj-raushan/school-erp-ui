@@ -21,9 +21,8 @@ type SyllabusRow = {
 
 export default function SyllabusPage() {
   const {
-    syllabi, classes, classDetails, isLoading,
+    syllabi, classes, isLoading,
     filterClassId, setFilterClassId,
-    filterClassDetailId, setFilterClassDetailId,
     removeSyllabus, navigateToNew, navigateToEdit,
     getClassName,
   } = useSyllabusPage();
@@ -80,13 +79,6 @@ export default function SyllabusPage() {
           <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)} width="md">
             <option value="">All Classes</option>
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
-        </Div>
-        <Div type="col" gap="xs">
-          <FilterLabel>Class Detail</FilterLabel>
-          <Select value={filterClassDetailId} onChange={(e) => setFilterClassDetailId(e.target.value)} width="md" disabled={!filterClassId}>
-            <option value="">All</option>
-            {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
           </Select>
         </Div>
       </Div>

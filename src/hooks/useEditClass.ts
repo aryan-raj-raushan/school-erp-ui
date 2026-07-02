@@ -14,7 +14,6 @@ import type { AcademicYear, Section } from '@/types';
 const editClassSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
   name: z.string().min(1, 'Name is required').max(50),
-  department: z.string().min(1, 'Department is required').max(100),
   class_type: z.string().max(50).optional(),
   class_sequence: z.coerce.number().int().min(1).optional(),
   no_of_sessions: z.coerce.number().int().min(1).optional(),
@@ -50,7 +49,6 @@ export function useEditClass(classId: string) {
       form.reset({
         name: cls.name,
         academic_year_id: cls.academic_year_id,
-        department: cls.department ?? '',
         class_type: cls.class_type ?? '',
         class_sequence: cls.class_sequence ?? undefined,
         no_of_sessions: cls.no_of_sessions ?? undefined,
@@ -87,7 +85,6 @@ export function useEditClass(classId: string) {
       await ClassesService.update(classId, {
         name: values.name,
         academic_year_id: values.academic_year_id,
-        department: values.department,
         class_type: values.class_type || undefined,
         class_sequence: values.class_sequence,
         no_of_sessions: values.no_of_sessions,

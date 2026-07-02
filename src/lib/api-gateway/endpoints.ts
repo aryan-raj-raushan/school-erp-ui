@@ -48,6 +48,10 @@ export const ENDPOINTS = {
     list: "/class-subjects",
     byId: (id: string) => `/class-subjects/${id}`,
   },
+  classSubjectTeachers: {
+    list: "/class-subject-teachers",
+    byId: (id: string) => `/class-subject-teachers/${id}`,
+  },
   masterData: {
     subjects: "/master-data/subjects",
   },
@@ -108,7 +112,6 @@ export const ENDPOINTS = {
     byId: (id: string) => `/gate-passes/${id}`,
   },
   notificationRules: { base: '/notification-rules' },
-  calendar: { unified: '/school-events/calendar' },
   auditLogs: { base: '/audit-logs' },
   staffAttendance: {
     base: "/staff-attendance",
@@ -241,18 +244,11 @@ export const ENDPOINTS = {
     byId: (id: string) => `/timetable/${id}`,
     employeeView: (teacherId: string) => `/timetable/employee/${teacherId}`,
     sessionView: "/timetable/session-view",
-  },
-  classDetails: {
-    list: "/class-details",
-    byId: (id: string) => `/class-details/${id}`,
+    autoGenerate: "/timetable/auto-generate",
   },
   syllabus: {
     list: "/syllabi",
     byId: (id: string) => `/syllabi/${id}`,
-  },
-  departments: {
-    list: "/departments",
-    byId: (id: string) => `/departments/${id}`,
   },
   roles: {
     list: "/roles",

@@ -80,11 +80,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     permissions: [PERMISSIONS.admissions.view, PERMISSIONS.admissions.create],
     items: [
       {
-        title: "Enquiry Source",
-        url: "/admissions/source",
-        permissions: [PERMISSIONS.admissions.create],
-      },
-      {
         title: "Add Enquiry",
         url: "/admissions/create-new",
         permissions: [PERMISSIONS.admissions.create],
@@ -168,12 +163,18 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       PERMISSIONS.homework.view,
       PERMISSIONS.syllabus.view,
       PERMISSIONS.timetable.view,
+      PERMISSIONS.classSubjectTeachers.view,
     ],
     items: [
       {
         title: "Homework",
         url: "/school/homework",
         permissions: [PERMISSIONS.homework.view],
+      },
+      {
+        title: "Subject-Teacher Map",
+        url: "/school/subject-teacher-map",
+        permissions: [PERMISSIONS.classSubjectTeachers.view],
       },
       {
         title: "Study Materials",
@@ -394,8 +395,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       PERMISSIONS.academic_years.update,
       PERMISSIONS.classes.create,
       PERMISSIONS.classes.update,
-      PERMISSIONS.departments.create,
-      PERMISSIONS.departments.update,
       PERMISSIONS.subjects.create,
       PERMISSIONS.subjects.update,
       PERMISSIONS.holidays.create,
@@ -418,14 +417,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         permissions: [PERMISSIONS.classes.create, PERMISSIONS.classes.update],
       },
       {
-        title: "Departments",
-        url: "/school/departments",
-        permissions: [
-          PERMISSIONS.departments.create,
-          PERMISSIONS.departments.update,
-        ],
-      },
-      {
         title: "Subjects",
         url: "/school/subjects",
         permissions: [PERMISSIONS.subjects.create, PERMISSIONS.subjects.update],
@@ -434,11 +425,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         title: "Holidays & Events",
         url: "/school/holidays-events",
         permissions: [PERMISSIONS.holidays.create, PERMISSIONS.events.create],
-      },
-      {
-        title: "School Calendar",
-        url: "/school/calendar",
-        permissions: [PERMISSIONS.holidays.view],
       },
     ],
   },

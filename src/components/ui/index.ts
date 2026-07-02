@@ -24,3 +24,5 @@ export * from './social-button';
 export * from './form-card';
 export * from './data-table';
 export * from './multi-select';
+export * from './photo-upload';
+export * from './phone-field';

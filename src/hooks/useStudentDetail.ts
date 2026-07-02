@@ -13,7 +13,7 @@ import {
   type StudentFormValues,
 } from "@/lib/validations/students.validation";
 import type { StudentFull } from "@/types/students.types";
-import { STUDENT_ROUTES } from "@/constants/students-v2.constants";
+import { STUDENT_ROUTES } from "@/constants/students.constants";
 
 export function useStudentDetail(id?: string) {
   const router = useRouter();

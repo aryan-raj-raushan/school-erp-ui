@@ -1,33 +1,49 @@
 "use client";
 
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import ReactBarcode from "react-barcode";
+import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowLeft,
   Printer,
   Download,
   CreditCard,
-  Users,
   GraduationCap,
-  Phone,
   MapPin,
-  Hash,
-  Droplets,
   School,
+  ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { useStudentCards, type CardMode } from "@/hooks/useStudentCard";
 import { useStudents } from "@/hooks/useStudentV2";
+import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { PageHeader } from "@/components/ui/page-header";
-import { Div, H3, P, Button, Spinner } from "@/components/ui";
+import {
+  Div,
+  H3,
+  P,
+  Button,
+  Spinner,
+  Select,
+  FormField,
+  Tabs,
+  Modal,
+  ModalBody,
+} from "@/components/ui";
 import {
   STUDENT_PAGE,
   STUDENT_ROUTES,
   CARD_TEMPLATES,
   type CardTemplateId,
-} from "@/constants/students-v2.constants";
-import type { StudentIdCardData, PickupCardData } from "@/types/students.types";
+} from "@/constants/students.constants";
+import type {
+  StudentIdCardData,
+  PickupCardData,
+  StudentParent,
+} from "@/types/students.types";
 
-// ─── Blood group display helper ────────────────────────────────────────────────
+// ─── Formatting helpers ─────────────────────────────────────────────────────
 
 function formatBloodGroup(bg: string | null): string {
   if (!bg) return "—";
@@ -44,1006 +60,1194 @@ function formatAddress(data: StudentIdCardData): string {
   );
 }
 
-// ─── User Icon SVG (fallback when no photo) ───────────────────────────────────
-
 function UserIconPlaceholder({
-  size = 64,
+  size = 56,
   color = "#94a3b8",
 }: {
   size?: number;
   color?: string;
 }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="32" cy="24" r="14" fill={color} opacity="0.7" />
-      <ellipse cx="32" cy="54" rx="22" ry="14" fill={color} opacity="0.5" />
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="24" r="14" fill={color} opacity="0.6" />
+      <ellipse cx="32" cy="54" rx="22" ry="14" fill={color} opacity="0.4" />
     </svg>
   );
 }
 
-// ─── TEMPLATE 1 — Classic ──────────────────────────────────────────────────────
-// Deep navy gradient, gold accent strip, official feel
+// ─── Card themes ─────────────────────────────────────────────────────────────
+// Twelve templates across seven distinct layout families — palette differs per
+// template, structure differs per family.
 
-function ClassicStudentCard({ data }: { data: StudentIdCardData }) {
+type CardLayout =
+  | "badge"
+  | "ribbon"
+  | "band"
+  | "executive"
+  | "crest"
+  | "access"
+  | "pastel";
+
+interface CardTheme {
+  layout: CardLayout;
+  cardBg: string;
+  headerBg: string;
+  headerText: string;
+  headerMuted: string;
+  headerBorder?: string;
+  panelBg: string;
+  panelText?: string;
+  accent: string;
+  bodyText: string;
+  mutedText: string;
+  chipBg: string;
+  chipBorder: string;
+  divider: string;
+  footerBg: string;
+  footerText: string;
+  footerMuted: string;
+  punchHole?: string;
+}
+
+const CARD_THEMES: Record<CardTemplateId, CardTheme> = {
+  classic: {
+    layout: "badge",
+    cardBg: "#ffffff",
+    headerBg: "linear-gradient(135deg, #0b2545 0%, #163a63 100%)",
+    headerText: "#ffffff",
+    headerMuted: "rgba(255,255,255,0.55)",
+    panelBg: "#0b2545",
+    accent: "#c9a227",
+    bodyText: "#0f172a",
+    mutedText: "#64748b",
+    chipBg: "#f8fafc",
+    chipBorder: "#e2e8f0",
+    divider: "rgba(201,162,39,0.35)",
+    footerBg: "#0b2545",
+    footerText: "rgba(255,255,255,0.85)",
+    footerMuted: "rgba(255,255,255,0.4)",
+    punchHole: "rgba(255,255,255,0.25)",
+  },
+  modern: {
+    layout: "badge",
+    cardBg: "#f8fafc",
+    headerBg: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    headerText: "#ffffff",
+    headerMuted: "rgba(255,255,255,0.5)",
+    panelBg: "#0f172a",
+    accent: "#06b6d4",
+    bodyText: "#0f172a",
+    mutedText: "#64748b",
+    chipBg: "#ffffff",
+    chipBorder: "#e2e8f0",
+    divider: "rgba(6,182,212,0.3)",
+    footerBg: "#0f172a",
+    footerText: "rgba(255,255,255,0.85)",
+    footerMuted: "rgba(255,255,255,0.35)",
+    punchHole: "rgba(255,255,255,0.2)",
+  },
+  minimal: {
+    layout: "badge",
+    cardBg: "#ffffff",
+    headerBg: "#ffffff",
+    headerText: "#0f172a",
+    headerMuted: "#94a3b8",
+    headerBorder: "#e2e8f0",
+    panelBg: "#ffffff",
+    accent: "#334155",
+    bodyText: "#0f172a",
+    mutedText: "#64748b",
+    chipBg: "#f8fafc",
+    chipBorder: "#e2e8f0",
+    divider: "#e2e8f0",
+    footerBg: "#f8fafc",
+    footerText: "#334155",
+    footerMuted: "#94a3b8",
+    punchHole: "rgba(15,23,42,0.08)",
+  },
+  "ribbon-crimson": {
+    layout: "ribbon",
+    cardBg: "#ffffff",
+    headerBg: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)",
+    headerText: "#ffffff",
+    headerMuted: "rgba(255,255,255,0.6)",
+    panelBg: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)",
+    panelText: "#ffffff",
+    accent: "#b91c1c",
+    bodyText: "#1f2937",
+    mutedText: "#6b7280",
+    chipBg: "#fef2f2",
+    chipBorder: "#fecaca",
+    divider: "rgba(185,28,28,0.25)",
+    footerBg: "#7f1d1d",
+    footerText: "rgba(255,255,255,0.9)",
+    footerMuted: "rgba(255,255,255,0.45)",
+  },
+  "ribbon-emerald": {
+    layout: "ribbon",
+    cardBg: "#ffffff",
+    headerBg: "linear-gradient(135deg, #065f46 0%, #059669 100%)",
+    headerText: "#ffffff",
+    headerMuted: "rgba(255,255,255,0.6)",
+    panelBg: "linear-gradient(135deg, #065f46 0%, #059669 100%)",
+    panelText: "#ffffff",
+    accent: "#059669",
+    bodyText: "#1f2937",
+    mutedText: "#6b7280",
+    chipBg: "#ecfdf5",
+    chipBorder: "#a7f3d0",
+    divider: "rgba(5,150,105,0.25)",
+    footerBg: "#065f46",
+    footerText: "rgba(255,255,255,0.9)",
+    footerMuted: "rgba(255,255,255,0.45)",
+  },
+  "band-indigo": {
+    layout: "band",
+    cardBg: "#ffffff",
+    headerBg: "#ffffff",
+    headerText: "#0f172a",
+    headerMuted: "#64748b",
+    panelBg: "#4f46e5",
+    accent: "#4f46e5",
+    bodyText: "#0f172a",
+    mutedText: "#64748b",
+    chipBg: "#eef2ff",
+    chipBorder: "#e0e7ff",
+    divider: "#e2e8f0",
+    footerBg: "#ffffff",
+    footerText: "#0f172a",
+    footerMuted: "#94a3b8",
+  },
+  "band-amber": {
+    layout: "band",
+    cardBg: "#111827",
+    headerBg: "#111827",
+    headerText: "#f1f5f9",
+    headerMuted: "#94a3b8",
+    panelBg: "#f59e0b",
+    accent: "#f59e0b",
+    bodyText: "#f1f5f9",
+    mutedText: "#94a3b8",
+    chipBg: "#1f2937",
+    chipBorder: "#374151",
+    divider: "#374151",
+    footerBg: "#111827",
+    footerText: "#f1f5f9",
+    footerMuted: "#94a3b8",
+  },
+  "executive-charcoal": {
+    layout: "executive",
+    cardBg: "#f8fafc",
+    headerBg: "linear-gradient(160deg, #1f2937 0%, #111827 100%)",
+    headerText: "#ffffff",
+    headerMuted: "rgba(255,255,255,0.55)",
+    panelBg: "linear-gradient(160deg, #1f2937 0%, #111827 100%)",
+    panelText: "#ffffff",
+    accent: "#94a3b8",
+    bodyText: "#0f172a",
+    mutedText: "#64748b",
+    chipBg: "#ffffff",
+    chipBorder: "#e2e8f0",
+    divider: "#e2e8f0",
+    footerBg: "#f8fafc",
+    footerText: "#0f172a",
+    footerMuted: "#94a3b8",
+  },
+  "executive-platinum": {
+    layout: "executive",
+    cardBg: "#eef2ff",
+    headerBg: "linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 100%)",
+    headerText: "#ffffff",
+    headerMuted: "rgba(255,255,255,0.55)",
+    panelBg: "linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 100%)",
+    panelText: "#ffffff",
+    accent: "#38bdf8",
+    bodyText: "#0f172a",
+    mutedText: "#64748b",
+    chipBg: "#ffffff",
+    chipBorder: "#dbeafe",
+    divider: "#dbeafe",
+    footerBg: "#eef2ff",
+    footerText: "#1e3a8a",
+    footerMuted: "#64748b",
+  },
+  "heritage-crest": {
+    layout: "crest",
+    cardBg: "#fbf7ee",
+    headerBg: "#fbf7ee",
+    headerText: "#241a12",
+    headerMuted: "#8a7860",
+    panelBg: "#fbf7ee",
+    accent: "#b08d3f",
+    bodyText: "#241a12",
+    mutedText: "#8a7860",
+    chipBg: "#f6efe0",
+    chipBorder: "#e6d9bd",
+    divider: "#e6d9bd",
+    footerBg: "#fbf7ee",
+    footerText: "#241a12",
+    footerMuted: "#8a7860",
+  },
+  "secure-access": {
+    layout: "access",
+    cardBg: "#0b0f14",
+    headerBg: "#0b0f14",
+    headerText: "#e2e8f0",
+    headerMuted: "#64748b",
+    panelBg: "#0b0f14",
+    accent: "#22d3ee",
+    bodyText: "#e2e8f0",
+    mutedText: "#94a3b8",
+    chipBg: "#111827",
+    chipBorder: "#1f2937",
+    divider: "rgba(34,211,238,0.25)",
+    footerBg: "#0b0f14",
+    footerText: "#e2e8f0",
+    footerMuted: "#64748b",
+  },
+  "junior-pastel": {
+    layout: "pastel",
+    cardBg: "#fff9f2",
+    headerBg: "linear-gradient(135deg, #ffe1c9 0%, #c9ecff 100%)",
+    headerText: "#334155",
+    headerMuted: "#64748b",
+    panelBg: "linear-gradient(135deg, #ffe1c9 0%, #c9ecff 100%)",
+    accent: "#f59e0b",
+    bodyText: "#334155",
+    mutedText: "#94a3b8",
+    chipBg: "#ffffff",
+    chipBorder: "#ffe9d6",
+    divider: "#ffe9d6",
+    footerBg: "#fff9f2",
+    footerText: "#334155",
+    footerMuted: "#94a3b8",
+  },
+};
+
+const LAYOUT_DIMS: Record<CardLayout, { w: number; h: number }> = {
+  badge: { w: 300, h: 465 },
+  ribbon: { w: 300, h: 450 },
+  band: { w: 300, h: 420 },
+  executive: { w: 440, h: 262 },
+  crest: { w: 300, h: 470 },
+  access: { w: 300, h: 460 },
+  pastel: { w: 300, h: 430 },
+};
+
+// ─── Sample fixture (used only for the template gallery preview) ─────────────
+
+const SAMPLE_STUDENT_CARD: StudentIdCardData = {
+  id: "sample",
+  system_number: 10234,
+  first_name: "Aarav",
+  last_name: "Mehta",
+  profile_image: null,
+  gender: "MALE",
+  blood_group: "B_POSITIVE",
+  phone_number: "+91 98765 43210",
+  admission_number: "ADM-2026-0143",
+  roll_number: "12",
+  class_name: "Class 8",
+  section_name: "B",
+  school_name: "Greenfield Public School",
+  school_address: null,
+  school_city: "Ghaziabad",
+  school_logo: null,
+  school_phone: null,
+  school_email: null,
+  school_website: null,
+  address: {
+    id: "sample-addr",
+    student_id: "sample",
+    address: "221 Park Avenue",
+    city: "Ghaziabad",
+    state: "Uttar Pradesh",
+    pincode: "201001",
+    country: "India",
+  },
+};
+
+const SAMPLE_PICKUP_CARD: PickupCardData = {
+  student: SAMPLE_STUDENT_CARD,
+  parents: [
+    {
+      id: "sample-p1",
+      student_id: "sample",
+      relation: "FATHER",
+      first_name: "Rohit",
+      last_name: "Mehta",
+      email: null,
+      dial_code: "+91",
+      phone_number: "98765 11111",
+      alternate_phone: null,
+      occupation: null,
+      qualification: null,
+      annual_income: null,
+      aadhaar_number: null,
+      profile_image: null,
+      is_primary: true,
+      can_pickup: true,
+    },
+    {
+      id: "sample-p2",
+      student_id: "sample",
+      relation: "MOTHER",
+      first_name: "Neha",
+      last_name: "Mehta",
+      email: null,
+      dial_code: "+91",
+      phone_number: "98765 22222",
+      alternate_phone: null,
+      occupation: null,
+      qualification: null,
+      annual_income: null,
+      aadhaar_number: null,
+      profile_image: null,
+      is_primary: false,
+      can_pickup: true,
+    },
+  ],
+};
+
+// ─── Shared card atoms ─────────────────────────────────────────────────────
+// Real, scannable codes — Code128 barcode (react-barcode) and a real QR code
+// (qrcode.react) — rather than decorative placeholder bars.
+
+function IdBarcode({ value, color }: { value: string; color: string }) {
+  return (
+    <ReactBarcode
+      value={value || "N/A"}
+      format="CODE128"
+      width={1.15}
+      height={22}
+      margin={0}
+      displayValue={false}
+      background="transparent"
+      lineColor={color}
+    />
+  );
+}
+
+function IdQrCode({ value, color, size = 96 }: { value: string; color: string; size?: number }) {
+  return (
+    <div style={{ padding: 6, background: "#ffffff", borderRadius: 8, lineHeight: 0 }}>
+      <QRCodeSVG value={value || "N/A"} size={size - 12} bgColor="#ffffff" fgColor={color} level="M" />
+    </div>
+  );
+}
+
+function DetailCell({
+  theme,
+  label,
+  value,
+}: {
+  theme: CardTheme;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p
+        style={{
+          color: theme.mutedText,
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}
+        className="truncate"
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function InlineDetail({
+  theme,
+  label,
+  value,
+}: {
+  theme: CardTheme;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span style={{ color: theme.mutedText, fontSize: 10.5 }}>{label}</span>
+      <span
+        style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 600 }}
+        className="truncate text-right"
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ParentRow({ theme, parent }: { theme: CardTheme; parent: StudentParent }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div
+        className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+        style={{ background: theme.chipBg, border: `1.5px solid ${theme.chipBorder}` }}
+      >
+        {parent.profile_image ? (
+          <img
+            src={parent.profile_image}
+            alt={parent.first_name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <UserIconPlaceholder size={22} color={theme.mutedText} />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 600 }} className="truncate">
+          {parent.first_name} {parent.last_name ?? ""}
+        </p>
+        <p style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
+          {parent.relation} · {parent.phone_number}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PickupParentList({ theme, data }: { theme: CardTheme; data: PickupCardData }) {
+  const pickupParents = data.parents.filter((p) => p.can_pickup);
+  if (pickupParents.length === 0) {
+    return <p style={{ color: theme.mutedText, fontSize: 12 }}>No pickup contacts assigned</p>;
+  }
+  return (
+    <div className="space-y-2.5">
+      {pickupParents.slice(0, 3).map((p) => (
+        <ParentRow key={p.id} theme={theme} parent={p} />
+      ))}
+    </div>
+  );
+}
+
+// ─── Layout family: Badge (Classic / Modern / Minimal) ───────────────────────
+
+function CardShell({
+  theme,
+  kicker,
+  logo,
+  schoolName,
+  schoolCity,
+  footerLeftLabel,
+  footerLeftValue,
+  children,
+}: {
+  theme: CardTheme;
+  kicker: string;
+  logo: string | null;
+  schoolName: string;
+  schoolCity: string;
+  footerLeftLabel: string;
+  footerLeftValue: string;
+  children: React.ReactNode;
+}) {
   return (
     <div
-      className="relative w-[340px] rounded-2xl overflow-hidden shadow-2xl select-none"
+      className="relative w-[300px] rounded-[24px] overflow-hidden select-none"
       style={{
-        background: "linear-gradient(160deg, #1e3a5f 0%, #0f1f35 100%)",
+        background: theme.cardBg,
+        boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4), 0 0 0 1px rgba(15,23,42,0.05)",
         fontFamily: "system-ui, sans-serif",
       }}
     >
-      {/* Gold accent bar */}
       <div
-        style={{
-          height: 4,
-          background: "linear-gradient(90deg, #f59e0b, #fcd34d, #f59e0b)",
-        }}
+        className="absolute left-1/2 top-2 -translate-x-1/2 h-2 w-9 rounded-full z-10"
+        style={{ background: theme.punchHole }}
       />
 
-      {/* Header */}
-      <div className="px-5 pt-4 pb-3">
-        <div className="flex items-center gap-3">
-          {data.school_logo ? (
+      <div
+        className="pt-6 pb-3 px-5"
+        style={{
+          background: theme.headerBg,
+          borderBottom: theme.headerBorder ? `1px solid ${theme.headerBorder}` : "none",
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          {logo ? (
             <img
-              src={data.school_logo}
+              src={logo}
               alt="School"
-              className="h-10 w-10 rounded-lg object-contain bg-white p-1 shrink-0"
+              className="h-9 w-9 rounded-lg object-contain bg-white/90 p-1 shrink-0"
             />
           ) : (
-            <div className="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-              <School size={20} color="#fcd34d" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-white font-bold text-sm leading-tight truncate">
-              {data.school_name ?? "School Name"}
-            </p>
-            <p className="text-amber-300 text-xs truncate">
-              {data.school_city ?? ""}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div
-        style={{
-          height: 1,
-          background: "rgba(252,211,77,0.3)",
-          margin: "0 20px",
-        }}
-      />
-
-      {/* Body */}
-      <div className="px-5 py-4 flex gap-4">
-        {/* Photo */}
-        <div className="shrink-0">
-          <div
-            className="h-20 w-20 rounded-xl overflow-hidden flex items-center justify-center"
-            style={{
-              background: "rgba(255,255,255,0.1)",
-              border: "2px solid rgba(252,211,77,0.5)",
-            }}
-          >
-            {data.profile_image ? (
-              <img
-                src={data.profile_image}
-                alt={data.first_name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <UserIconPlaceholder size={48} color="#fcd34d" />
-            )}
-          </div>
-          <div className="mt-2 text-center">
-            <p
-              style={{
-                color: "#fcd34d",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 1,
-              }}
+            <div
+              className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "rgba(148,163,184,0.15)" }}
             >
-              STUDENT
+              <School size={16} color={theme.accent} />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p style={{ color: theme.headerText, fontSize: 12.5, fontWeight: 700 }} className="truncate">
+              {schoolName}
+            </p>
+            <p style={{ color: theme.headerMuted, fontSize: 9.5 }} className="truncate">
+              {schoolCity}
             </p>
           </div>
         </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-bold text-base leading-tight truncate">
-            {data.first_name} {data.last_name ?? ""}
-          </p>
-          <div className="mt-2 space-y-1.5">
-            <InfoRow
-              icon={<GraduationCap size={11} color="#fcd34d" />}
-              label="Class"
-              value={`${data.class_name ?? "—"} — ${data.section_name ?? "—"}`}
-            />
-            <InfoRow
-              icon={<Hash size={11} color="#fcd34d" />}
-              label="Roll No."
-              value={data.roll_number ?? "—"}
-            />
-            <InfoRow
-              icon={<Droplets size={11} color="#fcd34d" />}
-              label="Blood"
-              value={formatBloodGroup(data.blood_group)}
-            />
-            <InfoRow
-              icon={<Phone size={11} color="#fcd34d" />}
-              label="Contact"
-              value={data.phone_number ?? "—"}
-            />
-            <InfoRow
-              icon={<MapPin size={11} color="#fcd34d" />}
-              label="Address"
-              value={formatAddress(data)}
-              truncate
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div
-        style={{
-          background: "rgba(252,211,77,0.1)",
-          borderTop: "1px solid rgba(252,211,77,0.2)",
-        }}
-        className="px-5 py-2.5 flex justify-between items-center"
-      >
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>
-          Adm: {data.admission_number ?? "—"}
-        </p>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>
-          #{data.system_number}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function ClassicPickupCard({ data }: { data: PickupCardData }) {
-  const primaryParent =
-    data.parents.find((p) => p.is_primary) ?? data.parents[0];
-  const pickupParents = data.parents.filter((p) => p.can_pickup);
-
-  return (
-    <div
-      className="relative w-[340px] rounded-2xl overflow-hidden shadow-2xl select-none"
-      style={{
-        background: "linear-gradient(160deg, #1e3a5f 0%, #0f1f35 100%)",
-        fontFamily: "system-ui, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          height: 4,
-          background: "linear-gradient(90deg, #10b981, #34d399, #10b981)",
-        }}
-      />
-
-      {/* Header */}
-      <div className="px-5 pt-4 pb-3">
-        <div className="flex items-center gap-3">
-          {data.student.school_logo ? (
-            <img
-              src={data.student.school_logo}
-              alt="School"
-              className="h-10 w-10 rounded-lg object-contain bg-white p-1 shrink-0"
-            />
-          ) : (
-            <div className="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-              <School size={20} color="#34d399" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-white font-bold text-sm leading-tight truncate">
-              {data.student.school_name ?? "School Name"}
-            </p>
-            <p style={{ color: "#34d399", fontSize: 11 }}>PARENT PICKUP CARD</p>
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          height: 1,
-          background: "rgba(52,211,153,0.3)",
-          margin: "0 20px",
-        }}
-      />
-
-      {/* Student summary */}
-      <div className="px-5 py-3">
-        <p
-          style={{
-            color: "rgba(255,255,255,0.5)",
-            fontSize: 10,
-            letterSpacing: 1,
-            fontWeight: 600,
-          }}
-        >
-          STUDENT
-        </p>
-        <p className="text-white font-bold text-base mt-0.5">
-          {data.student.first_name} {data.student.last_name ?? ""}
-        </p>
-        <div className="flex gap-4 mt-1">
-          <InfoRow
-            icon={<GraduationCap size={11} color="#34d399" />}
-            label="Class"
-            value={`${data.student.class_name ?? "—"} — ${data.student.section_name ?? "—"}`}
-          />
-          <InfoRow
-            icon={<Hash size={11} color="#34d399" />}
-            label="Roll"
-            value={data.student.roll_number ?? "—"}
-          />
-        </div>
-      </div>
-
-      <div
-        style={{
-          height: 1,
-          background: "rgba(52,211,153,0.2)",
-          margin: "0 20px",
-        }}
-      />
-
-      {/* Parents */}
-      <div className="px-5 py-3 space-y-2">
-        <p
-          style={{
-            color: "rgba(255,255,255,0.5)",
-            fontSize: 10,
-            letterSpacing: 1,
-            fontWeight: 600,
-          }}
-        >
-          AUTHORISED FOR PICKUP
-        </p>
-        {pickupParents.length === 0 ? (
-          <p className="text-white/40 text-xs">No pickup contacts assigned</p>
-        ) : (
-          pickupParents.slice(0, 3).map((parent) => (
-            <div key={parent.id} className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                {parent.profile_image ? (
-                  <img
-                    src={parent.profile_image}
-                    alt={parent.first_name}
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                ) : (
-                  <UserIconPlaceholder size={24} color="#34d399" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-white text-sm font-medium truncate">
-                  {parent.first_name} {parent.last_name ?? ""}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11 }}>
-                  {parent.relation} · {parent.phone_number}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div
-        style={{
-          background: "rgba(52,211,153,0.1)",
-          borderTop: "1px solid rgba(52,211,153,0.2)",
-        }}
-        className="px-5 py-2.5 flex justify-between items-center"
-      >
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>
-          Adm: {data.student.admission_number ?? "—"}
-        </p>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>
-          #{data.student.system_number}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── TEMPLATE 2 — Modern ──────────────────────────────────────────────────────
-// Near-black background, vivid teal/cyan accent, bold name treatment
-
-function ModernStudentCard({ data }: { data: StudentIdCardData }) {
-  return (
-    <div
-      className="relative w-[340px] rounded-2xl overflow-hidden shadow-2xl select-none"
-      style={{ background: "#0d0d0d", fontFamily: "system-ui, sans-serif" }}
-    >
-      {/* Vivid top band */}
-      <div
-        style={{
-          background: "linear-gradient(90deg, #06b6d4, #8b5cf6)",
-          height: 6,
-        }}
-      />
-
-      {/* Photo + name hero */}
-      <div
-        className="px-5 pt-5 pb-4 flex gap-4 items-center"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(6,182,212,0.08) 0%, transparent 60%)",
-        }}
-      >
-        <div
-          className="h-[72px] w-[72px] rounded-2xl overflow-hidden shrink-0 flex items-center justify-center"
-          style={{
-            border: "2px solid rgba(6,182,212,0.4)",
-            background: "#1a1a1a",
-          }}
-        >
-          {data.profile_image ? (
-            <img
-              src={data.profile_image}
-              alt={data.first_name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <UserIconPlaceholder size={40} color="#06b6d4" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p
-            style={{
-              color: "#06b6d4",
-              fontSize: 10,
-              letterSpacing: 2,
-              fontWeight: 700,
-            }}
-          >
-            IDENTITY CARD
-          </p>
-          <p className="text-white font-bold text-lg leading-tight mt-0.5 truncate">
-            {data.first_name} {data.last_name ?? ""}
-          </p>
-          <div
-            className="mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5"
-            style={{
-              background: "rgba(6,182,212,0.15)",
-              border: "1px solid rgba(6,182,212,0.3)",
-            }}
-          >
-            <GraduationCap size={11} color="#06b6d4" />
-            <span style={{ color: "#06b6d4", fontSize: 11, fontWeight: 600 }}>
-              {data.class_name ?? "—"} · {data.section_name ?? "—"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Details grid */}
-      <div className="px-5 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5">
-        <ModernInfoCell label="Roll No." value={data.roll_number ?? "—"} />
-        <ModernInfoCell
-          label="Blood Group"
-          value={formatBloodGroup(data.blood_group)}
-          accent
-        />
-        <ModernInfoCell label="Contact" value={data.phone_number ?? "—"} />
-        <ModernInfoCell label="Adm. No." value={data.admission_number ?? "—"} />
-        <div className="col-span-2">
-          <ModernInfoCell label="Address" value={formatAddress(data)} />
-        </div>
-      </div>
-
-      {/* School footer */}
-      <div
-        style={{
-          background: "#1a1a1a",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-        }}
-        className="px-5 py-3 flex items-center gap-2"
-      >
-        {data.school_logo ? (
-          <img
-            src={data.school_logo}
-            alt=""
-            className="h-5 w-5 object-contain opacity-70 shrink-0"
-          />
-        ) : (
-          <School size={14} color="#06b6d4" />
-        )}
-        <p
-          style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}
-          className="truncate"
-        >
-          {data.school_name ?? "School Name"}
-        </p>
-        <p
-          style={{
-            color: "rgba(255,255,255,0.2)",
-            fontSize: 11,
-            marginLeft: "auto",
-          }}
-        >
-          #{data.system_number}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function ModernPickupCard({ data }: { data: PickupCardData }) {
-  const pickupParents = data.parents.filter((p) => p.can_pickup);
-
-  return (
-    <div
-      className="relative w-[340px] rounded-2xl overflow-hidden shadow-2xl select-none"
-      style={{ background: "#0d0d0d", fontFamily: "system-ui, sans-serif" }}
-    >
-      <div
-        style={{
-          background: "linear-gradient(90deg, #10b981, #059669)",
-          height: 6,
-        }}
-      />
-
-      <div
-        className="px-5 pt-5 pb-4"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, transparent 60%)",
-        }}
-      >
-        <p
-          style={{
-            color: "#10b981",
-            fontSize: 10,
-            letterSpacing: 2,
-            fontWeight: 700,
-          }}
-        >
-          PARENT PICKUP CARD
-        </p>
-        <p className="text-white font-bold text-lg leading-tight mt-1 truncate">
-          {data.student.first_name} {data.student.last_name ?? ""}
-        </p>
-        <div className="flex gap-3 mt-1.5">
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5"
-            style={{
-              background: "rgba(16,185,129,0.15)",
-              border: "1px solid rgba(16,185,129,0.3)",
-            }}
-          >
-            <GraduationCap size={10} color="#10b981" />
-            <span style={{ color: "#10b981", fontSize: 11, fontWeight: 600 }}>
-              {data.student.class_name ?? "—"} ·{" "}
-              {data.student.section_name ?? "—"}
-            </span>
-          </span>
-          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
-            Roll: {data.student.roll_number ?? "—"}
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <span className="h-[3px] w-5 rounded-full" style={{ background: theme.accent }} />
+          <span style={{ color: theme.accent, fontSize: 9, fontWeight: 700, letterSpacing: 1.5 }}>
+            {kicker}
           </span>
         </div>
       </div>
 
-      <div
-        style={{
-          height: 1,
-          background: "rgba(255,255,255,0.06)",
-          margin: "0 20px",
-        }}
-      />
-
-      <div className="px-5 py-3 space-y-2.5">
-        <p
-          style={{
-            color: "rgba(255,255,255,0.3)",
-            fontSize: 10,
-            letterSpacing: 1.5,
-            fontWeight: 600,
-          }}
-        >
-          PICKUP CONTACTS
-        </p>
-        {pickupParents.length === 0 ? (
-          <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>
-            No pickup contacts assigned
-          </p>
-        ) : (
-          pickupParents.slice(0, 3).map((p) => (
-            <div key={p.id} className="flex items-center gap-3">
-              <div
-                className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center shrink-0"
-                style={{
-                  background: "#1a1a1a",
-                  border: "1px solid rgba(16,185,129,0.3)",
-                }}
-              >
-                {p.profile_image ? (
-                  <img
-                    src={p.profile_image}
-                    alt={p.first_name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <UserIconPlaceholder size={28} color="#10b981" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-white text-sm font-semibold truncate">
-                  {p.first_name} {p.last_name ?? ""}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
-                  {p.relation} · {p.phone_number}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <div className="px-5 py-4">{children}</div>
 
       <div
-        style={{
-          background: "#1a1a1a",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-        }}
-        className="px-5 py-3 flex items-center gap-2"
+        className="px-5 pt-2.5 pb-3 flex items-end justify-between gap-3"
+        style={{ background: theme.footerBg, borderTop: `1px solid ${theme.divider}` }}
       >
-        {data.student.school_logo ? (
-          <img
-            src={data.student.school_logo}
-            alt=""
-            className="h-5 w-5 object-contain opacity-70 shrink-0"
-          />
-        ) : (
-          <School size={14} color="#10b981" />
-        )}
-        <p
-          style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}
-          className="truncate"
-        >
-          {data.student.school_name ?? "School Name"}
-        </p>
-        <p
-          style={{
-            color: "rgba(255,255,255,0.2)",
-            fontSize: 11,
-            marginLeft: "auto",
-          }}
-        >
-          #{data.student.system_number}
-        </p>
+        <div className="min-w-0">
+          <p style={{ color: theme.footerMuted, fontSize: 8.5, letterSpacing: 0.5 }}>{footerLeftLabel}</p>
+          <p style={{ color: theme.footerText, fontSize: 10.5, fontWeight: 600 }} className="truncate">
+            {footerLeftValue}
+          </p>
+        </div>
+        <IdBarcode value={footerLeftValue} color={theme.footerText} />
       </div>
     </div>
   );
 }
 
-// ─── TEMPLATE 3 — Minimal ─────────────────────────────────────────────────────
-// Clean white card, thin border, serif-inspired type weight, single ink-blue accent
-
-function MinimalStudentCard({ data }: { data: StudentIdCardData }) {
+function StudentCardBody({ theme, data }: { theme: CardTheme; data: StudentIdCardData }) {
   return (
-    <div
-      className="relative w-[340px] rounded-2xl overflow-hidden shadow-lg select-none"
-      style={{
-        background: "#ffffff",
-        border: "1.5px solid #e2e8f0",
-        fontFamily: "system-ui, sans-serif",
-      }}
-    >
-      {/* Header strip */}
+    <div className="flex flex-col items-center text-center">
       <div
-        style={{ background: "#1e40af" }}
-        className="px-5 py-3 flex items-center gap-3"
+        className="h-24 w-24 rounded-2xl overflow-hidden flex items-center justify-center shrink-0"
+        style={{ background: theme.chipBg, border: `3px solid ${theme.accent}` }}
       >
-        {data.school_logo ? (
-          <img
-            src={data.school_logo}
-            alt="School"
-            className="h-8 w-8 rounded-lg object-contain bg-white/10 p-0.5 shrink-0"
-          />
+        {data.profile_image ? (
+          <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
         ) : (
-          <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-            <School size={16} color="white" />
-          </div>
+          <UserIconPlaceholder size={56} color={theme.mutedText} />
         )}
-        <div className="min-w-0 flex-1">
-          <p className="text-white font-bold text-sm truncate">
-            {data.school_name ?? "School Name"}
-          </p>
-        </div>
-        <span
-          className="rounded px-2 py-0.5 shrink-0"
-          style={{
-            background: "rgba(255,255,255,0.15)",
-            color: "white",
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 1,
-          }}
-        >
-          ID CARD
+      </div>
+
+      <p style={{ color: theme.bodyText, fontSize: 16, fontWeight: 700, marginTop: 10 }} className="truncate max-w-full">
+        {data.first_name} {data.last_name ?? ""}
+      </p>
+
+      <span
+        className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5"
+        style={{ background: `${theme.accent}1f` }}
+      >
+        <GraduationCap size={11} color={theme.accent} />
+        <span style={{ color: theme.accent, fontSize: 11, fontWeight: 700 }}>
+          {data.class_name ?? "—"} · {data.section_name ?? "—"}
         </span>
+      </span>
+
+      <div className="w-full mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-left">
+        <DetailCell theme={theme} label="Roll No." value={data.roll_number ?? "—"} />
+        <DetailCell theme={theme} label="Blood Group" value={formatBloodGroup(data.blood_group)} />
+        <DetailCell theme={theme} label="Adm. No." value={data.admission_number ?? "—"} />
+        <DetailCell theme={theme} label="Contact" value={data.phone_number ?? "—"} />
       </div>
 
-      {/* Body */}
-      <div className="px-5 pt-5 pb-3 flex gap-4">
-        {/* Photo */}
-        <div className="shrink-0">
-          <div
-            className="h-[76px] w-[76px] rounded-xl overflow-hidden flex items-center justify-center"
-            style={{ background: "#f1f5f9", border: "2px solid #e2e8f0" }}
-          >
-            {data.profile_image ? (
-              <img
-                src={data.profile_image}
-                alt={data.first_name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <UserIconPlaceholder size={44} color="#94a3b8" />
-            )}
-          </div>
-          <div className="mt-1.5 text-center">
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-semibold"
-              style={{ background: "#dbeafe", color: "#1e40af" }}
-            >
-              {formatBloodGroup(data.blood_group)}
-            </span>
-          </div>
-        </div>
-
-        {/* Details */}
-        <div className="flex-1 min-w-0">
-          <p
-            style={{
-              color: "#1e293b",
-              fontWeight: 700,
-              fontSize: 16,
-              lineHeight: 1.2,
-            }}
-            className="truncate"
-          >
-            {data.first_name} {data.last_name ?? ""}
-          </p>
-          <p
-            style={{
-              color: "#1e40af",
-              fontWeight: 600,
-              fontSize: 12,
-              marginTop: 2,
-            }}
-          >
-            {data.class_name ?? "—"} — {data.section_name ?? "—"}
-          </p>
-
-          <div className="mt-3 space-y-1.5">
-            <MinimalRow label="Roll No." value={data.roll_number ?? "—"} />
-            <MinimalRow label="Adm. No." value={data.admission_number ?? "—"} />
-            <MinimalRow label="Contact" value={data.phone_number ?? "—"} />
-          </div>
-        </div>
-      </div>
-
-      {/* Address */}
       <div
-        style={{
-          borderTop: "1px solid #f1f5f9",
-          borderBottom: "1px solid #f1f5f9",
-        }}
-        className="px-5 py-2"
+        className="w-full mt-3.5 pt-3 flex items-start gap-1.5 text-left"
+        style={{ borderTop: `1px dashed ${theme.chipBorder}` }}
       >
-        <p style={{ color: "#64748b", fontSize: 11 }} className="truncate">
-          <MapPin size={10} className="inline mr-1 opacity-60" />
+        <MapPin size={11} color={theme.mutedText} className="shrink-0 mt-0.5" />
+        <p style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
           {formatAddress(data)}
         </p>
       </div>
+    </div>
+  );
+}
 
-      {/* Footer */}
-      <div className="px-5 py-2.5 flex justify-between">
-        <p style={{ color: "#94a3b8", fontSize: 10 }}>
-          {data.school_city ?? ""}
-          {data.school_phone ? ` · ${data.school_phone}` : ""}
+function PickupCardBody({ theme, data }: { theme: CardTheme; data: PickupCardData }) {
+  const student = data.student;
+  return (
+    <div>
+      <div
+        className="rounded-xl px-3.5 py-3"
+        style={{ background: theme.chipBg, border: `1px solid ${theme.chipBorder}` }}
+      >
+        <p style={{ color: theme.mutedText, fontSize: 9, fontWeight: 700, letterSpacing: 0.6 }}>STUDENT</p>
+        <p style={{ color: theme.bodyText, fontSize: 14, fontWeight: 700, marginTop: 2 }} className="truncate">
+          {student.first_name} {student.last_name ?? ""}
         </p>
-        <p style={{ color: "#94a3b8", fontSize: 10 }}>#{data.system_number}</p>
+        <div className="flex items-center gap-3 mt-1">
+          <span style={{ color: theme.mutedText, fontSize: 11 }}>
+            {student.class_name ?? "—"} · {student.section_name ?? "—"}
+          </span>
+          <span style={{ color: theme.mutedText, fontSize: 11 }}>Roll {student.roll_number ?? "—"}</span>
+        </div>
+      </div>
+
+      <p
+        style={{
+          color: theme.mutedText,
+          fontSize: 9.5,
+          fontWeight: 700,
+          letterSpacing: 0.8,
+          marginTop: 14,
+          marginBottom: 8,
+        }}
+      >
+        AUTHORISED FOR PICKUP
+      </p>
+
+      <PickupParentList theme={theme} data={data} />
+    </div>
+  );
+}
+
+// ─── Per-layout dispatch props ────────────────────────────────────────────────
+
+interface LayoutProps {
+  theme: CardTheme;
+  mode: CardMode;
+  idCardData: StudentIdCardData | null;
+  pickupCardData: PickupCardData | null;
+}
+
+function BadgeCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  if (mode === "student" && idCardData) {
+    return (
+      <CardShell
+        theme={theme}
+        kicker="STUDENT IDENTITY CARD"
+        logo={idCardData.school_logo}
+        schoolName={idCardData.school_name ?? "School Name"}
+        schoolCity={idCardData.school_city ?? ""}
+        footerLeftLabel="Admission No."
+        footerLeftValue={idCardData.admission_number ?? String(idCardData.system_number)}
+      >
+        <StudentCardBody theme={theme} data={idCardData} />
+      </CardShell>
+    );
+  }
+  if (mode === "pickup" && pickupCardData) {
+    return (
+      <CardShell
+        theme={theme}
+        kicker="PARENT PICKUP CARD"
+        logo={pickupCardData.student.school_logo}
+        schoolName={pickupCardData.student.school_name ?? "School Name"}
+        schoolCity={pickupCardData.student.school_city ?? ""}
+        footerLeftLabel="Admission No."
+        footerLeftValue={pickupCardData.student.admission_number ?? String(pickupCardData.student.system_number)}
+      >
+        <PickupCardBody theme={theme} data={pickupCardData} />
+      </CardShell>
+    );
+  }
+  return null;
+}
+
+// ─── Layout family: Ribbon (diagonal corner banner) ───────────────────────────
+
+function RibbonCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  const data = mode === "student" ? idCardData : (pickupCardData?.student ?? null);
+  if (!data) return null;
+
+  return (
+    <div
+      className="relative w-[300px] rounded-[20px] overflow-hidden select-none"
+      style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4)" }}
+    >
+      <div className="relative h-[108px] overflow-hidden" style={{ background: theme.panelBg }}>
+        <div
+          className="absolute -right-11 top-4 rotate-45 px-11 py-1"
+          style={{ background: "rgba(0,0,0,0.18)" }}
+        >
+          <span style={{ color: theme.panelText ?? "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 1.5 }}>
+            {mode === "student" ? "STUDENT ID" : "PICKUP CARD"}
+          </span>
+        </div>
+        <div className="absolute left-5 top-4 right-16 flex items-center gap-2">
+          {data.school_logo ? (
+            <img src={data.school_logo} alt="School" className="h-8 w-8 rounded-md object-contain bg-white/90 p-1 shrink-0" />
+          ) : (
+            <School size={16} color={theme.panelText ?? "#fff"} className="shrink-0" />
+          )}
+          <span
+            style={{ color: theme.panelText ?? "#fff", fontSize: 11.5, fontWeight: 700 }}
+            className="truncate"
+          >
+            {data.school_name ?? "School Name"}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex justify-center -mt-10">
+        <div
+          className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center"
+          style={{ background: theme.chipBg, border: `4px solid ${theme.cardBg}`, boxShadow: `0 0 0 2px ${theme.accent}` }}
+        >
+          {data.profile_image ? (
+            <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
+          ) : (
+            <UserIconPlaceholder size={40} color={theme.mutedText} />
+          )}
+        </div>
+      </div>
+
+      <div className="px-5 pt-2 pb-4 text-center">
+        <p style={{ color: theme.bodyText, fontSize: 15.5, fontWeight: 700 }}>
+          {data.first_name} {data.last_name ?? ""}
+        </p>
+        <p style={{ color: theme.accent, fontSize: 11.5, fontWeight: 700, marginTop: 2 }}>
+          {data.class_name ?? "—"} · {data.section_name ?? "—"}
+        </p>
+
+        {mode === "student" && idCardData ? (
+          <div className="mt-4 space-y-2 text-left">
+            <InlineDetail theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
+            <InlineDetail theme={theme} label="Admission No." value={idCardData.admission_number ?? "—"} />
+            <InlineDetail theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
+            <InlineDetail theme={theme} label="Contact" value={idCardData.phone_number ?? "—"} />
+          </div>
+        ) : pickupCardData ? (
+          <div className="mt-4 text-left">
+            <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }} className="mb-2">
+              AUTHORISED FOR PICKUP
+            </p>
+            <PickupParentList theme={theme} data={pickupCardData} />
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        className="px-5 pt-2.5 pb-3 flex items-end justify-between gap-3"
+        style={{ background: theme.footerBg, borderTop: `1px solid ${theme.divider}` }}
+      >
+        <div className="min-w-0">
+          <p style={{ color: theme.footerMuted, fontSize: 8.5 }}>Adm. No.</p>
+          <p style={{ color: theme.footerText, fontSize: 10.5, fontWeight: 600 }} className="truncate">
+            {data.admission_number ?? "—"}
+          </p>
+        </div>
+        <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.footerText} />
       </div>
     </div>
   );
 }
 
-function MinimalPickupCard({ data }: { data: PickupCardData }) {
-  const pickupParents = data.parents.filter((p) => p.can_pickup);
+// ─── Layout family: Band (vertical side accent) ───────────────────────────────
+
+function BandCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  const data = mode === "student" ? idCardData : (pickupCardData?.student ?? null);
+  if (!data) return null;
 
   return (
     <div
-      className="relative w-[340px] rounded-2xl overflow-hidden shadow-lg select-none"
-      style={{
-        background: "#ffffff",
-        border: "1.5px solid #e2e8f0",
-        fontFamily: "system-ui, sans-serif",
-      }}
+      className="relative w-[300px] rounded-[18px] overflow-hidden flex select-none"
+      style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4)" }}
     >
-      <div
-        style={{ background: "#065f46" }}
-        className="px-5 py-3 flex items-center justify-between"
-      >
+      <div style={{ width: 14, background: theme.panelBg }} />
+      <div className="flex-1 px-4 py-4 min-w-0">
         <div className="flex items-center gap-2">
-          {data.student.school_logo ? (
-            <img
-              src={data.student.school_logo}
-              alt=""
-              className="h-7 w-7 object-contain bg-white/10 rounded-lg p-0.5 shrink-0"
-            />
+          {data.school_logo ? (
+            <img src={data.school_logo} alt="School" className="h-7 w-7 rounded object-contain shrink-0" />
           ) : (
-            <School size={16} color="white" />
+            <School size={14} color={theme.accent} className="shrink-0" />
           )}
-          <p className="text-white font-bold text-sm truncate">
-            {data.student.school_name ?? "School Name"}
+          <p
+            style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}
+            className="truncate uppercase"
+          >
+            {data.school_name ?? "School Name"}
           </p>
         </div>
-        <span
-          className="rounded px-2 py-0.5 shrink-0"
-          style={{
-            background: "rgba(255,255,255,0.15)",
-            color: "white",
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 1,
-          }}
+
+        <div className="mt-4 flex gap-3 items-start">
+          <div
+            className="h-16 w-16 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
+            style={{ background: theme.chipBg, border: `1.5px solid ${theme.chipBorder}` }}
+          >
+            {data.profile_image ? (
+              <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
+            ) : (
+              <UserIconPlaceholder size={34} color={theme.mutedText} />
+            )}
+          </div>
+          <div className="min-w-0 pt-1">
+            <p style={{ color: theme.bodyText, fontSize: 14.5, fontWeight: 700 }} className="truncate">
+              {data.first_name} {data.last_name ?? ""}
+            </p>
+            <p style={{ color: theme.accent, fontSize: 11, fontWeight: 700, marginTop: 2 }}>
+              {data.class_name ?? "—"} · {data.section_name ?? "—"}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {mode === "student" && idCardData ? (
+            <>
+              <InlineDetail theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
+              <InlineDetail theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
+              <InlineDetail theme={theme} label="Contact" value={idCardData.phone_number ?? "—"} />
+              <div
+                className="pt-2 mt-1 flex items-start gap-1.5"
+                style={{ borderTop: `1px dashed ${theme.chipBorder}` }}
+              >
+                <MapPin size={11} color={theme.mutedText} className="shrink-0 mt-0.5" />
+                <p style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
+                  {formatAddress(idCardData)}
+                </p>
+              </div>
+            </>
+          ) : pickupCardData ? (
+            <>
+              <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
+                AUTHORISED FOR PICKUP
+              </p>
+              <div className="pt-1">
+                <PickupParentList theme={theme} data={pickupCardData} />
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <div
+          className="mt-4 pt-3 flex items-end justify-between"
+          style={{ borderTop: `1px solid ${theme.divider}` }}
         >
-          PICKUP
+          <div>
+            <p style={{ color: theme.mutedText, fontSize: 8.5 }}>Adm. No.</p>
+            <p style={{ color: theme.bodyText, fontSize: 10.5, fontWeight: 600 }}>
+              {data.admission_number ?? "—"}
+            </p>
+          </div>
+          <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout family: Executive (landscape corporate badge) ────────────────────
+
+function ExecutiveCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  const data = mode === "student" ? idCardData : (pickupCardData?.student ?? null);
+  if (!data) return null;
+
+  return (
+    <div
+      className="relative w-[440px] rounded-[18px] overflow-hidden flex select-none"
+      style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4)" }}
+    >
+      <div
+        className="w-[160px] shrink-0 flex flex-col items-center justify-center px-4 py-5 text-center"
+        style={{ background: theme.panelBg }}
+      >
+        <div
+          className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center"
+          style={{ background: "rgba(255,255,255,0.1)", border: `2px solid ${theme.accent}` }}
+        >
+          {data.profile_image ? (
+            <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
+          ) : (
+            <UserIconPlaceholder size={44} color={theme.accent} />
+          )}
+        </div>
+        <p
+          style={{ color: theme.panelText ?? "#fff", fontSize: 13, fontWeight: 700, marginTop: 10 }}
+          className="truncate max-w-full"
+        >
+          {data.first_name} {data.last_name ?? ""}
+        </p>
+        <span className="mt-1.5 inline-flex rounded-full px-2 py-0.5" style={{ background: "rgba(255,255,255,0.15)" }}>
+          <span style={{ color: theme.accent, fontSize: 10, fontWeight: 700 }}>
+            {data.class_name ?? "—"}-{data.section_name ?? "—"}
+          </span>
+        </span>
+      </div>
+
+      <div className="flex-1 px-4 py-4 flex flex-col min-w-0">
+        <div className="flex items-center gap-2">
+          {data.school_logo ? (
+            <img src={data.school_logo} alt="School" className="h-6 w-6 rounded object-contain shrink-0" />
+          ) : (
+            <School size={14} color={theme.accent} className="shrink-0" />
+          )}
+          <p style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 700 }} className="truncate">
+            {data.school_name ?? "School Name"}
+          </p>
+          <span
+            style={{ color: theme.mutedText, fontSize: 8.5, fontWeight: 700, letterSpacing: 1, marginLeft: "auto" }}
+            className="shrink-0"
+          >
+            {mode === "student" ? "STUDENT ID CARD" : "PICKUP CARD"}
+          </span>
+        </div>
+
+        <div className="flex-1 mt-3">
+          {mode === "student" && idCardData ? (
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+              <DetailCell theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
+              <DetailCell theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
+              <DetailCell theme={theme} label="Adm. No." value={idCardData.admission_number ?? "—"} />
+              <DetailCell theme={theme} label="Contact" value={idCardData.phone_number ?? "—"} />
+            </div>
+          ) : pickupCardData ? (
+            <div className="space-y-2">
+              <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
+                AUTHORISED FOR PICKUP
+              </p>
+              <PickupParentList theme={theme} data={pickupCardData} />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="pt-2 flex items-end justify-between" style={{ borderTop: `1px solid ${theme.divider}` }}>
+          <p style={{ color: theme.mutedText, fontSize: 9.5 }}>#{data.system_number}</p>
+          <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout family: Crest (formal / heritage) ─────────────────────────────────
+
+function CrestCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  const data = mode === "student" ? idCardData : (pickupCardData?.student ?? null);
+  if (!data) return null;
+
+  return (
+    <div
+      className="relative w-[300px] rounded-[10px] overflow-hidden select-none"
+      style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.35)" }}
+    >
+      <div className="m-2 rounded-[6px]" style={{ border: `1.5px solid ${theme.accent}`, padding: "18px 20px 16px" }}>
+        <div className="flex flex-col items-center text-center">
+          {data.school_logo ? (
+            <img src={data.school_logo} alt="School" className="h-9 w-9 object-contain mb-1.5" />
+          ) : (
+            <GraduationCap size={26} color={theme.accent} className="mb-1.5" />
+          )}
+          <p
+            style={{ color: theme.bodyText, fontSize: 10.5, fontWeight: 700, letterSpacing: 1.5 }}
+            className="uppercase truncate max-w-full font-serif"
+          >
+            {data.school_name ?? "School Name"}
+          </p>
+          <span className="mt-1 h-px w-10" style={{ background: theme.accent }} />
+
+          <div className="relative mt-4">
+            <GraduationCap
+              size={110}
+              color={theme.accent}
+              className="absolute opacity-[0.08] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            />
+            <div
+              className="relative h-24 w-24 rounded-full overflow-hidden flex items-center justify-center"
+              style={{ background: theme.chipBg, border: `3px double ${theme.accent}` }}
+            >
+              {data.profile_image ? (
+                <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
+              ) : (
+                <UserIconPlaceholder size={54} color={theme.mutedText} />
+              )}
+            </div>
+          </div>
+
+          <p className="font-serif" style={{ color: theme.bodyText, fontSize: 16, fontWeight: 700, marginTop: 10 }}>
+            {data.first_name} {data.last_name ?? ""}
+          </p>
+          <p style={{ color: theme.accent, fontSize: 11.5, fontWeight: 600, marginTop: 1 }}>
+            {data.class_name ?? "—"} · Section {data.section_name ?? "—"}
+          </p>
+
+          {mode === "student" && idCardData ? (
+            <div className="mt-3.5 flex items-center gap-2 flex-wrap justify-center">
+              <span style={{ color: theme.mutedText, fontSize: 10.5 }}>Roll {idCardData.roll_number ?? "—"}</span>
+              <span style={{ color: theme.chipBorder }}>•</span>
+              <span style={{ color: theme.mutedText, fontSize: 10.5 }}>Adm {idCardData.admission_number ?? "—"}</span>
+              <span style={{ color: theme.chipBorder }}>•</span>
+              <span style={{ color: theme.mutedText, fontSize: 10.5 }}>{formatBloodGroup(idCardData.blood_group)}</span>
+            </div>
+          ) : pickupCardData ? (
+            <div className="mt-3.5 w-full text-left">
+              <p
+                style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}
+                className="text-center mb-2"
+              >
+                AUTHORISED FOR PICKUP
+              </p>
+              <PickupParentList theme={theme} data={pickupCardData} />
+            </div>
+          ) : null}
+
+          <div
+            className="mt-4 pt-3 w-full flex flex-col items-center gap-1"
+            style={{ borderTop: `1px dashed ${theme.chipBorder}` }}
+          >
+            <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
+            <p style={{ color: theme.mutedText, fontSize: 9, letterSpacing: 0.5, marginTop: 2 }}>
+              AUTHORIZED SIGNATORY
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout family: Secure Access (QR verification) ───────────────────────────
+
+function AccessCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  const data = mode === "student" ? idCardData : (pickupCardData?.student ?? null);
+  if (!data) return null;
+
+  return (
+    <div
+      className="relative w-[300px] rounded-[20px] overflow-hidden select-none"
+      style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(0,0,0,0.5)" }}
+    >
+      <div className="px-5 pt-5 pb-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${theme.divider}` }}>
+        {data.school_logo ? (
+          <img src={data.school_logo} alt="School" className="h-9 w-9 rounded-lg object-contain bg-white/10 p-1 shrink-0" />
+        ) : (
+          <ShieldCheck size={20} color={theme.accent} className="shrink-0" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 700 }} className="truncate">
+            {data.school_name ?? "School Name"}
+          </p>
+          <p style={{ color: theme.accent, fontSize: 9.5, fontWeight: 700, letterSpacing: 1.5 }}>
+            {mode === "student" ? "ACCESS · STUDENT" : "ACCESS · PICKUP"}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-5 py-4 flex items-center gap-3">
+        <div
+          className="h-16 w-16 rounded-xl overflow-hidden flex items-center justify-center shrink-0"
+          style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${theme.accent}` }}
+        >
+          {data.profile_image ? (
+            <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
+          ) : (
+            <UserIconPlaceholder size={36} color={theme.accent} />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p style={{ color: theme.bodyText, fontSize: 14.5, fontWeight: 700 }} className="truncate">
+            {data.first_name} {data.last_name ?? ""}
+          </p>
+          <p style={{ color: theme.mutedText, fontSize: 11 }}>
+            {data.class_name ?? "—"} · {data.section_name ?? "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-5 pb-2 flex items-center justify-center">
+        <IdQrCode value={data.admission_number ?? String(data.system_number)} color={theme.accent} size={104} />
+      </div>
+      <p style={{ color: theme.mutedText, fontSize: 9, letterSpacing: 1.2, textAlign: "center" }}>
+        SCAN TO VERIFY IDENTITY
+      </p>
+
+      <div className="px-5 mt-3 pt-3 pb-3" style={{ borderTop: `1px solid ${theme.divider}` }}>
+        {mode === "student" && idCardData ? (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+            <DetailCell theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
+            <DetailCell theme={theme} label="Adm. No." value={idCardData.admission_number ?? "—"} />
+          </div>
+        ) : pickupCardData ? (
+          <PickupParentList theme={theme} data={pickupCardData} />
+        ) : null}
+      </div>
+
+      <div className="px-5 pb-4 flex items-center justify-between">
+        <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
+        <span style={{ color: theme.mutedText, fontSize: 10 }}>#{data.system_number}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Layout family: Pastel (junior / softer grades) ───────────────────────────
+
+function PastelCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
+  const data = mode === "student" ? idCardData : (pickupCardData?.student ?? null);
+  if (!data) return null;
+
+  return (
+    <div
+      className="relative w-[300px] rounded-[28px] overflow-hidden select-none"
+      style={{ background: theme.cardBg, boxShadow: "0 20px 40px -16px rgba(15,23,42,0.25)" }}
+    >
+      <div className="px-5 pt-5 pb-4 text-center" style={{ background: theme.panelBg }}>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          {data.school_logo ? (
+            <img src={data.school_logo} alt="School" className="h-7 w-7 rounded-full object-contain bg-white/70 p-1" />
+          ) : (
+            <School size={14} color={theme.accent} />
+          )}
+          <span style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 700 }} className="truncate max-w-[180px]">
+            {data.school_name ?? "School Name"}
+          </span>
+        </div>
+        <div className="flex justify-center">
+          <div
+            className="h-24 w-24 rounded-full overflow-hidden flex items-center justify-center"
+            style={{ background: "#ffffff", border: `4px dashed ${theme.accent}` }}
+          >
+            {data.profile_image ? (
+              <img src={data.profile_image} alt={data.first_name} className="h-full w-full object-cover" />
+            ) : (
+              <UserIconPlaceholder size={54} color={theme.mutedText} />
+            )}
+          </div>
+        </div>
+        <p style={{ color: theme.bodyText, fontSize: 16, fontWeight: 800, marginTop: 10 }}>
+          {data.first_name} {data.last_name ?? ""}
+        </p>
+        <span className="mt-1.5 inline-flex items-center rounded-full px-3 py-1" style={{ background: "#ffffff" }}>
+          <span style={{ color: theme.accent, fontSize: 11.5, fontWeight: 700 }}>
+            {data.class_name ?? "—"} · {data.section_name ?? "—"}
+          </span>
         </span>
       </div>
 
       <div className="px-5 py-4">
-        {/* Student */}
-        <div
-          style={{
-            background: "#f0fdf4",
-            borderRadius: 12,
-            padding: "10px 14px",
-          }}
-        >
-          <p
-            style={{
-              color: "#065f46",
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 1,
-            }}
-          >
-            STUDENT
-          </p>
-          <p
-            style={{
-              color: "#0f172a",
-              fontWeight: 700,
-              fontSize: 15,
-              marginTop: 2,
-            }}
-          >
-            {data.student.first_name} {data.student.last_name ?? ""}
-          </p>
-          <div className="flex gap-4 mt-1">
-            <p style={{ color: "#374151", fontSize: 12 }}>
-              {data.student.class_name ?? "—"} –{" "}
-              {data.student.section_name ?? "—"}
-            </p>
-            <p style={{ color: "#374151", fontSize: 12 }}>
-              Roll: {data.student.roll_number ?? "—"}
-            </p>
+        {mode === "student" && idCardData ? (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+            <DetailCell theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
+            <DetailCell theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
           </div>
-        </div>
-
-        {/* Parents */}
-        <div className="mt-4">
-          <p
-            style={{
-              color: "#94a3b8",
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 1,
-              marginBottom: 8,
-            }}
-          >
-            AUTHORISED PICKUP CONTACTS
-          </p>
-          {pickupParents.length === 0 ? (
-            <p style={{ color: "#94a3b8", fontSize: 12 }}>
-              No contacts assigned
+        ) : pickupCardData ? (
+          <div className="space-y-2.5">
+            <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
+              AUTHORISED FOR PICKUP
             </p>
-          ) : (
-            pickupParents.slice(0, 3).map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-3 py-1.5"
-                style={{ borderBottom: "1px solid #f1f5f9" }}
-              >
-                <div
-                  className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-                  style={{ background: "#f1f5f9" }}
-                >
-                  {p.profile_image ? (
-                    <img
-                      src={p.profile_image}
-                      alt={p.first_name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <UserIconPlaceholder size={24} color="#94a3b8" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p
-                    style={{ color: "#0f172a", fontWeight: 600, fontSize: 13 }}
-                    className="truncate"
-                  >
-                    {p.first_name} {p.last_name ?? ""}
-                  </p>
-                  <p style={{ color: "#64748b", fontSize: 11 }}>
-                    {p.relation} · {p.phone_number}
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+            <PickupParentList theme={theme} data={pickupCardData} />
+          </div>
+        ) : null}
       </div>
 
-      <div
-        style={{ borderTop: "1px solid #f1f5f9" }}
-        className="px-5 py-2 flex justify-between"
-      >
-        <p style={{ color: "#94a3b8", fontSize: 10 }}>
-          Adm: {data.student.admission_number ?? "—"}
-        </p>
-        <p style={{ color: "#94a3b8", fontSize: 10 }}>
-          #{data.student.system_number}
-        </p>
+      <div className="px-5 pb-4 flex items-center justify-between">
+        <span style={{ color: theme.mutedText, fontSize: 10 }}>Adm: {data.admission_number ?? "—"}</span>
+        <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
       </div>
     </div>
   );
 }
 
-// ─── Small helper sub-components ──────────────────────────────────────────────
-
-function InfoRow({
-  icon,
-  label,
-  value,
-  truncate,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  truncate?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-1.5">
-      <span className="mt-0.5 shrink-0">{icon}</span>
-      <div className="min-w-0">
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 10 }}>
-          {label}:{" "}
-        </span>
-        <span
-          className={`text-white text-xs font-medium ${truncate ? "truncate block" : ""}`}
-        >
-          {value}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function ModernInfoCell({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div>
-      <p
-        style={{
-          color: "rgba(255,255,255,0.35)",
-          fontSize: 10,
-          letterSpacing: 0.5,
-        }}
-      >
-        {label}
-      </p>
-      <p
-        style={{
-          color: accent ? "#06b6d4" : "rgba(255,255,255,0.85)",
-          fontSize: 13,
-          fontWeight: 600,
-          marginTop: 1,
-        }}
-        className="truncate"
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function MinimalRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-1">
-      <span style={{ color: "#94a3b8", fontSize: 11, minWidth: 56 }}>
-        {label}
-      </span>
-      <span
-        style={{ color: "#1e293b", fontSize: 12, fontWeight: 500 }}
-        className="truncate"
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-// ─── Template selector button ──────────────────────────────────────────────────
-
-function TemplateButton({
-  id,
-  label,
-  description,
-  isActive,
-  onClick,
-}: {
-  id: string;
-  label: string;
-  description: string;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left rounded-xl border px-4 py-3 transition-all"
-      style={{
-        borderColor: isActive ? "hsl(var(--primary))" : "hsl(var(--border))",
-        background: isActive
-          ? "hsl(var(--primary) / 0.06)"
-          : "hsl(var(--card))",
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-foreground">{label}</p>
-        {isActive && (
-          <span
-            className="text-xs font-medium rounded-full px-2 py-0.5"
-            style={{
-              background: "hsl(var(--primary) / 0.12)",
-              color: "hsl(var(--primary))",
-            }}
-          >
-            Active
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-    </button>
-  );
-}
-
-// ─── Card renderer (delegates to correct template) ────────────────────────────
+// ─── Card renderer (delegates to correct layout family) ──────────────────────
 
 function CardPreview({
   template,
@@ -1056,28 +1260,61 @@ function CardPreview({
   idCardData: StudentIdCardData | null;
   pickupCardData: PickupCardData | null;
 }) {
-  if (mode === "student" && idCardData) {
-    if (template === "classic") return <ClassicStudentCard data={idCardData} />;
-    if (template === "modern") return <ModernStudentCard data={idCardData} />;
-    return <MinimalStudentCard data={idCardData} />;
+  const theme = CARD_THEMES[template];
+  if (mode === "student" && !idCardData) return null;
+  if (mode === "pickup" && !pickupCardData) return null;
+
+  const props: LayoutProps = { theme, mode, idCardData, pickupCardData };
+  switch (theme.layout) {
+    case "badge":
+      return <BadgeCard {...props} />;
+    case "ribbon":
+      return <RibbonCard {...props} />;
+    case "band":
+      return <BandCard {...props} />;
+    case "executive":
+      return <ExecutiveCard {...props} />;
+    case "crest":
+      return <CrestCard {...props} />;
+    case "access":
+      return <AccessCard {...props} />;
+    case "pastel":
+      return <PastelCard {...props} />;
+    default:
+      return null;
   }
-  if (mode === "pickup" && pickupCardData) {
-    if (template === "classic")
-      return <ClassicPickupCard data={pickupCardData} />;
-    if (template === "modern")
-      return <ModernPickupCard data={pickupCardData} />;
-    return <MinimalPickupCard data={pickupCardData} />;
-  }
-  return null;
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+function TemplateThumb({ templateId, mode }: { templateId: CardTemplateId; mode: CardMode }) {
+  const theme = CARD_THEMES[templateId];
+  const dims = LAYOUT_DIMS[theme.layout];
+  const scale = Math.min(150 / dims.w, 172 / dims.h);
+
+  return (
+    <div
+      className="w-full flex items-center justify-center overflow-hidden rounded-lg"
+      style={{ height: 176, background: "hsl(var(--muted) / 0.35)" }}
+    >
+      <div style={{ transform: `scale(${scale})`, width: dims.w }}>
+        <CardPreview
+          template={templateId}
+          mode={mode}
+          idCardData={SAMPLE_STUDENT_CARD}
+          pickupCardData={SAMPLE_PICKUP_CARD}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 function GeneratePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedStudentId = searchParams.get("studentId");
   const printRef = useRef<HTMLDivElement>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const {
     selectedStudentId,
@@ -1091,11 +1328,35 @@ function GeneratePageContent() {
     loadCardData,
   } = useStudentCards();
 
-  const { students, isLoading: isStudentsLoading } = useStudents({
+  const {
+    years,
+    classes,
+    sections,
+    selectedAcademicYearId,
+    setSelectedAcademicYearId,
+    selectedClassId,
+    selectedSectionId,
+    handleClassChange,
+    handleSectionChange,
+    isLoadingClasses,
+  } = useAcademicClassSection();
+
+  const { students, isLoading: isStudentsLoading, updateFilters } = useStudents({
     is_enabled: true,
   });
 
-  // Auto-load if arriving from student row action
+  // Fetch students for the chosen academic year / class / section only.
+  useEffect(() => {
+    if (selectedClassId) {
+      updateFilters({
+        academic_year_id: selectedAcademicYearId || undefined,
+        class_id: selectedClassId,
+        section_id: selectedSectionId || undefined,
+      });
+    }
+  }, [selectedAcademicYearId, selectedClassId, selectedSectionId]); // eslint-disable-line
+
+  // Auto-load if arriving from a student row action.
   useEffect(() => {
     if (preselectedStudentId) {
       loadCardData(preselectedStudentId);
@@ -1103,20 +1364,15 @@ function GeneratePageContent() {
   }, [preselectedStudentId]); // eslint-disable-line
 
   const hasData = cardMode === "student" ? !!idCardData : !!pickupCardData;
+  const currentTemplate = CARD_TEMPLATES.find((t) => t.id === selectedTemplate);
 
   function handlePrint() {
     window.print();
   }
 
   const cardTabs = [
-    {
-      value: "student" as CardMode,
-      label: STUDENT_PAGE.buttons.generateIdCard,
-    },
-    {
-      value: "pickup" as CardMode,
-      label: STUDENT_PAGE.buttons.generatePickupCard,
-    },
+    { value: "student" as CardMode, label: STUDENT_PAGE.buttons.generateIdCard },
+    { value: "pickup" as CardMode, label: STUDENT_PAGE.buttons.generatePickupCard },
   ];
 
   return (
@@ -1137,320 +1393,201 @@ function GeneratePageContent() {
         }
       `}</style>
 
-      <Div type="col" gap="lg">
+      <Div type="col" gap="md">
         <PageHeader
           title={STUDENT_PAGE.generate.title}
           subtitle={STUDENT_PAGE.generate.subtitle}
           actions={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(STUDENT_ROUTES.list)}
-            >
+            <Button variant="outline" size="sm" onClick={() => router.push(STUDENT_ROUTES.list)}>
               <ArrowLeft size={14} />
               {STUDENT_PAGE.buttons.back}
             </Button>
           }
         />
 
-        <Div type="row" gap="lg" align="start" className="min-h-[70vh]">
-          {/* ── LEFT PANEL — Controls ──────────────────────────────────── */}
-          <Div type="col" gap="md" className="w-72 shrink-0">
-            {/* Step 1 — Student */}
-            <Div variant="card" className="p-4">
-              <Div type="row" align="center" gap="sm" className="mb-3">
-                <Div
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{
-                    background: "hsl(var(--primary))",
-                    color: "hsl(var(--primary-foreground))",
-                  }}
-                >
-                  1
-                </Div>
-                <H3 color="default">Select Student</H3>
-              </Div>
-
-              {isStudentsLoading ? (
-                <Div type="row" justify="center" className="py-3">
-                  <Spinner size="sm" />
-                </Div>
-              ) : (
-                <div className="max-h-56 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
-                  {students.length === 0 && (
-                    <P color="muted" className="text-center py-3 text-xs">
-                      No students found
-                    </P>
-                  )}
-                  {students.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => loadCardData(s.id)}
-                      className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/60"
-                      style={{
-                        background:
-                          selectedStudentId === s.id
-                            ? "hsl(var(--primary) / 0.08)"
-                            : "transparent",
-                        border:
-                          selectedStudentId === s.id
-                            ? "1px solid hsl(var(--primary) / 0.3)"
-                            : "1px solid transparent",
-                      }}
-                    >
-                      <div className="h-7 w-7 rounded-full bg-muted overflow-hidden flex items-center justify-center shrink-0">
-                        {s.profile_image ? (
-                          <img
-                            src={s.profile_image}
-                            alt={s.first_name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs font-semibold text-muted-foreground">
-                            {s.first_name[0]}
-                            {s.last_name?.[0] ?? ""}
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {s.first_name} {s.last_name ?? ""}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {s.class_name ?? "—"}{" "}
-                          {s.section_name ? `· ${s.section_name}` : ""}{" "}
-                          {s.roll_number ? `· Roll ${s.roll_number}` : ""}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </Div>
-
-            {/* Step 2 — Card Type */}
-            <Div variant="card" className="p-4">
-              <Div type="row" align="center" gap="sm" className="mb-3">
-                <Div
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{
-                    background: "hsl(var(--primary))",
-                    color: "hsl(var(--primary-foreground))",
-                  }}
-                >
-                  2
-                </Div>
-                <H3 color="default">Card Type</H3>
-              </Div>
-              <Div type="col" gap="sm">
-                {cardTabs.map((tab) => (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    onClick={() => setCardMode(tab.value)}
-                    className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors"
-                    style={{
-                      background:
-                        cardMode === tab.value
-                          ? "hsl(var(--primary) / 0.08)"
-                          : "hsl(var(--muted) / 0.4)",
-                      border:
-                        cardMode === tab.value
-                          ? "1px solid hsl(var(--primary) / 0.3)"
-                          : "1px solid transparent",
-                    }}
-                  >
-                    {tab.value === "student" ? (
-                      <CreditCard
-                        size={14}
-                        className={
-                          cardMode === tab.value
-                            ? "text-primary"
-                            : "text-muted-foreground"
-                        }
-                      />
-                    ) : (
-                      <Users
-                        size={14}
-                        className={
-                          cardMode === tab.value
-                            ? "text-primary"
-                            : "text-muted-foreground"
-                        }
-                      />
-                    )}
-                    <span
-                      className={`text-sm font-medium ${cardMode === tab.value ? "text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {tab.label}
-                    </span>
-                  </button>
+        {/* ── Class & student selection ─────────────────────────────────── */}
+        <Div className="rounded-xl border border-border bg-card px-4 py-3" type="col" gap="xs">
+          <H3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Class &amp; Student
+          </H3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <FormField label="Academic Year">
+              <Select
+                value={selectedAcademicYearId}
+                onChange={(e) => setSelectedAcademicYearId(e.target.value)}
+              >
+                <option value="">Select year</option>
+                {years.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.name}
+                    {y.is_current ? " (Current)" : ""}
+                  </option>
                 ))}
-              </Div>
-            </Div>
+              </Select>
+            </FormField>
 
-            {/* Step 3 — Template */}
-            <Div variant="card" className="p-4">
-              <Div type="row" align="center" gap="sm" className="mb-3">
-                <Div
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{
-                    background: "hsl(var(--primary))",
-                    color: "hsl(var(--primary-foreground))",
-                  }}
-                >
-                  3
-                </Div>
-                <H3 color="default">{STUDENT_PAGE.generate.chooseTemplate}</H3>
-              </Div>
-              <Div type="col" gap="sm">
-                {CARD_TEMPLATES.map((t) => (
-                  <TemplateButton
-                    key={t.id}
-                    id={t.id}
-                    label={t.label}
-                    description={t.description}
-                    isActive={selectedTemplate === t.id}
-                    onClick={() => setSelectedTemplate(t.id)}
-                  />
+            <FormField label="Class">
+              <Select
+                value={selectedClassId}
+                onChange={(e) => handleClassChange(e.target.value)}
+                disabled={!selectedAcademicYearId || isLoadingClasses}
+              >
+                <option value="">Select class</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
-              </Div>
-            </Div>
+              </Select>
+            </FormField>
 
-            {/* Actions */}
-            {hasData && (
-              <Div type="col" gap="sm">
-                <Button onClick={handlePrint} fullWidth>
-                  <Printer size={15} />
-                  {STUDENT_PAGE.buttons.printCard}
-                </Button>
-                <Button variant="outline" onClick={handlePrint} fullWidth>
-                  <Download size={15} />
-                  {STUDENT_PAGE.buttons.downloadCard}
-                </Button>
-              </Div>
-            )}
+            <FormField label="Section">
+              <Select
+                value={selectedSectionId}
+                onChange={(e) => handleSectionChange(e.target.value)}
+                disabled={!selectedClassId}
+              >
+                <option value="">All sections</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            <FormField label="Student">
+              <Select
+                value={selectedStudentId ?? ""}
+                onChange={(e) => e.target.value && loadCardData(e.target.value)}
+                disabled={!selectedClassId || isStudentsLoading}
+              >
+                <option value="">{!selectedClassId ? "Select a class first" : "Select student"}</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.first_name} {s.last_name ?? ""}
+                    {s.roll_number ? ` — Roll ${s.roll_number}` : ""}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+        </Div>
+
+        {/* ── Card type / template / actions ────────────────────────────── */}
+        <Div
+          className="rounded-xl border border-border bg-card px-4 py-3"
+          type="row"
+          align="center"
+          justify="between"
+          wrap
+          gap="md"
+        >
+          <Div type="row" align="center" gap="sm">
+            <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
+              Card Type
+            </P>
+            <Tabs options={cardTabs} value={cardMode} onChange={setCardMode} className="w-64" />
           </Div>
 
-          {/* ── RIGHT PANEL — Preview ──────────────────────────────────── */}
-          <Div
-            type="col"
-            align="center"
-            justify="center"
-            className="flex-1 min-h-[500px] rounded-2xl"
-            style={{
-              background: "hsl(var(--muted) / 0.3)",
-              border: "1px dashed hsl(var(--border))",
-            }}
-          >
-            {isCardLoading ? (
-              <Div type="col" align="center" gap="md">
-                <Spinner size="lg" />
-                <P color="muted">Loading card data…</P>
-              </Div>
-            ) : !selectedStudentId ? (
-              <Div
-                type="col"
-                align="center"
-                gap="md"
-                className="px-8 text-center"
-              >
-                <Div
-                  className="h-16 w-16 rounded-2xl flex items-center justify-center"
-                  style={{ background: "hsl(var(--muted))" }}
-                >
-                  <CreditCard size={28} className="text-muted-foreground" />
-                </Div>
-                <P color="muted">{STUDENT_PAGE.generate.noStudent}</P>
-              </Div>
-            ) : (
-              <Div type="col" align="center" gap="xl">
-                {/* Live preview label */}
-                <Div type="row" align="center" gap="sm">
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-                    style={{
-                      background: "hsl(var(--primary) / 0.1)",
-                      color: "hsl(var(--primary))",
-                    }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    Live Preview
-                  </span>
-                  <P color="muted" className="text-xs">
-                    {
-                      CARD_TEMPLATES.find((t) => t.id === selectedTemplate)
-                        ?.label
-                    }{" "}
-                    template
-                  </P>
-                </Div>
+          <Div type="row" align="center" gap="sm">
+            <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
+              {STUDENT_PAGE.generate.chooseTemplate}
+            </P>
+            <button
+              type="button"
+              onClick={() => setGalleryOpen(true)}
+              className="flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-muted/50 transition-colors"
+              style={{ borderColor: "hsl(var(--border))" }}
+            >
+              <span
+                className="h-3.5 w-3.5 rounded-full shrink-0"
+                style={{ background: CARD_THEMES[selectedTemplate].accent }}
+              />
+              <span className="text-sm font-medium text-foreground">{currentTemplate?.label}</span>
+              <ChevronDown size={14} className="text-muted-foreground" />
+            </button>
+          </Div>
 
-                {/* Card preview */}
-                <div id="card-print-area" ref={printRef}>
-                  <CardPreview
-                    template={selectedTemplate}
-                    mode={cardMode}
-                    idCardData={idCardData}
-                    pickupCardData={pickupCardData}
-                  />
-                </div>
-
-                {/* All-template thumbnail strip */}
-                <Div type="col" align="center" gap="sm">
-                  <P color="muted" className="text-xs">
-                    All templates preview
-                  </P>
-                  <Div type="row" gap="md" className="overflow-x-auto pb-1">
-                    {CARD_TEMPLATES.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setSelectedTemplate(t.id)}
-                        className="shrink-0 group"
-                      >
-                        <div
-                          className="rounded-xl overflow-hidden transition-all group-hover:scale-105"
-                          style={{
-                            transform: "scale(0.42)",
-                            transformOrigin: "top center",
-                            width: 340,
-                            marginBottom: -196,
-                            outline:
-                              selectedTemplate === t.id
-                                ? "2.5px solid hsl(var(--primary))"
-                                : "2px solid transparent",
-                            borderRadius: 16,
-                          }}
-                        >
-                          <CardPreview
-                            template={t.id}
-                            mode={cardMode}
-                            idCardData={idCardData}
-                            pickupCardData={pickupCardData}
-                          />
-                        </div>
-                        <p
-                          className="text-xs font-medium mt-1"
-                          style={{
-                            color:
-                              selectedTemplate === t.id
-                                ? "hsl(var(--primary))"
-                                : "hsl(var(--muted-foreground))",
-                          }}
-                        >
-                          {t.label}
-                        </p>
-                      </button>
-                    ))}
-                  </Div>
-                </Div>
-              </Div>
-            )}
+          <Div type="row" align="center" gap="sm">
+            <Button variant="outline" size="sm" onClick={handlePrint} disabled={!hasData}>
+              <Printer size={14} />
+              {STUDENT_PAGE.buttons.printCard}
+            </Button>
+            <Button size="sm" onClick={handlePrint} disabled={!hasData}>
+              <Download size={14} />
+              {STUDENT_PAGE.buttons.downloadCard}
+            </Button>
           </Div>
         </Div>
+
+        {/* ── Preview ──────────────────────────────────────────────────── */}
+        <Div
+          type="col"
+          align="center"
+          justify="center"
+          className="flex-1 rounded-2xl py-10"
+          style={{ background: "hsl(var(--muted) / 0.25)", border: "1px dashed hsl(var(--border))" }}
+        >
+          {isCardLoading ? (
+            <Div type="col" align="center" gap="md">
+              <Spinner size="lg" />
+              <P color="muted">Loading card data…</P>
+            </Div>
+          ) : !selectedStudentId ? (
+            <Div type="col" align="center" gap="md" className="px-8 text-center">
+              <Div
+                className="h-14 w-14 rounded-2xl flex items-center justify-center"
+                style={{ background: "hsl(var(--muted))" }}
+              >
+                <CreditCard size={26} className="text-muted-foreground" />
+              </Div>
+              <P color="muted">{STUDENT_PAGE.generate.noStudent}</P>
+            </Div>
+          ) : (
+            <div id="card-print-area" ref={printRef}>
+              <CardPreview
+                template={selectedTemplate}
+                mode={cardMode}
+                idCardData={idCardData}
+                pickupCardData={pickupCardData}
+              />
+            </div>
+          )}
+        </Div>
       </Div>
+
+      {/* ── Template sandbox modal ────────────────────────────────────── */}
+      {galleryOpen && (
+        <Modal onClose={() => setGalleryOpen(false)} title="Template Sandbox" size="lg">
+          <ModalBody>
+            <P color="muted" className="text-xs mb-3">
+              Pick a design for the {cardMode === "student" ? "Student ID Card" : "Pickup Card"}. Previews use sample data.
+            </P>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {CARD_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplate(t.id);
+                    setGalleryOpen(false);
+                  }}
+                  className="text-left rounded-xl border p-2.5 transition-all hover:shadow-md"
+                  style={{
+                    borderColor: selectedTemplate === t.id ? "hsl(var(--primary))" : "hsl(var(--border))",
+                    background: selectedTemplate === t.id ? "hsl(var(--primary) / 0.05)" : "hsl(var(--card))",
+                  }}
+                >
+                  <TemplateThumb templateId={t.id} mode={cardMode} />
+                  <p className="text-xs font-semibold text-foreground mt-2">{t.label}</p>
+                  <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</p>
+                </button>
+              ))}
+            </div>
+          </ModalBody>
+        </Modal>
+      )}
     </>
   );
 }

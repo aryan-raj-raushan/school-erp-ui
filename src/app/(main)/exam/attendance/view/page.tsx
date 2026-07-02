@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { useMarkAttendance, type AttendanceSource } from "@/hooks/exam/useExamAttendance";
@@ -24,7 +24,6 @@ import {
   ATTENDANCE_BADGE,
 } from "@/constants/exam.constants";
 import type { AttendanceStatus } from "@/types/exam.types";
-import { useStudents } from "@/hooks/useStudentV2";
 
 type AttendanceRow = {
   student_id: string;
@@ -40,18 +39,6 @@ function fmtDate(iso: string) {
 
 function ViewAttendanceContent() {
   const router = useRouter();
-  const {
-    examId,
-    setExamId,
-    academicYearId,
-    setAcademicYearId,
-    availableDates,
-    isLoadingSchedules,
-    rows,
-    initRows,
-  } = useMarkAttendance();
-
-  const { students } = useStudents();
 
   const {
     years,
@@ -66,13 +53,24 @@ function ViewAttendanceContent() {
     isLoadingClasses,
   } = useAcademicClassSection({ autoSelectCurrentYear: true });
 
+  const {
+    examId,
+    setExamId,
+    availableDates,
+    isLoadingSchedules,
+    rows,
+  } = useMarkAttendance({
+    classId: selectedClassId,
+    sectionId: selectedSectionId,
+    academicYearId: selectedAcademicYearId,
+  });
+
   const { exams } = useExams(
     selectedAcademicYearId && selectedClassId
       ? { academic_year_id: selectedAcademicYearId, class_id: selectedClassId }
       : {},
   );
 
-  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
   const deduplicatedExams = useMemo(() => {
     const seen = new Set<string>();
     return exams.filter((e) => {
@@ -82,25 +80,13 @@ function ViewAttendanceContent() {
     });
   }, [exams]);
 
-  useEffect(() => {
-    if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
-  }, [selectedAcademicYearId, setAcademicYearId]);
-
-  useEffect(() => {
-    if (!examId || !selectedAcademicYearId || !selectedClassId) return;
-    if (isLoadingSchedules || availableDates.length === 0) return;
-    initRows(students);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examId, selectedAcademicYearId, selectedClassId, selectedSectionId, availableDates, isLoadingSchedules]);
-
   const { attendanceCardUrl } = useExamAttendanceCard({
     examId,
     classId: selectedClassId,
-    academicYearId,
+    academicYearId: selectedAcademicYearId,
     sectionId: selectedSectionId,
   });
 
-  // Dynamic columns: one per available date (read-only)
   const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
     const baseCols: ColumnDef<AttendanceRow>[] = [
       {
@@ -172,7 +158,6 @@ function ViewAttendanceContent() {
       {/* Selectors */}
       <Div variant="card" className="p-5">
         <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Academic Year */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.academicYear}
@@ -191,7 +176,6 @@ function ViewAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Class */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.class}
@@ -210,7 +194,6 @@ function ViewAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Section */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.section}
@@ -229,7 +212,6 @@ function ViewAttendanceContent() {
             </Select>
           </Div>
 
-          {/* Exam */}
           <Div type="col" gap="xs">
             <P color="muted" className="text-xs font-medium">
               {ATTENDANCE_PAGE.labels.exam}

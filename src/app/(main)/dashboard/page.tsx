@@ -523,7 +523,7 @@ export default function DashboardPage() {
     {
       label: "Classes",
       value: isLoading ? "…" : fmt(data?.counts.classes ?? 0),
-      sub: `${fmt(data?.counts.subjects ?? 0)} subjects · ${fmt(data?.counts.departments ?? 0)} depts`,
+      sub: `${fmt(data?.counts.subjects ?? 0)} subjects`,
       icon: GraduationCap,
       accent: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400",
       route: ROUTES.classes,

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Pencil,
-  X,
   Plus,
   CheckCircle2,
   XCircle,
@@ -23,7 +22,6 @@ import type {
 } from "@/types/admissions.types";
 import {
   Div,
-  H1,
   H2,
   H3,
   P,
@@ -31,12 +29,15 @@ import {
   Input,
   Select,
   FormField,
+  FormGrid,
+  PhoneField,
   Badge,
   Spinner,
   InfoRow,
   Modal,
   ModalBody,
   ModalFooter,
+  PageHeader,
   Table,
   TableHead,
   TableHeadRow,
@@ -147,255 +148,256 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
   };
 
   return (
-    <Div type="col" gap="lg" className="max-w-7xl">
-      {/* Header */}
-      <Div type="row" align="center" gap="md">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft size={16} /> Back
-        </Button>
-        <Div type="col" gap="xs" className="flex-1">
-          <Div type="row" align="center" gap="sm">
-            <H1>
-              {isNew
-                ? "New Admission Enquiry"
-                : (enquiry?.student_name ?? "Enquiry Details")}
-            </H1>
-            {!isNew && enquiry && (
-              <Badge variant={STATUS_BADGE[enquiry.status]}>
-                {enquiry.status.replace("_", " ")}
-              </Badge>
-            )}
-          </Div>
-          {!isNew && enquiry && (
-            <P color="muted">
-              Enquiry from{" "}
-              {new Date(enquiry.created_at).toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </P>
-          )}
-        </Div>
-        {!isNew && (
-          <Div type="row" gap="sm">
-            {showActionButtons && !isEditing && (
+    <Div type="col" gap="md" className="max-w-7xl">
+      <PageHeader
+        sticky
+        title={
+          isNew
+            ? "New Admission Enquiry"
+            : (enquiry?.student_name ?? "Enquiry Details")
+        }
+        subtitle={
+          !isNew && enquiry
+            ? `Enquiry from ${new Date(enquiry.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}`
+            : ""
+        }
+        actions={
+          <Div type="row" gap="sm" align="center" wrap>
+            <Button variant="ghost" size="sm" onClick={() => router.back()}>
+              <ArrowLeft size={14} /> Back
+            </Button>
+            {!isNew && !isEditing && enquiry && (
               <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    openHistoryModalWithAction("NEXT_FOLLOW_UP_UPDATE")
-                  }
-                >
-                  <RefreshCw size={14} />
-                  Update Next Follow Up
-                </Button>
-
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    openHistoryModalWithAction("ADMISSION_CONFIRMED")
-                  }
-                >
-                  <CheckCircle2 size={14} />
-                  Confirm Admission
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => openHistoryModalWithAction("ENQUIRY_REJECTED")}
-                >
-                  <XCircle size={14} />
-                  Reject Enquiry
+                <Badge variant={STATUS_BADGE[enquiry.status]}>
+                  {enquiry.status.replace("_", " ")}
+                </Badge>
+                {showActionButtons && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        openHistoryModalWithAction("NEXT_FOLLOW_UP_UPDATE")
+                      }
+                    >
+                      <RefreshCw size={14} />
+                      Update Follow Up
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        openHistoryModalWithAction("ADMISSION_CONFIRMED")
+                      }
+                    >
+                      <CheckCircle2 size={14} />
+                      Confirm Admission
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() =>
+                        openHistoryModalWithAction("ENQUIRY_REJECTED")
+                      }
+                    >
+                      <XCircle size={14} />
+                      Reject
+                    </Button>
+                  </>
+                )}
+                <Button size="sm" onClick={() => setIsEditing(true)}>
+                  <Pencil size={14} /> Edit
                 </Button>
               </>
             )}
-
-            {isEditing ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsEditing(false);
-                  reset();
-                }}
-              >
-                <X size={14} /> Cancel
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => setIsEditing(true)}>
-                <Pencil size={14} /> Edit
-              </Button>
+            {(isEditing || isNew) && (
+              <>
+                {!isNew && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditing(false);
+                      reset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  form="enquiry-form"
+                  size="sm"
+                  loading={isSubmitting}
+                >
+                  {isNew ? "Create Enquiry" : "Save Changes"}
+                </Button>
+              </>
             )}
           </Div>
-        )}
-      </Div>
+        }
+      />
 
       {/* View Mode */}
       {!isEditing && !isNew && enquiry && (
-        <Div type="col" gap="lg">
-          <Div type="grid" cols={2} gap="lg">
-            {/* Parent Info */}
-            <Div
-              type="col"
-              gap="sm"
-              className="rounded-xl border border-border bg-card p-5"
+        <Div type="grid" cols={2} gap="md">
+          {/* Parent Info */}
+          <Div
+            type="col"
+            gap="sm"
+            className="rounded-xl border border-border bg-card p-5"
+          >
+            <H3
+              color="muted"
+              className="uppercase tracking-wider text-xs font-semibold mb-2"
             >
-              <H3
-                color="muted"
-                className="uppercase tracking-wider text-xs font-semibold mb-2"
-              >
-                Parent Information
-              </H3>
-              <InfoRow label="Father Name" value={enquiry.father_name ?? "—"} />
-              <InfoRow label="Mother Name" value={enquiry.mother_name ?? "—"} />
-              <InfoRow
-                label="Phone"
-                value={`${enquiry.dial_code} ${enquiry.phone}`}
-              />
-              <InfoRow label="Email" value={enquiry.email ?? "—"} />
-              <InfoRow
-                label="Father Occupation"
-                value={enquiry.father_occupation ?? "—"}
-              />
-              <InfoRow
-                label="Mother Occupation"
-                value={enquiry.mother_occupation ?? "—"}
-              />
-              <InfoRow
-                label="City / State"
-                value={
-                  [enquiry.city, enquiry.state].filter(Boolean).join(", ") ||
-                  "—"
-                }
-              />
-            </Div>
+              Parent Information
+            </H3>
+            <InfoRow label="Father Name" value={enquiry.father_name ?? "—"} />
+            <InfoRow label="Mother Name" value={enquiry.mother_name ?? "—"} />
+            <InfoRow
+              label="Phone"
+              value={`${enquiry.dial_code} ${enquiry.phone}`}
+            />
+            <InfoRow label="Email" value={enquiry.email ?? "—"} />
+            <InfoRow
+              label="Father Occupation"
+              value={enquiry.father_occupation ?? "—"}
+            />
+            <InfoRow
+              label="Mother Occupation"
+              value={enquiry.mother_occupation ?? "—"}
+            />
+            <InfoRow
+              label="City / State"
+              value={
+                [enquiry.city, enquiry.state].filter(Boolean).join(", ") ||
+                "—"
+              }
+            />
+          </Div>
 
-            {/* Student Info */}
-            <Div
-              type="col"
-              gap="sm"
-              className="rounded-xl border border-border bg-card p-5"
+          {/* Student Info */}
+          <Div
+            type="col"
+            gap="sm"
+            className="rounded-xl border border-border bg-card p-5"
+          >
+            <H3
+              color="muted"
+              className="uppercase tracking-wider text-xs font-semibold mb-2"
             >
-              <H3
-                color="muted"
-                className="uppercase tracking-wider text-xs font-semibold mb-2"
-              >
-                Student Information
-              </H3>
-              <InfoRow label="Student Name" value={enquiry.student_name} />
-              <InfoRow
-                label="Date of Birth"
-                value={
-                  enquiry.date_of_birth
-                    ? new Date(enquiry.date_of_birth).toLocaleDateString(
-                        "en-IN",
-                      )
-                    : "—"
-                }
-              />
-              <InfoRow label="Gender" value={enquiry.gender ?? "—"} />
-              <InfoRow label="Religion" value={enquiry.religion ?? "—"} />
-              <InfoRow label="Category" value={enquiry.category ?? "—"} />
-              <InfoRow
-                label="Address"
-                value={enquiry.student_current_address ?? "—"}
-              />
-            </Div>
+              Student Information
+            </H3>
+            <InfoRow label="Student Name" value={enquiry.student_name} />
+            <InfoRow
+              label="Date of Birth"
+              value={
+                enquiry.date_of_birth
+                  ? new Date(enquiry.date_of_birth).toLocaleDateString(
+                      "en-IN",
+                    )
+                  : "—"
+              }
+            />
+            <InfoRow label="Gender" value={enquiry.gender ?? "—"} />
+            <InfoRow label="Religion" value={enquiry.religion ?? "—"} />
+            <InfoRow label="Category" value={enquiry.category ?? "—"} />
+            <InfoRow
+              label="Address"
+              value={enquiry.student_current_address ?? "—"}
+            />
+          </Div>
 
-            {/* Admission Info */}
-            <Div
-              type="col"
-              gap="sm"
-              className="rounded-xl border border-border bg-card p-5"
+          {/* Admission Info */}
+          <Div
+            type="col"
+            gap="sm"
+            className="rounded-xl border border-border bg-card p-5"
+          >
+            <H3
+              color="muted"
+              className="uppercase tracking-wider text-xs font-semibold mb-2"
             >
-              <H3
-                color="muted"
-                className="uppercase tracking-wider text-xs font-semibold mb-2"
-              >
-                Admission Details
-              </H3>
-              <InfoRow
-                label="Applying Year"
-                value={
-                  years.find((y) => y.id === enquiry.applying_academic_year_id)
-                    ?.name ?? "—"
-                }
-              />
-              <InfoRow
-                label="Applying Class"
-                value={
-                  classes.find((c) => c.id === enquiry.applying_class_id)
-                    ?.name ?? "—"
-                }
-              />
-              <InfoRow
-                label="Previous School"
-                value={enquiry.previous_school_name ?? "—"}
-              />
-              <InfoRow
-                label="Previous Class"
-                value={enquiry.previous_class ?? "—"}
-              />
-              <InfoRow
-                label="Reg. Fee Required"
-                value={enquiry.registration_fee_required ? "Yes" : "No"}
-              />
-            </Div>
+              Admission Details
+            </H3>
+            <InfoRow
+              label="Applying Year"
+              value={
+                years.find((y) => y.id === enquiry.applying_academic_year_id)
+                  ?.name ?? "—"
+              }
+            />
+            <InfoRow
+              label="Applying Class"
+              value={
+                classes.find((c) => c.id === enquiry.applying_class_id)
+                  ?.name ?? "—"
+              }
+            />
+            <InfoRow
+              label="Previous School"
+              value={enquiry.previous_school_name ?? "—"}
+            />
+            <InfoRow
+              label="Previous Class"
+              value={enquiry.previous_class ?? "—"}
+            />
+            <InfoRow
+              label="Reg. Fee Required"
+              value={enquiry.registration_fee_required ? "Yes" : "No"}
+            />
+          </Div>
 
-            {/* Enquiry Info */}
-            <Div
-              type="col"
-              gap="sm"
-              className="rounded-xl border border-border bg-card p-5"
+          {/* Enquiry Info */}
+          <Div
+            type="col"
+            gap="sm"
+            className="rounded-xl border border-border bg-card p-5"
+          >
+            <H3
+              color="muted"
+              className="uppercase tracking-wider text-xs font-semibold mb-2"
             >
-              <H3
-                color="muted"
-                className="uppercase tracking-wider text-xs font-semibold mb-2"
-              >
-                Enquiry Details
-              </H3>
-              <InfoRow
-                label="Source"
-                value={
-                  sources.find((s) => s.id === enquiry.enquiry_source_id)
-                    ?.name ?? "—"
-                }
-              />
-              <InfoRow
-                label="Assigned Teacher"
-                value={
-                  teachers.find((t) => t.id === enquiry.assigned_teacher_id)
-                    ? `${teachers.find((t) => t.id === enquiry.assigned_teacher_id)?.first_name ?? ""} ${
-                        teachers.find(
-                          (t) => t.id === enquiry.assigned_teacher_id,
-                        )?.last_name ?? ""
-                      }`.trim()
-                    : "—"
-                }
-              />
-              <InfoRow
-                label="Next Follow-up"
-                value={
-                  enquiry.next_followup_date
-                    ? new Date(enquiry.next_followup_date).toLocaleDateString(
-                        "en-IN",
-                      )
-                    : "—"
-                }
-              />
-              <InfoRow label="Remarks" value={enquiry.remarks} />
-            </Div>
+              Enquiry Details
+            </H3>
+            <InfoRow
+              label="Source"
+              value={
+                sources.find((s) => s.id === enquiry.enquiry_source_id)
+                  ?.name ?? "—"
+              }
+            />
+            <InfoRow
+              label="Assigned Teacher"
+              value={
+                teachers.find((t) => t.id === enquiry.assigned_teacher_id)
+                  ? `${teachers.find((t) => t.id === enquiry.assigned_teacher_id)?.first_name ?? ""} ${
+                      teachers.find(
+                        (t) => t.id === enquiry.assigned_teacher_id,
+                      )?.last_name ?? ""
+                    }`.trim()
+                  : "—"
+              }
+            />
+            <InfoRow
+              label="Next Follow-up"
+              value={
+                enquiry.next_followup_date
+                  ? new Date(enquiry.next_followup_date).toLocaleDateString(
+                      "en-IN",
+                    )
+                  : "—"
+              }
+            />
+            <InfoRow label="Remarks" value={enquiry.remarks} />
           </Div>
         </Div>
       )}
 
       {/* Create / Edit Form */}
       {(isEditing || isNew) && (
-        <form onSubmit={form.handleSubmit(onFormSubmit as any)}>
-          <Div type="col" gap="lg">
+        <form id="enquiry-form" onSubmit={form.handleSubmit(onFormSubmit as any)}>
+          <Div type="col" gap="md">
             {/* Section: Parent Info */}
             <Div
               type="col"
@@ -405,7 +407,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
               <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Parent Information
               </H2>
-              <Div type="grid" cols={2} gap="md">
+              <FormGrid>
                 <FormField
                   label="Father Name"
                   error={errors.father_name?.message}
@@ -424,30 +426,13 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     {...register("mother_name")}
                   />
                 </FormField>
-              </Div>
-              <Div type="row" gap="sm">
-                <FormField
-                  label="Dial Code *"
-                  error={errors.dial_code?.message}
-                >
-                  <Input
-                    width="xs"
-                    placeholder="+91"
-                    {...register("dial_code")}
-                  />
-                </FormField>
-                <FormField
-                  label="Phone *"
-                  error={errors.phone?.message}
-                  htmlFor="phone"
-                >
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="Phone number"
-                    {...register("phone")}
-                  />
-                </FormField>
+                <PhoneField
+                  label="Phone"
+                  required
+                  dialCodeProps={register("dial_code")}
+                  phoneProps={register("phone")}
+                  phoneError={errors.phone?.message}
+                />
                 <FormField label="Email" error={errors.email?.message}>
                   <Input
                     type="email"
@@ -455,8 +440,6 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     {...register("email")}
                   />
                 </FormField>
-              </Div>
-              <Div type="grid" cols={2} gap="md">
                 <FormField label="Father Occupation">
                   <Input
                     placeholder="e.g. Engineer"
@@ -481,8 +464,6 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     {...register("mother_qualification")}
                   />
                 </FormField>
-              </Div>
-              <Div type="grid" cols={3} gap="md">
                 <FormField label="City">
                   <Input placeholder="City" {...register("city")} />
                 </FormField>
@@ -492,7 +473,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                 <FormField label="Country">
                   <Input placeholder="Country" {...register("country")} />
                 </FormField>
-              </Div>
+              </FormGrid>
             </Div>
 
             {/* Section: Student Info */}
@@ -504,13 +485,15 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
               <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Student Information
               </H2>
-              <FormField
-                label="Student Name *"
-                error={errors.student_name?.message}
-              >
-                <Input placeholder="Full name" {...register("student_name")} />
-              </FormField>
-              <Div type="grid" cols={3} gap="md">
+              <FormGrid>
+                <FormField
+                  label="Student Name"
+                  required
+                  className="col-span-full"
+                  error={errors.student_name?.message}
+                >
+                  <Input placeholder="Full name" {...register("student_name")} />
+                </FormField>
                 <FormField
                   label="Date of Birth"
                   error={errors.date_of_birth?.message}
@@ -535,8 +518,6 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     ))}
                   </Select>
                 </FormField>
-              </Div>
-              <Div type="grid" cols={2} gap="md">
                 <FormField label="Religion" error={errors.religion?.message}>
                   <Select {...register("religion")}>
                     {RELIGION_OPTIONS.map((o) => (
@@ -546,13 +527,13 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     ))}
                   </Select>
                 </FormField>
-                <FormField label="Current Address">
+                <FormField label="Current Address" className="col-span-full">
                   <Input
                     placeholder="Student's current address"
                     {...register("student_current_address")}
                   />
                 </FormField>
-              </Div>
+              </FormGrid>
             </Div>
 
             {/* Section: Admission Info */}
@@ -564,9 +545,10 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
               <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Admission Information
               </H2>
-              <Div type="grid" cols={2} gap="md">
+              <FormGrid>
                 <FormField
-                  label="Academic Year *"
+                  label="Academic Year"
+                  required
                   error={errors.academic_year_id?.message}
                 >
                   <Select {...register("academic_year_id")}>
@@ -579,7 +561,8 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                   </Select>
                 </FormField>
                 <FormField
-                  label="Applying Academic Year *"
+                  label="Applying Academic Year"
+                  required
                   error={errors.applying_academic_year_id?.message}
                 >
                   <Select {...register("applying_academic_year_id")}>
@@ -591,21 +574,20 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     ))}
                   </Select>
                 </FormField>
-              </Div>
-              <FormField
-                label="Applying Class *"
-                error={errors.applying_class_id?.message}
-              >
-                <Select {...register("applying_class_id")}>
-                  <option value="">Select class</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <Div type="grid" cols={2} gap="md">
+                <FormField
+                  label="Applying Class"
+                  required
+                  error={errors.applying_class_id?.message}
+                >
+                  <Select {...register("applying_class_id")}>
+                    <option value="">Select class</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
                 <FormField label="Previous School">
                   <Input
                     placeholder="Previous school name"
@@ -618,7 +600,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     {...register("previous_class")}
                   />
                 </FormField>
-              </Div>
+              </FormGrid>
               <Div type="row" align="center" gap="sm">
                 <input
                   type="checkbox"
@@ -643,7 +625,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
               <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Enquiry Information
               </H2>
-              <Div type="grid" cols={2} gap="md">
+              <FormGrid>
                 <FormField label="Enquiry Source">
                   <Select {...register("enquiry_source_id")}>
                     <option value="">Select source</option>
@@ -664,61 +646,37 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     ))}
                   </Select>
                 </FormField>
-              </Div>
-              <Div type="grid" cols={2} gap="md">
                 <FormField label="Next Follow-up Date">
                   <Input type="date" {...register("next_followup_date")} />
                 </FormField>
                 <FormField label="Next Follow-up Time">
                   <Input type="time" {...register("next_followup_time")} />
                 </FormField>
-              </Div>
-              {!isNew && (
-                <FormField label="Status" error={errors.status?.message}>
-                  <Select {...register("status")} disabled={isTerminal}>
-                    {STATUS_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                {!isNew && (
+                  <FormField label="Status" error={errors.status?.message}>
+                    <Select {...register("status")} disabled={isTerminal}>
+                      {STATUS_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                )}
+                <FormField
+                  label="Remarks"
+                  required
+                  className="col-span-full"
+                  error={errors.remarks?.message}
+                >
+                  <textarea
+                    rows={3}
+                    placeholder="Add remarks about this enquiry…"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    {...register("remarks")}
+                  />
                 </FormField>
-              )}
-              <FormField label="Remarks *" error={errors.remarks?.message}>
-                <textarea
-                  rows={3}
-                  placeholder="Add remarks about this enquiry…"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                  {...register("remarks")}
-                />
-              </FormField>
-            </Div>
-
-            {/* Actions */}
-            <Div type="row" justify="end" gap="sm">
-              {isNew ? (
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => router.back()}
-                >
-                  Cancel
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-              )}
-              <Button type="submit" loading={isSubmitting}>
-                {isNew ? "Create Enquiry" : "Save Changes"}
-              </Button>
+              </FormGrid>
             </Div>
           </Div>
         </form>
@@ -844,7 +802,8 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
             <ModalBody>
               <Div type="col" gap="md">
                 <FormField
-                  label="Action *"
+                  label="Action"
+                  required
                   error={historyForm.formState.errors.action?.message}
                 >
                   <Select
@@ -863,7 +822,8 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                 {historyForm.watch("action") === "NEXT_FOLLOW_UP_UPDATE" && (
                   <Div type="grid" cols={2} gap="md">
                     <FormField
-                      label="Next Follow-up Date *"
+                      label="Next Follow-up Date"
+                      required
                       error={
                         historyForm.formState.errors.next_followup_date?.message
                       }
@@ -897,7 +857,8 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                   />
                 </FormField>
                 <FormField
-                  label="Remarks *"
+                  label="Remarks"
+                  required
                   error={historyForm.formState.errors.remarks?.message}
                 >
                   <textarea

@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { HomeworkService } from '@/services/homework.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
@@ -35,7 +34,6 @@ const ALLOWED_EXT_MAP: Record<string, string> = {
 const schema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
   class_id: z.string().min(1, 'Class is required'),
-  class_detail_id: z.string().optional(),
   subject_id: z.string().optional(),
   title: z.string().min(1, 'Title is required').max(200),
   homework_date: z.string().optional(),
@@ -53,7 +51,6 @@ export function useEditHomework(homeworkId: string) {
   const { years } = useAcademicYears();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [savedAttachments, setSavedAttachments] = useState<HomeworkAttachment[]>([]);
   const [newAttachments, setNewAttachments] = useState<PendingAttachment[]>([]);
@@ -74,28 +71,20 @@ export function useEditHomework(homeworkId: string) {
   const fetchInitialData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [clsRes, hwRes] = await Promise.all([
+      const [clsRes, subRes, hwRes] = await Promise.all([
         ClassesService.list({ limit: 100 }),
+        SubjectsService.list({ limit: 100 }),
         HomeworkService.getById(homeworkId),
       ]);
       setClasses(clsRes.items);
+      setSubjects(subRes.items);
       setSavedAttachments(hwRes.attachments);
 
       const hw = hwRes.homework;
 
-      if (hw.class_id) {
-        const [cdRes, subRes] = await Promise.all([
-          ClassDetailsService.list({ class_id: hw.class_id, limit: 100 }),
-          SubjectsService.list({ class_id: hw.class_id, limit: 100 }),
-        ]);
-        setClassDetails(cdRes.items);
-        setSubjects(subRes.items);
-      }
-
       form.reset({
         academic_year_id: hw.academic_year_id,
         class_id: hw.class_id ?? '',
-        class_detail_id: hw.class_detail_id ?? '',
         subject_id: hw.subject_id ?? '',
         title: hw.title,
         homework_date: hw.homework_date ?? '',
@@ -114,25 +103,11 @@ export function useEditHomework(homeworkId: string) {
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
 
-  const fetchClassDetails = useCallback(async (classId: string) => {
-    if (!classId) { setClassDetails([]); setSubjects([]); return; }
-    try {
-      const [cdRes, subRes] = await Promise.all([
-        ClassDetailsService.list({ class_id: classId, limit: 100 }),
-        SubjectsService.list({ class_id: classId, limit: 100 }),
-      ]);
-      setClassDetails(cdRes.items);
-      setSubjects(subRes.items);
-    } catch { /* ignore */ }
-  }, []);
-
   const prevClassId = useRef<string>('');
   useEffect(() => {
     if (!isLoadingData && watchedClassId && watchedClassId !== prevClassId.current) {
       prevClassId.current = watchedClassId;
-      fetchClassDetails(watchedClassId);
       if (prevClassId.current !== '') {
-        form.setValue('class_detail_id', '');
         form.setValue('subject_id', '');
       }
     }
@@ -210,7 +185,6 @@ export function useEditHomework(homeworkId: string) {
       await HomeworkService.update(homeworkId, {
         academic_year_id: values.academic_year_id,
         class_id: values.class_id,
-        class_detail_id: values.class_detail_id || undefined,
         subject_id: values.subject_id || undefined,
         title: values.title,
         description: values.description || undefined,
@@ -231,7 +205,7 @@ export function useEditHomework(homeworkId: string) {
   function handleBack() { router.push(ROUTES.homework); }
 
   return {
-    form, years, classes, classDetails, subjects,
+    form, years, classes, subjects,
     isLoadingData, savedAttachments, newAttachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateHomework),

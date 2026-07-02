@@ -108,12 +108,13 @@ interface FormFieldProps {
   hint?: string;
   htmlFor?: string;
   required?: boolean;
+  className?: string;
   children: React.ReactNode;
 }
 
-export function FormField({ label, error, hint, htmlFor, required, children }: FormFieldProps) {
+export function FormField({ label, error, hint, htmlFor, required, className, children }: FormFieldProps) {
   return (
-    <div className={cn('space-y-1.5', error && 'space-y-2')}>
+    <div className={cn('space-y-1.5', className)}>
       {label && (
         <Label htmlFor={htmlFor} className={error ? 'text-destructive font-medium' : ''}>
           {label}{required && <span className="text-destructive ml-0.5">*</span>}

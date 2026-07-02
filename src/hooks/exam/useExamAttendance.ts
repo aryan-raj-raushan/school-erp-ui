@@ -6,6 +6,7 @@ import {
   ExamAttendanceService,
   ExamScheduleService,
 } from "@/services/exam.service";
+import { StudentsService } from "@/services/students-v2.service";
 import type {
   ExamAttendance,
   AttendanceFilters,
@@ -15,7 +16,6 @@ import type {
 } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { ATTENDANCE_PAGE } from "@/constants/exam.constants";
-import { StudentListItem } from "@/types/students.types";
 
 // ── List Hook ─────────────────────────────────────────────────────────────────
 
@@ -64,22 +64,45 @@ export interface StudentAttendanceRow {
   student_id: string;
   student_name: string;
   roll_number?: string;
-  // key = exam_date (YYYY-MM-DD)
   entries: Record<string, { status: AttendanceStatus; source: AttendanceSource }>;
 }
 
 const STATUS_CYCLE: AttendanceStatus[] = ["PRESENT", "ABSENT", "LATE"];
 
-export function useMarkAttendance() {
+export function useMarkAttendance({
+  classId,
+  sectionId,
+  academicYearId,
+}: {
+  classId: string;
+  sectionId: string;
+  academicYearId: string;
+}) {
   const [examId, setExamId] = useState("");
-  const [academicYearId, setAcademicYearId] = useState("");
   const [schedules, setSchedules] = useState<ExamSchedule[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [rows, setRows] = useState<StudentAttendanceRow[]>([]);
+  const [students, setStudents] = useState<{ id: string; first_name: string; last_name?: string | null; roll_number?: string | null }[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load schedules + derive dates when exam selected
+  // Fetch students whenever class / section / year changes
+  useEffect(() => {
+    if (!classId) {
+      setStudents([]);
+      return;
+    }
+    StudentsService.list({
+      class_id: classId,
+      section_id: sectionId || undefined,
+      academic_year_id: academicYearId || undefined,
+      limit: 500,
+    })
+      .then((r) => setStudents(r.items))
+      .catch(() => toast.error("Failed to load students"));
+  }, [classId, sectionId, academicYearId]);
+
+  // Load schedules + derive dates when exam changes
   useEffect(() => {
     if (!examId) {
       setSchedules([]);
@@ -98,8 +121,16 @@ export function useMarkAttendance() {
       .finally(() => setIsLoadingSchedules(false));
   }, [examId]);
 
-  async function initRows(students: StudentListItem[]) {
-    // Fetch existing records to preserve saved statuses + detect rfid-auto
+  // Build attendance rows automatically when all data is ready
+  useEffect(() => {
+    if (!examId || !academicYearId || !classId) return;
+    if (isLoadingSchedules || availableDates.length === 0) return;
+    if (students.length === 0) return;
+    buildRows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examId, academicYearId, classId, sectionId, availableDates, students, isLoadingSchedules]);
+
+  async function buildRows() {
     let existing: ExamAttendance[] = [];
     if (examId && academicYearId) {
       try {
@@ -114,17 +145,14 @@ export function useMarkAttendance() {
       }
     }
 
-    // Build map: studentId → dateStr → { status, source }
     const existingMap: Record<
       string,
       Record<string, { status: AttendanceStatus; source: AttendanceSource }>
     > = {};
     for (const r of existing) {
-      // exam_date comes from the joined schedule — type has it via EnrichedExamAttendance
       const dateStr = (r as ExamAttendance & { exam_date?: string }).exam_date;
       if (!dateStr) continue;
       if (!existingMap[r.student_id]) existingMap[r.student_id] = {};
-      // First record wins for a given date (multiple schedules same day)
       if (!existingMap[r.student_id][dateStr]) {
         existingMap[r.student_id][dateStr] = {
           status: r.status,
@@ -140,7 +168,10 @@ export function useMarkAttendance() {
       entries: Object.fromEntries(
         availableDates.map((date) => [
           date,
-          existingMap[s.id]?.[date] ?? { status: "PRESENT" as AttendanceStatus, source: "manual" as AttendanceSource },
+          existingMap[s.id]?.[date] ?? {
+            status: "PRESENT" as AttendanceStatus,
+            source: "manual" as AttendanceSource,
+          },
         ])
       ),
     }));
@@ -154,13 +185,7 @@ export function useMarkAttendance() {
         if (r.student_id !== studentId) return r;
         const current = r.entries[date]?.status ?? "PRESENT";
         const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(current) + 1) % STATUS_CYCLE.length];
-        return {
-          ...r,
-          entries: {
-            ...r.entries,
-            [date]: { status: next, source: "manual" },
-          },
-        };
+        return { ...r, entries: { ...r.entries, [date]: { status: next, source: "manual" } } };
       })
     );
   }
@@ -204,7 +229,6 @@ export function useMarkAttendance() {
     }
     setIsSaving(true);
     try {
-      // For each student × date → all schedules on that date → same status
       const entries: AttendanceEntry[] = rows.flatMap((row) =>
         availableDates.flatMap((date) => {
           const schedulesOnDate = schedules.filter((s) => s.exam_date === date);
@@ -234,13 +258,9 @@ export function useMarkAttendance() {
   return {
     examId,
     setExamId,
-    academicYearId,
-    setAcademicYearId,
-    schedules,
     availableDates,
     isLoadingSchedules,
     rows,
-    initRows,
     cycleStatus,
     setDateStatus,
     markAllPresent,

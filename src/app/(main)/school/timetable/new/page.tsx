@@ -1,21 +1,165 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCreateTimetable } from '@/hooks/useCreateTimetable';
-import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS, MAX_PERIODS_OPTIONS } from '@/constants';
+import { useAutoGenerateTimetable } from '@/hooks/useAutoGenerateTimetable';
+import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS, MAX_PERIODS_OPTIONS, ROUTES } from '@/constants';
 import {
-  Div, Button, Spinner, Input, Select, FilterLabel, FormField, P,
+  Div, Button, Spinner, Input, Select, FormField, P, Badge, Tabs,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell,
 } from '@/components/ui';
 
+const TAB_OPTIONS = [
+  { value: 'auto', label: SCHOOL_TIMETABLE_PAGE.autoGenerate.tabLabel },
+  { value: 'manual', label: SCHOOL_TIMETABLE_PAGE.autoGenerate.manualTabLabel },
+] as const;
+
+type TabValue = (typeof TAB_OPTIONS)[number]['value'];
+
 export default function NewTimetablePage() {
+  const router = useRouter();
+  const [tab, setTab] = useState<TabValue>('auto');
+
+  return (
+    <Div type="col" gap="lg">
+      <PageHeader
+        title={SCHOOL_TIMETABLE_PAGE.form.createTitle}
+        actions={<Button variant="outline" onClick={() => router.push(ROUTES.timetable)}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>}
+      />
+
+      <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} className="max-w-xs" />
+
+      {tab === 'auto' ? <AutoGenerateForm /> : <ManualForm />}
+    </Div>
+  );
+}
+
+function AutoGenerateForm() {
   const {
-    years, classes, classDetails, subjects, staff,
+    name, setName,
+    years, academicYearId, setAcademicYearId,
+    classes, classId, setClassId,
+    timings, schoolTimingId, setSchoolTimingId,
+    lunchAfterPeriod, setLunchAfterPeriod,
+    lunchDurationMinutes, setLunchDurationMinutes,
+    preview,
+    mappings, isLoadingMappings,
+    isLoadingData, isSubmitting,
+    generate, handleBack,
+  } = useAutoGenerateTimetable();
+
+  if (isLoadingData) {
+    return <Div type="col" align="center" justify="center" className="py-20"><Spinner /></Div>;
+  }
+
+  const canGenerate = !!academicYearId && !!classId && !!schoolTimingId && mappings.length > 0;
+
+  return (
+    <PageCol>
+      <Div type="col" gap="md" className="max-w-3xl rounded-xl border border-border bg-card p-5">
+        <Div type="grid" cols={2} gap="md">
+          <FormField label={SCHOOL_TIMETABLE_PAGE.form.name}>
+            <Input placeholder={SCHOOL_TIMETABLE_PAGE.placeholders.name} value={name} onChange={(e) => setName(e.target.value)} />
+          </FormField>
+          <FormField label={SCHOOL_TIMETABLE_PAGE.form.academicYear}>
+            <Select value={academicYearId} onChange={(e) => setAcademicYearId(e.target.value)}>
+              {years.map((y) => <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>)}
+            </Select>
+          </FormField>
+          <FormField label={SCHOOL_TIMETABLE_PAGE.form.class}>
+            <Select value={classId} onChange={(e) => setClassId(e.target.value)}>
+              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}</option>
+              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </FormField>
+          <FormField label={SCHOOL_TIMETABLE_PAGE.autoGenerate.timingLabel}>
+            <Select value={schoolTimingId} onChange={(e) => setSchoolTimingId(e.target.value)}>
+              <option value="">{SCHOOL_TIMETABLE_PAGE.autoGenerate.selectTiming}</option>
+              {timings.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </Select>
+          </FormField>
+          <FormField label={SCHOOL_TIMETABLE_PAGE.autoGenerate.lunchAfterLabel}>
+            <Input
+              type="number"
+              min={1}
+              max={Math.max(1, mappings.length - 1)}
+              placeholder={SCHOOL_TIMETABLE_PAGE.autoGenerate.lunchAfterPlaceholder}
+              value={lunchAfterPeriod}
+              onChange={(e) => setLunchAfterPeriod(e.target.value ? Number(e.target.value) : '')}
+            />
+          </FormField>
+          <FormField label={SCHOOL_TIMETABLE_PAGE.autoGenerate.lunchDurationLabel}>
+            <Input
+              type="number"
+              min={5}
+              max={180}
+              placeholder={SCHOOL_TIMETABLE_PAGE.autoGenerate.lunchDurationPlaceholder}
+              value={lunchDurationMinutes}
+              onChange={(e) => setLunchDurationMinutes(e.target.value ? Number(e.target.value) : '')}
+            />
+          </FormField>
+        </Div>
+      </Div>
+
+      {preview && (
+        <Div type="col" gap="xs" className="max-w-3xl rounded-xl border border-border bg-card p-5">
+          <P size="sm" weight="semibold">{SCHOOL_TIMETABLE_PAGE.autoGenerate.previewSummaryTitle}</P>
+          <Div type="row" gap="xs" wrap>
+            <Badge variant="default">Total school day: {preview.totalLabel}</Badge>
+            {preview.lunchMinutes > 0 && (
+              <Badge variant="warning">Lunch: {preview.lunchMinutes}m after period {lunchAfterPeriod}</Badge>
+            )}
+            {preview.periodCount > 0 && (
+              <Badge variant="info">
+                {preview.periodCount} periods × ~{Math.round(preview.periodDurationMinutes)}m each
+              </Badge>
+            )}
+          </Div>
+        </Div>
+      )}
+
+      {classId && (
+        <Div type="col" gap="sm" className="max-w-3xl rounded-xl border border-border bg-card p-5">
+          <P size="sm" weight="semibold">{SCHOOL_TIMETABLE_PAGE.autoGenerate.previewTitle}</P>
+          {isLoadingMappings ? (
+            <Spinner size="sm" />
+          ) : mappings.length === 0 ? (
+            <P size="sm" className="text-muted-foreground">
+              {SCHOOL_TIMETABLE_PAGE.autoGenerate.noMapping}{' '}
+              <Link href={ROUTES.subjectTeacherMap} className="text-primary underline">
+                {SCHOOL_TIMETABLE_PAGE.autoGenerate.noMappingLink}
+              </Link>
+            </P>
+          ) : (
+            <Div type="row" gap="xs" wrap>
+              {mappings.map((m) => (
+                <Badge key={m.id} variant="info">{m.subject_name} — {m.teacher_name}</Badge>
+              ))}
+            </Div>
+          )}
+        </Div>
+      )}
+
+      <Div type="row" gap="md">
+        <Button variant="outline" onClick={handleBack}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>
+        <Button onClick={generate} loading={isSubmitting} disabled={!canGenerate}>
+          {SCHOOL_TIMETABLE_PAGE.autoGenerate.generateButton}
+        </Button>
+      </Div>
+    </PageCol>
+  );
+}
+
+function ManualForm() {
+  const {
+    years, classes, subjects, staff,
     name, setName,
     academicYearId, setAcademicYearId,
     classId, setClassId,
-    classDetailId, setClassDetailId,
     maxPeriods, setMaxPeriods,
     classTeacherId, setClassTeacherId,
     periodTimes, setPeriodTime,
@@ -31,11 +175,6 @@ export default function NewTimetablePage() {
 
   return (
     <Div type="col" gap="lg">
-      <PageHeader
-        title={SCHOOL_TIMETABLE_PAGE.form.createTitle}
-        actions={<Button variant="outline" onClick={handleBack}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>}
-      />
-
       <Div type="col" gap="md" className="max-w-3xl">
         <Div type="grid" cols={2} gap="md">
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.name}>
@@ -56,12 +195,6 @@ export default function NewTimetablePage() {
             <Select value={classId} onChange={(e) => setClassId(e.target.value)} defaultValue="">
               <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-          </FormField>
-          <FormField label={SCHOOL_TIMETABLE_PAGE.form.classDetail}>
-            <Select value={classDetailId} onChange={(e) => setClassDetailId(e.target.value)} defaultValue="" disabled={!classId}>
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectClassDetail}</option>
-              {classDetails.map((cd) => <option key={cd.id} value={cd.id}>{cd.name}</option>)}
             </Select>
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.classTeacher}>

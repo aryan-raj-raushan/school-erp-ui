@@ -14,7 +14,7 @@ export * from './exams.constants';
 export * from './leave.constants';
 export * from './academics.constants';
 export * from './subjects.constants';
+export * from './class-subject-teacher.constants';
 export * from './syllabus.constants';
 export * from './timetable.constants';
-export * from './departments.constants';
 export * from './permissions.registry';

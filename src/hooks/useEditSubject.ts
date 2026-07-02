@@ -7,16 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { SubjectsService } from '@/services/subjects.service';
-import { ClassesService } from '@/services/classes.service';
-import { ClassDetailsService, type ClassDetail } from '@/services/class-details.service';
 import { ROUTES } from '@/constants';
-import type { Class } from '@/types';
 
 const editSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   code: z.string().max(20).optional(),
-  class_ids: z.array(z.string()).optional(),
-  class_detail_id: z.string().optional(),
   display_order: z.coerce.number().int().min(0),
   total_marks: z.coerce.number().int().min(0),
   passing_marks: z.coerce.number().int().min(0),
@@ -28,56 +23,35 @@ export type EditSubjectFormValues = z.infer<typeof editSubjectSchema>;
 
 export function useEditSubject(id: string) {
   const router = useRouter();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [classDetails, setClassDetails] = useState<ClassDetail[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<EditSubjectFormValues>({
     resolver: zodResolver(editSubjectSchema) as any,
-    defaultValues: { class_ids: [], display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
+    defaultValues: { display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
   });
-
-  const watchedClassIds = form.watch('class_ids');
-
-  const fetchClassDetails = useCallback(async (classIds: string[]) => {
-    if (!classIds.length) { setClassDetails([]); return; }
-    try {
-      const res = await ClassDetailsService.list({ class_id: classIds[0], limit: 100 });
-      setClassDetails(res.items);
-    } catch { /* ignore */ }
-  }, []);
 
   const loadData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [subject, clsRes] = await Promise.all([
-        SubjectsService.getById(id),
-        ClassesService.list({ limit: 100 }),
-      ]);
-      setClasses(clsRes.items);
+      const subject = await SubjectsService.getById(id);
       form.reset({
         name: subject.name,
         code: subject.code ?? '',
-        class_ids: subject.class_ids ?? [],
-        class_detail_id: subject.class_detail_id ?? '',
         display_order: subject.display_order,
         total_marks: subject.total_marks,
         passing_marks: subject.passing_marks,
         is_elective: subject.is_elective,
         is_active: subject.is_active,
       });
-      if (subject.class_ids?.length) await fetchClassDetails(subject.class_ids);
     } catch {
       toast.error('Failed to load subject');
       router.push(ROUTES.subjects);
-    } finally { setIsLoadingData(false); }
-  }, [id, form, router, fetchClassDetails]);
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [id, form, router]);
 
   useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => {
-    if (watchedClassIds !== undefined) fetchClassDetails(watchedClassIds ?? []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(watchedClassIds)]);
 
   function toggleIsElective() { form.setValue('is_elective', !form.getValues('is_elective')); }
   function toggleIsActive() { form.setValue('is_active', !form.getValues('is_active')); }
@@ -87,8 +61,6 @@ export function useEditSubject(id: string) {
       await SubjectsService.update(id, {
         name: values.name,
         code: values.code || undefined,
-        class_ids: values.class_ids,
-        class_detail_id: values.class_detail_id || undefined,
         display_order: values.display_order,
         total_marks: values.total_marks,
         passing_marks: values.passing_marks,
@@ -105,7 +77,7 @@ export function useEditSubject(id: string) {
   function handleBack() { router.push(ROUTES.subjects); }
 
   return {
-    form, classes, classDetails, isLoadingData,
+    form, isLoadingData,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateSubject),
     toggleIsElective, toggleIsActive, handleBack,

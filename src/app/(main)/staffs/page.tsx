@@ -238,6 +238,7 @@ export default function StaffsPage() {
         isLoading={isLoading}
         emptyText="No staff members found."
         pagination={pagination ?? undefined}
+        fillViewport
       />
 
       {showBulkModal && (

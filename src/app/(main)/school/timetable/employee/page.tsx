@@ -119,7 +119,7 @@ export default function EmployeeTimetablePage() {
                                   {cell.subject_name ?? <P size="xs" color="muted" weight="normal">No Subject</P>}
                                 </P>
                                 <P size="xs" color="muted" className="leading-none">
-                                  {[cell.class_name, cell.class_detail_name].filter(Boolean).join(' / ')}
+                                  {cell.class_name}
                                 </P>
                                 <P size="xs" color="muted" className="leading-none truncate max-w-35">
                                   {cell.timetable_name}
