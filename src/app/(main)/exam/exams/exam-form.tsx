@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Copy } from "lucide-react";
 import { useExamDetail } from "@/hooks/exam/useExams";
+import { useExamLifecycle } from "@/hooks/exam/useExamLifecycle";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
+  P,
   Button,
   Spinner,
   FormField,
@@ -15,20 +18,86 @@ import {
   Select,
   Badge,
   MultiSelect,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  type BadgeVariant,
 } from "@/components/ui";
 import {
   EXAMS_PAGE,
   EXAM_ROUTES,
   EXAM_TERM_OPTIONS,
 } from "@/constants/exam.constants";
+import type { ExamStatus } from "@/types/exam.types";
+
+const STATUS_BADGE: Record<ExamStatus, BadgeVariant> = {
+  DRAFT: "default",
+  UNDER_REVIEW: "warning",
+  PUBLISHED: "success",
+  STARTED: "info",
+  COMPLETED: "success",
+  LOCKED: "warning",
+  ARCHIVED: "default",
+};
+
+function CopyExamModal({
+  isCopying,
+  onCopy,
+  onDismiss,
+}: {
+  isCopying: boolean;
+  onCopy: (targetYearId: string, newStartDate: string) => void;
+  onDismiss: () => void;
+}) {
+  const { years } = useAcademicYears();
+  const [targetYearId, setTargetYearId] = useState("");
+  const [newStartDate, setNewStartDate] = useState("");
+
+  return (
+    <Modal title="Copy exam to another academic year" onClose={onDismiss} size="sm">
+      <ModalBody>
+        <Div type="col" gap="md">
+          <FormField label="Target academic year *">
+            <Select value={targetYearId} onChange={(e) => setTargetYearId(e.target.value)}>
+              <option value="">Select year</option>
+              {years.map((y) => (
+                <option key={y.id} value={y.id}>{y.name}</option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField label="New start date *">
+            <Input type="date" value={newStartDate} onChange={(e) => setNewStartDate(e.target.value)} />
+          </FormField>
+          <P className="text-xs text-muted-foreground">
+            Classes and subject schedule are cloned; dates shift by the same amount as the start date.
+            Invigilators, halls, and locks do not carry over.
+          </P>
+        </Div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="outline" size="sm" onClick={onDismiss}>Cancel</Button>
+        <Button
+          size="sm"
+          loading={isCopying}
+          disabled={!targetYearId || !newStartDate}
+          onClick={() => onCopy(targetYearId, newStartDate)}
+        >
+          <Copy size={13} /> Copy Exam
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
 
 export function ExamFormContent({ slug }: { slug: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
+  const [showCopyModal, setShowCopyModal] = useState(false);
 
   const {
     exam,
+    setExam,
     isLoading,
     isNew,
     isEditing,
@@ -37,6 +106,17 @@ export function ExamFormContent({ slug }: { slug: string }) {
     isSubmitting,
     onSubmit,
   } = useExamDetail(slug);
+
+  const { allowedNextStatuses, isChangingStatus, changeStatus, isCopying, copyExam } =
+    useExamLifecycle(exam, setExam);
+
+  async function handleCopy(targetYearId: string, newStartDate: string) {
+    const copied = await copyExam({ target_academic_year_id: targetYearId, new_start_date: newStartDate });
+    if (copied) {
+      setShowCopyModal(false);
+      router.push(EXAM_ROUTES.exams.edit(copied.id));
+    }
+  }
 
   const {
     register,
@@ -97,11 +177,27 @@ export function ExamFormContent({ slug }: { slug: string }) {
             >
               <ArrowLeft size={14} /> {EXAMS_PAGE.buttons.back}
             </Button>
-            {!isNew && !isEditing && (
+            {!isNew && !isEditing && exam && (
               <>
-                <Badge variant={exam?.is_published ? "success" : "warning"}>
-                  {exam?.is_published ? "Published" : "Draft"}
+                <Badge variant={STATUS_BADGE[exam.status] ?? "default"}>
+                  {exam.status.replace(/_/g, " ")}
                 </Badge>
+                {allowedNextStatuses.length > 0 && (
+                  <Select
+                    width="xs"
+                    value=""
+                    disabled={isChangingStatus}
+                    onChange={(e) => e.target.value && changeStatus(e.target.value as ExamStatus)}
+                  >
+                    <option value="">Move to...</option>
+                    {allowedNextStatuses.map((s) => (
+                      <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                    ))}
+                  </Select>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setShowCopyModal(true)}>
+                  <Copy size={14} /> Copy
+                </Button>
                 <Button size="sm" onClick={() => setIsEditing(true)}>
                   <Pencil size={14} /> {EXAMS_PAGE.buttons.edit}
                 </Button>
@@ -269,6 +365,14 @@ export function ExamFormContent({ slug }: { slug: string }) {
           </Div>
         </Div>
       </form>
+
+      {showCopyModal && (
+        <CopyExamModal
+          isCopying={isCopying}
+          onCopy={handleCopy}
+          onDismiss={() => setShowCopyModal(false)}
+        />
+      )}
     </Div>
   );
 }

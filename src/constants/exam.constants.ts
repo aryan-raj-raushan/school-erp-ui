@@ -6,23 +6,24 @@ export const EXAM_ROUTES = {
   // Grading
   grading: {
     list: '/exam/grading',
-    create: '/exam/grading/create-new',
-    view: (id: string) => `/exam/grading/${id}`,
-    edit: (id: string) => `/exam/grading/${id}?edit=true`,
+    create: '/exam/grading/view?id=create-new',
+    view: (id: string) => `/exam/grading/view?id=${id}`,
+    edit: (id: string) => `/exam/grading/view?id=${id}&edit=true`,
   },
   // Exams
   exams: {
     list: '/exam/exams',
-    create: '/exam/exams/create-new',
-    view: (id: string) => `/exam/exams/${id}`,
-    edit: (id: string) => `/exam/exams/${id}?edit=true`,
+    create: '/exam/exams/new',
+    view: (id: string) => `/exam/exams/view?id=${id}`,
+    edit: (id: string) => `/exam/exams/view?id=${id}&edit=true`,
+    schedule: (id: string) => `/exam/exams/view?id=${id}&tab=schedule`,
   },
   // Schedule
   schedule: {
     list: '/exam/schedule',
     create: '/exam/schedule/create-new',
-    view: (id: string) => `/exam/schedule/${id}`,
-    edit: (id: string) => `/exam/schedule/${id}?edit=true`,
+    view: (id: string) => `/exam/schedule/view?id=${id}`,
+    edit: (id: string) => `/exam/schedule/view?id=${id}&edit=true`,
   },
   // Attendance
   attendance: {
@@ -44,6 +45,7 @@ export const EXAM_ROUTES = {
     create: '/exam/sitting-plan/create-new',
     roomView: (hallDetailId: string, examId: string, academicYearId: string) =>
       `/exam/sitting-plan/view?hall_detail_id=${hallDetailId}&exam_id=${examId}&academic_year_id=${academicYearId}`,
+    print: (examId: string) => `/exam/sitting-plan?tab=print&exam_id=${examId}`,
   },
   // Admit Card
   admitCard: {

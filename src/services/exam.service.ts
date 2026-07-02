@@ -8,8 +8,20 @@ import type {
   ExamFilters,
   CreateExamPayload,
   UpdateExamPayload,
+  AutoGenerateExamPayload,
+  AutoGenerateExamResult,
+  RegenerateApplyPayload,
+  RegeneratePreviewResult,
+  ExamStatus,
+  ExamTemplate,
+  CreateExamTemplatePayload,
+  UpdateExamTemplatePayload,
+  CopyExamPayload,
   ExamSchedule,
   BulkCreateSchedulePayload,
+  BulkLockSchedulePayload,
+  BulkUpdateSchedulePayload,
+  BulkUpdateScheduleResult,
   // UpdateExamSchedulePayload,
   ScheduleFilters,
   ExamAttendance,
@@ -21,6 +33,8 @@ import type {
   ExamSittingPlan,
   BulkCreateSittingPayload,
   SittingFilters,
+  AutoShuffleSittingPayload,
+  AutoShuffleSittingResult,
   AdmitCardData,
   PaginatedResult,
   SittingPlanEntry,
@@ -91,6 +105,71 @@ export const ExamsService = {
   async remove(id: string): Promise<void> {
     await apiGateway.delete(EXAM_ENDPOINTS.exams.byId(id));
   },
+
+  async autoGenerate(payload: AutoGenerateExamPayload): Promise<AutoGenerateExamResult> {
+    const res = await apiGateway.post<AutoGenerateExamResult>(
+      EXAM_ENDPOINTS.exams.autoGenerate,
+      payload,
+    );
+    return res.data;
+  },
+
+  async changeStatus(id: string, status: ExamStatus): Promise<Exam> {
+    const res = await apiGateway.patch<Exam>(EXAM_ENDPOINTS.exams.status(id), { status });
+    return res.data;
+  },
+
+  async copy(id: string, payload: CopyExamPayload): Promise<Exam> {
+    const res = await apiGateway.post<Exam>(EXAM_ENDPOINTS.exams.copy(id), payload);
+    return res.data;
+  },
+
+  async restore(id: string): Promise<Exam> {
+    const res = await apiGateway.patch<Exam>(EXAM_ENDPOINTS.exams.restore(id), {});
+    return res.data;
+  },
+
+  async regeneratePreview(
+    id: string,
+    payload: AutoGenerateExamPayload,
+  ): Promise<RegeneratePreviewResult> {
+    const res = await apiGateway.post<RegeneratePreviewResult>(
+      EXAM_ENDPOINTS.exams.regeneratePreview(id),
+      payload,
+    );
+    return res.data;
+  },
+
+  async regenerateApply(id: string, payload: RegenerateApplyPayload): Promise<AutoGenerateExamResult> {
+    const res = await apiGateway.post<AutoGenerateExamResult>(
+      EXAM_ENDPOINTS.exams.regenerateApply(id),
+      payload,
+    );
+    return res.data;
+  },
+};
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+
+export const ExamTemplateService = {
+  async list(): Promise<ExamTemplate[]> {
+    const res = await apiGateway.get<ExamTemplate[]>(EXAM_ENDPOINTS.templates.list);
+    return res.data;
+  },
+
+  async create(payload: CreateExamTemplatePayload): Promise<ExamTemplate> {
+    const res = await apiGateway.post<ExamTemplate>(EXAM_ENDPOINTS.templates.list, payload);
+    return res.data;
+  },
+
+  async update(id: string, payload: UpdateExamTemplatePayload): Promise<ExamTemplate> {
+    const res = await apiGateway.patch<ExamTemplate>(EXAM_ENDPOINTS.templates.byId(id), payload);
+    return res.data;
+  },
+
+  async remove(id: string): Promise<void> {
+    await apiGateway.delete(EXAM_ENDPOINTS.templates.byId(id));
+  },
 };
 
 // ── Schedule ──────────────────────────────────────────────────────────────────
@@ -124,6 +203,22 @@ export const ExamScheduleService = {
 
   async remove(id: string): Promise<void> {
     await apiGateway.delete(EXAM_ENDPOINTS.schedules.byId(id));
+  },
+
+  async bulkLock(payload: BulkLockSchedulePayload): Promise<void> {
+    await apiGateway.patch(EXAM_ENDPOINTS.schedules.bulkLock, payload);
+  },
+
+  async bulkUpdate(payload: BulkUpdateSchedulePayload): Promise<BulkUpdateScheduleResult> {
+    const res = await apiGateway.patch<BulkUpdateScheduleResult>(
+      EXAM_ENDPOINTS.schedules.bulkUpdate,
+      payload,
+    );
+    return res.data;
+  },
+
+  async bulkRemove(ids: string[]): Promise<void> {
+    await apiGateway.delete(EXAM_ENDPOINTS.schedules.bulk, { ids });
   },
 };
 
@@ -222,13 +317,8 @@ export const SittingPlanService = {
     await apiGateway.delete(EXAM_ENDPOINTS.sittingPlans.byId(id));
   },
 
-  async autoShuffle(payload: {
-    exam_ids: string[];
-    academic_year_id: string;
-    hall_detail_ids: string[];
-    clear_existing?: boolean;
-  }): Promise<{ total_assigned: number; rooms: { room_name: string; assigned_count: number }[] }> {
-    const res = await apiGateway.post<{ total_assigned: number; rooms: { room_name: string; assigned_count: number }[] }>(
+  async autoShuffle(payload: AutoShuffleSittingPayload): Promise<AutoShuffleSittingResult> {
+    const res = await apiGateway.post<AutoShuffleSittingResult>(
       EXAM_ENDPOINTS.sittingPlans.autoShuffle,
       payload,
     );
@@ -257,6 +347,23 @@ export const SittingPlanService = {
     const a = document.createElement('a');
     a.href = url;
     a.download = `seating-${(params.room_name ?? 'room').replace(/\s+/g, '-').toLowerCase()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  async downloadMasterPdf(params: { exam_id: string; date?: string; exam_name?: string }): Promise<void> {
+    const q = new URLSearchParams();
+    q.set('exam_id', params.exam_id);
+    if (params.date) q.set('date', params.date);
+    const res = await apiGateway.get<ArrayBuffer>(
+      `${EXAM_ENDPOINTS.sittingPlans.masterPdf}?${q.toString()}`,
+      { responseType: 'blob' } as any,
+    );
+    const blob = new Blob([res as any], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `master-seating-${(params.exam_name ?? 'exam').replace(/\s+/g, '-').toLowerCase()}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
   },

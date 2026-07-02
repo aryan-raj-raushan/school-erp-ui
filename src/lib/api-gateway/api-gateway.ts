@@ -71,8 +71,8 @@ export class ApiGateway {
     return this.request<T>({ ...options, method: 'PATCH', url, data });
   }
 
-  async delete<T>(url: string, options: Omit<RequestOptions, 'url' | 'method' | 'data'> = {}): Promise<GatewayResponse<T>> {
-    return this.request<T>({ ...options, method: 'DELETE', url });
+  async delete<T>(url: string, data?: unknown, options: Omit<RequestOptions, 'url' | 'method' | 'data'> = {}): Promise<GatewayResponse<T>> {
+    return this.request<T>({ ...options, method: 'DELETE', url, data });
   }
 
   async upload<T>(url: string, formData: FormData, options: Omit<RequestOptions, 'url' | 'method' | 'data'> = {}): Promise<GatewayResponse<T>> {

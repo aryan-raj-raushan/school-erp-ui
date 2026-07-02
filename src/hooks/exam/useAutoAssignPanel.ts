@@ -18,7 +18,8 @@ export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseA
   const { details: rooms } = useHallDetails();
   const { isAssigning, result, shuffle, reset } = useAutoShufflePlan();
 
-  const [selectedExamIds, setSelectedExamIds] = useState<string[]>([]);
+  const [selectedExamId, setSelectedExamId] = useState("");
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [clearExisting, setClearExisting] = useState(true);
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
@@ -28,36 +29,35 @@ export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseA
     [classes],
   );
 
-  const examGroups = useMemo(() => {
-    const groups: Record<string, typeof exams> = {};
-    exams.forEach((e) => {
-      if (!groups[e.exam_name]) groups[e.exam_name] = [];
-      groups[e.exam_name].push(e);
-    });
-    return Object.entries(groups);
-  }, [exams]);
+  const selectedExam = useMemo(
+    () => exams.find((e) => e.id === selectedExamId) ?? null,
+    [exams, selectedExamId],
+  );
 
-  // Fetch student counts per class (separate call per class to bypass backend page-size cap)
+  // Default to every class in the exam whenever the exam selection changes
   useEffect(() => {
-    if (!academicYearId || exams.length === 0) return;
-    const uniqueClassIds = [...new Set(exams.map((e) => e.class_id))];
+    setSelectedClassIds(selectedExam?.class_ids ?? []);
+  }, [selectedExam]);
+
+  // Fetch student counts per class of the selected exam
+  useEffect(() => {
+    if (!academicYearId || !selectedExam || selectedExam.class_ids.length === 0) {
+      setStudentCounts({});
+      return;
+    }
     Promise.all(
-      uniqueClassIds.map((cid) =>
+      selectedExam.class_ids.map((cid) =>
         StudentsService.list({ class_id: cid, academic_year_id: academicYearId, limit: 100 })
           .then((r) => [cid, r.pagination?.total ?? r.items.length] as [string, number]),
       ),
     )
       .then((entries) => setStudentCounts(Object.fromEntries(entries)))
       .catch(() => {});
-  }, [academicYearId, exams]);
+  }, [academicYearId, selectedExam]);
 
   const totalSelectedStudents = useMemo(
-    () =>
-      selectedExamIds.reduce((sum, eid) => {
-        const exam = exams.find((e) => e.id === eid);
-        return sum + (exam ? (studentCounts[exam.class_id] ?? 0) : 0);
-      }, 0),
-    [selectedExamIds, exams, studentCounts],
+    () => selectedClassIds.reduce((sum, cid) => sum + (studentCounts[cid] ?? 0), 0),
+    [selectedClassIds, studentCounts],
   );
 
   const totalSelectedCapacity = useMemo(
@@ -74,19 +74,10 @@ export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseA
       ? totalSelectedStudents - totalSelectedCapacity
       : 0;
 
-  function toggleExam(id: string) {
-    setSelectedExamIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+  function toggleClass(classId: string) {
+    setSelectedClassIds((prev) =>
+      prev.includes(classId) ? prev.filter((x) => x !== classId) : [...prev, classId],
     );
-  }
-
-  function toggleGroup(ids: string[]) {
-    const allSelected = ids.every((id) => selectedExamIds.includes(id));
-    if (allSelected) {
-      setSelectedExamIds((prev) => prev.filter((id) => !ids.includes(id)));
-    } else {
-      setSelectedExamIds((prev) => [...new Set([...prev, ...ids])]);
-    }
   }
 
   function toggleRoom(id: string) {
@@ -96,22 +87,27 @@ export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseA
   }
 
   async function handleShuffle() {
-    await shuffle(selectedExamIds, academicYearId, selectedRoomIds, clearExisting);
+    if (!selectedExamId) return;
+    await shuffle(selectedExamId, selectedClassIds, academicYearId, selectedRoomIds, clearExisting);
     onComplete();
   }
 
   function handleReset() {
     reset();
-    setSelectedExamIds([]);
+    setSelectedExamId("");
+    setSelectedClassIds([]);
     setSelectedRoomIds([]);
   }
 
   return {
     exams,
     rooms,
-    examGroups,
+    selectedExamId,
+    setSelectedExamId,
+    selectedExam,
     classNameById,
-    selectedExamIds,
+    selectedClassIds,
+    toggleClass,
     selectedRoomIds,
     clearExisting,
     setClearExisting,
@@ -121,8 +117,6 @@ export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseA
     capacityShortfall,
     isAssigning,
     result,
-    toggleExam,
-    toggleGroup,
     toggleRoom,
     handleShuffle,
     handleReset,

@@ -231,12 +231,12 @@ function SiblingCopyModal({
   onCopy,
   onDismiss,
 }: {
-  siblings: { exam: { id: string; class_id: string }; className?: string }[];
+  siblings: { classId: string; className?: string }[];
   isCopying: boolean;
   onCopy: (ids: string[]) => void;
   onDismiss: () => void;
 }) {
-  const [selected, setSelected] = useState<string[]>(siblings.map((s) => s.exam.id));
+  const [selected, setSelected] = useState<string[]>(siblings.map((s) => s.classId));
 
   function toggle(id: string) {
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -246,17 +246,17 @@ function SiblingCopyModal({
     <Modal title="Copy schedule to other classes?" onClose={onDismiss} size="sm">
       <ModalBody>
         <P className="text-sm text-muted-foreground mb-4">
-          This exam exists for other classes too. Apply the same dates, times and marks to:
+          This exam covers other classes too. Apply the same dates, times and marks to:
         </P>
         <Div type="col" gap="sm">
           {siblings.map((s) => {
-            const checked = selected.includes(s.exam.id);
+            const checked = selected.includes(s.classId);
             return (
               <Button
-                key={s.exam.id}
+                key={s.classId}
                 type="button"
                 variant="outline"
-                onClick={() => toggle(s.exam.id)}
+                onClick={() => toggle(s.classId)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left justify-start"
               >
                 {checked ? (
@@ -264,7 +264,7 @@ function SiblingCopyModal({
                 ) : (
                   <Square size={14} className="text-muted-foreground shrink-0" />
                 )}
-                <Span className="text-sm">{s.className ?? s.exam.class_id}</Span>
+                <Span className="text-sm">{s.className ?? s.classId}</Span>
               </Button>
             );
           })}
@@ -372,7 +372,7 @@ function ScheduleCreateContent() {
     <>
     {pendingSiblings.length > 0 && (
       <SiblingCopyModal
-        siblings={pendingSiblings.map((s) => ({ exam: s.exam, className: classNameById[s.exam.class_id] }))}
+        siblings={pendingSiblings.map((s) => ({ classId: s.classId, className: classNameById[s.classId] }))}
         isCopying={isCopyingToSiblings}
         onCopy={copyToSiblings}
         onDismiss={dismissSiblingCopy}

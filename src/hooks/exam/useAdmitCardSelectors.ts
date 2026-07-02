@@ -19,19 +19,20 @@ export function useAdmitCardSelectors(examId: string, academicYearId: string) {
     setStudentsLoading(true);
     ExamsService.getById(examId)
       .then(async (exam) => {
-        const [studentsRes, classesRes] = await Promise.all([
-          StudentsService.list({
-            class_id: exam.class_id,
-            academic_year_id: academicYearId,
-            limit: 500,
-          }),
+        const [studentsResults, classesRes] = await Promise.all([
+          Promise.all(
+            exam.class_ids.map((classId) =>
+              StudentsService.list({ class_id: classId, academic_year_id: academicYearId, limit: 500 }),
+            ),
+          ),
           import("@/services/classes.service").then((m) =>
             m.ClassesService.list({ academic_year_id: academicYearId })
           ),
         ]);
-        setAllStudents(studentsRes.items);
+        setAllStudents(studentsResults.flatMap((r) => r.items));
+        const classIdSet = new Set(exam.class_ids);
         const classSections = classesRes.sections.filter(
-          (s: { class_id: string; id: string; name: string }) => s.class_id === exam.class_id
+          (s: { class_id: string; id: string; name: string }) => classIdSet.has(s.class_id)
         );
         setSections(classSections);
       })

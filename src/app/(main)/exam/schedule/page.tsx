@@ -1,19 +1,25 @@
 ﻿"use client";
 
-import { Suspense, useMemo, useEffect } from "react";
+import { Suspense, useMemo, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Lock, Unlock, CheckSquare, Square } from "lucide-react";
 import { useExamSchedules } from "@/hooks/exam/useExamSchedule";
+import { useScheduleBulkActions } from "@/hooks/exam/useScheduleBulkActions";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
+import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { useFilterParams } from "@/hooks/useFilterParams";
+import { StaffService } from "@/services/staff.service";
 import {
   Div,
+  P,
+  Span,
   Button,
   Select,
   Badge,
   Spinner,
   DataTable,
+  Input,
   type ColumnDef,
   PageHeader,
 } from "@/components/ui";
@@ -23,6 +29,7 @@ import {
   SUBJECT_TYPE_OPTIONS,
 } from "@/constants/exam.constants";
 import type { ExamSchedule } from "@/types/exam.types";
+import type { Staff } from "@/types";
 
 function ScheduleContent() {
   const router = useRouter();
@@ -38,7 +45,7 @@ function ScheduleContent() {
     page: undefined,
   });
 
-  const { schedules, pagination, filters, isLoading, updateFilters, remove } =
+  const { schedules, pagination, filters, isLoading, updateFilters, remove, refetch } =
     useExamSchedules({
       academic_year_id: urlFilters.academic_year_id
         ? urlFilters.academic_year_id
@@ -51,6 +58,19 @@ function ScheduleContent() {
         : undefined,
       page: urlFilters.page ? Number(urlFilters.page) : 1,
     });
+
+  const bulk = useScheduleBulkActions(refetch);
+  const { details: hallRooms } = useHallDetails();
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [bulkDate, setBulkDate] = useState("");
+  const [bulkStart, setBulkStart] = useState("");
+  const [bulkEnd, setBulkEnd] = useState("");
+  const [bulkInvigilatorId, setBulkInvigilatorId] = useState("");
+  const [bulkHallId, setBulkHallId] = useState("");
+
+  useEffect(() => {
+    StaffService.list({ limit: 200 }).then((r) => setStaff(r.items)).catch(() => {});
+  }, []);
 
   const {
     years,
@@ -135,6 +155,37 @@ function ScheduleContent() {
   const columns = useMemo<ColumnDef<ExamSchedule>[]>(
     () => [
       {
+        id: "select",
+        header: () => (
+          <button
+            type="button"
+            onClick={() => bulk.toggleAll(schedules.filter((s) => !s.locked).map((s) => s.id))}
+            className="flex items-center justify-center"
+          >
+            {bulk.selectedIds.size > 0 && bulk.selectedIds.size === schedules.filter((s) => !s.locked).length ? (
+              <CheckSquare size={14} className="text-primary" />
+            ) : (
+              <Square size={14} className="text-muted-foreground" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) =>
+          row.original.locked ? (
+            <span title="Locked">
+              <Lock size={13} className="text-muted-foreground" />
+            </span>
+          ) : (
+            <button type="button" onClick={() => bulk.toggle(row.original.id)} className="flex items-center justify-center">
+              {bulk.selectedIds.has(row.original.id) ? (
+                <CheckSquare size={14} className="text-primary" />
+              ) : (
+                <Square size={14} className="text-muted-foreground" />
+              )}
+            </button>
+          ),
+        size: 36,
+      },
+      {
         id: "sno",
         header: SCHEDULE_PAGE.table.sno,
         cell: ({ row }) => {
@@ -213,7 +264,7 @@ function ScheduleContent() {
         ),
       },
     ],
-    [allSections, router]
+    [allSections, router, bulk.selectedIds, bulk.toggle, bulk.toggleAll, schedules]
   );
 
   return (
@@ -303,6 +354,76 @@ function ScheduleContent() {
           ))}
         </Select>
       </Div>
+
+      {/* Bulk action bar */}
+      {bulk.selectedIds.size > 0 && (
+        <Div variant="card" className="p-4">
+          <Div type="col" gap="sm">
+            <Div type="row" align="center" justify="between">
+              <P size="sm" weight="semibold">{bulk.selectedIds.size} selected</P>
+              <Button size="sm" variant="outline" onClick={bulk.clear}>Clear</Button>
+            </Div>
+            <Div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+              <Input type="date" placeholder="Date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} />
+              <Input type="time" placeholder="Start" value={bulkStart} onChange={(e) => setBulkStart(e.target.value)} />
+              <Input type="time" placeholder="End" value={bulkEnd} onChange={(e) => setBulkEnd(e.target.value)} />
+              <Select value={bulkInvigilatorId} onChange={(e) => setBulkInvigilatorId(e.target.value)}>
+                <option value="">Invigilator</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>{[s.first_name, s.last_name].filter(Boolean).join(" ")}</option>
+                ))}
+              </Select>
+              <Select value={bulkHallId} onChange={(e) => setBulkHallId(e.target.value)}>
+                <option value="">Hall</option>
+                {hallRooms.map((h) => (
+                  <option key={h.id} value={h.id}>{h.room_name}</option>
+                ))}
+              </Select>
+            </Div>
+            <Div type="row" gap="sm" wrap>
+              <Button
+                size="sm"
+                loading={bulk.isApplying}
+                disabled={!bulkDate && !bulkStart && !bulkEnd && !bulkInvigilatorId && !bulkHallId}
+                onClick={() =>
+                  bulk.applyBulkUpdate({
+                    exam_date: bulkDate || undefined,
+                    start_time: bulkStart || undefined,
+                    end_time: bulkEnd || undefined,
+                    exam_invigilator_id: bulkInvigilatorId || undefined,
+                    hall_detail_id: bulkHallId || undefined,
+                  })
+                }
+              >
+                Apply Changes
+              </Button>
+              <Button size="sm" variant="outline" loading={bulk.isApplying} onClick={() => bulk.applyBulkLock(true)}>
+                <Lock size={13} /> Lock
+              </Button>
+              <Button size="sm" variant="outline" loading={bulk.isApplying} onClick={() => bulk.applyBulkLock(false)}>
+                <Unlock size={13} /> Unlock
+              </Button>
+              <Button size="sm" variant="destructive" loading={bulk.isApplying} onClick={bulk.applyBulkDelete}>
+                <Trash2 size={13} /> Delete
+              </Button>
+            </Div>
+            {bulk.conflicts.length > 0 && (
+              <Div type="col" gap="xs" className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3">
+                <P size="sm" weight="semibold" className="text-amber-700 dark:text-amber-400">
+                  {bulk.conflicts.length} row(s) skipped
+                </P>
+                <Div type="row" gap="xs" wrap>
+                  {bulk.conflicts.map((c) => (
+                    <Span key={c.id} className="text-[11px] bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full">
+                      {c.reason}
+                    </Span>
+                  ))}
+                </Div>
+              </Div>
+            )}
+          </Div>
+        </Div>
+      )}
 
       {/* Table */}
       <DataTable

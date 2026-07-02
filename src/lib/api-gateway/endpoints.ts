@@ -359,11 +359,23 @@ export const EXAM_ENDPOINTS = {
     list: "/exam/exams",
     byId: (id: string) => `/exam/exams/${id}`,
     publish: (id: string) => `/exam/exams/${id}/publish`,
+    autoGenerate: "/exam/exams/auto-generate",
+    status: (id: string) => `/exam/exams/${id}/status`,
+    copy: (id: string) => `/exam/exams/${id}/copy`,
+    restore: (id: string) => `/exam/exams/${id}/restore`,
+    regeneratePreview: (id: string) => `/exam/exams/${id}/regenerate-preview`,
+    regenerateApply: (id: string) => `/exam/exams/${id}/regenerate-apply`,
+  },
+  templates: {
+    list: "/exam/templates",
+    byId: (id: string) => `/exam/templates/${id}`,
   },
   schedules: {
     list: "/exam/schedules",
     byId: (id: string) => `/exam/schedules/${id}`,
     bulk: "/exam/schedules/bulk",
+    bulkLock: "/exam/schedules/bulk-lock",
+    bulkUpdate: "/exam/schedules/bulk-update",
   },
   attendance: {
     list: "/exam/attendance",
@@ -385,6 +397,7 @@ export const EXAM_ENDPOINTS = {
     bulk: "/exam/sitting-plans/bulk",
     autoShuffle: "/exam/sitting-plans/auto-shuffle",
     roomPdf: "/exam/sitting-plans/room-pdf",
+    masterPdf: "/exam/sitting-plans/master-pdf",
   },
   admitCard: {
     data: "/exam/admit-card/data",

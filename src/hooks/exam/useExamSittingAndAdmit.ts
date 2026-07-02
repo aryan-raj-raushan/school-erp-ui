@@ -16,6 +16,7 @@ import type {
   AdmitCardData,
   ExamHallDetail,
   Exam,
+  AutoShuffleSittingResult,
 } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SITTING_PLAN_PAGE, ADMIT_CARD_PAGE } from "@/constants/exam.constants";
@@ -118,7 +119,6 @@ export interface StudentSlot {
   sitting_plan_id?: string; // set if already in DB
   original_seat_index?: number; // original DB seat position (0-based)
   class_label?: string; // e.g. "Cl.1" — displayed as badge in room view
-  exam_id?: string; // which exam record owns this student (needed for multi-class save)
 }
 
 type SeatState = {
@@ -213,49 +213,31 @@ export function useRoomSittingPlan(
     Promise.all([
       HallDetailService.getById(hallDetailId),
       ExamsService.getById(examId),
-      ExamsService.list({ academic_year_id: academicYearId, limit: 200 }),
     ])
-      .then(([roomData, examData, allExamsRes]) => {
+      .then(([roomData, examData]) => {
         setRoom(roomData);
         setExam(examData);
 
-        // Find all exams for the same test name+term (one per class)
-        const siblingExams = allExamsRes.items.filter(
-          (e) => e.exam_name === examData.exam_name && e.exam_term === examData.exam_term,
-        );
-        const siblingExamIds = siblingExams.map((e) => e.id);
-        const siblingClassIds = [...new Set(siblingExams.map((e) => e.class_id))];
-
-        // class_id → which exam record it belongs to (for save routing)
-        const examByClassId: Record<string, string> = {};
-        siblingExams.forEach((e) => { examByClassId[e.class_id] = e.id; });
+        const classIds = examData.class_ids;
 
         // class_id → short display label (Cl.1, Cl.2 …)
         const classLabelMap: Record<string, string> = {};
-        siblingExams.forEach((e, i) => {
-          if (!classLabelMap[e.class_id]) classLabelMap[e.class_id] = `Cl.${i + 1}`;
-        });
+        classIds.forEach((cid, i) => { classLabelMap[cid] = `Cl.${i + 1}`; });
 
         return Promise.all([
-          // All students across sibling classes
+          // All students across the exam's classes
           Promise.all(
-            siblingClassIds.map((cid) =>
+            classIds.map((cid) =>
               StudentsService.list({ academic_year_id: academicYearId, class_id: cid, limit: 100 }),
             ),
           ).then((results) => results.flatMap((r) => r.items)),
           // Plans for THIS room only (seat layout)
-          Promise.all(
-            siblingExamIds.map((eid) =>
-              SittingPlanService.list({ exam_id: eid, hall_detail_id: hallDetailId, limit: 1000 }),
-            ),
-          ).then((results) => results.flatMap((r) => r.items)),
+          SittingPlanService.list({ exam_id: examId, hall_detail_id: hallDetailId, limit: 1000 }),
           // Plans for ALL rooms (to exclude students already seated elsewhere)
-          Promise.all(
-            siblingExamIds.map((eid) =>
-              SittingPlanService.list({ exam_id: eid, limit: 1000 }),
-            ),
-          ).then((results) => results.flatMap((r) => r.items)),
-        ]).then(([allStudents, thisRoomPlans, allRoomPlans]) => {
+          SittingPlanService.list({ exam_id: examId, limit: 1000 }),
+        ]).then(([allStudents, thisRoomPlansRes, allRoomPlansRes]) => {
+          const thisRoomPlans = thisRoomPlansRes.items;
+          const allRoomPlans = allRoomPlansRes.items;
           const studentMap = Object.fromEntries(
             allStudents.map((s) => [
               s.id,
@@ -284,7 +266,6 @@ export function useRoomSittingPlan(
               sitting_plan_id: p.id,
               original_seat_index: seatIdx,
               class_label: meta ? classLabelMap[meta.class_id] : undefined,
-              exam_id: p.exam_id,
             };
           });
 
@@ -297,7 +278,6 @@ export function useRoomSittingPlan(
               admission_number: s.admission_number,
               roll_number: s.roll_number ?? undefined,
               class_label: classLabelMap[s.class_id],
-              exam_id: examByClassId[s.class_id],
             }));
 
           dispatch({ type: "INIT", seated, unassigned });
@@ -360,33 +340,26 @@ export function useRoomSittingPlan(
         ),
       );
 
-      // 3. Create new assignments grouped by exam_id (multi-class support)
-      const entriesByExam: Record<string, SittingPlanEntry[]> = {};
-      let totalNew = 0;
+      // 3. Create new assignments
+      const newEntries: SittingPlanEntry[] = [];
       state.seated.forEach((slot, i) => {
         if (slot && !slot.sitting_plan_id) {
-          const eid = slot.exam_id ?? examId;
-          if (!entriesByExam[eid]) entriesByExam[eid] = [];
-          entriesByExam[eid].push({
+          newEntries.push({
             student_id: slot.student_id,
             hall_detail_id: hallDetailId,
             seat_number: i + 1,
             roll_number: slot.roll_number,
           });
-          totalNew++;
         }
       });
+      const totalNew = newEntries.length;
 
       if (totalNew > 0) {
-        await Promise.all(
-          Object.entries(entriesByExam).map(([eid, entries]) =>
-            SittingPlanService.bulkCreate({
-              exam_id: eid,
-              academic_year_id: academicYearId,
-              entries,
-            }),
-          ),
-        );
+        await SittingPlanService.bulkCreate({
+          exam_id: examId,
+          academic_year_id: academicYearId,
+          entries: newEntries,
+        });
       }
 
       const parts: string[] = [];
@@ -423,23 +396,19 @@ export function useRoomSittingPlan(
 
 // ── Auto-Shuffle Hook ─────────────────────────────────────────────────────────
 
-export interface ShuffleResult {
-  total_assigned: number;
-  rooms: { room_name: string; assigned_count: number }[];
-}
-
 export function useAutoShufflePlan() {
   const [isAssigning, setIsAssigning] = useState(false);
-  const [result, setResult] = useState<ShuffleResult | null>(null);
+  const [result, setResult] = useState<AutoShuffleSittingResult | null>(null);
 
   async function shuffle(
-    examIds: string[],
+    examId: string,
+    classIds: string[],
     academicYearId: string,
     hallDetailIds: string[],
     clearExisting = true,
   ) {
-    if (examIds.length === 0) {
-      toast.error("Select at least one exam");
+    if (!examId) {
+      toast.error("Select an exam");
       return;
     }
     if (hallDetailIds.length === 0) {
@@ -450,13 +419,18 @@ export function useAutoShufflePlan() {
     setResult(null);
     try {
       const data = await SittingPlanService.autoShuffle({
-        exam_ids: examIds,
+        exam_id: examId,
+        class_ids: classIds.length > 0 ? classIds : undefined,
         academic_year_id: academicYearId,
         hall_detail_ids: hallDetailIds,
         clear_existing: clearExisting,
       });
       setResult(data);
-      toast.success(`${data.total_assigned} students assigned across ${data.rooms.length} room(s)`);
+      toast.success(
+        data.shortfall_warning
+          ? data.shortfall_warning
+          : `${data.total_assigned} students assigned across ${data.rooms.length} room(s)`,
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Auto-assign failed");
     } finally {

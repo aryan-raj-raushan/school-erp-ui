@@ -9,13 +9,11 @@ import { toast } from "sonner";
 import { ExamScheduleService, ExamsService } from "@/services/exam.service";
 import { SubjectsService } from "@/services/subjects.service";
 import type { ExamSchedule, ScheduleFilters } from "@/types/exam.types";
-import type { Exam } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SCHEDULE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 
 export interface SiblingCopyTask {
-  exam: Exam;
-  className?: string;
+  classId: string;
 }
 
 // ── Schema ────────────────────────────────────────────────────────────────────
@@ -185,20 +183,12 @@ export function useExamScheduleForm() {
       lastPayloadRef.current = payload;
       toast.success(SCHEDULE_PAGE.toasts.createSuccess);
 
-      // Detect sibling exams (same name+term, different class) and offer to copy
+      // This exam may span other classes too — offer to copy the same schedule to them
       try {
-        const [submittedExam, allExamsRes] = await Promise.all([
-          ExamsService.getById(values.exam_id),
-          ExamsService.list({ academic_year_id: values.academic_year_id, limit: 200 }),
-        ]);
-        const siblings = allExamsRes.items.filter(
-          (e) =>
-            e.exam_name === submittedExam.exam_name &&
-            e.exam_term === submittedExam.exam_term &&
-            e.class_id !== submittedExam.class_id,
-        );
-        if (siblings.length > 0) {
-          setPendingSiblings(siblings.map((e) => ({ exam: e })));
+        const submittedExam = await ExamsService.getById(values.exam_id);
+        const otherClassIds = submittedExam.class_ids.filter((cid) => cid !== values.class_id);
+        if (otherClassIds.length > 0) {
+          setPendingSiblings(otherClassIds.map((classId) => ({ classId })));
           return; // Stay on page to show copy dialog
         }
       } catch {
@@ -212,24 +202,21 @@ export function useExamScheduleForm() {
     }
   });
 
-  async function copyToSiblings(selectedSiblingExamIds: string[]) {
+  async function copyToSiblings(selectedClassIds: string[]) {
     const payload = lastPayloadRef.current;
-    if (!payload || selectedSiblingExamIds.length === 0) {
+    if (!payload || selectedClassIds.length === 0) {
       router.push(EXAM_ROUTES.schedule.list);
       return;
     }
     setIsCopyingToSiblings(true);
     try {
+      // Remap subject_ids by name against the school's subject list (once, shared across classes)
+      const subjectsRes = await SubjectsService.list({ limit: 100 });
+      const subjectByName: Record<string, string> = {};
+      subjectsRes.items.forEach((s) => { subjectByName[s.name.toLowerCase()] = s.id; });
+
       await Promise.all(
-        selectedSiblingExamIds.map(async (siblingExamId) => {
-          const siblingExam = pendingSiblings.find((t) => t.exam.id === siblingExamId)?.exam;
-          if (!siblingExam) return;
-
-          // Remap subject_ids by name against the school's subject list
-          const subjectsRes = await SubjectsService.list({ limit: 100 });
-          const subjectByName: Record<string, string> = {};
-          subjectsRes.items.forEach((s) => { subjectByName[s.name.toLowerCase()] = s.id; });
-
+        selectedClassIds.map(async (classId) => {
           const siblingSchedules = payload.schedules.map((s) => ({
             ...s,
             subject_id: subjectByName[s.subject_name.toLowerCase()] ?? s.subject_id,
@@ -237,13 +224,12 @@ export function useExamScheduleForm() {
 
           await ExamScheduleService.bulkCreate({
             ...payload,
-            exam_id: siblingExamId,
-            class_id: siblingExam.class_id,
+            class_id: classId,
             schedules: siblingSchedules,
           });
         }),
       );
-      toast.success(`Schedule copied to ${selectedSiblingExamIds.length} more class${selectedSiblingExamIds.length > 1 ? "es" : ""}`);
+      toast.success(`Schedule copied to ${selectedClassIds.length} more class${selectedClassIds.length > 1 ? "es" : ""}`);
       router.push(EXAM_ROUTES.schedule.list);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to copy schedule");

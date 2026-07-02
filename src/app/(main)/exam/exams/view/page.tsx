@@ -1,10 +1,17 @@
 "use client";
 
 import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Div, Spinner } from "@/components/ui";
 import { ExamFormContent } from "../exam-form";
 
-export default function CreateExamPage() {
+function ExamViewContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "create-new";
+  return <ExamFormContent slug={id} />;
+}
+
+export default function ExamViewPage() {
   return (
     <Suspense
       fallback={
@@ -13,7 +20,7 @@ export default function CreateExamPage() {
         </Div>
       }
     >
-      <ExamFormContent slug="create-new" />
+      <ExamViewContent />
     </Suspense>
   );
 }

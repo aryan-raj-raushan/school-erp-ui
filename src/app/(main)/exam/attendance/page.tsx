@@ -82,9 +82,14 @@ function AttendanceListContent() {
         title={ATTENDANCE_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} records` : ""}
         actions={
-          <Button onClick={() => router.push(EXAM_ROUTES.attendance.mark)}>
-            <ClipboardList size={16} /> {ATTENDANCE_PAGE.buttons.mark}
-          </Button>
+          <Div type="row" gap="sm">
+            <Button variant="outline" onClick={() => router.push(EXAM_ROUTES.admitCard.list)}>
+              Admit Cards
+            </Button>
+            <Button onClick={() => router.push(EXAM_ROUTES.attendance.mark)}>
+              <ClipboardList size={16} /> {ATTENDANCE_PAGE.buttons.mark}
+            </Button>
+          </Div>
         }
       />
 

@@ -2,11 +2,12 @@
 
 import { Suspense, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Shuffle, ChevronDown, ChevronUp, CheckSquare, Square, AlertTriangle } from "lucide-react";
+import { Shuffle, ChevronDown, ChevronUp, CheckSquare, Square, AlertTriangle, Printer } from "lucide-react";
 import { useSittingPlanGrid } from "@/hooks/exam/useExamSittingAndAdmit";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useAutoAssignPanel } from "@/hooks/exam/useAutoAssignPanel";
+import { SittingPlanService } from "@/services/exam.service";
 import type { Class } from "@/types";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -18,6 +19,7 @@ import {
   DataTable,
   Badge,
   Button,
+  FormField,
   type ColumnDef,
 } from "@/components/ui";
 import { SITTING_PLAN_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
@@ -37,9 +39,12 @@ function AutoAssignPanel({
   const {
     exams,
     rooms,
-    examGroups,
+    selectedExamId,
+    setSelectedExamId,
+    selectedExam,
     classNameById,
-    selectedExamIds,
+    selectedClassIds,
+    toggleClass,
     selectedRoomIds,
     clearExisting,
     setClearExisting,
@@ -49,8 +54,6 @@ function AutoAssignPanel({
     capacityShortfall,
     isAssigning,
     result,
-    toggleExam,
-    toggleGroup,
     toggleRoom,
     handleShuffle,
     handleReset,
@@ -64,69 +67,50 @@ function AutoAssignPanel({
           <P color="muted" className="text-xs mt-0.5">{SITTING_PLAN_PAGE.shuffle.panelSubtitle}</P>
         </Div>
 
+        <FormField label={SITTING_PLAN_PAGE.shuffle.selectExams}>
+          <Select value={selectedExamId} onChange={(e) => setSelectedExamId(e.target.value)}>
+            <option value="">Select exam</option>
+            {exams.map((e) => (
+              <option key={e.id} value={e.id}>{e.exam_name} ({e.exam_term})</option>
+            ))}
+          </Select>
+        </FormField>
+
         <Div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Exam selection — grouped by name */}
+          {/* Class selection — classes participating in the selected exam */}
           <Div>
             <P color="muted" className="text-xs font-semibold mb-2 uppercase tracking-wide">
-              {SITTING_PLAN_PAGE.shuffle.selectExams}
+              Classes in this exam
             </P>
             <Div className="border border-border rounded-lg divide-y divide-border max-h-40 md:max-h-56 overflow-y-auto">
-              {examGroups.length === 0 ? (
-                <P color="muted" className="text-xs text-center py-4">No exams found</P>
+              {!selectedExam ? (
+                <P color="muted" className="text-xs text-center py-4">Select an exam first</P>
+              ) : selectedExam.class_ids.length === 0 ? (
+                <P color="muted" className="text-xs text-center py-4">This exam has no classes</P>
               ) : (
-                examGroups.map(([groupName, groupExams]) => {
-                  const groupIds = groupExams.map((e) => e.id);
-                  const allGroupSelected = groupIds.every((id) => selectedExamIds.includes(id));
-                  const someGroupSelected = groupIds.some((id) => selectedExamIds.includes(id));
-                  const groupTotal = groupExams.reduce((s, e) => s + (studentCounts[e.class_id] ?? 0), 0);
+                selectedExam.class_ids.map((classId) => {
+                  const checked = selectedClassIds.includes(classId);
+                  const count = studentCounts[classId];
                   return (
-                    <Div key={groupName}>
-                      {/* Group header */}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => toggleGroup(groupIds)}
-                        className="w-full h-auto px-3 py-2 justify-start gap-2 rounded-none bg-muted/20 hover:bg-muted/50 text-foreground font-normal"
-                      >
-                        {allGroupSelected ? (
-                          <CheckSquare size={14} className="text-primary shrink-0" />
-                        ) : someGroupSelected ? (
-                          <CheckSquare size={14} className="text-primary/50 shrink-0" />
-                        ) : (
-                          <Square size={14} className="text-muted-foreground shrink-0" />
-                        )}
-                        <Span className="text-xs font-semibold">{groupName}</Span>
-                        <Span color="muted" className="ml-auto text-[10px]">
-                          {groupTotal > 0 ? `${groupTotal} students` : `${groupExams.length} class${groupExams.length > 1 ? "es" : ""}`}
+                    <Button
+                      key={classId}
+                      type="button"
+                      variant="ghost"
+                      onClick={() => toggleClass(classId)}
+                      className="w-full h-auto px-3 py-2 justify-start gap-2 rounded-none hover:bg-muted/50 text-foreground font-normal"
+                    >
+                      {checked ? (
+                        <CheckSquare size={14} className="text-primary shrink-0" />
+                      ) : (
+                        <Square size={14} className="text-muted-foreground shrink-0" />
+                      )}
+                      <Span className="text-xs">{classNameById[classId] ?? classId}</Span>
+                      {count !== undefined && (
+                        <Span color="muted" className="ml-auto text-[10px] shrink-0">
+                          {count} student{count !== 1 ? "s" : ""}
                         </Span>
-                      </Button>
-                      {/* Per-class rows with student count */}
-                      {groupExams.map((e) => {
-                        const checked = selectedExamIds.includes(e.id);
-                        const count = studentCounts[e.class_id];
-                        return (
-                          <Button
-                            key={e.id}
-                            type="button"
-                            variant="ghost"
-                            onClick={() => toggleExam(e.id)}
-                            className="w-full h-auto pl-7 pr-3 py-1.5 justify-start gap-2 rounded-none hover:bg-muted/50 text-foreground font-normal"
-                          >
-                            {checked ? (
-                              <CheckSquare size={12} className="text-primary shrink-0" />
-                            ) : (
-                              <Square size={12} className="text-muted-foreground shrink-0" />
-                            )}
-                            <Span className="text-xs">{classNameById[e.class_id] ?? e.class_id}</Span>
-                            {count !== undefined && (
-                              <Span color="muted" className="ml-auto text-[10px] shrink-0">
-                                {count} student{count !== 1 ? "s" : ""}
-                              </Span>
-                            )}
-                          </Button>
-                        );
-                      })}
-                    </Div>
+                      )}
+                    </Button>
                   );
                 })
               )}
@@ -234,6 +218,11 @@ function AutoAssignPanel({
                 </Span>
               ))}
             </Div>
+            {result.shortfall_warning && (
+              <P className="text-xs text-amber-700 dark:text-amber-400 font-semibold mt-2">
+                ⚠ {result.shortfall_warning}
+              </P>
+            )}
           </Div>
         )}
 
@@ -242,7 +231,7 @@ function AutoAssignPanel({
             type="button"
             size="sm"
             loading={isAssigning}
-            disabled={selectedExamIds.length === 0 || selectedRoomIds.length === 0 || capacityShortfall > 0}
+            disabled={!selectedExamId || selectedClassIds.length === 0 || selectedRoomIds.length === 0 || capacityShortfall > 0}
             onClick={handleShuffle}
           >
             <Shuffle size={13} />
@@ -272,31 +261,10 @@ function SittingPlanContent() {
   const academicYearId = selectedAcademicYearId;
   const { exams } = useExams(academicYearId ? { academic_year_id: academicYearId } : {});
 
-  const classNameById = useMemo(
-    () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
-    [classes],
+  const { rooms, occupancy, isLoading, refetch } = useSittingPlanGrid(
+    examId ? [examId] : [],
+    academicYearId,
   );
-
-  // Find the selected exam and all its siblings (same name+term = same test across classes)
-  const selectedExam = useMemo(() => exams.find((e) => e.id === examId), [exams, examId]);
-  const siblingExamIds = useMemo(() => {
-    if (!selectedExam) return [];
-    return exams
-      .filter((e) => e.exam_name === selectedExam.exam_name && e.exam_term === selectedExam.exam_term)
-      .map((e) => e.id);
-  }, [exams, selectedExam]);
-
-  const { rooms, occupancy, isLoading, refetch } = useSittingPlanGrid(siblingExamIds, academicYearId);
-
-  // Group exams by name for the filter dropdown
-  const examGroups = useMemo(() => {
-    const groups: Record<string, typeof exams> = {};
-    exams.forEach((e) => {
-      if (!groups[e.exam_name]) groups[e.exam_name] = [];
-      groups[e.exam_name].push(e);
-    });
-    return Object.entries(groups);
-  }, [exams]);
 
   const handleShuffleComplete = useCallback(() => {
     refetch?.();
@@ -363,15 +331,20 @@ function SittingPlanContent() {
         title={SITTING_PLAN_PAGE.pageHeading.title}
         subtitle={SITTING_PLAN_PAGE.pageHeading.subtitle}
         actions={
-          <Button
-            size="sm"
-            variant={showAutoAssign ? "default" : "outline"}
-            onClick={() => setShowAutoAssign((p) => !p)}
-          >
-            <Shuffle size={13} />
-            {SITTING_PLAN_PAGE.buttons.autoAssign}
-            {showAutoAssign ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </Button>
+          <Div type="row" gap="sm">
+            <Button size="sm" variant="outline" onClick={() => router.push("/exam/hall-details")}>
+              Manage Rooms
+            </Button>
+            <Button
+              size="sm"
+              variant={showAutoAssign ? "default" : "outline"}
+              onClick={() => setShowAutoAssign((p) => !p)}
+            >
+              <Shuffle size={13} />
+              {SITTING_PLAN_PAGE.buttons.autoAssign}
+              {showAutoAssign ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </Button>
+          </Div>
         }
       />
 
@@ -407,12 +380,25 @@ function SittingPlanContent() {
           onChange={(e) => setExamId(e.target.value)}
         >
           <option value="">Select exam</option>
-          {examGroups.map(([groupName, groupExams]) => (
-            <option key={groupName} value={groupExams[0].id}>
-              {groupName}
-            </option>
+          {exams.map((e) => (
+            <option key={e.id} value={e.id}>{e.exam_name} ({e.exam_term})</option>
           ))}
         </Select>
+
+        {examId && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              SittingPlanService.downloadMasterPdf({
+                exam_id: examId,
+                exam_name: exams.find((e) => e.id === examId)?.exam_name,
+              })
+            }
+          >
+            <Printer size={13} /> Print Master Sheet
+          </Button>
+        )}
       </Div>
 
       {/* Table */}
