@@ -249,10 +249,6 @@ export const ENDPOINTS = {
     list: "/syllabi",
     byId: (id: string) => `/syllabi/${id}`,
   },
-  departments: {
-    list: "/departments",
-    byId: (id: string) => `/departments/${id}`,
-  },
   roles: {
     list: "/roles",
     byId: (id: string) => `/roles/${id}`,

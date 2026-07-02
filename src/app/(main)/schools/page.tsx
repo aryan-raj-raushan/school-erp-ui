@@ -9,7 +9,7 @@ import {
   Div, P, Button, Input, Select,
   PageHeader, PageCol, FilterBar,
   DataTable,
-  Modal, ModalBody, ModalFooter, FormField,
+  Modal, ModalBody, ModalFooter, FormField, PhoneField,
   Badge, Spinner,
   type ColumnDef,
 } from '@/components/ui';
@@ -159,14 +159,12 @@ export default function SchoolsPage() {
                   <FormField label={CREATE_SCHOOL_FORM.labels.email} error={createForm.formState.errors.email?.message}>
                     <Input type="email" placeholder={CREATE_SCHOOL_FORM.placeholders.email} {...createForm.register('email')} />
                   </FormField>
-                  <Div type="row" gap="sm">
-                    <FormField label={CREATE_SCHOOL_FORM.labels.dial_code}>
-                      <Input width="xs" placeholder={CREATE_SCHOOL_FORM.placeholders.dial_code} {...createForm.register('dial_code')} />
-                    </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.contact_number} error={createForm.formState.errors.contact_number?.message}>
-                      <Input type="tel" placeholder={CREATE_SCHOOL_FORM.placeholders.contact_number} {...createForm.register('contact_number')} />
-                    </FormField>
-                  </Div>
+                  <PhoneField
+                    label={CREATE_SCHOOL_FORM.labels.contact_number}
+                    dialCodeProps={createForm.register('dial_code')}
+                    phoneProps={createForm.register('contact_number')}
+                    phoneError={createForm.formState.errors.contact_number?.message}
+                  />
                   <FormField label={CREATE_SCHOOL_FORM.labels.website} error={createForm.formState.errors.website?.message}>
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.website} {...createForm.register('website')} />
                   </FormField>
@@ -226,14 +224,12 @@ export default function SchoolsPage() {
                   <FormField label={CREATE_SCHOOL_FORM.labels.email} error={editForm.formState.errors.email?.message}>
                     <Input type="email" placeholder={CREATE_SCHOOL_FORM.placeholders.email} {...editForm.register('email')} />
                   </FormField>
-                  <Div type="row" gap="sm">
-                    <FormField label={CREATE_SCHOOL_FORM.labels.dial_code}>
-                      <Input width="xs" placeholder={CREATE_SCHOOL_FORM.placeholders.dial_code} {...editForm.register('dial_code')} />
-                    </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.contact_number} error={editForm.formState.errors.contact_number?.message}>
-                      <Input type="tel" placeholder={CREATE_SCHOOL_FORM.placeholders.contact_number} {...editForm.register('contact_number')} />
-                    </FormField>
-                  </Div>
+                  <PhoneField
+                    label={CREATE_SCHOOL_FORM.labels.contact_number}
+                    dialCodeProps={editForm.register('dial_code')}
+                    phoneProps={editForm.register('contact_number')}
+                    phoneError={editForm.formState.errors.contact_number?.message}
+                  />
                   <FormField label={CREATE_SCHOOL_FORM.labels.website} error={editForm.formState.errors.website?.message}>
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.website} {...editForm.register('website')} />
                   </FormField>

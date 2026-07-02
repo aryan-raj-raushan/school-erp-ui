@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { StudentsService } from "@/services/students-v2.service";
 import type { StudentIdCardData, PickupCardData } from "@/types/students.types";
-import type { CardTemplateId } from "@/constants/students-v2.constants";
+import type { CardTemplateId } from "@/constants/students.constants";
 
 export type CardMode = "student" | "pickup";
 

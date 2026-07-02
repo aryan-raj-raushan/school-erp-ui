@@ -32,7 +32,6 @@ export default function ClassesPage() {
             <TableHeadRow>
               <TableHeaderCell>{CLASSES_PAGE.classTable.name}</TableHeaderCell>
               <TableHeaderCell>{CLASSES_PAGE.classTable.academicYear}</TableHeaderCell>
-              <TableHeaderCell>{CLASSES_PAGE.classTable.department}</TableHeaderCell>
               <TableHeaderCell>{CLASSES_PAGE.classTable.classType}</TableHeaderCell>
               <TableHeaderCell>{CLASSES_PAGE.classTable.sections}</TableHeaderCell>
               <TableHeaderCell>{CLASSES_PAGE.classTable.actions}</TableHeaderCell>
@@ -40,9 +39,9 @@ export default function ClassesPage() {
           </TableHead>
           <TableBody>
             {isLoading ? (
-              <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
+              <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
             ) : classes.length === 0 ? (
-              <TableEmptyRow colSpan={6}>{CLASSES_PAGE.classEmpty}</TableEmptyRow>
+              <TableEmptyRow colSpan={5}>{CLASSES_PAGE.classEmpty}</TableEmptyRow>
             ) : (
               classes.map((cls) => {
                 const clsSections = sectionsForClass(cls.id);
@@ -51,7 +50,6 @@ export default function ClassesPage() {
                   <TableRow key={cls.id}>
                     <TableCell primary>{cls.name}</TableCell>
                     <TableCell>{year?.name ?? '—'}</TableCell>
-                    <TableCell>{cls.department ?? '—'}</TableCell>
                     <TableCell>{cls.class_type ?? '—'}</TableCell>
                     <TableCell>
                       <Div type="row" gap="xs" wrap>

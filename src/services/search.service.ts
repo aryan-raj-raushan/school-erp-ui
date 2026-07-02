@@ -8,7 +8,6 @@ export type SearchResultType =
   | 'admission'
   | 'class'
   | 'subject'
-  | 'department'
   | 'fee_type'
   | 'event'
   | 'academic_year'
@@ -29,7 +28,6 @@ export interface GlobalSearchResult {
   admissions: SearchResultItem[];
   classes: SearchResultItem[];
   subjects: SearchResultItem[];
-  departments: SearchResultItem[];
   feeTypes: SearchResultItem[];
   events: SearchResultItem[];
   academicYears: SearchResultItem[];
@@ -44,7 +42,6 @@ export const EMPTY_SEARCH_RESULT: GlobalSearchResult = {
   admissions: [],
   classes: [],
   subjects: [],
-  departments: [],
   feeTypes: [],
   events: [],
   academicYears: [],

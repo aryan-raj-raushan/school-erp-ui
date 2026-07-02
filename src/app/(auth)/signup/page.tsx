@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSignupPage } from '@/hooks/useSignupPage';
 import { ROUTES } from '@/constants';
-import { Div, Button, Input, FormField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
+import { Div, Button, Input, FormField, PhoneField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
 
 export default function SignupPage() {
   const { form, onSubmit, isLoading } = useSignupPage();
@@ -57,34 +57,11 @@ export default function SignupPage() {
             </FormField>
           </Div>
 
-          <Div type="grid" cols={2} gap="md">
-            <FormField
-              label="Dial Code"
-              htmlFor="dial_code"
-              error={form.formState.errors.dial_code?.message}
-            >
-              <Input
-                id="dial_code"
-                type="text"
-                placeholder="+91"
-                width="xs"
-                {...form.register('dial_code')}
-              />
-            </FormField>
-
-            <FormField
-              label="Phone Number"
-              htmlFor="phone_number"
-              error={form.formState.errors.phone_number?.message}
-            >
-              <Input
-                id="phone_number"
-                type="text"
-                placeholder="9876543210"
-                {...form.register('phone_number')}
-              />
-            </FormField>
-          </Div>
+          <PhoneField
+            dialCodeProps={form.register('dial_code')}
+            phoneProps={form.register('phone_number')}
+            phoneError={form.formState.errors.phone_number?.message}
+          />
 
           <FormField
             label="Email (optional)"

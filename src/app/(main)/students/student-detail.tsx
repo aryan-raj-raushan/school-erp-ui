@@ -10,7 +10,6 @@ import {
   Trash2,
   ArrowLeft,
   User,
-  Camera,
   BookOpen,
   History,
   MapPin,
@@ -32,6 +31,9 @@ import {
   Textarea,
   Spinner,
   Badge,
+  FormGrid,
+  PhotoUpload,
+  PhoneField,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -46,7 +48,7 @@ import {
   QUALIFICATION_OPTIONS,
   DOCUMENT_TYPE_OPTIONS,
   DOCUMENT_FILE_TYPE_OPTIONS,
-} from "@/constants/students-v2.constants";
+} from "@/constants/students.constants";
 import { useStudentDetail } from "@/hooks/useStudentDetail";
 
 // ─── Section Wrapper ───────────────────────────────────────────────────────────
@@ -90,16 +92,6 @@ function SectionCard({
   );
 }
 
-// ─── Grid Row Helper ───────────────────────────────────────────────────────────
-
-function FieldGrid({ children }: { children: React.ReactNode }) {
-  return (
-    <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {children}
-    </Div>
-  );
-}
-
 // ─── Main Form Component ───────────────────────────────────────────────────────
 
 export function StudentDetail({ id }: { id: string }) {
@@ -137,7 +129,10 @@ export function StudentDetail({ id }: { id: string }) {
   const watchedAcademicYearId = watch("academic_info.academic_year_id");
   const watchedClassId = watch("academic_info.class_id");
   const watchedHostelRequired = watch("hostel_info.hostel_required");
-  const { classes, sections } = useClassSections(watchedAcademicYearId ?? "", watchedClassId ?? "");
+  const { classes, sections } = useClassSections(
+    watchedAcademicYearId ?? "",
+    watchedClassId ?? ""
+  );
 
   // Set edit mode from URL param
   useEffect(() => {
@@ -177,12 +172,15 @@ export function StudentDetail({ id }: { id: string }) {
   const isReadOnly = !isEditing;
 
   return (
-    <Div type="col" gap="lg" className="max-w-7xl">
+    <Div type="col" gap="md" className="max-w-7xl">
       <PageHeader
+        sticky
         title={
           isNew
             ? "Add New Student"
-            : `${student?.student.first_name ?? ""} ${student?.student.last_name ?? ""}`
+            : `${student?.student.first_name ?? ""} ${
+                student?.student.last_name ?? ""
+              }`
         }
         subtitle={
           !isNew && student
@@ -192,7 +190,7 @@ export function StudentDetail({ id }: { id: string }) {
         actions={
           <Div type="row" gap="sm" align="center">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => router.push(STUDENT_ROUTES.list)}
             >
@@ -210,256 +208,237 @@ export function StudentDetail({ id }: { id: string }) {
                 </Button>
               </>
             )}
-            {isEditing && !isNew && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-              >
-                {STUDENT_PAGE.buttons.cancel}
-              </Button>
+            {isEditing && (
+              <>
+                {!isNew && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    {STUDENT_PAGE.buttons.cancel}
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  form="student-form"
+                  size="sm"
+                  loading={isSubmitting || isUploading}
+                >
+                  {STUDENT_PAGE.buttons.save}
+                </Button>
+              </>
             )}
           </Div>
         }
       />
 
-      <form onSubmit={handleSubmit} className="max-w-5xl">
+      <form id="student-form" onSubmit={handleSubmit}>
         <Div type="col" gap="md">
-          {/* ── Profile Photo ───────────────────────────────────────────── */}
-          <SectionCard icon={<Camera size={16} />} title="Profile Photo">
-            <Div type="row" align="center" gap="lg">
-              <Div className="relative">
-                {profileImageUrl ? (
-                  <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover border border-border" />
-                ) : (
-                  <Div type="row" justify="center" align="center" className="w-20 h-20 rounded-full bg-muted border border-border">
-                    <User size={32} className="text-muted-foreground" />
-                  </Div>
-                )}
-                {isUploadingImage && (
-                  <Div type="row" justify="center" align="center" className="absolute inset-0 rounded-full bg-black/40">
-                    <Spinner size="sm" />
-                  </Div>
-                )}
-              </Div>
-              {!isReadOnly && (
-                <Div type="col" gap="xs">
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={onImageChange}
-                    id="student-profile-image-upload"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => imageInputRef.current?.click()}
-                    disabled={isUploadingImage}
-                  >
-                    <Camera size={14} /> {profileImageUrl ? 'Change Photo' : 'Upload Photo'}
-                  </Button>
-                  <P color="muted" className="text-xs">JPG, PNG or WebP — max 10 MB</P>
-                </Div>
-              )}
-            </Div>
-          </SectionCard>
-
           {/* ── Basic Information ───────────────────────────────────────── */}
           <SectionCard
             icon={<User size={16} />}
             title={STUDENT_PAGE.sections.basicInfo}
           >
-            <FieldGrid>
-              <FormField
-                label={STUDENT_PAGE.labels.firstName + " *"}
-                error={errors.first_name?.message}
-              >
-                <Input
-                  {...register("first_name")}
-                  placeholder="Enter first name"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField
-                label={STUDENT_PAGE.labels.lastName}
-                error={errors.last_name?.message}
-              >
-                <Input
-                  {...register("last_name")}
-                  placeholder="Enter last name"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.dob}>
-                <Input
-                  {...register("date_of_birth")}
-                  type="date"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField
-                label={STUDENT_PAGE.labels.gender}
-                error={errors.gender?.message}
-              >
-                <Select
-                  {...register("gender")}
-                  disabled={isReadOnly}
-                  defaultValue=""
+            <Div type="col" gap="md">
+              <PhotoUpload
+                url={profileImageUrl}
+                isUploading={isUploadingImage}
+                disabled={isReadOnly}
+                onFileChange={onImageChange}
+                inputRef={imageInputRef}
+                hint="JPG, PNG or WebP · max 10MB"
+              />
+              <FormGrid>
+                <FormField
+                  label={STUDENT_PAGE.labels.firstName}
+                  required
+                  error={errors.first_name?.message}
                 >
-                  <option value="">Select gender</option>
-                  {GENDER_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.bloodGroup}>
-                <Select
-                  {...register("blood_group")}
-                  disabled={isReadOnly}
-                  defaultValue=""
-                >
-                  <option value="">Select blood group</option>
-                  {BLOOD_GROUP_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.religion}>
-                <Select
-                  {...register("religion")}
-                  disabled={isReadOnly}
-                  defaultValue=""
-                >
-                  <option value="">Select religion</option>
-                  {RELIGION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.category}>
-                <Select
-                  {...register("category")}
-                  disabled={isReadOnly}
-                  defaultValue=""
-                >
-                  <option value="">Select category</option>
-                  {CATEGORY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.caste}>
-                <Input
-                  {...register("caste")}
-                  placeholder="Enter caste"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.nationality}>
-                <Input
-                  {...register("nationality")}
-                  placeholder="Indian"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField
-                label={STUDENT_PAGE.labels.aadhaar}
-                error={errors.aadhaar_number?.message}
-              >
-                <Input
-                  {...register("aadhaar_number")}
-                  placeholder="12-digit aadhaar"
-                  maxLength={12}
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.idCardNumber} hint="Managed from RFID Setup page">
-                <Input
-                  {...register("id_card_number")}
-                  readOnly
-                  className="bg-muted cursor-not-allowed"
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.height}>
-                <Input
-                  {...register("height_cm")}
-                  type="number"
-                  placeholder="e.g. 160"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.weight}>
-                <Input
-                  {...register("weight_kg")}
-                  type="number"
-                  placeholder="e.g. 55"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.phone}>
-                <Div type="row" gap="sm">
                   <Input
-                    {...register("dial_code")}
-                    width="xs"
-                    placeholder="+91"
+                    {...register("first_name")}
+                    placeholder="Enter first name"
                     disabled={isReadOnly}
                   />
+                </FormField>
+                <FormField
+                  label={STUDENT_PAGE.labels.lastName}
+                  error={errors.last_name?.message}
+                >
                   <Input
-                    {...register("phone_number")}
-                    placeholder="Phone number"
+                    {...register("last_name")}
+                    placeholder="Enter last name"
                     disabled={isReadOnly}
                   />
-                </Div>
-              </FormField>
-              <FormField
-                label={STUDENT_PAGE.labels.email}
-                error={errors.email?.message}
-              >
-                <Input
-                  {...register("email")}
-                  type="email"
-                  placeholder="Email address"
-                  disabled={isReadOnly}
-                />
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.status}>
-                <Select {...register("status")} disabled={isReadOnly}>
-                  {STUDENT_STATUS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label={STUDENT_PAGE.labels.isEnabled}>
-                <Div type="row" align="center" gap="sm" className="pt-2">
-                  <input
-                    type="checkbox"
-                    {...register("is_enabled")}
-                    id="is_enabled"
-                    className="h-4 w-4 rounded border-border"
+                </FormField>
+                <FormField
+                  label={STUDENT_PAGE.labels.dob}
+                  required
+                  error={errors.date_of_birth?.message}
+                >
+                  <Input
+                    {...register("date_of_birth")}
+                    type="date"
                     disabled={isReadOnly}
                   />
-                  <label
-                    htmlFor="is_enabled"
-                    className="text-sm text-foreground"
+                </FormField>
+                <FormField
+                  label={STUDENT_PAGE.labels.gender}
+                  required
+                  error={errors.gender?.message}
+                >
+                  <Select
+                    {...register("gender")}
+                    disabled={isReadOnly}
+                    defaultValue=""
                   >
-                    Student is active and visible
-                  </label>
-                </Div>
-              </FormField>
-            </FieldGrid>
+                    <option value="">Select gender</option>
+                    {GENDER_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.bloodGroup}>
+                  <Select
+                    {...register("blood_group")}
+                    disabled={isReadOnly}
+                    defaultValue=""
+                  >
+                    <option value="">Select blood group</option>
+                    {BLOOD_GROUP_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.religion}>
+                  <Select
+                    {...register("religion")}
+                    disabled={isReadOnly}
+                    defaultValue=""
+                  >
+                    <option value="">Select religion</option>
+                    {RELIGION_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.category}>
+                  <Select
+                    {...register("category")}
+                    disabled={isReadOnly}
+                    defaultValue=""
+                  >
+                    <option value="">Select category</option>
+                    {CATEGORY_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.caste}>
+                  <Input
+                    {...register("caste")}
+                    placeholder="Enter caste"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.nationality}>
+                  <Input
+                    {...register("nationality")}
+                    placeholder="Indian"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField
+                  label={STUDENT_PAGE.labels.aadhaar}
+                  error={errors.aadhaar_number?.message}
+                >
+                  <Input
+                    {...register("aadhaar_number")}
+                    placeholder="12-digit aadhaar"
+                    maxLength={12}
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField
+                  label={STUDENT_PAGE.labels.idCardNumber}
+                  hint="Managed from RFID Setup page"
+                >
+                  <Input
+                    {...register("id_card_number")}
+                    readOnly
+                    className="bg-muted cursor-not-allowed"
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.height}>
+                  <Input
+                    {...register("height_cm")}
+                    type="number"
+                    placeholder="e.g. 160"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.weight}>
+                  <Input
+                    {...register("weight_kg")}
+                    type="number"
+                    placeholder="e.g. 55"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <PhoneField
+                  label={STUDENT_PAGE.labels.phone}
+                  dialCodeProps={register("dial_code")}
+                  phoneProps={register("phone_number")}
+                  phoneError={errors.phone_number?.message}
+                  disabled={isReadOnly}
+                />
+                <FormField
+                  label={STUDENT_PAGE.labels.email}
+                  error={errors.email?.message}
+                >
+                  <Input
+                    {...register("email")}
+                    type="email"
+                    placeholder="Email address"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.status}>
+                  <Select {...register("status")} disabled={isReadOnly}>
+                    {STUDENT_STATUS_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                <FormField label={STUDENT_PAGE.labels.isEnabled}>
+                  <Div type="row" align="center" gap="sm" className="pt-2">
+                    <input
+                      type="checkbox"
+                      {...register("is_enabled")}
+                      id="is_enabled"
+                      className="h-4 w-4 rounded border-border"
+                      disabled={isReadOnly}
+                    />
+                    <label
+                      htmlFor="is_enabled"
+                      className="text-sm text-foreground"
+                    >
+                      Student is active and visible
+                    </label>
+                  </Div>
+                </FormField>
+              </FormGrid>
+            </Div>
           </SectionCard>
 
           {/* ── Academic Information ────────────────────────────────────── */}
@@ -467,9 +446,10 @@ export function StudentDetail({ id }: { id: string }) {
             icon={<BookOpen size={16} />}
             title={STUDENT_PAGE.sections.academicInfo}
           >
-            <FieldGrid>
+            <FormGrid>
               <FormField
-                label={STUDENT_PAGE.labels.academicYear + " *"}
+                label={STUDENT_PAGE.labels.academicYear}
+                required
                 error={errors.academic_info?.academic_year_id?.message}
               >
                 <Select
@@ -487,7 +467,8 @@ export function StudentDetail({ id }: { id: string }) {
                 </Select>
               </FormField>
               <FormField
-                label={STUDENT_PAGE.labels.class + " *"}
+                label={STUDENT_PAGE.labels.class}
+                required
                 error={errors.academic_info?.class_id?.message}
               >
                 <Select
@@ -518,7 +499,8 @@ export function StudentDetail({ id }: { id: string }) {
                 </Select>
               </FormField>
               <FormField
-                label={STUDENT_PAGE.labels.admissionNumber + " *"}
+                label={STUDENT_PAGE.labels.admissionNumber}
+                required
                 error={errors.academic_info?.admission_number?.message}
               >
                 <Input
@@ -548,7 +530,7 @@ export function StudentDetail({ id }: { id: string }) {
                   disabled={isReadOnly}
                 />
               </FormField>
-            </FieldGrid>
+            </FormGrid>
           </SectionCard>
 
           {/* ── Previous Academic Details ───────────────────────────────── */}
@@ -557,7 +539,7 @@ export function StudentDetail({ id }: { id: string }) {
             title={STUDENT_PAGE.sections.previousAcademics}
             defaultOpen={false}
           >
-            <FieldGrid>
+            <FormGrid>
               <FormField label={STUDENT_PAGE.labels.previousSchool}>
                 <Input
                   {...register("previous_academics.previous_school_name")}
@@ -600,7 +582,7 @@ export function StudentDetail({ id }: { id: string }) {
                   disabled={isReadOnly}
                 />
               </FormField>
-            </FieldGrid>
+            </FormGrid>
           </SectionCard>
 
           {/* ── Address ─────────────────────────────────────────────────── */}
@@ -609,46 +591,47 @@ export function StudentDetail({ id }: { id: string }) {
             title={STUDENT_PAGE.sections.address}
             defaultOpen={false}
           >
-            <Div type="col" gap="md">
-              <FormField label={STUDENT_PAGE.labels.address}>
+            <FormGrid>
+              <FormField
+                label={STUDENT_PAGE.labels.address}
+                className="col-span-full"
+              >
                 <Textarea
                   {...register("address.address")}
                   placeholder="Full address"
-                  rows={3}
+                  rows={2}
                   disabled={isReadOnly}
                 />
               </FormField>
-              <FieldGrid>
-                <FormField label={STUDENT_PAGE.labels.city}>
-                  <Input
-                    {...register("address.city")}
-                    placeholder="City"
-                    disabled={isReadOnly}
-                  />
-                </FormField>
-                <FormField label={STUDENT_PAGE.labels.state}>
-                  <Input
-                    {...register("address.state")}
-                    placeholder="State"
-                    disabled={isReadOnly}
-                  />
-                </FormField>
-                <FormField label={STUDENT_PAGE.labels.pincode}>
-                  <Input
-                    {...register("address.pincode")}
-                    placeholder="Pincode"
-                    disabled={isReadOnly}
-                  />
-                </FormField>
-                <FormField label={STUDENT_PAGE.labels.country}>
-                  <Input
-                    {...register("address.country")}
-                    placeholder="India"
-                    disabled={isReadOnly}
-                  />
-                </FormField>
-              </FieldGrid>
-            </Div>
+              <FormField label={STUDENT_PAGE.labels.city}>
+                <Input
+                  {...register("address.city")}
+                  placeholder="City"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.state}>
+                <Input
+                  {...register("address.state")}
+                  placeholder="State"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.pincode}>
+                <Input
+                  {...register("address.pincode")}
+                  placeholder="Pincode"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+              <FormField label={STUDENT_PAGE.labels.country}>
+                <Input
+                  {...register("address.country")}
+                  placeholder="India"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+            </FormGrid>
           </SectionCard>
 
           {/* ── Hostel Information ──────────────────────────────────────── */}
@@ -674,8 +657,12 @@ export function StudentDetail({ id }: { id: string }) {
                 </label>
               </Div>
               {watchedHostelRequired && (
-                <FieldGrid>
-                  <FormField label={STUDENT_PAGE.labels.hostelName}>
+                <FormGrid>
+                  <FormField
+                    label={STUDENT_PAGE.labels.hostelName}
+                    required
+                    error={errors.hostel_info?.hostel_name?.message}
+                  >
                     <Input
                       {...register("hostel_info.hostel_name")}
                       placeholder="Hostel name"
@@ -689,7 +676,7 @@ export function StudentDetail({ id }: { id: string }) {
                       disabled={isReadOnly}
                     />
                   </FormField>
-                </FieldGrid>
+                </FormGrid>
               )}
             </Div>
           </SectionCard>
@@ -710,7 +697,7 @@ export function StudentDetail({ id }: { id: string }) {
                   >
                     <H3 color="default">
                       {PARENT_RELATION_OPTIONS.find(
-                        (r) => r.value === watch(`parents.${index}.relation`),
+                        (r) => r.value === watch(`parents.${index}.relation`)
                       )?.label ?? `Parent ${index + 1}`}
                     </H3>
                     {isEditing && (
@@ -724,9 +711,10 @@ export function StudentDetail({ id }: { id: string }) {
                       </Button>
                     )}
                   </Div>
-                  <FieldGrid>
+                  <FormGrid>
                     <FormField
                       label={STUDENT_PAGE.labels.relation}
+                      required
                       error={errors.parents?.[index]?.relation?.message}
                     >
                       <Select
@@ -743,7 +731,8 @@ export function StudentDetail({ id }: { id: string }) {
                       </Select>
                     </FormField>
                     <FormField
-                      label={STUDENT_PAGE.labels.parentFirstName + " *"}
+                      label={STUDENT_PAGE.labels.parentFirstName}
+                      required
                       error={errors.parents?.[index]?.first_name?.message}
                     >
                       <Input
@@ -759,24 +748,14 @@ export function StudentDetail({ id }: { id: string }) {
                         disabled={isReadOnly}
                       />
                     </FormField>
-                    <FormField
-                      label={STUDENT_PAGE.labels.parentPhone + " *"}
-                      error={errors.parents?.[index]?.phone_number?.message}
-                    >
-                      <Div type="row" gap="sm">
-                        <Input
-                          {...register(`parents.${index}.dial_code`)}
-                          width="xs"
-                          placeholder="+91"
-                          disabled={isReadOnly}
-                        />
-                        <Input
-                          {...register(`parents.${index}.phone_number`)}
-                          placeholder="Phone"
-                          disabled={isReadOnly}
-                        />
-                      </Div>
-                    </FormField>
+                    <PhoneField
+                      label={STUDENT_PAGE.labels.parentPhone}
+                      required
+                      dialCodeProps={register(`parents.${index}.dial_code`)}
+                      phoneProps={register(`parents.${index}.phone_number`)}
+                      phoneError={errors.parents?.[index]?.phone_number?.message}
+                      disabled={isReadOnly}
+                    />
                     <FormField label={STUDENT_PAGE.labels.alternatePhone}>
                       <Input
                         {...register(`parents.${index}.alternate_phone`)}
@@ -784,7 +763,10 @@ export function StudentDetail({ id }: { id: string }) {
                         disabled={isReadOnly}
                       />
                     </FormField>
-                    <FormField label={STUDENT_PAGE.labels.parentEmail}>
+                    <FormField
+                      label={STUDENT_PAGE.labels.parentEmail}
+                      error={errors.parents?.[index]?.email?.message}
+                    >
                       <Input
                         {...register(`parents.${index}.email`)}
                         type="email"
@@ -820,7 +802,10 @@ export function StudentDetail({ id }: { id: string }) {
                         disabled={isReadOnly}
                       />
                     </FormField>
-                    <FormField label={STUDENT_PAGE.labels.parentAadhaar}>
+                    <FormField
+                      label={STUDENT_PAGE.labels.parentAadhaar}
+                      error={errors.parents?.[index]?.aadhaar_number?.message}
+                    >
                       <Input
                         {...register(`parents.${index}.aadhaar_number`)}
                         placeholder="12-digit aadhaar"
@@ -828,7 +813,7 @@ export function StudentDetail({ id }: { id: string }) {
                         disabled={isReadOnly}
                       />
                     </FormField>
-                    <Div className="flex gap-6 pt-2">
+                    <Div className="flex gap-6 pt-2 col-span-full">
                       <Div type="row" align="center" gap="sm">
                         <input
                           type="checkbox"
@@ -854,7 +839,7 @@ export function StudentDetail({ id }: { id: string }) {
                         </label>
                       </Div>
                     </Div>
-                  </FieldGrid>
+                  </FormGrid>
                 </Div>
               ))}
               {isEditing && (
@@ -876,6 +861,11 @@ export function StudentDetail({ id }: { id: string }) {
                 >
                   <Plus size={14} /> Add Parent / Guardian
                 </Button>
+              )}
+              {errors.parents?.root?.message && (
+                <P className="text-xs text-destructive">
+                  {errors.parents.root.message}
+                </P>
               )}
               {parentsArray.fields.length === 0 && (
                 <P color="muted" className="text-center py-4">
@@ -912,9 +902,10 @@ export function StudentDetail({ id }: { id: string }) {
                       </Button>
                     )}
                   </Div>
-                  <FieldGrid>
+                  <FormGrid>
                     <FormField
-                      label={STUDENT_PAGE.labels.documentName + " *"}
+                      label={STUDENT_PAGE.labels.documentName}
+                      required
                       error={errors.documents?.[index]?.document_name?.message}
                     >
                       <Select
@@ -931,7 +922,8 @@ export function StudentDetail({ id }: { id: string }) {
                       </Select>
                     </FormField>
                     <FormField
-                      label={STUDENT_PAGE.labels.fileType + " *"}
+                      label={STUDENT_PAGE.labels.fileType}
+                      required
                       error={errors.documents?.[index]?.file_type?.message}
                     >
                       <Select
@@ -960,7 +952,8 @@ export function StudentDetail({ id }: { id: string }) {
                       />
                     </FormField>
                     <FormField
-                      label={STUDENT_PAGE.labels.documentLink + " *"}
+                      label={STUDENT_PAGE.labels.documentLink}
+                      required
                       error={errors.documents?.[index]?.document_link?.message}
                     >
                       <Input
@@ -976,7 +969,7 @@ export function StudentDetail({ id }: { id: string }) {
                         disabled={isReadOnly}
                       />
                     </FormField>
-                  </FieldGrid>
+                  </FormGrid>
                 </Div>
               ))}
               {isEditing && (
@@ -1003,25 +996,6 @@ export function StudentDetail({ id }: { id: string }) {
               )}
             </Div>
           </SectionCard>
-
-          {/* ── Submit ──────────────────────────────────────────────────── */}
-          {isEditing && (
-            <Div type="row" gap="md">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  if (isNew) router.push(STUDENT_ROUTES.list);
-                  else setIsEditing(false);
-                }}
-              >
-                {STUDENT_PAGE.buttons.cancel}
-              </Button>
-              <Button type="submit" loading={isSubmitting || isUploading}>
-                {STUDENT_PAGE.buttons.save}
-              </Button>
-            </Div>
-          )}
         </Div>
       </form>
     </Div>

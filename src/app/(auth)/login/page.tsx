@@ -19,32 +19,30 @@ export default function LoginPage() {
           <FormField
             label="Email or Phone Number"
             htmlFor="identifier"
-            error={form.formState.errors.identifier?.message}
+            error={form.formState.errors.identifier?.message ?? form.formState.errors.dial_code?.message}
           >
-            <Input
-              id="identifier"
-              type="text"
-              placeholder="you@school.com or 9876543210"
-              autoComplete="username"
-              {...form.register('identifier')}
-            />
-          </FormField>
-
-          {isPhone && (
-            <FormField
-              label="Dial Code"
-              htmlFor="dial_code"
-              error={form.formState.errors.dial_code?.message}
-            >
-              <Input
-                id="dial_code"
+            <div className="flex h-11 items-center rounded-[8px] border border-border bg-white/70 backdrop-blur-sm transition-all duration-200 focus-within:border-primary focus-within:ring-2 focus-within:ring-ring dark:bg-white/5">
+              {isPhone && (
+                <input
+                  id="dial_code"
+                  type="text"
+                  placeholder="+91"
+                  aria-label="Dial code"
+                  className="h-full w-14 shrink-0 border-r border-border bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  {...form.register('dial_code')}
+                />
+              )}
+              <input
+                id="identifier"
                 type="text"
-                placeholder="+91"
-                width="xs"
-                {...form.register('dial_code')}
+                placeholder="you@school.com or 9876543210"
+                autoComplete="username"
+                maxLength={isPhone ? 10 : undefined}
+                className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                {...form.register('identifier')}
               />
-            </FormField>
-          )}
+            </div>
+          </FormField>
 
           <FormField
             label="Password"

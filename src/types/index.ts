@@ -108,7 +108,6 @@ export interface Class {
   name: string;
   display_name: string;
   class_id: string;
-  department?: string | null;
   class_type?: string | null;
   class_sequence?: number | null;
   no_of_sessions?: number | null;
@@ -225,7 +224,6 @@ export interface Staff {
   city?: string | null;
   joining_date?: string | null;
   employee_code?: string | null;
-  department_id?: string | null;
   custom_role_id?: string | null;
   father_name?: string | null;
   husband_name?: string | null;

@@ -16,7 +16,7 @@ export function useLoginPage() {
   });
 
   const identifier = form.watch('identifier');
-  const isPhone = REGEX.phone.test(identifier.trim()) && !REGEX.email.test(identifier.trim());
+  const isPhone = !identifier.trim().includes('@');
 
   async function onSubmit(values: UnifiedLoginFormValues) {
     try {

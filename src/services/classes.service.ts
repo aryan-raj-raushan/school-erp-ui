@@ -11,7 +11,6 @@ export interface ClassFilters {
 export interface CreateClassPayload {
   name: string;
   academic_year_id: string;
-  department?: string;
   class_type?: string;
   class_sequence?: number;
   no_of_sessions?: number;
@@ -44,7 +43,7 @@ export interface UpdateSectionPayload extends Partial<CreateSectionPayload> {}
 type RawClassSection = {
   id: string; class_id: string; class_name: string; section_name: string;
   school_id: string; academic_year_id: string;
-  department?: string | null; class_type?: string | null; class_sequence?: number | null;
+  class_type?: string | null; class_sequence?: number | null;
   no_of_sessions?: number | null; class_code?: string | null; default_sections?: string | null;
   numeric_value?: number | null; is_active: boolean;
   class_teacher_id?: string | null; room_number?: string | null;
@@ -69,7 +68,6 @@ export const ClassesService = {
           display_name: r.class_name,
           school_id: r.school_id,
           academic_year_id: r.academic_year_id,
-          department: r.department ?? null,
           class_type: r.class_type ?? null,
           class_sequence: r.class_sequence ?? null,
           no_of_sessions: r.no_of_sessions ?? null,

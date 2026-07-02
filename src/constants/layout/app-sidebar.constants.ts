@@ -80,11 +80,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     permissions: [PERMISSIONS.admissions.view, PERMISSIONS.admissions.create],
     items: [
       {
-        title: "Enquiry Source",
-        url: "/admissions/source",
-        permissions: [PERMISSIONS.admissions.create],
-      },
-      {
         title: "Add Enquiry",
         url: "/admissions/create-new",
         permissions: [PERMISSIONS.admissions.create],
@@ -400,8 +395,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
       PERMISSIONS.academic_years.update,
       PERMISSIONS.classes.create,
       PERMISSIONS.classes.update,
-      PERMISSIONS.departments.create,
-      PERMISSIONS.departments.update,
       PERMISSIONS.subjects.create,
       PERMISSIONS.subjects.update,
       PERMISSIONS.holidays.create,
@@ -422,14 +415,6 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         title: "Classes & Sections",
         url: "/school/classes",
         permissions: [PERMISSIONS.classes.create, PERMISSIONS.classes.update],
-      },
-      {
-        title: "Departments",
-        url: "/school/departments",
-        permissions: [
-          PERMISSIONS.departments.create,
-          PERMISSIONS.departments.update,
-        ],
       },
       {
         title: "Subjects",

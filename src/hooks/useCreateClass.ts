@@ -14,7 +14,6 @@ import type { AcademicYear } from '@/types';
 const createClassSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
   name: z.string().min(1, 'Name is required').max(50),
-  department: z.string().min(1, 'Department is required').max(100),
   class_type: z.string().max(50).optional(),
   class_sequence: z.coerce.number().int().min(1).optional(),
   no_of_sessions: z.coerce.number().int().min(1).optional(),
@@ -72,7 +71,6 @@ export function useCreateClass() {
       const cls = await ClassesService.create({
         name: values.name,
         academic_year_id: values.academic_year_id,
-        department: values.department,
         class_type: values.class_type || undefined,
         class_sequence: values.class_sequence,
         no_of_sessions: values.no_of_sessions,

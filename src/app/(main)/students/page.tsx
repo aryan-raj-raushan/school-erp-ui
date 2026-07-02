@@ -41,7 +41,7 @@ import {
   STATUS_BADGE,
   STUDENT_STATUS_OPTIONS,
   GENDER_OPTIONS,
-} from "@/constants/students-v2.constants";
+} from "@/constants/students.constants";
 
 function useClassesAndSections(academicYearId: string | undefined, classId: string | undefined) {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -292,7 +292,7 @@ function StudentsContent() {
   );
 
   return (
-    <PageCol>
+    <PageCol className="pt-4 md:pt-5">
       <PageHeader
         title={STUDENT_PAGE.pageHeading.title}
         subtitle={pagination ? `${pagination.total} students` : ""}
@@ -414,6 +414,7 @@ function StudentsContent() {
         isLoading={isLoading}
         emptyText={STUDENT_PAGE.table.noEntry}
         pagination={pagination ?? undefined}
+        fillViewport
       />
     </PageCol>
   );

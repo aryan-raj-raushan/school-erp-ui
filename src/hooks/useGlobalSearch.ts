@@ -13,13 +13,12 @@ import {
 export type { SearchResultItem, SearchResultType, GlobalSearchResult };
 
 export const RECORD_URL: Record<SearchResultType, (id: string) => string> = {
-  student:       (id) => `/students/${id}`,
+  student:       (id) => `/students/view?id=${id}`,
   staff:         (id) => `/staffs/${id}`,
   parent:        ()   => `/parents`,
   admission:     (id) => `/admissions/${id}`,
   class:         (id) => `/school/classes/${id}`,
   subject:       (id) => `/school/subjects/${id}`,
-  department:    (id) => `/school/departments/${id}`,
   fee_type:      ()   => `/fees/setup`,
   event:         (id) => `/school/holidays-events/${id}`,
   academic_year: (id) => `/school/academic-years/${id}`,
@@ -33,7 +32,6 @@ export const TYPE_BADGE: Record<SearchResultType, { bg: string; color: string; l
   admission:     { bg: 'rgba(239,68,68,0.15)',   color: '#f87171', label: 'Admission'  },
   class:         { bg: 'rgba(139,92,246,0.15)',  color: '#a78bfa', label: 'Class'      },
   subject:       { bg: 'rgba(6,182,212,0.15)',   color: '#22d3ee', label: 'Subject'    },
-  department:    { bg: 'rgba(20,184,166,0.15)',  color: '#2dd4bf', label: 'Department' },
   fee_type:      { bg: 'rgba(234,179,8,0.15)',   color: '#facc15', label: 'Fee Type'   },
   event:         { bg: 'rgba(236,72,153,0.15)',  color: '#f472b6', label: 'Event'      },
   academic_year: { bg: 'rgba(14,165,233,0.15)',  color: '#38bdf8', label: 'Acad. Year' },
@@ -47,7 +45,6 @@ export const SECTIONS: { key: keyof Omit<GlobalSearchResult, 'query'>; label: st
   { key: 'admissions',    label: 'Admissions'        },
   { key: 'classes',       label: 'Classes'           },
   { key: 'subjects',      label: 'Subjects'          },
-  { key: 'departments',   label: 'Departments'       },
   { key: 'feeTypes',      label: 'Fee Types'         },
   { key: 'events',        label: 'Holidays & Events' },
   { key: 'academicYears', label: 'Academic Years'    },

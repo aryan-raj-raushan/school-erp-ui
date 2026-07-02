@@ -70,7 +70,6 @@ export interface AdminDashboard {
     staff: number;
     parents: number;
     classes: number;
-    departments: number;
     subjects: number;
   };
   attendance: {

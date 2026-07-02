@@ -68,6 +68,12 @@ export interface DataTableProps<TData> {
    * Example: "calc(100vh - 400px)"
    */
   maxHeight?: string;
+  /**
+   * Dynamically size the table to reach the bottom of the viewport,
+   * measured live so it adapts to any screen size instead of a guessed
+   * pixel offset. Ignored if maxHeight is also set.
+   */
+  fillViewport?: boolean;
 }
 
 function getPinnedStyle(column: Column<any>): React.CSSProperties | undefined {
@@ -94,8 +100,10 @@ export function DataTable<TData>({
   onSortingChange,
   pinnedColumns,
   maxHeight,
+  fillViewport,
 }: DataTableProps<TData>) {
   const manualSort = sorting !== undefined && onSortingChange !== undefined;
+  const showsPaginationFooter = !!pagination && pagination.totalPages > 1;
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const stickyBarRef = React.useRef<HTMLDivElement>(null);
@@ -146,7 +154,12 @@ export function DataTable<TData>({
 
   return (
     <>
-      <Table scrollRef={scrollRef} maxHeight={maxHeight}>
+      <Table
+        scrollRef={scrollRef}
+        maxHeight={maxHeight}
+        fillViewport={fillViewport}
+        bottomOffset={showsPaginationFooter ? 72 : 8}
+      >
         <TableHead>
           <TableHeadRow>
             {table.getHeaderGroups()[0]?.headers.map((header) => (
@@ -192,8 +205,8 @@ export function DataTable<TData>({
           )}
         </TableBody>
       </Table>
-      {/* Sticky scrollbar — only useful when table has no fixed maxHeight */}
-      {!maxHeight && (
+      {/* Sticky scrollbar — only useful when the table has no fixed/auto height */}
+      {!maxHeight && !fillViewport && (
         <div
           ref={stickyBarRef}
           className="sticky bottom-0 overflow-x-auto overflow-y-hidden"

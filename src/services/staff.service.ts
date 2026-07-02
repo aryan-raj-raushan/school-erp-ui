@@ -26,7 +26,6 @@ export interface CreateStaffPayload {
   city?: string;
   joining_date?: string;
   employee_code?: string;
-  department_id?: string;
   custom_role_id?: string;
   father_name?: string;
   husband_name?: string;
@@ -55,7 +54,6 @@ export interface UpdateStaffPayload {
   city?: string;
   joining_date?: string;
   employee_code?: string;
-  department_id?: string;
   custom_role_id?: string;
   father_name?: string;
   husband_name?: string;

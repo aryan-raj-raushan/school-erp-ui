@@ -6,7 +6,6 @@ export const CLASSES_PAGE = {
   classTable: {
     name: 'Name',
     session: 'Session',
-    department: 'Department',
     classType: 'Type',
     sections: 'Sections',
     academicYear: 'Academic Year',
@@ -18,7 +17,6 @@ export const CLASSES_PAGE = {
     editTitle: 'Edit Class',
     session: 'Session',
     name: 'Name *',
-    department: 'Department *',
     classType: 'Class Type',
     classSequence: 'Class Sequence',
     noOfSessions: 'No. of Sessions',
@@ -33,7 +31,6 @@ export const CLASSES_PAGE = {
   placeholders: {
     session: 'Select Session',
     name: 'Enter Name',
-    department: 'Enter Department',
     classType: 'e.g. Regular, Elective',
     classSequence: '1',
     noOfSessions: '1',

@@ -127,6 +127,19 @@ export function PageActions({ children, ...props }: PageLayoutProps) {
   );
 }
 
+/**
+ * Compact responsive field grid for create/edit forms.
+ * 1 col mobile → 2 sm → 3 lg → 4 xl, so wide screens fill instead of leaving blank space.
+ * Pass `className="col-span-full"` on a child (e.g. a textarea) to make it span the full row.
+ */
+export function FormGrid({ children, className, ...props }: PageLayoutProps) {
+  return (
+    <div className={cn('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3', className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
