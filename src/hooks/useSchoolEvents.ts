@@ -71,7 +71,14 @@ export function useSchoolEventDetail(id?: string) {
 
   const form = useForm<SchoolEventFormValues>({
     resolver: zodResolver(schoolEventSchema),
-    defaultValues: { type: 'EVENT', from_time: '', to_time: '', description: '' },
+    defaultValues: {
+      type: 'EVENT',
+      from_time: '',
+      to_time: '',
+      description: '',
+      applies_to: 'BOTH',
+      exempt_role_ids: [],
+    },
   });
 
   const fetchEvent = useCallback(async () => {
@@ -89,6 +96,8 @@ export function useSchoolEventDetail(id?: string) {
         from_time: data.from_time ?? '',
         to_date: data.to_date,
         to_time: data.to_time ?? '',
+        applies_to: data.applies_to,
+        exempt_role_ids: data.exempt_role_ids ?? [],
       });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to load event');
@@ -104,6 +113,7 @@ export function useSchoolEventDetail(id?: string) {
         from_time: values.from_time || undefined,
         to_time: values.to_time || undefined,
         description: values.description || undefined,
+        exempt_role_ids: values.exempt_role_ids && values.exempt_role_ids.length > 0 ? values.exempt_role_ids : [],
       };
       if (isNew) {
         const created = await SchoolEventsService.create(payload);

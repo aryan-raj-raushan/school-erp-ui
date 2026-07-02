@@ -7,8 +7,9 @@ import {
   Div, Button,
   PageHeader, PageCol,
   DataTable,
-  Badge, Spinner, Icon, Select, FilterLabel,
+  Badge, Spinner, Icon, FilterLabel,
   type ColumnDef,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { Pencil, Trash2 } from 'lucide-react';
 
@@ -76,10 +77,12 @@ export default function SyllabusPage() {
       <Div type="row" gap="md" align="end" wrap>
         <Div type="col" gap="xs">
           <FilterLabel>Class</FilterLabel>
-          <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)} width="md">
-            <option value="">All Classes</option>
-            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
+          <ResponsiveSelect
+            value={filterClassId}
+            onChange={(e) => setFilterClassId(e.target.value)}
+            customPlaceholder="All Classes"
+            options={classes.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </Div>
       </Div>
 

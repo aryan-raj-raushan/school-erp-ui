@@ -2,8 +2,9 @@
 
 import { useCreateStudyMaterial } from '@/hooks/useCreateStudyMaterial';
 import {
-  Div, Button, H2, FormField, Input, Select, Textarea, Spinner,
+  Div, Button, H2, FormField, Input, Textarea, Spinner,
   PageHeader, PageCol,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 const CONTENT_TYPE_OPTIONS = [
@@ -45,26 +46,31 @@ export default function NewStudyMaterialPage() {
             </H2>
 
             <FormField label="Session *" error={errors.academic_year_id?.message}>
-              <Select {...register('academic_year_id')} defaultValue="">
-                <option value="">Select session</option>
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                {...register('academic_year_id')}
+                defaultValue=""
+                customPlaceholder="Select session"
+                options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+              />
             </FormField>
 
             <FormField label="Class *" error={errors.class_id?.message}>
-              <Select {...register('class_id')} defaultValue="">
-                <option value="">Select class</option>
-                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
+              <ResponsiveSelect
+                {...register('class_id')}
+                defaultValue=""
+                customPlaceholder="Select class"
+                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </FormField>
 
             <FormField label="Subject">
-              <Select {...register('subject_id')} defaultValue="" disabled={!watch('class_id')}>
-                <option value="">Select subject</option>
-                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </Select>
+              <ResponsiveSelect
+                {...register('subject_id')}
+                defaultValue=""
+                disabled={!watch('class_id')}
+                customPlaceholder="Select subject"
+                options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+              />
             </FormField>
 
             <FormField label="Document Title *" error={errors.title?.message}>

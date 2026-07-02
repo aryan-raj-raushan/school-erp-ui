@@ -7,13 +7,11 @@ import {
   Badge,
   PageHeader,
   PageCol,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  Select,
   Input,
   FormField,
   EmptyState,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import {
@@ -266,12 +264,12 @@ export default function TimingsPage() {
         />
       )}
 
-      {isDialogOpen && (
-        <Modal
-          onClose={closeDialog}
-          title={editingTiming ? 'Edit Timing Schedule' : 'New Timing Schedule'}
-        >
-          <ModalBody>
+      <ResponsiveModalContainer
+        isOpen={isDialogOpen}
+        onClose={closeDialog}
+        title={editingTiming ? 'Edit Timing Schedule' : 'New Timing Schedule'}
+      >
+          <div className="px-4 py-4">
             <Div type="col" gap="md">
               <Div type="grid" cols={2} gap="md">
                 <FormField label="Name">
@@ -282,14 +280,11 @@ export default function TimingsPage() {
                   />
                 </FormField>
                 <FormField label="Type">
-                  <Select
+                  <ResponsiveSelect
                     value={form.timing_type}
                     onChange={(e) => updateForm('timing_type', e.target.value as typeof form.timing_type)}
-                  >
-                    {TIMING_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </Select>
+                    options={TIMING_TYPE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  />
                 </FormField>
                 <FormField label="Start Time">
                   <Input type="time" value={form.school_start_time} onChange={(e) => updateForm('school_start_time', e.target.value)} />
@@ -351,15 +346,14 @@ export default function TimingsPage() {
                 </div>
               </FormField>
             </Div>
-          </ModalBody>
-          <ModalFooter>
+          </div>
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             <Button loading={isSubmitting} onClick={() => submit(form)}>
               {editingTiming ? 'Update Schedule' : 'Create Schedule'}
             </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

@@ -2,13 +2,13 @@
 
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import {
-  Div, Button, Span, P, FormField, Input, Select,
+  Div, Button, Span, P, FormField, Input,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon,
+  ResponsiveSelect, ResponsiveModalContainer,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useFinanceSetup, FINANCE_SETUP_TABS } from '@/hooks/useFinanceSetup';
 
 export default function FinanceSetupPage() {
@@ -130,106 +130,100 @@ export default function FinanceSetupPage() {
         </Table>
       )}
 
-      {showAccountModal && (
-        <Modal title={editingAccount ? 'Edit Finance Account' : 'Add Finance Account'} onClose={closeAccountModal} size="md">
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label="Account Name" required>
+      <ResponsiveModalContainer isOpen={showAccountModal} title={editingAccount ? 'Edit Finance Account' : 'Add Finance Account'} onClose={closeAccountModal}>
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            <FormField label="Account Name" required>
+              <Input
+                placeholder="Enter name"
+                value={accountForm.name}
+                onChange={e => setAccountForm(f => ({ ...f, name: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Account Type" required>
+              <ResponsiveSelect
+                value={accountForm.account_type}
+                onChange={e => setAccountForm(f => ({ ...f, account_type: e.target.value }))}
+                options={ACCOUNT_TYPES.map(t => ({ value: t, label: t }))}
+              />
+            </FormField>
+            {!editingAccount && (
+              <FormField label="Opening Balance">
                 <Input
-                  placeholder="Enter name"
-                  value={accountForm.name}
-                  onChange={e => setAccountForm(f => ({ ...f, name: e.target.value }))}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={accountForm.opening_balance ?? 0}
+                  onChange={e => setAccountForm(f => ({ ...f, opening_balance: parseFloat(e.target.value) || 0 }))}
+                />
+                <P size="xs" className="mt-1">Cannot be modified after creation</P>
+              </FormField>
+            )}
+            {!editingAccount && (
+              <FormField label="Account Start Date" required>
+                <Input
+                  type="date"
+                  value={accountForm.account_start_date}
+                  onChange={e => setAccountForm(f => ({ ...f, account_start_date: e.target.value }))}
                 />
               </FormField>
-              <FormField label="Account Type" required>
-                <Select
-                  value={accountForm.account_type}
-                  onChange={e => setAccountForm(f => ({ ...f, account_type: e.target.value }))}
-                >
-                  {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </Select>
-              </FormField>
-              {!editingAccount && (
-                <FormField label="Opening Balance">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={accountForm.opening_balance ?? 0}
-                    onChange={e => setAccountForm(f => ({ ...f, opening_balance: parseFloat(e.target.value) || 0 }))}
-                  />
-                  <P size="xs" className="mt-1">Cannot be modified after creation</P>
-                </FormField>
-              )}
-              {!editingAccount && (
-                <FormField label="Account Start Date" required>
-                  <Input
-                    type="date"
-                    value={accountForm.account_start_date}
-                    onChange={e => setAccountForm(f => ({ ...f, account_start_date: e.target.value }))}
-                  />
-                </FormField>
-              )}
-              <Div type="row" gap="sm" align="center">
-                <input
-                  type="checkbox"
-                  id="acc-enabled"
-                  checked={accountForm.is_enabled ?? true}
-                  onChange={e => setAccountForm(f => ({ ...f, is_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-border"
-                />
-                <label htmlFor="acc-enabled" className="text-sm text-foreground">Enabled</label>
-              </Div>
+            )}
+            <Div type="row" gap="sm" align="center">
+              <input
+                type="checkbox"
+                id="acc-enabled"
+                checked={accountForm.is_enabled ?? true}
+                onChange={e => setAccountForm(f => ({ ...f, is_enabled: e.target.checked }))}
+                className="h-4 w-4 rounded border-border"
+              />
+              <label htmlFor="acc-enabled" className="text-sm text-foreground">Enabled</label>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" onClick={closeAccountModal}>Cancel</Button>
-            <Button onClick={handleAccountSubmit} disabled={submitting}>
-              {submitting ? <Spinner /> : editingAccount ? 'Update' : 'Create'}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="ghost" onClick={closeAccountModal}>Cancel</Button>
+          <Button onClick={handleAccountSubmit} disabled={submitting}>
+            {submitting ? <Spinner /> : editingAccount ? 'Update' : 'Create'}
+          </Button>
+        </div>
+      </ResponsiveModalContainer>
 
-      {showHeadModal && (
-        <Modal title={editingHead ? 'Edit Finance Head' : 'Add Income / Expense Head'} onClose={closeHeadModal} size="md">
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label="Head Name" required>
-                <Input
-                  placeholder="Enter name"
-                  value={headForm.name}
-                  onChange={e => setHeadForm(f => ({ ...f, name: e.target.value }))}
-                />
-              </FormField>
-              <FormField label="Head Type" required>
-                <Select
-                  value={headForm.head_type}
-                  onChange={e => setHeadForm(f => ({ ...f, head_type: e.target.value }))}
-                >
-                  {HEAD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </Select>
-              </FormField>
-              <Div type="row" gap="sm" align="center">
-                <input
-                  type="checkbox"
-                  id="head-enabled"
-                  checked={headForm.is_enabled ?? true}
-                  onChange={e => setHeadForm(f => ({ ...f, is_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-border"
-                />
-                <label htmlFor="head-enabled" className="text-sm text-foreground">Enabled</label>
-              </Div>
+      <ResponsiveModalContainer isOpen={showHeadModal} title={editingHead ? 'Edit Finance Head' : 'Add Income / Expense Head'} onClose={closeHeadModal}>
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            <FormField label="Head Name" required>
+              <Input
+                placeholder="Enter name"
+                value={headForm.name}
+                onChange={e => setHeadForm(f => ({ ...f, name: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Head Type" required>
+              <ResponsiveSelect
+                value={headForm.head_type}
+                onChange={e => setHeadForm(f => ({ ...f, head_type: e.target.value }))}
+                options={HEAD_TYPES.map(t => ({ value: t, label: t }))}
+              />
+            </FormField>
+            <Div type="row" gap="sm" align="center">
+              <input
+                type="checkbox"
+                id="head-enabled"
+                checked={headForm.is_enabled ?? true}
+                onChange={e => setHeadForm(f => ({ ...f, is_enabled: e.target.checked }))}
+                className="h-4 w-4 rounded border-border"
+              />
+              <label htmlFor="head-enabled" className="text-sm text-foreground">Enabled</label>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" onClick={closeHeadModal}>Cancel</Button>
-            <Button onClick={handleHeadSubmit} disabled={submitting}>
-              {submitting ? <Spinner /> : editingHead ? 'Update' : 'Create'}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="ghost" onClick={closeHeadModal}>Cancel</Button>
+          <Button onClick={handleHeadSubmit} disabled={submitting}>
+            {submitting ? <Spinner /> : editingHead ? 'Update' : 'Create'}
+          </Button>
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

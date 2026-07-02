@@ -18,6 +18,8 @@ import {
   Select,
   EmptyState,
   type ColumnDef,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import { LEAVE_STATUS_BADGE } from '@/constants/leave.constants';
 import type { StudentLeaveRequest } from '@/types';
@@ -136,36 +138,31 @@ export default function StudentLeavePage() {
 
       {/* ── Apply on Behalf Modal ── */}
       {isApplyOpen && (
-        <Modal onClose={closeApply} title="Apply Leave on Behalf of Student">
-          <ModalBody>
+        <ResponsiveModalContainer isOpen={isApplyOpen} onClose={closeApply} title="Apply Leave on Behalf of Student">
+          <div className="px-4 py-4">
             <Div type="col" gap="md">
               <FormField label="Section">
-                <Select
+                <ResponsiveSelect
                   value={applySectionId}
                   onChange={(e) => setApplySectionId(e.target.value)}
-                >
-                  <option value="">Select section</option>
-                  {sectionOptions.map((s) => (
-                    <option key={s.id} value={s.id}>{s.label}</option>
-                  ))}
-                </Select>
+                  customPlaceholder="Select section"
+                  options={sectionOptions}
+                />
               </FormField>
 
               <FormField label="Student">
-                <Select
+                <ResponsiveSelect
                   value={applyStudentId}
                   onChange={(e) => setApplyStudentId(e.target.value)}
                   disabled={!applySectionId || isLoadingApplyStudents}
-                >
-                  <option value="">
-                    {isLoadingApplyStudents ? 'Loading students…' : 'Select student'}
-                  </option>
-                  {applyStudents.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.first_name} {s.last_name ?? ''} {s.admission_number ? `(${s.admission_number})` : ''}
-                    </option>
-                  ))}
-                </Select>
+                  customPlaceholder={
+                    isLoadingApplyStudents ? 'Loading students…' : 'Select student'
+                  }
+                  options={applyStudents.map((s) => ({
+                    value: s.id,
+                    label: `${s.first_name} ${s.last_name ?? ''} ${s.admission_number ? `(${s.admission_number})` : ''}`.trim(),
+                  }))}
+                />
               </FormField>
 
               <Div type="grid" cols={2} gap="sm">
@@ -204,12 +201,12 @@ export default function StudentLeavePage() {
                 />
               </FormField>
             </Div>
-          </ModalBody>
-          <ModalFooter>
+          </div>
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeApply}>Cancel</Button>
             <Button loading={isApplying} onClick={applyLeave}>Submit Request</Button>
-          </ModalFooter>
-        </Modal>
+          </div>
+        </ResponsiveModalContainer>
       )}
 
       {/* ── Review Modal ── */}

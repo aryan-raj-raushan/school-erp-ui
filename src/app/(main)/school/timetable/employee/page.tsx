@@ -3,10 +3,11 @@
 import { useEmployeeTimetable } from '@/hooks/useEmployeeTimetable';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
 import {
-  Div, Select, FilterLabel, Spinner, Badge, SectionLabel, P,
+  Div, FilterLabel, Spinner, Badge, SectionLabel, P,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 export default function EmployeeTimetablePage() {
@@ -30,17 +31,13 @@ export default function EmployeeTimetablePage() {
         <Div type="row" gap="md" align="end" wrap>
           <Div type="col" gap="xs">
             <FilterLabel>{SCHOOL_TIMETABLE_PAGE.employee.selectTeacher}</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={teacherId}
               onChange={(e) => setTeacherId(e.target.value)}
-              width="md"
               disabled={isLoadingStaff}
-            >
-              <option value="">— Select Teacher —</option>
-              {staff.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
+              customPlaceholder="— Select Teacher —"
+              options={staff.map((s) => ({ value: s.id, label: s.name }))}
+            />
           </Div>
           {selectedTeacher && !isLoading && entries.length > 0 && (
             <Div type="col" gap="xs">

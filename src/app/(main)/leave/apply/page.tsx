@@ -12,10 +12,10 @@ import {
   P,
   Button,
   Input,
-  Select,
   FormField,
   Badge,
   Spinner,
+  ResponsiveSelect,
 } from "@/components/ui";
 import {
   LEAVE_STATUS_BADGE,
@@ -226,14 +226,11 @@ function LeaveApplyContent() {
                 label={`${PAGE.labels.academicYear} *`}
                 error={errors.academic_year_id?.message}
               >
-                <Select {...register("academic_year_id")}>
-                  <option value="">{PAGE.placeholders.selectYear}</option>
-                  {years.map((y) => (
-                    <option key={y.id} value={y.id}>
-                      {y.name}
-                    </option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  {...register("academic_year_id")}
+                  customPlaceholder={PAGE.placeholders.selectYear}
+                  options={years.map((y) => ({ value: y.id, label: y.name }))}
+                />
               </FormField>
 
               {/* Leave Type — only shown once we know who + what year */}
@@ -261,18 +258,14 @@ function LeaveApplyContent() {
                     {PAGE.info.noAssignedLeaves}
                   </P>
                 ) : (
-                  <Select {...register("leave_type_id")}>
-                    <option value="">
-                      {PAGE.placeholders.selectLeaveType}
-                    </option>
-                    {employeeLeaves.map((el) => (
-                      <option key={el.leave_type_id} value={el.leave_type_id}>
-                        {el.leave_type.leave_name} — {el.remaining_days} days
-                        remaining (
-                        {LEAVE_PAY_TYPE_LABEL[el.leave_type.leave_pay_type]})
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    {...register("leave_type_id")}
+                    customPlaceholder={PAGE.placeholders.selectLeaveType}
+                    options={employeeLeaves.map((el) => ({
+                      value: el.leave_type_id,
+                      label: `${el.leave_type.leave_name} — ${el.remaining_days} days remaining (${LEAVE_PAY_TYPE_LABEL[el.leave_type.leave_pay_type]})`,
+                    }))}
+                  />
                 )}
               </FormField>
 

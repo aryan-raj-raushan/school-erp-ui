@@ -4,11 +4,12 @@ import { useCreateSyllabus } from '@/hooks/useCreateSyllabus';
 import { SYLLABUS_PAGE } from '@/constants';
 import {
   Div, Button, H2,
-  FormField, Input, Select, Textarea,
+  FormField, Input, Textarea,
   CheckboxLabel, Spinner,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge,
   PageHeader, PageCol,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 
@@ -44,10 +45,12 @@ export default function NewSyllabusPage() {
             </H2>
 
             <FormField label={SYLLABUS_PAGE.form.class} error={form.formState.errors.class_id?.message}>
-              <Select {...form.register('class_id')} defaultValue="">
-                <option value="">{SYLLABUS_PAGE.placeholders.selectClass}</option>
-                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
+              <ResponsiveSelect
+                {...form.register('class_id')}
+                defaultValue=""
+                customPlaceholder={SYLLABUS_PAGE.placeholders.selectClass}
+                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </FormField>
 
             <FormField label={SYLLABUS_PAGE.form.title} error={form.formState.errors.title?.message}>

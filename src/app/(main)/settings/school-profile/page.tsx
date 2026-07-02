@@ -7,11 +7,11 @@ import {
   H3,
   Button,
   Input,
-  Select,
   Spinner,
   FormField,
   PageHeader,
   PageCol,
+  ResponsiveSelect,
 } from '@/components/ui';
 import {
   SCHOOL_PROFILE_PAGE,
@@ -87,14 +87,11 @@ export default function SchoolProfilePage() {
               />
             </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.timezone}>
-              <Select
+              <ResponsiveSelect
                 value={form.timezone ?? 'Asia/Kolkata'}
                 onChange={(e) => updateField('timezone', e.target.value)}
-              >
-                {TIMEZONE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </Select>
+                options={TIMEZONE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              />
             </FormField>
           </Div>
         </Div>
@@ -104,26 +101,20 @@ export default function SchoolProfilePage() {
           <H3>{SCHOOL_PROFILE_PAGE.sections.academic}</H3>
           <Div type="grid" cols={2} gap="md">
             <FormField label={SCHOOL_PROFILE_PAGE.fields.board_type}>
-              <Select
+              <ResponsiveSelect
                 value={form.board_type ?? ''}
                 onChange={(e) => updateField('board_type', e.target.value)}
-              >
-                <option value="">Select board</option>
-                {BOARD_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </Select>
+                customPlaceholder="Select board"
+                options={BOARD_TYPE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              />
             </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.marking_system}>
-              <Select
+              <ResponsiveSelect
                 value={form.marking_system ?? ''}
                 onChange={(e) => updateField('marking_system', e.target.value)}
-              >
-                <option value="">Select system</option>
-                {MARKING_SYSTEM_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </Select>
+                customPlaceholder="Select system"
+                options={MARKING_SYSTEM_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              />
             </FormField>
           </Div>
         </Div>

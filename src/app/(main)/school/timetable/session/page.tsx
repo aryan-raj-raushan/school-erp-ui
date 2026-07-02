@@ -3,10 +3,11 @@
 import { useSessionTimetable } from '@/hooks/useSessionTimetable';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
 import {
-  Div, Select, FilterLabel, Spinner, Badge, SectionLabel, P,
+  Div, FilterLabel, Spinner, Badge, SectionLabel, P,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
+  ResponsiveSelect,
 } from '@/components/ui';
 import type { DayOfWeek } from '@/services/timetable.service';
 
@@ -39,47 +40,33 @@ export default function SessionTimetablePage() {
         <Div type="row" gap="md" align="end" wrap>
           <Div type="col" gap="xs">
             <FilterLabel>Session</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={academicYearId}
               onChange={(e) => setAcademicYearId(e.target.value)}
-              width="md"
               disabled={isLoadingMeta}
-            >
-              <option value="">All Sessions</option>
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name}{y.is_current ? ' (Current)' : ''}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="All Sessions"
+              options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+            />
           </Div>
 
           <Div type="col" gap="xs">
             <FilterLabel>Day Name</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={day}
               onChange={(e) => setDay(e.target.value as DayOfWeek)}
-              width="md"
-            >
-              {days.map((d) => (
-                <option key={d} value={d}>{dayLabels[d]}</option>
-              ))}
-            </Select>
+              options={days.map((d) => ({ value: d, label: dayLabels[d] }))}
+            />
           </Div>
 
           <Div type="col" gap="xs">
             <FilterLabel>Timetable Session</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={timetableName}
               onChange={(e) => setTimetableName(e.target.value)}
-              width="md"
               disabled={isLoadingMeta}
-            >
-              <option value="">All</option>
-              {timetableNames.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </Select>
+              customPlaceholder="All"
+              options={timetableNames.map((n) => ({ value: n, label: n }))}
+            />
           </Div>
         </Div>
       </Div>

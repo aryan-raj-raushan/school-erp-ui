@@ -9,12 +9,12 @@ import {
   PageCol,
   Spinner,
   Input,
-  Select,
   Badge,
   Button,
   MiniStat,
   DataTable,
   FilterLabel,
+  ResponsiveSelect,
   type ColumnDef,
 } from '@/components/ui';
 import { ATTENDANCE_STATUS_BADGE } from '@/constants/attendance.constants';
@@ -152,14 +152,13 @@ export default function StaffAttendanceReportPage() {
           </Div>
           <Div type="col" gap="xs">
             <P size="xs" color="muted">Role</P>
-            <Select width="sm" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-              <option value="">All Roles</option>
-              {roles.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </Select>
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              customPlaceholder="All Roles"
+              options={roles.map((r) => ({ value: r, label: r }))}
+            />
           </Div>
           <Button variant="outline" loading={isExporting} onClick={exportAttendance} className="mt-5">
             <FileDown size={16} className="mr-2" />
@@ -192,14 +191,12 @@ export default function StaffAttendanceReportPage() {
             </Div>
             <Div type="col" gap="xs">
               <FilterLabel>Role</FilterLabel>
-              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-                <option value="">All Roles</option>
-                {roles.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                customPlaceholder="All Roles"
+                options={roles.map((r) => ({ value: r, label: r }))}
+              />
             </Div>
           </Div>
 
@@ -224,30 +221,26 @@ export default function StaffAttendanceReportPage() {
       {tab === 'monthly' && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select width="sm" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </Select>
-            <Select width="sm" value={year} onChange={(e) => setYear(Number(e.target.value))}>
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </Select>
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(month)}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              options={MONTHS.map((m) => ({ value: String(m.value), label: m.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(year)}
+              onChange={(e) => setYear(Number(e.target.value))}
+              options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+            />
             <Div type="col" gap="xs">
               <FilterLabel>Role</FilterLabel>
-              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-                <option value="">All Roles</option>
-                {roles.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                customPlaceholder="All Roles"
+                options={roles.map((r) => ({ value: r, label: r }))}
+              />
             </Div>
             <Button onClick={loadMonthlyReport} loading={isLoading}>
               Load Summary

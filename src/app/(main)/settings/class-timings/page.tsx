@@ -4,11 +4,11 @@ import { useClassTimings } from '@/hooks/useClassTimings';
 import {
   Div,
   P,
-  Select,
   Spinner,
   PageHeader,
   PageCol,
   EmptyState,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { CLASS_TIMINGS_PAGE } from '@/constants/school-settings.constants';
 
@@ -57,16 +57,13 @@ export default function ClassTimingsPage() {
               </Div>
               <Div type="row" align="center" gap="sm">
                 {savingClassId === cls.id && <Spinner size="sm" />}
-                <Select
+                <ResponsiveSelect
                   value={getOverrideForClass(cls.id) ?? ''}
                   onChange={(e) => setClassTiming(cls.id, e.target.value || null)}
                   disabled={savingClassId === cls.id}
-                >
-                  <option value="">School Default</option>
-                  {timings.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </Select>
+                  customPlaceholder="School Default"
+                  options={timings.map((t) => ({ value: t.id, label: t.name }))}
+                />
               </Div>
             </Div>
           ))}

@@ -9,7 +9,6 @@ import {
   Div,
   Button,
   Input,
-  Select,
   Badge,
   DataTable,
   FilterLabel,
@@ -17,6 +16,7 @@ import {
   P,
   type ColumnDef,
   type BadgeVariant,
+  ResponsiveSelect,
 } from '@/components/ui';
 import type { AuditLogRecord, AuditEntity, AuditAction } from '@/types';
 
@@ -73,16 +73,20 @@ export default function AuditLogPage() {
 
       <FilterBar>
         <FilterLabel>Entity</FilterLabel>
-        <Select value={entity} onChange={e => setEntity(e.target.value as AuditEntity | '')}>
-          <option value="">All Entities</option>
-          {ENTITY_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
-        </Select>
+        <ResponsiveSelect
+          value={entity}
+          onChange={e => setEntity(e.target.value as AuditEntity | '')}
+          customPlaceholder="All Entities"
+          options={ENTITY_OPTIONS.map(e => ({ value: e, label: e }))}
+        />
 
         <FilterLabel>Action</FilterLabel>
-        <Select value={action} onChange={e => setAction(e.target.value as AuditAction | '')}>
-          <option value="">All Actions</option>
-          {ACTION_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-        </Select>
+        <ResponsiveSelect
+          value={action}
+          onChange={e => setAction(e.target.value as AuditAction | '')}
+          customPlaceholder="All Actions"
+          options={ACTION_OPTIONS.map(a => ({ value: a, label: a }))}
+        />
 
         <FilterLabel>From</FilterLabel>
         <Input type="date" value={from} onChange={e => setFrom(e.target.value)} />

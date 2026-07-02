@@ -6,7 +6,8 @@ import {
   Div, Button,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge, Spinner, Icon, Select, FilterLabel,
+  Badge, Spinner, Icon, FilterLabel,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { Pencil, Eye, Trash2, Users, Calendar, Send, Undo2 } from 'lucide-react';
 
@@ -40,19 +41,21 @@ export default function TimetablePage() {
       <Div type="row" gap="md" align="end" wrap>
         <Div type="col" gap="xs">
           <FilterLabel>Academic Year</FilterLabel>
-          <Select value={filterAcademicYearId} onChange={(e) => setFilterAcademicYearId(e.target.value)} width="md">
-            <option value="">All Years</option>
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>
-            ))}
-          </Select>
+          <ResponsiveSelect
+            value={filterAcademicYearId}
+            onChange={(e) => setFilterAcademicYearId(e.target.value)}
+            customPlaceholder="All Years"
+            options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+          />
         </Div>
         <Div type="col" gap="xs">
           <FilterLabel>Class</FilterLabel>
-          <Select value={filterClassId} onChange={(e) => setFilterClassId(e.target.value)} width="md">
-            <option value="">All Classes</option>
-            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
+          <ResponsiveSelect
+            value={filterClassId}
+            onChange={(e) => setFilterClassId(e.target.value)}
+            customPlaceholder="All Classes"
+            options={classes.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </Div>
       </Div>
 

@@ -12,15 +12,14 @@ import {
   P,
   Button,
   Input,
-  Select,
   PageHeader,
   PageCol,
   Badge,
   Spinner,
   MiniStat,
   DataTable,
-  Modal,
-  ModalBody,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
   type ColumnDef,
 } from "@/components/ui";
 
@@ -398,54 +397,42 @@ export default function StudentAttendanceReportPage() {
         <Div type="row" gap="md" align="end" wrap>
           <Div type="col" gap="xs">
             <P size="xs" color="muted">Academic Year</P>
-            <Select
-              width="sm"
+            <ResponsiveSelect
+              className="w-32 max-w-full"
               value={selectedAcademicYearId}
               onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-            >
-              <option value="">All years</option>
-              {academicYears.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name}{y.is_current ? " (Current)" : ""}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="All years"
+              options={academicYears.map((y) => ({
+                value: y.id,
+                label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+              }))}
+            />
           </Div>
 
           <Div type="col" gap="xs">
             <P size="xs" color="muted">Class</P>
-            <Select
-              width="sm"
+            <ResponsiveSelect
+              className="w-32 max-w-full"
               value={exportClassId}
               onChange={(e) => {
                 setExportClassId(e.target.value);
                 setExportSectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
           </Div>
           <Div type="col" gap="xs">
             <P size="xs" color="muted">Section</P>
-            <Select
-              width="sm"
+            <ResponsiveSelect
+              className="w-32 max-w-full"
               value={exportSectionId}
               onChange={(e) => setExportSectionId(e.target.value)}
               disabled={!exportClassId || isLoadingClassSection}
-            >
-              <option value="">Select Section</option>
-              {getFilteredSections(exportClassId).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="Select Section"
+              options={getFilteredSections(exportClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
           </Div>
           <Div type="col" gap="xs">
             <P size="xs" color="muted">From</P>
@@ -505,37 +492,25 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "daily" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select
-              width="md"
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={dailyClassId}
               onChange={(e) => {
                 setDailyClassId(e.target.value);
                 setDailySectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={dailySectionId}
               onChange={(e) => setDailySectionId(e.target.value)}
               disabled={!dailyClassId || isLoadingClassSection}
-            >
-              <option value="">
-                {ATTENDANCE_REPORT_PAGE.daily.selectSection}
-              </option>
-              {getFilteredSections(dailyClassId).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder={ATTENDANCE_REPORT_PAGE.daily.selectSection}
+              options={getFilteredSections(dailyClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
             <Input
               type="date"
               width="sm"
@@ -602,59 +577,37 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "monthly" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select
-              width="md"
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={monthlyClassId}
               onChange={(e) => {
                 setMonthlyClassId(e.target.value);
                 setMonthlySectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={monthlySectionId}
               onChange={(e) => setMonthlySectionId(e.target.value)}
               disabled={!monthlyClassId || isLoadingClassSection}
-            >
-              <option value="">
-                {ATTENDANCE_REPORT_PAGE.monthly.selectSection}
-              </option>
-              {getFilteredSections(monthlyClassId).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={monthlyMonth}
+              customPlaceholder={ATTENDANCE_REPORT_PAGE.monthly.selectSection}
+              options={getFilteredSections(monthlyClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(monthlyMonth)}
               onChange={(e) => setMonthlyMonth(Number(e.target.value))}
-            >
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={monthlyYear}
+              options={MONTHS.map((m) => ({ value: String(m.value), label: m.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(monthlyYear)}
               onChange={(e) => setMonthlyYear(Number(e.target.value))}
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </Select>
+              options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+            />
             <Button onClick={fetchMonthlyReport} loading={isLoadingMonthly}>
               {ATTENDANCE_REPORT_PAGE.monthly.fetch}
             </Button>
@@ -687,59 +640,37 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "defaulters" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select
-              width="md"
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={defaulterClassId}
               onChange={(e) => {
                 setDefaulterClassId(e.target.value);
                 setDefaulterSectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={defaulterSectionId}
               onChange={(e) => setDefaulterSectionId(e.target.value)}
               disabled={!defaulterClassId || isLoadingClassSection}
-            >
-              <option value="">
-                {ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
-              </option>
-              {getFilteredSections(defaulterClassId).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={defaulterMonth}
+              customPlaceholder={ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
+              options={getFilteredSections(defaulterClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(defaulterMonth)}
               onChange={(e) => setDefaulterMonth(Number(e.target.value))}
-            >
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={defaulterYear}
+              options={MONTHS.map((m) => ({ value: String(m.value), label: m.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(defaulterYear)}
               onChange={(e) => setDefaulterYear(Number(e.target.value))}
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </Select>
+              options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+            />
             <Div type="row" align="center" gap="sm">
               <P noWrap>{ATTENDANCE_REPORT_PAGE.defaulters.threshold}</P>
               <Input
@@ -788,50 +719,36 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "studentHistory" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select
-              width="md"
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={historyClassId}
               onChange={(e) => {
                 setHistoryClassId(e.target.value);
                 setHistorySectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={historySectionId}
               onChange={(e) => setHistorySectionId(e.target.value)}
               disabled={!historyClassId || isLoadingClassSection}
-            >
-              <option value="">Select Section</option>
-              {getFilteredSections(historyClassId).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Section"
+              options={getFilteredSections(historyClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={historyStudentId}
               onChange={(e) => setHistoryStudentId(e.target.value)}
               disabled={!historySectionId || isLoadingHistoryStudents}
-            >
-              <option value="">
-                {isLoadingHistoryStudents ? "Loading students…" : "Select Student"}
-              </option>
-              {historyStudents.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.first_name} {s.last_name ?? ""} {s.admission_number ? `(${s.admission_number})` : ""}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder={isLoadingHistoryStudents ? "Loading students…" : "Select Student"}
+              options={historyStudents.map((s) => ({
+                value: s.id,
+                label: `${s.first_name} ${s.last_name ?? ""} ${s.admission_number ? `(${s.admission_number})` : ""}`,
+              }))}
+            />
             <Button
               onClick={() => fetchStudentHistory(1)}
               loading={isLoadingHistory}
@@ -963,55 +880,42 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "heatmap" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select
-              width="md"
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={heatmapClassId}
               onChange={(e) => {
                 setHeatmapClassId(e.target.value);
                 setHeatmapSectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={heatmapSectionId}
               onChange={(e) => setHeatmapSectionId(e.target.value)}
               disabled={!heatmapClassId || isLoadingClassSection}
-            >
-              <option value="">Select Section</option>
-              {getFilteredSections(heatmapClassId).map((s) => (
-                <option key={s.id} value={s.id}>{s.label}</option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Section"
+              options={getFilteredSections(heatmapClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={heatmapStudentId}
               onChange={(e) => setHeatmapStudentId(e.target.value)}
               disabled={!heatmapSectionId || isLoadingHeatmapStudents}
-            >
-              <option value="">
-                {isLoadingHeatmapStudents ? "Loading students…" : "Select Student"}
-              </option>
-              {heatmapStudents.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.first_name} {s.last_name ?? ""} {s.admission_number ? `(${s.admission_number})` : ""}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={heatmapYear}
+              customPlaceholder={isLoadingHeatmapStudents ? "Loading students…" : "Select Student"}
+              options={heatmapStudents.map((s) => ({
+                value: s.id,
+                label: `${s.first_name} ${s.last_name ?? ""} ${s.admission_number ? `(${s.admission_number})` : ""}`,
+              }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(heatmapYear)}
               onChange={(e) => setHeatmapYear(Number(e.target.value))}
-            >
-              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-            </Select>
+              options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+            />
             <Button onClick={fetchHeatmap} loading={isLoadingHeatmap}>Load Heatmap</Button>
           </Div>
           {isLoadingHeatmap ? (
@@ -1087,47 +991,37 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "lateTrend" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Select
-              width="md"
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={lateTrendClassId}
               onChange={(e) => {
                 setLateTrendClassId(e.target.value);
                 setLateTrendSectionId("");
               }}
               disabled={isLoadingClassSection}
-            >
-              <option value="">Select Class</option>
-              {classOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              width="md"
+              customPlaceholder="Select Class"
+              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            <ResponsiveSelect
+              className="w-48 max-w-full"
               value={lateTrendSectionId}
               onChange={(e) => setLateTrendSectionId(e.target.value)}
               disabled={!lateTrendClassId || isLoadingClassSection}
-            >
-              <option value="">Select Section</option>
-              {getFilteredSections(lateTrendClassId).map((s) => (
-                <option key={s.id} value={s.id}>{s.label}</option>
-              ))}
-            </Select>
-            <Select
-              width="sm"
-              value={lateTrendMonth}
+              customPlaceholder="Select Section"
+              options={getFilteredSections(lateTrendClassId).map((s) => ({ value: s.id, label: s.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(lateTrendMonth)}
               onChange={(e) => setLateTrendMonth(Number(e.target.value))}
-            >
-              {MONTHS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </Select>
-            <Select
-              width="sm"
-              value={lateTrendYear}
+              options={MONTHS.map((m) => ({ value: String(m.value), label: m.label }))}
+            />
+            <ResponsiveSelect
+              className="w-32 max-w-full"
+              value={String(lateTrendYear)}
               onChange={(e) => setLateTrendYear(Number(e.target.value))}
-            >
-              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-            </Select>
+              options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+            />
             <Button onClick={fetchLateTrend} loading={isLoadingLateTrend}>Load Trend</Button>
           </Div>
           {isLoadingLateTrend ? (
@@ -1188,41 +1082,43 @@ export default function StudentAttendanceReportPage() {
         </Div>
       )}
 
-      {selectedAuditId && (
-        <Modal title="Attendance Change History" onClose={() => setSelectedAuditId(null)}>
-          <ModalBody>
-            {isLoadingAudit ? (
-              <Div type="row" justify="center" padding="p-8">
-                <Spinner />
-              </Div>
-            ) : auditLog.length === 0 ? (
-              <P color="muted">No changes recorded for this record.</P>
-            ) : (
-              <Div type="col" gap="sm">
-                {auditLog.map((entry) => (
-                  <Div key={entry.id} variant="inset" padding="p-3" type="col" gap="xs">
-                    <Div type="row" justify="between" align="center">
-                      <P size="xs" color="muted">{new Date(entry.changed_at).toLocaleString()}</P>
-                      {entry.ip_address && <P size="xs" color="muted">IP: {entry.ip_address}</P>}
-                    </Div>
-                    <Div type="row" gap="sm" align="center">
-                      {entry.old_status && <Badge variant={ATTENDANCE_STATUS_BADGE[entry.old_status as keyof typeof ATTENDANCE_STATUS_BADGE] ?? 'default'}>{entry.old_status}</Badge>}
-                      <P size="xs" color="muted">→</P>
-                      {entry.new_status && <Badge variant={ATTENDANCE_STATUS_BADGE[entry.new_status as keyof typeof ATTENDANCE_STATUS_BADGE] ?? 'default'}>{entry.new_status}</Badge>}
-                    </Div>
-                    {(entry.old_remarks || entry.new_remarks) && (
-                      <P size="xs" color="muted">
-                        Remarks: {entry.old_remarks ?? '—'} → {entry.new_remarks ?? '—'}
-                      </P>
-                    )}
-                    <P size="xs" color="muted">Changed by: {entry.changed_by}</P>
+      <ResponsiveModalContainer
+        isOpen={!!selectedAuditId}
+        title="Attendance Change History"
+        onClose={() => setSelectedAuditId(null)}
+      >
+        <div className="px-4 py-4">
+          {isLoadingAudit ? (
+            <Div type="row" justify="center" padding="p-8">
+              <Spinner />
+            </Div>
+          ) : auditLog.length === 0 ? (
+            <P color="muted">No changes recorded for this record.</P>
+          ) : (
+            <Div type="col" gap="sm">
+              {auditLog.map((entry) => (
+                <Div key={entry.id} variant="inset" padding="p-3" type="col" gap="xs">
+                  <Div type="row" justify="between" align="center">
+                    <P size="xs" color="muted">{new Date(entry.changed_at).toLocaleString()}</P>
+                    {entry.ip_address && <P size="xs" color="muted">IP: {entry.ip_address}</P>}
                   </Div>
-                ))}
-              </Div>
-            )}
-          </ModalBody>
-        </Modal>
-      )}
+                  <Div type="row" gap="sm" align="center">
+                    {entry.old_status && <Badge variant={ATTENDANCE_STATUS_BADGE[entry.old_status as keyof typeof ATTENDANCE_STATUS_BADGE] ?? 'default'}>{entry.old_status}</Badge>}
+                    <P size="xs" color="muted">→</P>
+                    {entry.new_status && <Badge variant={ATTENDANCE_STATUS_BADGE[entry.new_status as keyof typeof ATTENDANCE_STATUS_BADGE] ?? 'default'}>{entry.new_status}</Badge>}
+                  </Div>
+                  {(entry.old_remarks || entry.new_remarks) && (
+                    <P size="xs" color="muted">
+                      Remarks: {entry.old_remarks ?? '—'} → {entry.new_remarks ?? '—'}
+                    </P>
+                  )}
+                  <P size="xs" color="muted">Changed by: {entry.changed_by}</P>
+                </Div>
+              ))}
+            </Div>
+          )}
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

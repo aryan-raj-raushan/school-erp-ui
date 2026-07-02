@@ -8,7 +8,6 @@ import {
   H1,
   P,
   Button,
-  Select,
   Input,
   Table,
   TableHead,
@@ -20,11 +19,12 @@ import {
   TableEmptyRow,
   Badge,
   Spinner,
-  Modal,
   FormField,
   FilterLabel,
   MiniStat,
   Icon,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from "@/components/ui";
 import { Plus } from "lucide-react";
 
@@ -74,18 +74,12 @@ export default function TeacherLeaveView() {
       <Div variant="card" padding="p-4">
         <Div type="row" gap="md" align="center">
           <FilterLabel noWrap>Academic Year (for balance)</FilterLabel>
-          <Select
+          <ResponsiveSelect
             value={selectedAcademicYearId}
             onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-            width="md"
-          >
-            <option value="">Select year</option>
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}{y.is_current ? " (Current)" : ""}
-              </option>
-            ))}
-          </Select>
+            customPlaceholder="Select year"
+            options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? " (Current)" : ""}` }))}
+          />
         </Div>
       </Div>
 
@@ -176,19 +170,15 @@ export default function TeacherLeaveView() {
       )}
 
       {/* Apply Leave Modal */}
-      {showApplyModal && (
-        <Modal title={LEAVE_PAGE.apply.title} onClose={() => setShowApplyModal(false)}>
+      <ResponsiveModalContainer isOpen={showApplyModal} title={LEAVE_PAGE.apply.title} onClose={() => setShowApplyModal(false)}>
           <form onSubmit={handleSubmit(handleApply)}>
-            <Div type="col" gap="md" padding="px-6 py-5">
+            <Div type="col" gap="md" className="px-4 py-4">
               <FormField label={LEAVE_PAGE.apply.leaveType} error={errors.leave_type_id?.message}>
-                <Select {...register("leave_type_id")}>
-                  <option value="">Select leave type</option>
-                  {leaveTypes.map((lt) => (
-                    <option key={lt.id} value={lt.id}>
-                      {lt.name} (max {lt.max_days} days)
-                    </option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  {...register("leave_type_id")}
+                  customPlaceholder="Select leave type"
+                  options={leaveTypes.map((lt) => ({ value: lt.id, label: `${lt.name} (max ${lt.max_days} days)` }))}
+                />
               </FormField>
               <Div type="grid" cols={2} gap="md">
                 <FormField label={LEAVE_PAGE.apply.fromDate} error={errors.from_date?.message}>
@@ -211,8 +201,7 @@ export default function TeacherLeaveView() {
               </Div>
             </Div>
           </form>
-        </Modal>
-      )}
+      </ResponsiveModalContainer>
     </Div>
   );
 }

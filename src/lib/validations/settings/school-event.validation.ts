@@ -18,6 +18,8 @@ export const schoolEventSchema = z
       .string()
       .optional()
       .refine((v) => !v || TIME_REGEX.test(v), { message: 'Invalid time format (HH:mm)' }),
+    applies_to: z.enum(['STUDENTS', 'STAFF', 'BOTH']).default('BOTH'),
+    exempt_role_ids: z.array(z.string()).optional().default([]),
   })
   .refine((d) => d.to_date >= d.from_date, {
     message: 'To date must be on or after From date',

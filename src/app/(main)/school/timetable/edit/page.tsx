@@ -10,8 +10,9 @@ import { timeToMinutes, formatDuration } from '@/lib/time.utils';
 import { cn } from '@/lib/utils';
 import type { DayOfWeek, PeriodTimeDto } from '@/services/timetable.service';
 import {
-  Div, Button, Spinner, Input, Select, FormField, P, Badge,
+  Div, Button, Spinner, Input, FormField, P, Badge,
   PageHeader, SectionCard,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 interface DragPayload {

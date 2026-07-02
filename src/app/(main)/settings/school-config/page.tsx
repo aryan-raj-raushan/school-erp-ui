@@ -6,11 +6,11 @@ import {
   P,
   H3,
   Button,
-  Select,
   Spinner,
   FormField,
   PageHeader,
   PageCol,
+  ResponsiveSelect,
 } from '@/components/ui';
 import {
   SCHOOL_CONFIG_PAGE,
@@ -49,24 +49,18 @@ export default function SchoolConfigPage() {
           <H3>Attendance Method</H3>
           <Div type="grid" cols={2} gap="md">
             <FormField label="Attendance Method">
-              <Select
+              <ResponsiveSelect
                 value={form.attendance_method ?? 'MANUAL'}
                 onChange={(e) => updateField('attendance_method', e.target.value as typeof form.attendance_method)}
-              >
-                {ATTENDANCE_METHOD_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </Select>
+                options={ATTENDANCE_METHOD_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+              />
             </FormField>
             <FormField label="Attendance Lock (hours)" hint="After this many hours, only admin can edit">
-              <Select
+              <ResponsiveSelect
                 value={String(form.attendance_lock_hours ?? 24)}
                 onChange={(e) => updateField('attendance_lock_hours', Number(e.target.value))}
-              >
-                {[6, 12, 24, 48, 72, 168].map((h) => (
-                  <option key={h} value={h}>{h === 168 ? '1 week' : `${h} hours`}</option>
-                ))}
-              </Select>
+                options={[6, 12, 24, 48, 72, 168].map((h) => ({ value: String(h), label: h === 168 ? '1 week' : `${h} hours` }))}
+              />
             </FormField>
           </Div>
         </Div>
@@ -80,42 +74,33 @@ export default function SchoolConfigPage() {
                 <P color="default" size="sm" weight="medium">3 Lates = 1 Half Day</P>
                 <P size="xs">Auto-convert three LATE records in a month to a HALF_DAY</P>
               </Div>
-              <Select
+              <ResponsiveSelect
                 value={form.three_lates_equal_half_day ? 'true' : 'false'}
                 onChange={(e) => updateField('three_lates_equal_half_day', e.target.value === 'true')}
-                width="sm"
-              >
-                <option value="true">Enabled</option>
-                <option value="false">Disabled</option>
-              </Select>
+                options={[{ value: 'true', label: 'Enabled' }, { value: 'false', label: 'Disabled' }]}
+              />
             </Div>
             <Div type="row" justify="between" align="center" padding="py-3">
               <Div type="col" gap="xs">
                 <P color="default" size="sm" weight="medium">2 Half Days = 1 Leave</P>
                 <P size="xs">Auto-convert two HALF_DAY records to a full leave deduction</P>
               </Div>
-              <Select
+              <ResponsiveSelect
                 value={form.two_half_days_equal_leave ? 'true' : 'false'}
                 onChange={(e) => updateField('two_half_days_equal_leave', e.target.value === 'true')}
-                width="sm"
-              >
-                <option value="true">Enabled</option>
-                <option value="false">Disabled</option>
-              </Select>
+                options={[{ value: 'true', label: 'Enabled' }, { value: 'false', label: 'Disabled' }]}
+              />
             </Div>
             <Div type="row" justify="between" align="center" padding="py-3">
               <Div type="col" gap="xs">
                 <P color="default" size="sm" weight="medium">Auto Notify Parent on Absent</P>
                 <P size="xs">Send notification when student is marked absent</P>
               </Div>
-              <Select
+              <ResponsiveSelect
                 value={form.auto_notify_parent_on_absent ? 'true' : 'false'}
                 onChange={(e) => updateField('auto_notify_parent_on_absent', e.target.value === 'true')}
-                width="sm"
-              >
-                <option value="true">Enabled</option>
-                <option value="false">Disabled</option>
-              </Select>
+                options={[{ value: 'true', label: 'Enabled' }, { value: 'false', label: 'Disabled' }]}
+              />
             </Div>
           </Div>
         </Div>

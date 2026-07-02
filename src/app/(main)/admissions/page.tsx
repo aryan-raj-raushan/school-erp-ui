@@ -23,6 +23,7 @@ import {
   PageCol,
   FilterBar,
   PageHeader,
+  ResponsiveSelect,
 } from "@/components/ui";
 import {
   ADMISSION_PAGE,
@@ -93,25 +94,10 @@ function AdmissionsContent() {
         ),
       },
       {
-        accessorKey: "father_name",
-        header: ADMISSION_PAGE.table.fatherName,
-      },
-      {
-        accessorKey: "mother_name",
-        header: ADMISSION_PAGE.table.motherName,
-      },
-      {
         accessorKey: "phone",
         header: ADMISSION_PAGE.table.phone,
         cell: ({ row }) =>
           `${row.original.dial_code} ${row.original.phone}`,
-      },
-      {
-        accessorKey: "applying_academic_year_id",
-        header: ADMISSION_PAGE.table.applyingAcadYear,
-        cell: ({ row }) =>
-          years.find((y) => y.id === row.original.applying_academic_year_id)
-            ?.name ?? "-",
       },
       {
         accessorKey: "applying_class_id",
@@ -119,19 +105,6 @@ function AdmissionsContent() {
         cell: ({ row }) =>
           classes.find((c) => c.id === row.original.applying_class_id)?.name ??
           "—",
-      },
-      {
-        accessorKey: "created_at",
-        header: ADMISSION_PAGE.table.createdDate,
-        cell: ({ row }) =>
-          new Date(row.original.created_at).toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          }),
       },
       {
         accessorKey: "next_followup_date",
@@ -147,13 +120,6 @@ function AdmissionsContent() {
                 },
               )
             : "—",
-      },
-      {
-        accessorKey: "assigned_teacher_id",
-        header: ADMISSION_PAGE.table.teacherAssigned,
-        cell: ({ row }) =>
-          teachers.find((t) => t.id === row.original.assigned_teacher_id)
-            ?.first_name ?? "—",
       },
       {
         id: "actions",
@@ -178,19 +144,11 @@ function AdmissionsContent() {
             >
               <Pencil size={14} />
             </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              onClick={() => deleteEnquiry(row.original.id)}
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </Button>
           </Div>
         ),
       },
     ],
-    [router, years, classes, teachers, deleteEnquiry],
+    [router, classes],
   );
 
   return (
@@ -222,53 +180,36 @@ function AdmissionsContent() {
             handleFilterChange({ search: e.target.value || undefined })
           }
         />
-        <Select
-          width="sm"
+        <ResponsiveSelect
+          customPlaceholder="All Years"
+          options={years.map((y) => ({ value: y.id, label: y.name }))}
           value={filters.academic_year_id ?? ""}
           onChange={(e) =>
             handleFilterChange({
               academic_year_id: e.target.value || undefined,
             })
           }
-        >
-          <option value="">All Years</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+        />
+        <ResponsiveSelect
+          customPlaceholder="All Classes"
+          options={classes.map((c) => ({ value: c.id, label: c.name }))}
           value={filters.applying_class_id ?? ""}
           onChange={(e) =>
             handleFilterChange({
               applying_class_id: e.target.value || undefined,
             })
           }
-        >
-          <option value="">All Classes</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+        />
+        <ResponsiveSelect
+          customPlaceholder="All Status"
+          options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
           value={filters.status ?? ""}
           onChange={(e) =>
             handleFilterChange({
               status: (e.target.value as EnquiryStatus) || undefined,
             })
           }
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+        />
       </FilterBar>
 
       <DataTable

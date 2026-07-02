@@ -8,7 +8,6 @@ import {
   H1,
   P,
   Button,
-  Select,
   Input,
   Table,
   TableHead,
@@ -20,10 +19,11 @@ import {
   TableEmptyRow,
   Badge,
   Spinner,
-  Modal,
   FormField,
   FilterLabel,
   MiniStat,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from "@/components/ui";
 import { CheckCircle, XCircle } from "lucide-react";
 
@@ -66,18 +66,12 @@ export default function AdminLeaveView() {
       <Div variant="card" padding="p-4">
         <Div type="row" gap="md" align="center">
           <FilterLabel noWrap>Academic Year</FilterLabel>
-          <Select
+          <ResponsiveSelect
             value={selectedAcademicYearId}
             onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-            width="md"
-          >
-            <option value="">Select year</option>
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}{y.is_current ? " (Current)" : ""}
-              </option>
-            ))}
-          </Select>
+            customPlaceholder="Select year"
+            options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? " (Current)" : ""}` }))}
+          />
         </Div>
       </Div>
 
@@ -197,15 +191,17 @@ export default function AdminLeaveView() {
       )}
 
       {/* Review Modal */}
-      {showReviewModal && (
-        <Modal title={LEAVE_PAGE.review.title} onClose={() => setShowReviewModal(false)}>
+      <ResponsiveModalContainer isOpen={showReviewModal} title={LEAVE_PAGE.review.title} onClose={() => setShowReviewModal(false)}>
           <form onSubmit={handleSubmit(handleReview)}>
-            <Div type="col" gap="md" padding="px-6 py-5">
+            <Div type="col" gap="md" className="px-4 py-4">
               <FormField label={LEAVE_PAGE.review.status} error={errors.status?.message}>
-                <Select {...register("status")}>
-                  <option value="APPROVED">{LEAVE_PAGE.review.approve}</option>
-                  <option value="REJECTED">{LEAVE_PAGE.review.reject}</option>
-                </Select>
+                <ResponsiveSelect
+                  {...register("status")}
+                  options={[
+                    { value: "APPROVED", label: LEAVE_PAGE.review.approve },
+                    { value: "REJECTED", label: LEAVE_PAGE.review.reject },
+                  ]}
+                />
               </FormField>
               <FormField label={LEAVE_PAGE.review.remarks}>
                 <Input {...register("reviewer_remarks")} placeholder="Optional remarks" />
@@ -220,8 +216,7 @@ export default function AdminLeaveView() {
               </Div>
             </Div>
           </form>
-        </Modal>
-      )}
+      </ResponsiveModalContainer>
     </Div>
   );
 }

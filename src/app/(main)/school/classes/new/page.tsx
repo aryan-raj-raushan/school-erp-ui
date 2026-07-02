@@ -5,9 +5,10 @@ import { useClassTypeCrudSelect } from '@/hooks/useClassTypeCrudSelect';
 import { CLASSES_PAGE, CLASS_SEQUENCE_OPTIONS } from '@/constants';
 import {
   Div, Button, H2,
-  FormField, Input, Select, Textarea,
+  FormField, Input, Textarea,
   CheckboxLabel, Spinner, CrudDropdown,
   PageHeader, PageCol,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 
@@ -43,12 +44,12 @@ export default function NewClassPage() {
             </H2>
 
             <FormField label="Academic Year *" error={form.formState.errors.academic_year_id?.message}>
-              <Select {...form.register('academic_year_id')} defaultValue="">
-                <option value="">Select Academic Year</option>
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>{y.name}</option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                {...form.register('academic_year_id')}
+                defaultValue=""
+                customPlaceholder="Select Academic Year"
+                options={years.map((y) => ({ value: y.id, label: y.name }))}
+              />
             </FormField>
 
             <FormField label={CLASSES_PAGE.form.name} error={form.formState.errors.name?.message}>
@@ -75,12 +76,12 @@ export default function NewClassPage() {
                 />
               </FormField>
               <FormField label={CLASSES_PAGE.form.classSequence} error={form.formState.errors.class_sequence?.message}>
-                <Select {...form.register('class_sequence')} defaultValue="">
-                  <option value="">Select</option>
-                  {CLASS_SEQUENCE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  {...form.register('class_sequence')}
+                  defaultValue=""
+                  customPlaceholder="Select"
+                  options={CLASS_SEQUENCE_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
+                />
               </FormField>
             </Div>
 

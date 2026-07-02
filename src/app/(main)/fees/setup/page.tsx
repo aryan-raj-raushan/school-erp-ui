@@ -2,12 +2,12 @@
 
 import { Plus, Trash2, Pencil, Save, ChevronDown, ChevronRight, Search, GripVertical, X } from 'lucide-react';
 import {
-  Div, Button, Badge, Spinner, Icon, P, FormField, Input, Select, FormCard, SectionCard,
+  Div, Button, Badge, Spinner, Icon, P, FormField, Input, FormCard, SectionCard,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   PageHeader, PageCol,
+  ResponsiveSelect, ResponsiveModalContainer,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useFeesSetup } from '@/hooks/useFeesSetup';
 import type { FeeType } from '@/services/fees.service';
 
@@ -149,30 +149,26 @@ export default function FeeSetupPage() {
           <FormCard title="Select Class to Configure Fee Structure">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-3">
               <FormField label="Academic Year" required>
-                <Select value={structureFilter.academic_year_id}
-                  onChange={e => setStructureFilter(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Academic Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={structureFilter.academic_year_id}
+                  onChange={e => setStructureFilter(f => ({ ...f, academic_year_id: e.target.value }))}
+                  customPlaceholder="Select Academic Year"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Fee Plan" required>
-                <Select value={structureFilter.fee_plan_id}
+                <ResponsiveSelect value={structureFilter.fee_plan_id}
                   onChange={e => { if (!feePlans.length) fetchFeePlans(); setStructureFilter(f => ({ ...f, fee_plan_id: e.target.value })); }}
-                  onFocus={() => { if (!feePlans.length) fetchFeePlans(); }}>
-                  <option value="">Select Fee Plan</option>
-                  {feePlans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </Select>
+                  onFocus={() => { if (!feePlans.length) fetchFeePlans(); }}
+                  customPlaceholder="Select Fee Plan"
+                  options={feePlans.map(p => ({ value: p.id, label: p.name }))}
+                />
               </FormField>
               <FormField label="Class" required>
-                <Select value={structureFilter.class_id}
-                  onChange={e => setStructureFilter(f => ({ ...f, class_id: e.target.value }))}>
-                  <option value="">Select Class</option>
-                  {(classes as any[]).map(c => (
-                    <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={structureFilter.class_id}
+                  onChange={e => setStructureFilter(f => ({ ...f, class_id: e.target.value }))}
+                  customPlaceholder="Select Class"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
             </Div>
             <Div type="row" justify="end" className="mt-4">
@@ -443,12 +439,10 @@ export default function FeeSetupPage() {
           </Div>
           <FormCard title="Transport Route Configuration">
             <FormField label="Academic Year for Fees">
-              <Select value={routeFeesAcademicYear} onChange={e => setRouteFeesAcademicYear(e.target.value)}>
-                <option value="">Select Year</option>
-                {(academicYears as any[]).map(y => (
-                  <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                ))}
-              </Select>
+              <ResponsiveSelect value={routeFeesAcademicYear} onChange={e => setRouteFeesAcademicYear(e.target.value)}
+                customPlaceholder="Select Year"
+                options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+              />
             </FormField>
           </FormCard>
           {loadingRoutes ? (
@@ -555,119 +549,111 @@ export default function FeeSetupPage() {
       )}
 
       {/* ─── Fee Type Modal ─────────────────────────────────────────────────── */}
-      {showFeeTypeModal && (
-        <Modal onClose={() => setShowFeeTypeModal(false)} title={feeTypeForm.id ? 'Edit Fee Type' : 'Add Fee Type'}>
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label="Name" required>
-                <Input value={feeTypeForm.name}
-                  onChange={e => setFeeTypeForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Tuition Fee" />
+      <ResponsiveModalContainer isOpen={showFeeTypeModal} onClose={() => setShowFeeTypeModal(false)} title={feeTypeForm.id ? 'Edit Fee Type' : 'Add Fee Type'}>
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            <FormField label="Name" required>
+              <Input value={feeTypeForm.name}
+                onChange={e => setFeeTypeForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Tuition Fee" />
+            </FormField>
+            <FormField label="Frequency" required>
+              <ResponsiveSelect value={feeTypeForm.frequency}
+                onChange={e => setFeeTypeForm(f => ({ ...f, frequency: e.target.value as typeof feeTypeForm.frequency }))}
+                options={FEE_FREQUENCIES.map(f => ({ value: f, label: f }))}
+              />
+            </FormField>
+            {feeTypeForm.frequency === 'Monthly' && (
+              <FormField label="Applicable Months">
+                <Div type="row" className="flex-wrap gap-2 mt-1">
+                  {MONTHS.map(m => (
+                    <Button key={m} variant={feeTypeForm.applicable_months?.includes(m) ? 'default' : 'outline'} size="sm"
+                      onClick={() => toggleMonth(m)}>
+                      {m}
+                    </Button>
+                  ))}
+                </Div>
               </FormField>
-              <FormField label="Frequency" required>
-                <Select value={feeTypeForm.frequency}
-                  onChange={e => setFeeTypeForm(f => ({ ...f, frequency: e.target.value as typeof feeTypeForm.frequency }))}>
-                  {FEE_FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                </Select>
-              </FormField>
-              {feeTypeForm.frequency === 'Monthly' && (
-                <FormField label="Applicable Months">
-                  <Div type="row" className="flex-wrap gap-2 mt-1">
-                    {MONTHS.map(m => (
-                      <Button key={m} variant={feeTypeForm.applicable_months?.includes(m) ? 'default' : 'outline'} size="sm"
-                        onClick={() => toggleMonth(m)}>
-                        {m}
-                      </Button>
-                    ))}
-                  </Div>
-                </FormField>
-              )}
-              <FormField label="Income Head (optional)">
-                <Select value={feeTypeForm.income_head_id ?? ''}
-                  onChange={e => setFeeTypeForm(f => ({ ...f, income_head_id: e.target.value || undefined }))}>
-                  <option value="">None</option>
-                  {incomeHeads.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                </Select>
-              </FormField>
-            </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setShowFeeTypeModal(false)}>Cancel</Button>
-            <Button onClick={handleSaveFeeType} disabled={!feeTypeForm.name}>{feeTypeForm.id ? 'Update' : 'Create'}</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+            )}
+            <FormField label="Income Head (optional)">
+              <ResponsiveSelect value={feeTypeForm.income_head_id ?? ''}
+                onChange={e => setFeeTypeForm(f => ({ ...f, income_head_id: e.target.value || undefined }))}
+                customPlaceholder="None"
+                options={incomeHeads.map(h => ({ value: h.id, label: h.name }))}
+              />
+            </FormField>
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={() => setShowFeeTypeModal(false)}>Cancel</Button>
+          <Button onClick={handleSaveFeeType} disabled={!feeTypeForm.name}>{feeTypeForm.id ? 'Update' : 'Create'}</Button>
+        </div>
+      </ResponsiveModalContainer>
 
       {/* ─── Route Modal ────────────────────────────────────────────────────── */}
-      {showRouteModal && (
-        <Modal onClose={() => setShowRouteModal(false)} title="Add Transport Route">
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label="Route Name" required>
-                <Input value={routeForm.name}
-                  onChange={e => setRouteForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. North Zone" />
-              </FormField>
-              <FormField label="Description">
-                <Input value={routeForm.description ?? ''}
-                  onChange={e => setRouteForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Optional" />
-              </FormField>
-            </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setShowRouteModal(false)}>Cancel</Button>
-            <Button onClick={handleSaveRoute} disabled={!routeForm.name}>Create</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+      <ResponsiveModalContainer isOpen={showRouteModal} onClose={() => setShowRouteModal(false)} title="Add Transport Route">
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            <FormField label="Route Name" required>
+              <Input value={routeForm.name}
+                onChange={e => setRouteForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. North Zone" />
+            </FormField>
+            <FormField label="Description">
+              <Input value={routeForm.description ?? ''}
+                onChange={e => setRouteForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Optional" />
+            </FormField>
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={() => setShowRouteModal(false)}>Cancel</Button>
+          <Button onClick={handleSaveRoute} disabled={!routeForm.name}>Create</Button>
+        </div>
+      </ResponsiveModalContainer>
 
       {/* ─── Late Rule Modal ────────────────────────────────────────────────── */}
-      {showLateRuleModal && (
-        <Modal onClose={() => setShowLateRuleModal(false)} title="Add Late Payment Rule">
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label="Rule Name" required>
-                <Input value={lateRuleForm.name}
-                  onChange={e => setLateRuleForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Monthly Late Fee" />
+      <ResponsiveModalContainer isOpen={showLateRuleModal} onClose={() => setShowLateRuleModal(false)} title="Add Late Payment Rule">
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            <FormField label="Rule Name" required>
+              <Input value={lateRuleForm.name}
+                onChange={e => setLateRuleForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Monthly Late Fee" />
+            </FormField>
+            <FormField label="Academic Year" required>
+              <ResponsiveSelect value={lateRuleForm.academic_year_id}
+                onChange={e => setLateRuleForm(f => ({ ...f, academic_year_id: e.target.value }))}
+                customPlaceholder="Select Year"
+                options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+              />
+            </FormField>
+            <Div type="grid" cols={2} gap="md">
+              <FormField label="Late Fee Amount (₹)" required>
+                <Input type="number" value={lateRuleForm.late_fee_amount}
+                  onChange={e => setLateRuleForm(f => ({ ...f, late_fee_amount: e.target.value }))}
+                  placeholder="e.g. 50" />
               </FormField>
-              <FormField label="Academic Year" required>
-                <Select value={lateRuleForm.academic_year_id}
-                  onChange={e => setLateRuleForm(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
-              </FormField>
-              <Div type="grid" cols={2} gap="md">
-                <FormField label="Late Fee Amount (₹)" required>
-                  <Input type="number" value={lateRuleForm.late_fee_amount}
-                    onChange={e => setLateRuleForm(f => ({ ...f, late_fee_amount: e.target.value }))}
-                    placeholder="e.g. 50" />
-                </FormField>
-                <FormField label="Days After Due Date" required>
-                  <Input type="number" value={lateRuleForm.days_after_due}
-                    onChange={e => setLateRuleForm(f => ({ ...f, days_after_due: e.target.value }))}
-                    placeholder="e.g. 5" />
-                </FormField>
-              </Div>
-              <FormField label="Late Fine Fee Type">
-                <Select value={lateRuleForm.late_fine_fee_type_id}
-                  onChange={e => setLateRuleForm(f => ({ ...f, late_fine_fee_type_id: e.target.value }))}>
-                  <option value="">Select fee type for late fine</option>
-                  {classFeeTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </Select>
+              <FormField label="Days After Due Date" required>
+                <Input type="number" value={lateRuleForm.days_after_due}
+                  onChange={e => setLateRuleForm(f => ({ ...f, days_after_due: e.target.value }))}
+                  placeholder="e.g. 5" />
               </FormField>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setShowLateRuleModal(false)}>Cancel</Button>
-            <Button onClick={handleSaveLateRule} disabled={!lateRuleForm.name || !lateRuleForm.academic_year_id}>Create</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+            <FormField label="Late Fine Fee Type">
+              <ResponsiveSelect value={lateRuleForm.late_fine_fee_type_id}
+                onChange={e => setLateRuleForm(f => ({ ...f, late_fine_fee_type_id: e.target.value }))}
+                customPlaceholder="Select fee type for late fine"
+                options={classFeeTypes.map(t => ({ value: t.id, label: t.name }))}
+              />
+            </FormField>
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={() => setShowLateRuleModal(false)}>Cancel</Button>
+          <Button onClick={handleSaveLateRule} disabled={!lateRuleForm.name || !lateRuleForm.academic_year_id}>Create</Button>
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

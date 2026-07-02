@@ -10,13 +10,11 @@ import {
   Button,
   Badge,
   Spinner,
-  Modal,
-  ModalBody,
-  ModalFooter,
   FormField,
   Input,
-  Select,
   EmptyState,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from '@/components/ui';
 import type { CreateLeavePolicyPayload } from '@/services/leave.service';
 
@@ -119,26 +117,20 @@ export default function LeavePolicyPage() {
         </Div>
       )}
 
-      {isDialogOpen && (
-        <Modal onClose={closeDialog} title={editingPolicy ? 'Edit Policy' : 'New Leave Policy'}>
-          <ModalBody>
+      <ResponsiveModalContainer isOpen={isDialogOpen} onClose={closeDialog} title={editingPolicy ? 'Edit Policy' : 'New Leave Policy'}>
+          <div className="px-4 py-4">
             <Div type="col" gap="md">
               <FormField label="Policy Name">
                 <Input value={form.name} onChange={(e) => updateForm('name', e.target.value)} placeholder="Staff Leave Policy 2024-25" />
               </FormField>
               {!editingPolicy && (
                 <FormField label="Academic Year">
-                  <Select
+                  <ResponsiveSelect
                     value={form.academic_year_id}
                     onChange={(e) => updateForm('academic_year_id', e.target.value)}
-                  >
-                    <option value="">Select academic year</option>
-                    {academicYears.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}{y.is_current ? ' (Current)' : ''}
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder="Select academic year"
+                    options={academicYears.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+                  />
                 </FormField>
               )}
               <FormField label="Description (optional)">
@@ -178,15 +170,14 @@ export default function LeavePolicyPage() {
                 </Div>
               )}
             </Div>
-          </ModalBody>
-          <ModalFooter>
+          </div>
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             <Button loading={isSaving} onClick={() => submit(form)}>
               {editingPolicy ? 'Update' : 'Create'}
             </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

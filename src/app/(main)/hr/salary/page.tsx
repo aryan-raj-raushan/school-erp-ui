@@ -8,6 +8,7 @@ import {
   Badge, Spinner, Icon,
   Input, Select, FormField,
   H2, P, Span, Label,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useSalary, SalaryTab } from '@/hooks/useSalary';

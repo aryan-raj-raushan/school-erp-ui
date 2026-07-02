@@ -9,13 +9,13 @@ import {
   Div,
   P,
   Button,
-  Select,
   Badge,
   Spinner,
   DataTable,
   type ColumnDef,
   PageCol,
   FilterBar,
+  ResponsiveSelect,
 } from '@/components/ui';
 import {
   LEAVE_TYPE_PAGE,
@@ -138,40 +138,29 @@ function LeaveTypeContent() {
       />
 
       <FilterBar>
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={filters.leave_validity ?? ''}
           onChange={(e) =>
             handleFilterChange({
               leave_validity: (e.target.value as any) || undefined,
             })
           }
-        >
-          {LEAVE_VALIDITY_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          customPlaceholder={LEAVE_VALIDITY_OPTIONS.find((o) => o.value === '')?.label}
+          options={LEAVE_VALIDITY_OPTIONS.filter((o) => o.value !== '').map((o) => ({ value: o.value, label: o.label }))}
+        />
 
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={filters.leave_pay_type ?? ''}
           onChange={(e) =>
             handleFilterChange({
               leave_pay_type: (e.target.value as any) || undefined,
             })
           }
-        >
-          {LEAVE_PAY_TYPE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          customPlaceholder={LEAVE_PAY_TYPE_OPTIONS.find((o) => o.value === '')?.label}
+          options={LEAVE_PAY_TYPE_OPTIONS.filter((o) => o.value !== '').map((o) => ({ value: o.value, label: o.label }))}
+        />
 
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={
             filters.is_enabled === undefined ? '' : String(filters.is_enabled)
           }
@@ -181,11 +170,12 @@ function LeaveTypeContent() {
                 e.target.value === '' ? undefined : e.target.value === 'true',
             })
           }
-        >
-          <option value="">All Status</option>
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
-        </Select>
+          customPlaceholder="All Status"
+          options={[
+            { value: 'true', label: 'Enabled' },
+            { value: 'false', label: 'Disabled' },
+          ]}
+        />
       </FilterBar>
 
       <DataTable

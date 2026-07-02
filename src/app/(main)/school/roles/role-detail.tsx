@@ -37,7 +37,7 @@ export function RoleDetail({ id }: { id: string }) {
     <Div type="col" gap="lg" className="max-w-3xl">
       {/* Header */}
       <Div type="row" align="center" gap="md">
-        <Button variant="ghost" size="sm" onClick={handleBack}>
+        <Button variant="outline" size="sm" onClick={handleBack}>
           <ArrowLeft size={16} />
           Back
         </Button>

@@ -23,7 +23,6 @@ import {
   H3,
   P,
   Button,
-  Select,
   Input,
   FormField,
   Table,
@@ -37,9 +36,8 @@ import {
   TablePagination,
   Badge,
   Spinner,
-  Modal,
-  ModalBody,
-  ModalFooter,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import {
   REPORT_CARD_PAGE,
@@ -51,6 +49,7 @@ import type { ReportCardItem } from '@/types/result.types';
 // ── Generate Modal ────────────────────────────────────────────────────────────
 
 function GenerateModal({
+  isOpen,
   onClose,
   years,
   classes,
@@ -67,6 +66,7 @@ function GenerateModal({
   handleClassChange,
   handleSectionChange,
 }: {
+  isOpen: boolean;
   onClose: () => void;
   years: any[];
   classes: any[];
@@ -94,13 +94,13 @@ function GenerateModal({
   const watchedSectionId = watch('section_id');
 
   return (
-    <Modal
+    <ResponsiveModalContainer
+      isOpen={isOpen}
       onClose={onClose}
       title={REPORT_CARD_PAGE.generateModal.title}
-      size="md"
     >
       <form onSubmit={handleGenerate}>
-        <ModalBody>
+        <div className="px-4 py-4">
           <Div type="col" gap="md">
             {/* Scope toggle */}
             <Div type="row" gap="sm">
@@ -130,7 +130,7 @@ function GenerateModal({
 
             {/* Academic Year */}
             <FormField label="Academic Year *" error={errors.academic_year_id?.message}>
-              <Select
+              <ResponsiveSelect
                 value={selectedAcademicYearId}
                 onChange={(e) => {
                   setSelectedAcademicYearId(e.target.value);
@@ -138,17 +138,14 @@ function GenerateModal({
                   setValue('class_id', '');
                   setValue('exam_id', '');
                 }}
-              >
-                <option value="">Select Year</option>
-                {years.map((y: any) => (
-                  <option key={y.id} value={y.id}>{y.name}</option>
-                ))}
-              </Select>
+                customPlaceholder="Select Year"
+                options={years.map((y: any) => ({ value: y.id, label: y.name }))}
+              />
             </FormField>
 
             {/* Class */}
             <FormField label="Class *" error={errors.class_id?.message}>
-              <Select
+              <ResponsiveSelect
                 {...register('class_id')}
                 value={watchedClassId}
                 onChange={(e) => {
@@ -156,54 +153,42 @@ function GenerateModal({
                   handleClassChange(e.target.value);
                   setValue('section_id', '');
                 }}
-              >
-                <option value="">Select Class</option>
-                {classes.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
+                customPlaceholder="Select Class"
+                options={classes.map((c: any) => ({ value: c.id, label: c.name }))}
+              />
             </FormField>
 
             {/* Section */}
             <FormField label="Section">
-              <Select
+              <ResponsiveSelect
                 {...register('section_id')}
                 value={watchedSectionId}
                 onChange={(e) => {
                   setValue('section_id', e.target.value);
                   handleSectionChange(e.target.value);
                 }}
-              >
-                <option value="">All Sections</option>
-                {sections.map((s: any) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </Select>
+                customPlaceholder="All Sections"
+                options={sections.map((s: any) => ({ value: s.id, label: s.name }))}
+              />
             </FormField>
 
             {/* Exam */}
             <FormField label="Exam *" error={errors.exam_id?.message}>
-              <Select {...register('exam_id')}>
-                <option value="">Select Exam</option>
-                {exams.map((e: any) => (
-                  <option key={e.id} value={e.id}>
-                    {e.exam_name} — {EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}
-                  </option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                {...register('exam_id')}
+                customPlaceholder="Select Exam"
+                options={exams.map((e: any) => ({ value: e.id, label: `${e.exam_name} — ${EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}` }))}
+              />
             </FormField>
 
             {/* Student (single scope) */}
             {scope === 'student' && (
               <FormField label="Student *" error={errors.student_id?.message}>
-                <Select {...register('student_id')}>
-                  <option value="">Select Student</option>
-                  {students.map((s: any) => (
-                    <option key={s.id} value={s.id}>
-                      {s.first_name} {s.last_name ?? ''} {s.roll_number ? `(Roll: ${s.roll_number})` : ''}
-                    </option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  {...register('student_id')}
+                  customPlaceholder="Select Student"
+                  options={students.map((s: any) => ({ value: s.id, label: `${s.first_name} ${s.last_name ?? ''} ${s.roll_number ? `(Roll: ${s.roll_number})` : ''}` }))}
+                />
               </FormField>
             )}
 
@@ -217,17 +202,17 @@ function GenerateModal({
               />
             </FormField>
           </Div>
-        </ModalBody>
-        <ModalFooter>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button type="button" variant="outline" onClick={onClose} disabled={isGenerating}>
             {REPORT_CARD_PAGE.buttons.cancel}
           </Button>
           <Button type="submit" loading={isGenerating}>
             {REPORT_CARD_PAGE.generateModal.submitLabel}
           </Button>
-        </ModalFooter>
+        </div>
       </form>
-    </Modal>
+    </ResponsiveModalContainer>
   );
 }
 
@@ -311,60 +296,50 @@ function ReportCardsContent() {
           value={filters.search ?? ''}
           onChange={(e) => updateFilters({ search: e.target.value || undefined })}
         />
-        <Select
-          width="sm"
-          value={filters.academic_year_id ?? ''}
-          onChange={(e) => {
-            setSelectedAcademicYearId(e.target.value);
-            updateFilters({
-              academic_year_id: e.target.value || undefined,
-              class_id: undefined,
-              section_id: undefined,
-              exam_id: undefined,
-            });
-          }}
-        >
-          <option value="">All Years</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>{y.name}</option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.class_id ?? ''}
-          onChange={(e) => handleFilterClass(e.target.value)}
-        >
-          <option value="">All Classes</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.section_id ?? ''}
-          onChange={(e) => {
-            handleSectionChange(e.target.value);
-            updateFilters({ section_id: e.target.value || undefined });
-          }}
-          disabled={!selectedClassId}
-        >
-          <option value="">All Sections</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </Select>
-        <Select
-          width="md"
-          value={filters.exam_id ?? ''}
-          onChange={(e) => handleFilterExam(e.target.value)}
-        >
-          <option value="">All Exams</option>
-          {exams.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.exam_name} — {EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}
-            </option>
-          ))}
-        </Select>
+        <Div className="w-32 max-w-full">
+          <ResponsiveSelect
+            value={filters.academic_year_id ?? ''}
+            onChange={(e) => {
+              setSelectedAcademicYearId(e.target.value);
+              updateFilters({
+                academic_year_id: e.target.value || undefined,
+                class_id: undefined,
+                section_id: undefined,
+                exam_id: undefined,
+              });
+            }}
+            customPlaceholder="All Years"
+            options={years.map((y) => ({ value: y.id, label: y.name }))}
+          />
+        </Div>
+        <Div className="w-32 max-w-full">
+          <ResponsiveSelect
+            value={filters.class_id ?? ''}
+            onChange={(e) => handleFilterClass(e.target.value)}
+            customPlaceholder="All Classes"
+            options={classes.map((c) => ({ value: c.id, label: c.name }))}
+          />
+        </Div>
+        <Div className="w-32 max-w-full">
+          <ResponsiveSelect
+            value={filters.section_id ?? ''}
+            onChange={(e) => {
+              handleSectionChange(e.target.value);
+              updateFilters({ section_id: e.target.value || undefined });
+            }}
+            disabled={!selectedClassId}
+            customPlaceholder="All Sections"
+            options={sections.map((s) => ({ value: s.id, label: s.name }))}
+          />
+        </Div>
+        <Div className="w-48 max-w-full">
+          <ResponsiveSelect
+            value={filters.exam_id ?? ''}
+            onChange={(e) => handleFilterExam(e.target.value)}
+            customPlaceholder="All Exams"
+            options={exams.map((e) => ({ value: e.id, label: `${e.exam_name} — ${EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}` }))}
+          />
+        </Div>
       </Div>
 
       {/* Table */}
@@ -513,25 +488,24 @@ function ReportCardsContent() {
       )}
 
       {/* Generate Modal */}
-      {showGenerateModal && (
-        <GenerateModal
-          onClose={closeGenerateModal}
-          years={years}
-          classes={classes}
-          sections={sections}
-          exams={exams}
-          students={students}
-          generateForm={generateForm}
-          handleGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          scope={scope}
-          selectedAcademicYearId={selectedAcademicYearId}
-          setSelectedAcademicYearId={setSelectedAcademicYearId}
-          selectedClassId={selectedClassId}
-          handleClassChange={handleClassChange}
-          handleSectionChange={handleSectionChange}
-        />
-      )}
+      <GenerateModal
+        isOpen={showGenerateModal}
+        onClose={closeGenerateModal}
+        years={years}
+        classes={classes}
+        sections={sections}
+        exams={exams}
+        students={students}
+        generateForm={generateForm}
+        handleGenerate={handleGenerate}
+        isGenerating={isGenerating}
+        scope={scope}
+        selectedAcademicYearId={selectedAcademicYearId}
+        setSelectedAcademicYearId={setSelectedAcademicYearId}
+        selectedClassId={selectedClassId}
+        handleClassChange={handleClassChange}
+        handleSectionChange={handleSectionChange}
+      />
     </Div>
   );
 }

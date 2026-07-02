@@ -7,13 +7,13 @@ import {
 } from 'lucide-react';
 import {
   Div, P, Span, Button, Badge, Spinner, Label,
-  FormField, Select, Input,
+  FormField, Input,
   FormCard, SectionCard, WarnBanner,
   PageHeader, PageCol,
   DataTable, type ColumnDef,
+  ResponsiveSelect, ResponsiveModalContainer,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
-import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useFeesPayments } from '@/hooks/useFeesPayments';
 import { useFeesSetup } from '@/hooks/useFeesSetup';
 import type { PaymentMode } from '@/services/fees.service';
@@ -284,36 +284,26 @@ export default function FeePaymentsPage() {
           <FormCard title="Search Class Fee Payment">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-3">
               <FormField label="Session" required>
-                <Select value={studentFilter.academic_year_id}
-                  onChange={e => handleSessionChange(e.target.value)}>
-                  <option value="">Select Session</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>
-                      {y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}
-                    </option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={studentFilter.academic_year_id}
+                  onChange={e => handleSessionChange(e.target.value)}
+                  customPlaceholder="Select Session"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Class" required>
-                <Select value={studentFilter.class_id}
-                  onChange={e => handleClassChange(e.target.value)}>
-                  <option value="">Select Class</option>
-                  {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-                </Select>
+                <ResponsiveSelect value={studentFilter.class_id}
+                  onChange={e => handleClassChange(e.target.value)}
+                  customPlaceholder="Select Class"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
               <FormField label="Student" required>
-                <Select value={selectedStudentId}
+                <ResponsiveSelect value={selectedStudentId}
                   disabled={!studentFilter.class_id || loadingClassStudents}
-                  onChange={e => handleStudentChange(e.target.value, studentFilter.academic_year_id, regularPlanId, studentFilter.class_id)}>
-                  <option value="">
-                    {loadingClassStudents ? 'Loading students…' : studentFilter.class_id ? `Select Student (${classStudents.length})` : 'Select class first'}
-                  </option>
-                  {classStudents.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.first_name}{s.last_name ? ` ${s.last_name}` : ''} [{s.admission_number}]
-                    </option>
-                  ))}
-                </Select>
+                  onChange={e => handleStudentChange(e.target.value, studentFilter.academic_year_id, regularPlanId, studentFilter.class_id)}
+                  customPlaceholder={loadingClassStudents ? 'Loading students…' : studentFilter.class_id ? `Select Student (${classStudents.length})` : 'Select class first'}
+                  options={classStudents.map(s => ({ value: s.id, label: `${s.first_name}${s.last_name ? ` ${s.last_name}` : ''} [${s.admission_number}]` }))}
+                />
               </FormField>
             </Div>
           </FormCard>
@@ -436,26 +426,22 @@ export default function FeePaymentsPage() {
           <FormCard title="Monthly Dues by Class">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-3">
               <FormField label="Academic Year" required>
-                <Select value={monthlyFilter.academic_year_id} onChange={e => setMonthlyFilter(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Academic Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={monthlyFilter.academic_year_id} onChange={e => setMonthlyFilter(f => ({ ...f, academic_year_id: e.target.value }))}
+                  customPlaceholder="Select Academic Year"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Class" required>
-                <Select value={monthlyFilter.class_id} onChange={e => setMonthlyFilter(f => ({ ...f, class_id: e.target.value }))}>
-                  <option value="">Select Class</option>
-                  {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-                </Select>
+                <ResponsiveSelect value={monthlyFilter.class_id} onChange={e => setMonthlyFilter(f => ({ ...f, class_id: e.target.value }))}
+                  customPlaceholder="Select Class"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
               <FormField label="Month" required>
-                <Select value={monthlyFilter.month} onChange={e => setMonthlyFilter(f => ({ ...f, month: e.target.value }))}>
-                  <option value="">Select Month</option>
-                  {buildMonthYearOpts(monthlyFilter.academic_year_id, academicYears as any[]).map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={monthlyFilter.month} onChange={e => setMonthlyFilter(f => ({ ...f, month: e.target.value }))}
+                  customPlaceholder="Select Month"
+                  options={buildMonthYearOpts(monthlyFilter.academic_year_id, academicYears as any[]).map(o => ({ value: o.value, label: o.label }))}
+                />
               </FormField>
             </Div>
             <Div type="row" justify="end" padding="mt-4">
@@ -502,57 +488,47 @@ export default function FeePaymentsPage() {
         <FormCard title="Create Manual Fee Bill">
           <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2">
             <FormField label="Academic Year" required>
-              <Select value={createForm.academic_year_id}
-                onChange={e => handleCreateSessionChange(e.target.value)}>
-                <option value="">Select Academic Year</option>
-                {(academicYears as any[]).map(y => (
-                  <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                ))}
-              </Select>
+              <ResponsiveSelect value={createForm.academic_year_id}
+                onChange={e => handleCreateSessionChange(e.target.value)}
+                customPlaceholder="Select Academic Year"
+                options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+              />
             </FormField>
             <FormField label="Class" required>
-              <Select value={createClassId} disabled={!createForm.academic_year_id}
-                onChange={e => handleCreateClassChange(e.target.value, createForm.academic_year_id)}>
-                <option value="">Select Class</option>
-                {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-              </Select>
+              <ResponsiveSelect value={createClassId} disabled={!createForm.academic_year_id}
+                onChange={e => handleCreateClassChange(e.target.value, createForm.academic_year_id)}
+                customPlaceholder="Select Class"
+                options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+              />
             </FormField>
             <FormField label="Student" required>
-              <Select value={createForm.student_id} disabled={!createClassId || loadingCreateStudents}
-                onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))}>
-                <option value="">
-                  {loadingCreateStudents ? 'Loading…' : createClassId ? `Select Student (${createStudents.length})` : 'Select class first'}
-                </option>
-                {createStudents.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.first_name}{s.last_name ? ` ${s.last_name}` : ''} [{s.admission_number}]
-                  </option>
-                ))}
-              </Select>
+              <ResponsiveSelect value={createForm.student_id} disabled={!createClassId || loadingCreateStudents}
+                onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))}
+                customPlaceholder={loadingCreateStudents ? 'Loading…' : createClassId ? `Select Student (${createStudents.length})` : 'Select class first'}
+                options={createStudents.map(s => ({ value: s.id, label: `${s.first_name}${s.last_name ? ` ${s.last_name}` : ''} [${s.admission_number}]` }))}
+              />
             </FormField>
             <FormField label="Fee Type" required>
-              <Select value={createForm.fee_type_id} onChange={e => setCreateForm(f => ({ ...f, fee_type_id: e.target.value }))}>
-                <option value="">Select Fee Type</option>
-                {allFeeTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </Select>
+              <ResponsiveSelect value={createForm.fee_type_id} onChange={e => setCreateForm(f => ({ ...f, fee_type_id: e.target.value }))}
+                customPlaceholder="Select Fee Type"
+                options={allFeeTypes.map(t => ({ value: t.id, label: t.name }))}
+              />
             </FormField>
             <FormField label="Fee Plan">
-              <Select value={createForm.fee_plan_id} onChange={e => setCreateForm(f => ({ ...f, fee_plan_id: e.target.value }))}>
-                <option value="">No specific plan</option>
-                {feePlans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </Select>
+              <ResponsiveSelect value={createForm.fee_plan_id} onChange={e => setCreateForm(f => ({ ...f, fee_plan_id: e.target.value }))}
+                customPlaceholder="No specific plan"
+                options={feePlans.map(p => ({ value: p.id, label: p.name }))}
+              />
             </FormField>
             <FormField label="Amount (₹)" required>
               <Input type="number" value={createForm.total_amount} onChange={e => setCreateForm(f => ({ ...f, total_amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" />
             </FormField>
             <FormField label="Bill Month">
-              <Select value={createForm.bill_month} disabled={!createForm.academic_year_id}
-                onChange={e => setCreateForm(f => ({ ...f, bill_month: e.target.value }))}>
-                <option value="">One-time / No month</option>
-                {buildMonthYearOpts(createForm.academic_year_id, academicYears as any[]).map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </Select>
+              <ResponsiveSelect value={createForm.bill_month} disabled={!createForm.academic_year_id}
+                onChange={e => setCreateForm(f => ({ ...f, bill_month: e.target.value }))}
+                customPlaceholder="One-time / No month"
+                options={buildMonthYearOpts(createForm.academic_year_id, academicYears as any[]).map(o => ({ value: o.value, label: o.label }))}
+              />
             </FormField>
             <FormField label="Due Date">
               <Input type="date" value={createForm.due_date} onChange={e => setCreateForm(f => ({ ...f, due_date: e.target.value }))} />
@@ -575,24 +551,22 @@ export default function FeePaymentsPage() {
           <FormCard title="View Class Fee Structure">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-3">
               <FormField label="Academic Year" required>
-                <Select value={structFilter.academic_year_id} onChange={e => setStructFilter(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Academic Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={structFilter.academic_year_id} onChange={e => setStructFilter(f => ({ ...f, academic_year_id: e.target.value }))}
+                  customPlaceholder="Select Academic Year"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Fee Plan" required>
-                <Select value={structFilter.fee_plan_id} onChange={e => setStructFilter(f => ({ ...f, fee_plan_id: e.target.value }))}>
-                  <option value="">Select Fee Plan</option>
-                  {feePlans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={structFilter.fee_plan_id} onChange={e => setStructFilter(f => ({ ...f, fee_plan_id: e.target.value }))}
+                  customPlaceholder="Select Fee Plan"
+                  options={feePlans.map(p => ({ value: p.id, label: p.name }))}
+                />
               </FormField>
               <FormField label="Class" required>
-                <Select value={structFilter.class_id} onChange={e => setStructFilter(f => ({ ...f, class_id: e.target.value }))}>
-                  <option value="">Select Class</option>
-                  {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-                </Select>
+                <ResponsiveSelect value={structFilter.class_id} onChange={e => setStructFilter(f => ({ ...f, class_id: e.target.value }))}
+                  customPlaceholder="Select Class"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
             </Div>
             <Div type="row" justify="end" padding="mt-4">
@@ -640,18 +614,16 @@ export default function FeePaymentsPage() {
           <FormCard title="Generate Demand Receipts">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2">
               <FormField label="Academic Year" required>
-                <Select value={receiptFilter.academic_year_id} onChange={e => setReceiptFilter(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Academic Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={receiptFilter.academic_year_id} onChange={e => setReceiptFilter(f => ({ ...f, academic_year_id: e.target.value }))}
+                  customPlaceholder="Select Academic Year"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Class" required>
-                <Select value={receiptFilter.class_id} onChange={e => setReceiptFilter(f => ({ ...f, class_id: e.target.value }))}>
-                  <option value="">Select Class</option>
-                  {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-                </Select>
+                <ResponsiveSelect value={receiptFilter.class_id} onChange={e => setReceiptFilter(f => ({ ...f, class_id: e.target.value }))}
+                  customPlaceholder="Select Class"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
               <FormField label="Month From" required>
                 <Input value={receiptFilter.month_from} onChange={e => setReceiptFilter(f => ({ ...f, month_from: e.target.value }))} placeholder="YYYY-MM e.g. 2026-04" />
@@ -732,24 +704,22 @@ export default function FeePaymentsPage() {
           <FormCard title="Apply Bulk Discount">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2">
               <FormField label="Academic Year" required>
-                <Select value={discountForm.academic_year_id} onChange={e => setDiscountForm(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Academic Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={discountForm.academic_year_id} onChange={e => setDiscountForm(f => ({ ...f, academic_year_id: e.target.value }))}
+                  customPlaceholder="Select Academic Year"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Class (leave blank = all classes)">
-                <Select value={discountForm.class_id} onChange={e => setDiscountForm(f => ({ ...f, class_id: e.target.value }))}>
-                  <option value="">All Classes</option>
-                  {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-                </Select>
+                <ResponsiveSelect value={discountForm.class_id} onChange={e => setDiscountForm(f => ({ ...f, class_id: e.target.value }))}
+                  customPlaceholder="All Classes"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
               <FormField label="Fee Type" required>
-                <Select value={discountForm.fee_type_id} onChange={e => setDiscountForm(f => ({ ...f, fee_type_id: e.target.value }))}>
-                  <option value="">Select Fee Type</option>
-                  {classFeeTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={discountForm.fee_type_id} onChange={e => setDiscountForm(f => ({ ...f, fee_type_id: e.target.value }))}
+                  customPlaceholder="Select Fee Type"
+                  options={classFeeTypes.map(t => ({ value: t.id, label: t.name }))}
+                />
               </FormField>
               <FormField label="Discount Amount (₹)" required>
                 <Input type="number" value={discountForm.discount_amount} onChange={e => setDiscountForm(f => ({ ...f, discount_amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" />
@@ -782,24 +752,22 @@ export default function FeePaymentsPage() {
           <FormCard title="Apply Bulk Extra Payment">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2">
               <FormField label="Academic Year" required>
-                <Select value={extraForm.academic_year_id} onChange={e => setExtraForm(f => ({ ...f, academic_year_id: e.target.value }))}>
-                  <option value="">Select Academic Year</option>
-                  {(academicYears as any[]).map(y => (
-                    <option key={y.id} value={y.id}>{y.name ?? y.year_name}{y.is_current ? ' (Current)' : ''}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect value={extraForm.academic_year_id} onChange={e => setExtraForm(f => ({ ...f, academic_year_id: e.target.value }))}
+                  customPlaceholder="Select Academic Year"
+                  options={(academicYears as any[]).map(y => ({ value: y.id, label: `${y.name ?? y.year_name}${y.is_current ? ' (Current)' : ''}` }))}
+                />
               </FormField>
               <FormField label="Class (leave blank = all classes)">
-                <Select value={extraForm.class_id} onChange={e => setExtraForm(f => ({ ...f, class_id: e.target.value }))}>
-                  <option value="">All Classes</option>
-                  {(classes as any[]).map(c => <option key={c.id} value={c.id}>{c.name ?? c.class_name}</option>)}
-                </Select>
+                <ResponsiveSelect value={extraForm.class_id} onChange={e => setExtraForm(f => ({ ...f, class_id: e.target.value }))}
+                  customPlaceholder="All Classes"
+                  options={(classes as any[]).map(c => ({ value: c.id, label: c.name ?? c.class_name }))}
+                />
               </FormField>
               <FormField label="Fee Type" required>
-                <Select value={extraForm.fee_type_id} onChange={e => setExtraForm(f => ({ ...f, fee_type_id: e.target.value }))}>
-                  <option value="">Select Fee Type</option>
-                  {classFeeTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={extraForm.fee_type_id} onChange={e => setExtraForm(f => ({ ...f, fee_type_id: e.target.value }))}
+                  customPlaceholder="Select Fee Type"
+                  options={classFeeTypes.map(t => ({ value: t.id, label: t.name }))}
+                />
               </FormField>
               <FormField label="Amount (₹)" required>
                 <Input type="number" value={extraForm.amount} onChange={e => setExtraForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" />
@@ -825,163 +793,155 @@ export default function FeePaymentsPage() {
       )}
 
       {/* ─── Pay Bill Modal ───────────────────────────────────────────────── */}
-      {(!!payingBill || !!payingDue) && (
-        <Modal onClose={closePayModal} title="Cash / Offline Payment Details">
-          <ModalBody>
-            <Div type="col" gap="md">
-              {payingBill && (
-                <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
-                  <P color="default" weight="medium">{payingBill.fee_type_name}</P>
-                  <P size="xs">{payingBill.bill_month ?? 'One-time'} · Status: {payingBill.status}</P>
-                </Div>
-              )}
-              {payingDue && (
-                <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
-                  <P color="default" weight="medium">{payingDue.student_name}</P>
-                  <P size="xs">Month: {payingDue.month} · Due: ₹{payingDue.due_amount}</P>
-                </Div>
-              )}
-              <FormField label="Select Finance Account">
-                <Select value={payForm.to_account_id ?? ''} onChange={e => setPayForm(f => ({ ...f, to_account_id: e.target.value || undefined }))}>
-                  <option value="">No account (offline record only)</option>
-                  {financeAccounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.account_type})</option>)}
-                </Select>
-              </FormField>
-              <FormField label="Paying Now Amount" required>
-                <Input type="number" value={payForm.amount || ''} onChange={e => setPayForm(f => ({ ...f, amount: parseFloat(e.target.value) || 0 }))} min="0" step="0.01" placeholder="0.00" />
-              </FormField>
-              <FormField label="Payment Mode" required>
-                <Select value={payForm.payment_mode} onChange={e => setPayForm(f => ({ ...f, payment_mode: e.target.value as PaymentMode }))}>
-                  {PAYMENT_MODES.map(m => <option key={m} value={m}>{m}</option>)}
-                </Select>
-              </FormField>
-              <Div type="grid" cols={2} gap="sm">
-                <FormField label="Transaction No">
-                  <Input value={payForm.transaction_id ?? ''} onChange={e => setPayForm(f => ({ ...f, transaction_id: e.target.value || undefined }))} placeholder="UTR / Ref No." />
-                </FormField>
-                <FormField label="Bank Name">
-                  <Input value={payForm.bank_name ?? ''} onChange={e => setPayForm(f => ({ ...f, bank_name: e.target.value || undefined }))} placeholder="Optional" />
-                </FormField>
+      <ResponsiveModalContainer isOpen={!!payingBill || !!payingDue} onClose={closePayModal} title="Cash / Offline Payment Details">
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            {payingBill && (
+              <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
+                <P color="default" weight="medium">{payingBill.fee_type_name}</P>
+                <P size="xs">{payingBill.bill_month ?? 'One-time'} · Status: {payingBill.status}</P>
               </Div>
-              <Div type="grid" cols={2} gap="sm">
-                <FormField label="Payment Date" required>
-                  <Input type="date" value={payForm.payment_date} onChange={e => setPayForm(f => ({ ...f, payment_date: e.target.value }))} />
-                </FormField>
-                <FormField label="Remarks">
-                  <Input value={payForm.remarks ?? ''} onChange={e => setPayForm(f => ({ ...f, remarks: e.target.value || undefined }))} placeholder="Optional" />
-                </FormField>
+            )}
+            {payingDue && (
+              <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
+                <P color="default" weight="medium">{payingDue.student_name}</P>
+                <P size="xs">Month: {payingDue.month} · Due: ₹{payingDue.due_amount}</P>
               </Div>
-              <Div type="grid" cols={3} gap="sm" className="rounded-lg bg-muted/20 border border-border/40 px-4 py-3">
-                <Div type="col">
-                  <P size="xs">Total</P>
-                  <P color="default" weight="semibold">
-                    ₹{(payingBill ? parseFloat(payingBill.total_amount) : parseFloat(payingDue?.due_amount ?? '0')).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </P>
-                </Div>
-                <Div type="col">
-                  <P size="xs">Paying</P>
-                  <P color="primary" weight="semibold">₹{(payForm.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</P>
-                </Div>
-                <Div type="col">
-                  <P size="xs">Remaining Due</P>
-                  <P weight="semibold" className={Math.max(0, (payingBill ? billBalanceDue(payingBill) : parseFloat(payingDue?.due_amount ?? '0')) - (payForm.amount || 0)) > 0 ? 'text-destructive' : 'text-success'}>
-                    ₹{Math.max(0, (payingBill ? billBalanceDue(payingBill) : parseFloat(payingDue?.due_amount ?? '0')) - (payForm.amount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </P>
-                </Div>
+            )}
+            <FormField label="Select Finance Account">
+              <ResponsiveSelect value={payForm.to_account_id ?? ''} onChange={e => setPayForm(f => ({ ...f, to_account_id: e.target.value || undefined }))}
+                customPlaceholder="No account (offline record only)"
+                options={financeAccounts.map(a => ({ value: a.id, label: `${a.name} (${a.account_type})` }))}
+              />
+            </FormField>
+            <FormField label="Paying Now Amount" required>
+              <Input type="number" value={payForm.amount || ''} onChange={e => setPayForm(f => ({ ...f, amount: parseFloat(e.target.value) || 0 }))} min="0" step="0.01" placeholder="0.00" />
+            </FormField>
+            <FormField label="Payment Mode" required>
+              <ResponsiveSelect value={payForm.payment_mode} onChange={e => setPayForm(f => ({ ...f, payment_mode: e.target.value as PaymentMode }))}
+                options={PAYMENT_MODES.map(m => ({ value: m, label: m }))}
+              />
+            </FormField>
+            <Div type="grid" cols={2} gap="sm">
+              <FormField label="Transaction No">
+                <Input value={payForm.transaction_id ?? ''} onChange={e => setPayForm(f => ({ ...f, transaction_id: e.target.value || undefined }))} placeholder="UTR / Ref No." />
+              </FormField>
+              <FormField label="Bank Name">
+                <Input value={payForm.bank_name ?? ''} onChange={e => setPayForm(f => ({ ...f, bank_name: e.target.value || undefined }))} placeholder="Optional" />
+              </FormField>
+            </Div>
+            <Div type="grid" cols={2} gap="sm">
+              <FormField label="Payment Date" required>
+                <Input type="date" value={payForm.payment_date} onChange={e => setPayForm(f => ({ ...f, payment_date: e.target.value }))} />
+              </FormField>
+              <FormField label="Remarks">
+                <Input value={payForm.remarks ?? ''} onChange={e => setPayForm(f => ({ ...f, remarks: e.target.value || undefined }))} placeholder="Optional" />
+              </FormField>
+            </Div>
+            <Div type="grid" cols={3} gap="sm" className="rounded-lg bg-muted/20 border border-border/40 px-4 py-3">
+              <Div type="col">
+                <P size="xs">Total</P>
+                <P color="default" weight="semibold">
+                  ₹{(payingBill ? parseFloat(payingBill.total_amount) : parseFloat(payingDue?.due_amount ?? '0')).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </P>
+              </Div>
+              <Div type="col">
+                <P size="xs">Paying</P>
+                <P color="primary" weight="semibold">₹{(payForm.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</P>
+              </Div>
+              <Div type="col">
+                <P size="xs">Remaining Due</P>
+                <P weight="semibold" className={Math.max(0, (payingBill ? billBalanceDue(payingBill) : parseFloat(payingDue?.due_amount ?? '0')) - (payForm.amount || 0)) > 0 ? 'text-destructive' : 'text-success'}>
+                  ₹{Math.max(0, (payingBill ? billBalanceDue(payingBill) : parseFloat(payingDue?.due_amount ?? '0')) - (payForm.amount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </P>
               </Div>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={closePayModal}>Cancel</Button>
-            <Button onClick={payingBill ? handlePayBill : handleMonthlyPay} disabled={!payForm.amount || !payForm.payment_date}>
-              <CreditCard className="w-3.5 h-3.5 mr-1" /> Record Payment
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={closePayModal}>Cancel</Button>
+          <Button onClick={payingBill ? handlePayBill : handleMonthlyPay} disabled={!payForm.amount || !payForm.payment_date}>
+            <CreditCard className="w-3.5 h-3.5 mr-1" /> Record Payment
+          </Button>
+        </div>
+      </ResponsiveModalContainer>
 
       {/* ─── Add Additional Fee Modal ─────────────────────────────────────── */}
-      {addFeeModal && selectedStudent && (
-        <Modal onClose={() => setAddFeeModal(false)} title="Add Additional Fee">
-          <ModalBody>
-            <Div type="col" gap="md">
+      <ResponsiveModalContainer isOpen={!!(addFeeModal && selectedStudent)} onClose={() => setAddFeeModal(false)} title="Add Additional Fee">
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            {selectedStudent && (
               <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
                 <P color="default" weight="medium">{selectedStudent.first_name}{selectedStudent.last_name ? ` ${selectedStudent.last_name}` : ''}</P>
                 <P size="xs">Admission: {selectedStudent.admission_number}</P>
               </Div>
-              <FormField label="Select Fee Type" required>
-                <Select value={addFeeForm.fee_type_id} onChange={e => setAddFeeForm(f => ({ ...f, fee_type_id: e.target.value }))}>
-                  <option value="">Select Fee Type</option>
-                  {allFeeTypes.map(t => <option key={t.id} value={t.id}>{t.name} ({t.frequency})</option>)}
-                </Select>
-              </FormField>
-              <FormField label="Month Year">
-                <Select value={addFeeForm.bill_month} onChange={e => setAddFeeForm(f => ({ ...f, bill_month: e.target.value }))}>
-                  <option value="">One-time / No month</option>
-                  {buildMonthYearOpts(studentFilter.academic_year_id, academicYears as any[]).map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label="Fee Amount" required>
-                <Input type="number" value={addFeeForm.amount} onChange={e => setAddFeeForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" />
-              </FormField>
-            </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setAddFeeModal(false)}>Cancel</Button>
-            <Button onClick={handleAddFee} disabled={!addFeeForm.fee_type_id || !addFeeForm.amount}>
-              <FilePlus className="w-3.5 h-3.5 mr-1" /> Add Fee
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+            )}
+            <FormField label="Select Fee Type" required>
+              <ResponsiveSelect value={addFeeForm.fee_type_id} onChange={e => setAddFeeForm(f => ({ ...f, fee_type_id: e.target.value }))}
+                customPlaceholder="Select Fee Type"
+                options={allFeeTypes.map(t => ({ value: t.id, label: `${t.name} (${t.frequency})` }))}
+              />
+            </FormField>
+            <FormField label="Month Year">
+              <ResponsiveSelect value={addFeeForm.bill_month} onChange={e => setAddFeeForm(f => ({ ...f, bill_month: e.target.value }))}
+                customPlaceholder="One-time / No month"
+                options={buildMonthYearOpts(studentFilter.academic_year_id, academicYears as any[]).map(o => ({ value: o.value, label: o.label }))}
+              />
+            </FormField>
+            <FormField label="Fee Amount" required>
+              <Input type="number" value={addFeeForm.amount} onChange={e => setAddFeeForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" />
+            </FormField>
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={() => setAddFeeModal(false)}>Cancel</Button>
+          <Button onClick={handleAddFee} disabled={!addFeeForm.fee_type_id || !addFeeForm.amount}>
+            <FilePlus className="w-3.5 h-3.5 mr-1" /> Add Fee
+          </Button>
+        </div>
+      </ResponsiveModalContainer>
 
       {/* ─── Confirm Bulk Discount ────────────────────────────────────────── */}
-      {confirmDiscount && (
-        <Modal onClose={() => setConfirmDiscount(false)} title="Confirm Bulk Discount">
-          <ModalBody>
-            <Div type="row" align="start" gap="sm">
-              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-              <Div type="col" gap="xs">
-                <P color="default" weight="semibold">This action is irreversible.</P>
-                <P>
-                  A discount of <Span color="default" className="font-medium">₹{discountForm.discount_amount}</Span> will be applied
-                  to all matching fee bills{discountForm.class_id ? '' : ' across all classes'}.
-                  An audit record will be created per student.
-                </P>
-              </Div>
+      <ResponsiveModalContainer isOpen={confirmDiscount} onClose={() => setConfirmDiscount(false)} title="Confirm Bulk Discount">
+        <div className="px-4 py-4">
+          <Div type="row" align="start" gap="sm">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <Div type="col" gap="xs">
+              <P color="default" weight="semibold">This action is irreversible.</P>
+              <P>
+                A discount of <Span color="default" className="font-medium">₹{discountForm.discount_amount}</Span> will be applied
+                to all matching fee bills{discountForm.class_id ? '' : ' across all classes'}.
+                An audit record will be created per student.
+              </P>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setConfirmDiscount(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleBulkDiscount}>Yes, Apply Discount</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={() => setConfirmDiscount(false)}>Cancel</Button>
+          <Button variant="destructive" onClick={handleBulkDiscount}>Yes, Apply Discount</Button>
+        </div>
+      </ResponsiveModalContainer>
 
       {/* ─── Confirm Bulk Extra ───────────────────────────────────────────── */}
-      {confirmExtra && (
-        <Modal onClose={() => setConfirmExtra(false)} title="Confirm Bulk Extra Payment">
-          <ModalBody>
-            <Div type="row" align="start" gap="sm">
-              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-              <Div type="col" gap="xs">
-                <P color="default" weight="semibold">This action is irreversible.</P>
-                <P>
-                  New fee bills of <Span color="default" className="font-medium">₹{extraForm.amount}</Span> will be created
-                  for all matching students{extraForm.class_id ? '' : ' across all classes'}.
-                  This cannot be undone.
-                </P>
-              </Div>
+      <ResponsiveModalContainer isOpen={confirmExtra} onClose={() => setConfirmExtra(false)} title="Confirm Bulk Extra Payment">
+        <div className="px-4 py-4">
+          <Div type="row" align="start" gap="sm">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <Div type="col" gap="xs">
+              <P color="default" weight="semibold">This action is irreversible.</P>
+              <P>
+                New fee bills of <Span color="default" className="font-medium">₹{extraForm.amount}</Span> will be created
+                for all matching students{extraForm.class_id ? '' : ' across all classes'}.
+                This cannot be undone.
+              </P>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setConfirmExtra(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleBulkExtra}>Yes, Create Bills</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={() => setConfirmExtra(false)}>Cancel</Button>
+          <Button variant="destructive" onClick={handleBulkExtra}>Yes, Create Bills</Button>
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

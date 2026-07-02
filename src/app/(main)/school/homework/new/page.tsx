@@ -4,12 +4,13 @@ import { useCreateHomework } from '@/hooks/useCreateHomework';
 import { HOMEWORK_PAGE, HOMEWORK_STATUS_OPTIONS } from '@/constants';
 import {
   Div, Button, H2,
-  FormField, Input, Select, Textarea,
+  FormField, Input, Textarea,
   CheckboxLabel, Spinner,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
   Badge,
   PageHeader, PageCol,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 
@@ -47,17 +48,22 @@ export default function NewHomeworkPage() {
             </H2>
 
             <FormField label={HOMEWORK_PAGE.form.class} error={errors.class_id?.message}>
-              <Select {...register('class_id')} defaultValue="">
-                <option value="">{HOMEWORK_PAGE.placeholders.selectClass}</option>
-                {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </Select>
+              <ResponsiveSelect
+                {...register('class_id')}
+                defaultValue=""
+                customPlaceholder={HOMEWORK_PAGE.placeholders.selectClass}
+                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </FormField>
 
             <FormField label={HOMEWORK_PAGE.form.subject} error={errors.subject_id?.message}>
-              <Select {...register('subject_id')} defaultValue="" disabled={!watch('class_id')}>
-                <option value="">{HOMEWORK_PAGE.placeholders.selectSubject}</option>
-                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </Select>
+              <ResponsiveSelect
+                {...register('subject_id')}
+                defaultValue=""
+                disabled={!watch('class_id')}
+                customPlaceholder={HOMEWORK_PAGE.placeholders.selectSubject}
+                options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+              />
             </FormField>
 
             <FormField label={HOMEWORK_PAGE.form.title} error={errors.title?.message}>
@@ -74,11 +80,11 @@ export default function NewHomeworkPage() {
             </Div>
 
             <FormField label={HOMEWORK_PAGE.form.status} error={errors.status?.message}>
-              <Select {...register('status')} defaultValue="ACTIVE">
-                {HOMEWORK_STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                {...register('status')}
+                defaultValue="ACTIVE"
+                options={HOMEWORK_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              />
             </FormField>
           </Div>
 

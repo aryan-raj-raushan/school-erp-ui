@@ -26,3 +26,5 @@ export * from './data-table';
 export * from './multi-select';
 export * from './photo-upload';
 export * from './phone-field';
+export * from './responsive-bottom-sheet';
+export * from './responsive-select';

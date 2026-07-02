@@ -34,6 +34,7 @@ import {
   FormGrid,
   PhotoUpload,
   PhoneField,
+  ResponsiveSelect,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -287,60 +288,36 @@ export function StudentDetail({ id }: { id: string }) {
                   required
                   error={errors.gender?.message}
                 >
-                  <Select
+                  <ResponsiveSelect
                     {...register("gender")}
                     disabled={isReadOnly}
-                    defaultValue=""
-                  >
-                    <option value="">Select gender</option>
-                    {GENDER_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder="Select gender"
+                    options={GENDER_OPTIONS}
+                  />
                 </FormField>
                 <FormField label={STUDENT_PAGE.labels.bloodGroup}>
-                  <Select
+                  <ResponsiveSelect
                     {...register("blood_group")}
                     disabled={isReadOnly}
-                    defaultValue=""
-                  >
-                    <option value="">Select blood group</option>
-                    {BLOOD_GROUP_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder="Select blood group"
+                    options={BLOOD_GROUP_OPTIONS}
+                  />
                 </FormField>
                 <FormField label={STUDENT_PAGE.labels.religion}>
-                  <Select
+                  <ResponsiveSelect
                     {...register("religion")}
                     disabled={isReadOnly}
-                    defaultValue=""
-                  >
-                    <option value="">Select religion</option>
-                    {RELIGION_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder="Select religion"
+                    options={RELIGION_OPTIONS}
+                  />
                 </FormField>
                 <FormField label={STUDENT_PAGE.labels.category}>
-                  <Select
+                  <ResponsiveSelect
                     {...register("category")}
                     disabled={isReadOnly}
-                    defaultValue=""
-                  >
-                    <option value="">Select category</option>
-                    {CATEGORY_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder="Select category"
+                    options={CATEGORY_OPTIONS}
+                  />
                 </FormField>
                 <FormField label={STUDENT_PAGE.labels.caste}>
                   <Input
@@ -412,13 +389,11 @@ export function StudentDetail({ id }: { id: string }) {
                   />
                 </FormField>
                 <FormField label={STUDENT_PAGE.labels.status}>
-                  <Select {...register("status")} disabled={isReadOnly}>
-                    {STUDENT_STATUS_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    {...register("status")}
+                    disabled={isReadOnly}
+                    options={STUDENT_STATUS_OPTIONS}
+                  />
                 </FormField>
                 <FormField label={STUDENT_PAGE.labels.isEnabled}>
                   <Div type="row" align="center" gap="sm" className="pt-2">
@@ -452,51 +427,32 @@ export function StudentDetail({ id }: { id: string }) {
                 required
                 error={errors.academic_info?.academic_year_id?.message}
               >
-                <Select
+                <ResponsiveSelect
                   {...register("academic_info.academic_year_id")}
                   disabled={isReadOnly}
-                  defaultValue=""
-                >
-                  <option value="">Select academic year</option>
-                  {years.map((y) => (
-                    <option key={y.id} value={y.id}>
-                      {y.name}
-                      {y.is_current ? " (Current)" : ""}
-                    </option>
-                  ))}
-                </Select>
+                  customPlaceholder="Select academic year"
+                  options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? " (Current)" : ""}` }))}
+                />
               </FormField>
               <FormField
                 label={STUDENT_PAGE.labels.class}
                 required
                 error={errors.academic_info?.class_id?.message}
               >
-                <Select
+                <ResponsiveSelect
                   {...register("academic_info.class_id")}
                   disabled={isReadOnly || !watchedAcademicYearId}
-                  defaultValue=""
-                >
-                  <option value="">Select class</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
+                  customPlaceholder="Select class"
+                  options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                />
               </FormField>
               <FormField label={STUDENT_PAGE.labels.section}>
-                <Select
+                <ResponsiveSelect
                   {...register("academic_info.section_id")}
                   disabled={isReadOnly || !watchedClassId}
-                  defaultValue=""
-                >
-                  <option value="">Select section</option>
-                  {sections.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </Select>
+                  customPlaceholder="Select section"
+                  options={sections.map((s) => ({ value: s.id, label: s.name }))}
+                />
               </FormField>
               <FormField
                 label={STUDENT_PAGE.labels.admissionNumber}
@@ -717,18 +673,12 @@ export function StudentDetail({ id }: { id: string }) {
                       required
                       error={errors.parents?.[index]?.relation?.message}
                     >
-                      <Select
+                      <ResponsiveSelect
                         {...register(`parents.${index}.relation`)}
                         disabled={isReadOnly}
-                        defaultValue=""
-                      >
-                        <option value="">Select relation</option>
-                        {PARENT_RELATION_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </Select>
+                        customPlaceholder="Select relation"
+                        options={PARENT_RELATION_OPTIONS}
+                      />
                     </FormField>
                     <FormField
                       label={STUDENT_PAGE.labels.parentFirstName}
@@ -782,18 +732,12 @@ export function StudentDetail({ id }: { id: string }) {
                       />
                     </FormField>
                     <FormField label={STUDENT_PAGE.labels.qualification}>
-                      <Select
+                      <ResponsiveSelect
                         {...register(`parents.${index}.qualification`)}
                         disabled={isReadOnly}
-                        defaultValue=""
-                      >
-                        <option value="">Select qualification</option>
-                        {QUALIFICATION_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </Select>
+                        customPlaceholder="Select qualification"
+                        options={QUALIFICATION_OPTIONS}
+                      />
                     </FormField>
                     <FormField label={STUDENT_PAGE.labels.annualIncome}>
                       <Input
@@ -908,36 +852,24 @@ export function StudentDetail({ id }: { id: string }) {
                       required
                       error={errors.documents?.[index]?.document_name?.message}
                     >
-                      <Select
+                      <ResponsiveSelect
                         {...register(`documents.${index}.document_name`)}
                         disabled={isReadOnly}
-                        defaultValue=""
-                      >
-                        <option value="">Select document type</option>
-                        {DOCUMENT_TYPE_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </Select>
+                        customPlaceholder="Select document type"
+                        options={DOCUMENT_TYPE_OPTIONS}
+                      />
                     </FormField>
                     <FormField
                       label={STUDENT_PAGE.labels.fileType}
                       required
                       error={errors.documents?.[index]?.file_type?.message}
                     >
-                      <Select
+                      <ResponsiveSelect
                         {...register(`documents.${index}.file_type`)}
                         disabled={isReadOnly}
-                        defaultValue=""
-                      >
-                        <option value="">Select type</option>
-                        {DOCUMENT_FILE_TYPE_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </Select>
+                        customPlaceholder="Select type"
+                        options={DOCUMENT_FILE_TYPE_OPTIONS}
+                      />
                     </FormField>
                     <FormField label="Upload File">
                       <input

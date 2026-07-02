@@ -86,47 +86,10 @@ function AdmissionsContent() {
         ),
       },
       {
-        accessorKey: "father_name",
-        header: "Father Name",
-        cell: ({ row }) => row.original.father_name ?? "—",
-      },
-      {
-        accessorKey: "mother_name",
-        header: "Mother Name",
-        cell: ({ row }) => row.original.mother_name ?? "—",
-      },
-      {
         id: "phone",
         header: "Phone",
         cell: ({ row }) =>
           `${row.original.dial_code ?? ""} ${row.original.phone}`,
-      },
-      {
-        id: "academic_year",
-        header: "Applying Academic Year",
-        cell: ({ row }) =>
-          years.find((y) => y.id === row.original.applying_academic_year_id)
-            ?.name ?? "—",
-      },
-      {
-        id: "class",
-        header: "Applying Class",
-        cell: ({ row }) =>
-          classes.find((c) => c.id === row.original.applying_class_id)?.name ??
-          "—",
-      },
-      {
-        id: "created_date",
-        header: "Created Date",
-        cell: ({ row }) =>
-          new Date(row.original.created_at).toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          }),
       },
       {
         id: "followup_date",
@@ -173,19 +136,11 @@ function AdmissionsContent() {
             >
               <Pencil size={14} />
             </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              onClick={() => deleteEnquiry(row.original.id)}
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </Button>
           </Div>
         ),
       },
     ],
-    [years, classes, teachers, deleteEnquiry, router]
+    [teachers, router]
   );
 
   return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Calendar, PartyPopper, Pencil, Trash2, Eye, CalendarDays } from "lucide-react";
+import { Plus, Calendar, PartyPopper, Pencil, Trash2, Eye, CalendarDays, Search } from "lucide-react";
 import { useSchoolEvents } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -12,7 +12,6 @@ import {
   P,
   Button,
   Input,
-  Select,
   PageHeader,
   PageCol,
   FilterBar,
@@ -28,6 +27,7 @@ import {
   Badge,
   Spinner,
   Tabs,
+  ResponsiveSelect,
 } from "@/components/ui";
 import { CalendarViewModal } from "@/components/holiday-events/CalendarViewModal";
 
@@ -43,6 +43,12 @@ function SchoolEventsContent() {
 
   const [calendarOpen, setCalendarOpen] = useState(false);
 
+  // Get current academic year ID
+  const currentYearId = useMemo(() => {
+    const current = years.find((y) => y.is_current);
+    return current?.id || (years[0]?.id ?? undefined);
+  }, [years]);
+
   // Persistent filters via URL query params
   const [urlFilters, setUrlFilters] = useFilterParams<
     Record<string, string | undefined>
@@ -55,7 +61,7 @@ function SchoolEventsContent() {
 
   const initialFilters: SchoolEventFilters = {
     type: (urlFilters.type as SchoolEventFilters["type"]) || undefined,
-    academic_year_id: urlFilters.academic_year_id || undefined,
+    academic_year_id: urlFilters.academic_year_id || currentYearId || undefined,
     search: urlFilters.search || undefined,
     page: urlFilters.page ? Number(urlFilters.page) : 1,
   };
@@ -125,28 +131,28 @@ function SchoolEventsContent() {
 
       {/* Filters */}
       <FilterBar>
-        <Input
-          width="md"
-          placeholder="Search by name…"
-          value={searchInput}
-          onChange={(e) => handleFilterChange({ search: e.target.value })}
-        />
-        <Select
-          width="sm"
+        <Div className="relative flex-1 max-w-xl">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          />
+          <Input
+            width="full"
+            className="pl-9"
+            placeholder="Search by name…"
+            value={searchInput}
+            onChange={(e) => handleFilterChange({ search: e.target.value })}
+          />
+        </Div>
+        <ResponsiveSelect
           value={filters.academic_year_id ?? ""}
           onChange={(e) =>
             handleFilterChange({
               academic_year_id: e.target.value || undefined,
             })
           }
-        >
-          <option value="">All Years</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </Select>
+          options={years.map((y) => ({ value: y.id, label: `${y.name} ${y.is_current ? "(Current)" : ""}` }))}
+        />
       </FilterBar>
 
       {/* Table */}
@@ -230,7 +236,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/school/holidays-events/view?id=${ev.id}`)
+                        router.push(`/school/holidays-events/${ev.id}`)
                       }
                       title="View"
                     >
@@ -240,7 +246,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/school/holidays-events/view?id=${ev.id}&edit=true`)
+                        router.push(`/school/holidays-events/${ev.id}?edit=true`)
                       }
                       title="Edit"
                     >
