@@ -146,7 +146,7 @@ export default function StudentLeavePage() {
                   value={applySectionId}
                   onChange={(e) => setApplySectionId(e.target.value)}
                   customPlaceholder="Select section"
-                  options={sectionOptions}
+                  options={sectionOptions.map((s) => ({ value: s.id, label: s.label }))}
                 />
               </FormField>
 

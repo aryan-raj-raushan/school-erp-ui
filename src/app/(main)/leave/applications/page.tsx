@@ -230,7 +230,7 @@ function LeaveApplicationsContent() {
             handleFilterChange({ status: (e.target.value as any) || undefined })
           }
           options={LEAVE_STATUS_OPTIONS}
-          customPlaceholder={LEAVE_APPLICATION_PAGE.filters.allStatuses || 'All Statuses'}
+          customPlaceholder={LEAVE_APPLICATION_PAGE.filters.allStatus || 'All Statuses'}
         />
 
         <ResponsiveSelect
