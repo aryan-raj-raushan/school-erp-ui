@@ -111,6 +111,8 @@ export interface AutoGenerateExamPayload {
   default_passing_marks?: number;
   include_in_marks?: boolean;
   template_id?: string;
+  subject_duration_minutes?: number;
+  break_duration_minutes?: number;
 }
 
 export interface RegenerateApplyPayload extends AutoGenerateExamPayload {

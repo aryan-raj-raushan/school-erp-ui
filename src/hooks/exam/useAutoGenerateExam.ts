@@ -3,18 +3,21 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ExamsService, ExamTemplateService } from "@/services/exam.service";
+import { ExamsService, ExamTemplateService, SittingPlanService } from "@/services/exam.service";
 import {
   ClassSubjectTeacherService,
   type ClassSubjectTeacherMapping,
 } from "@/services/class-subject-teacher.service";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
+import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { EXAM_ROUTES } from "@/constants/exam.constants";
+import { GatewayError } from "@/lib/api-gateway/interceptors/error.interceptor";
 import type { AutoGenerateConflict, ExamTerm, ExamTemplate } from "@/types/exam.types";
 
 export function useAutoGenerateExam() {
   const router = useRouter();
   const { years, classes, currentYear } = useAcademicClassSection({ autoSelectCurrentYear: true });
+  const { details: hallRooms } = useHallDetails();
 
   const [examName, setExamName] = useState("");
   const [academicYearId, setAcademicYearId] = useState("");
@@ -24,10 +27,14 @@ export function useAutoGenerateExam() {
   const [endDate, setEndDate] = useState("");
   const [dailyStartTime, setDailyStartTime] = useState("09:00");
   const [dailyEndTime, setDailyEndTime] = useState("12:00");
+  const [subjectDurationMinutes, setSubjectDurationMinutes] = useState(60);
+  const [breakDurationMinutes, setBreakDurationMinutes] = useState(20);
   const [defaultExamMarks, setDefaultExamMarks] = useState(100);
   const [defaultPassingMarks, setDefaultPassingMarks] = useState(35);
   const [templateId, setTemplateId] = useState("");
   const [templates, setTemplates] = useState<ExamTemplate[]>([]);
+  const [autoAssignSeating, setAutoAssignSeating] = useState(false);
+  const [seatingHallIds, setSeatingHallIds] = useState<string[]>([]);
 
   const [mappingsByClass, setMappingsByClass] = useState<
     Record<string, ClassSubjectTeacherMapping[]>
@@ -97,7 +104,8 @@ export function useAutoGenerateExam() {
     !!examName &&
     !!startDate &&
     !!endDate &&
-    classesMissingMapping.length < classIds.length; // at least one class has subjects to schedule
+    classesMissingMapping.length < classIds.length && // at least one class has subjects to schedule
+    (!autoAssignSeating || seatingHallIds.length > 0); // seating needs at least one room picked
 
   async function generate() {
     if (!canGenerate) {
@@ -115,19 +123,52 @@ export function useAutoGenerateExam() {
         end_date: endDate,
         daily_start_time: dailyStartTime,
         daily_end_time: dailyEndTime,
+        subject_duration_minutes: subjectDurationMinutes,
+        break_duration_minutes: breakDurationMinutes,
         default_exam_marks: defaultExamMarks,
         default_passing_marks: defaultPassingMarks,
         template_id: templateId || undefined,
       });
-      setConflicts(result.conflicts);
-      if (result.conflicts.length > 0) {
-        toast.warning(`Exam created — ${result.conflicts.length} item(s) need attention`);
+      // Backend refuses to create anything unless every subject fit cleanly —
+      // a success response here always means a clean, conflict-free exam.
+      setConflicts([]);
+
+      if (autoAssignSeating && seatingHallIds.length > 0) {
+        try {
+          const seating = await SittingPlanService.autoShuffle({
+            exam_id: result.exam.id,
+            academic_year_id: academicYearId,
+            class_ids: classIds,
+            hall_detail_ids: seatingHallIds,
+            clear_existing: true,
+          });
+          if (seating.shortfall_warning) {
+            toast.warning(`Exam created — ${seating.shortfall_warning}`);
+          } else {
+            toast.success(
+              `Exam auto-generated — ${seating.total_assigned} student(s) seated across ${seating.rooms.length} room(s)`,
+            );
+          }
+        } catch (seatErr: unknown) {
+          toast.warning(
+            `Exam and schedule created, but seating failed: ${seatErr instanceof Error ? seatErr.message : "unknown error"}. Assign seating manually.`,
+          );
+        }
       } else {
         toast.success("Exam auto-generated");
       }
+
       router.push(EXAM_ROUTES.exams.schedule(result.exam.id));
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to auto-generate exam");
+      if (err instanceof GatewayError && Array.isArray(err.data && (err.data as { conflicts?: unknown }).conflicts)) {
+        const data = err.data as { conflicts: AutoGenerateConflict[] };
+        setConflicts(data.conflicts);
+        toast.error(
+          `${data.conflicts.length} subject(s) didn't fit — nothing was created. See details below.`,
+        );
+      } else {
+        toast.error(err instanceof Error ? err.message : "Failed to auto-generate exam");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -156,6 +197,10 @@ export function useAutoGenerateExam() {
     setDailyStartTime,
     dailyEndTime,
     setDailyEndTime,
+    subjectDurationMinutes,
+    setSubjectDurationMinutes,
+    breakDurationMinutes,
+    setBreakDurationMinutes,
     defaultExamMarks,
     setDefaultExamMarks,
     defaultPassingMarks,
@@ -163,6 +208,11 @@ export function useAutoGenerateExam() {
     templateId,
     setTemplateId,
     templates,
+    autoAssignSeating,
+    setAutoAssignSeating,
+    seatingHallIds,
+    setSeatingHallIds,
+    hallRooms,
     mappingsByClass,
     isLoadingMappings,
     totalSubjectCount,

@@ -85,7 +85,7 @@ function ExamsContent() {
         header: "Classes",
         cell: ({ row }) => (
           <Div type="row" gap="xs" wrap>
-            {row.original.class_ids.map((classId) => (
+            {(row.original.class_ids ?? []).map((classId) => (
               <Badge key={classId} variant="default">
                 {classNameById[classId] ?? classId.slice(0, 6)}
               </Badge>

@@ -131,12 +131,6 @@ export function ScheduleFormContent() {
             <P color="muted" className="text-xs">Exam</P>
             <P>{examName}</P>
           </Div>
-          <Div type="col" gap="xs">
-            <P color="muted" className="text-xs">Subject Type</P>
-            <Badge variant={schedule.subject_type === "MAIN_EXAM" ? "info" : "warning"}>
-              {schedule.subject_type.replace(/_/g, " ")}
-            </Badge>
-          </Div>
           {subSchedules.length > 0 && (
             <Div type="col" gap="xs">
               <P color="muted" className="text-xs">Sub-Subjects</P>

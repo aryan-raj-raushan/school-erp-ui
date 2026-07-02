@@ -69,6 +69,10 @@ function AutoGenerateExamForm() {
     setDailyStartTime,
     dailyEndTime,
     setDailyEndTime,
+    subjectDurationMinutes,
+    setSubjectDurationMinutes,
+    breakDurationMinutes,
+    setBreakDurationMinutes,
     defaultExamMarks,
     setDefaultExamMarks,
     defaultPassingMarks,
@@ -76,6 +80,11 @@ function AutoGenerateExamForm() {
     templateId,
     setTemplateId,
     templates,
+    autoAssignSeating,
+    setAutoAssignSeating,
+    seatingHallIds,
+    setSeatingHallIds,
+    hallRooms,
     mappingsByClass,
     isLoadingMappings,
     totalSubjectCount,
@@ -147,6 +156,24 @@ function AutoGenerateExamForm() {
           <FormField label="Daily End Time">
             <Input type="time" value={dailyEndTime} onChange={(e) => setDailyEndTime(e.target.value)} />
           </FormField>
+          <FormField label="Subject Duration (minutes)">
+            <Input
+              type="number"
+              min={15}
+              step={5}
+              value={subjectDurationMinutes}
+              onChange={(e) => setSubjectDurationMinutes(Number(e.target.value) || 0)}
+            />
+          </FormField>
+          <FormField label="Break Between Subjects (minutes)">
+            <Input
+              type="number"
+              min={0}
+              step={5}
+              value={breakDurationMinutes}
+              onChange={(e) => setBreakDurationMinutes(Number(e.target.value) || 0)}
+            />
+          </FormField>
           <FormField label="Default Marks">
             <Input
               type="number"
@@ -205,19 +232,55 @@ function AutoGenerateExamForm() {
         </Div>
       )}
 
+      <Div type="col" gap="sm" className="max-w-3xl rounded-xl border border-border bg-card p-5">
+        <Div type="row" align="center" gap="sm">
+          <input
+            type="checkbox"
+            id="auto_assign_seating"
+            checked={autoAssignSeating}
+            onChange={(e) => setAutoAssignSeating(e.target.checked)}
+            className="h-4 w-4 rounded border-border"
+          />
+          <label htmlFor="auto_assign_seating" className="text-sm text-foreground">
+            Also auto-assign seating (rooms) right after creating this exam
+          </label>
+        </Div>
+        {autoAssignSeating ? (
+          <FormField label="Rooms to seat students in *">
+            <MultiSelect
+              options={hallRooms.map((r) => ({ value: r.id, label: r.room_name }))}
+              value={seatingHallIds}
+              onChange={setSeatingHallIds}
+              placeholder="Select room(s)..."
+            />
+          </FormField>
+        ) : (
+          <P size="sm" className="text-muted-foreground">
+            Leave unchecked to assign seating manually later from the Sitting Plan page.
+          </P>
+        )}
+      </Div>
+
       {conflicts.length > 0 && (
-        <Div type="col" gap="xs" className="max-w-3xl rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-5">
-          <P size="sm" weight="semibold" className="text-amber-700 dark:text-amber-400">
-            {conflicts.length} item{conflicts.length > 1 ? "s" : ""} need attention
+        <Div type="col" gap="xs" className="max-w-3xl rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/30 p-5">
+          <P size="sm" weight="semibold" className="text-red-700 dark:text-red-400">
+            Nothing was created — {conflicts.length} subject{conflicts.length > 1 ? "s" : ""} didn&apos;t fit
           </P>
           <Div type="col" gap="xs">
             {conflicts.map((c, i) => (
-              <P key={i} size="sm" className="text-amber-700 dark:text-amber-400">
+              <P key={i} size="sm" className="text-red-700 dark:text-red-400">
                 {c.class_name} — {c.subject_name}
                 {c.exam_date ? ` (${c.exam_date})` : ""}: {c.reason.replace(/_/g, " ").toLowerCase()}
               </P>
             ))}
           </Div>
+          {conflicts.some((c) => c.reason === "NOT_ENOUGH_WORKING_DAYS") && (
+            <P size="sm" className="text-red-700 dark:text-red-400">
+              Not enough working days in the date range to fit every subject with the current
+              subject duration / break settings — widen the date range, or shorten the subject
+              duration / break, and try again.
+            </P>
+          )}
         </Div>
       )}
 
