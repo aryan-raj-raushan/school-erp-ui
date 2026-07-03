@@ -17,6 +17,7 @@ import {
   Input,
   EmptyState,
   type ColumnDef,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import { LEAVE_STATUS_BADGE } from '@/constants/leave.constants';
 import type { TeacherLeaveRequest } from '@/types';
@@ -108,8 +109,8 @@ export default function TeacherLeavePage() {
       )}
 
       {selectedRequest && (
-        <Modal onClose={closeReview} title="Review Leave Request">
-          <ModalBody>
+        <ResponsiveModalContainer isOpen={!!selectedRequest} onClose={closeReview} title="Review Leave Request">
+          <div className="px-4 py-4">
             <Div type="grid" cols={2} gap="sm">
               <Div type="col" gap="xs">
                 <P size="xs">Period</P>
@@ -129,13 +130,13 @@ export default function TeacherLeavePage() {
                 />
               </FormField>
             </Div>
-          </ModalBody>
-          <ModalFooter>
+          </div>
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeReview}>Cancel</Button>
             <Button variant="destructive" loading={isReviewing} onClick={() => review('REJECTED')}>Reject</Button>
             <Button variant="success" loading={isReviewing} onClick={() => review('APPROVED')}>Approve</Button>
-          </ModalFooter>
-        </Modal>
+          </div>
+        </ResponsiveModalContainer>
       )}
     </PageCol>
   );

@@ -7,6 +7,8 @@ import { H1, H3, P } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { FormCard } from "@/components/ui/form-card";
 import { FormField, Select } from "@/components/ui/form";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
+import { ResponsiveModalContainer } from "@/components/ui/responsive-bottom-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Modal, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useRfidEvents } from "@/hooks/useRfidEvents";
@@ -49,8 +51,8 @@ function AssignModal({
   const canAssign = tab === "student" ? !!studentId : !!staffId;
 
   return (
-    <Modal onClose={onClose} title="Assign RFID Card" size="md">
-      <ModalBody>
+    <ResponsiveModalContainer isOpen={true} onClose={onClose} title="Assign RFID Card">
+      <div className="px-4 py-4">
         <Div type="col" gap="md">
           <Div type="col" gap="xs">
             <P size="xs" color="muted">RFID Card ID</P>
@@ -74,66 +76,74 @@ function AssignModal({
           {tab === "student" && (
             <Div type="col" gap="sm">
               <FormField label="Academic Year">
-                <Select value={yearId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYearId(e.target.value)}>
-                  <option value="">Select academic year</option>
-                  {years.map((y) => (
-                    <option key={y.id} value={y.id}>{y.name}{y.is_current ? " (Current)" : ""}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  value={yearId}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYearId(e.target.value)}
+                  customPlaceholder="Select academic year"
+                  options={years.map((y) => ({
+                    value: y.id,
+                    label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+                  }))}
+                />
               </FormField>
 
               <FormField label="Class">
-                <Select value={classId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setClassId(e.target.value)} disabled={!yearId}>
-                  <option value="">Select class</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  value={classId}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setClassId(e.target.value)}
+                  disabled={!yearId}
+                  customPlaceholder="Select class"
+                  options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                />
               </FormField>
 
               <FormField label="Section">
-                <Select value={sectionId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSectionId(e.target.value)} disabled={!classId}>
-                  <option value="">Select section</option>
-                  {sections.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  value={sectionId}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSectionId(e.target.value)}
+                  disabled={!classId}
+                  customPlaceholder="Select section"
+                  options={sections.map((s) => ({ value: s.id, label: s.name }))}
+                />
               </FormField>
 
               <FormField label="Student">
-                <Select value={studentId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStudentId(e.target.value)} disabled={!classId}>
-                  <option value="">Select student</option>
-                  {studentList.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.first_name} {s.last_name ?? ""}
-                    </option>
-                  ))}
-                </Select>
+                <ResponsiveSelect
+                  value={studentId}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStudentId(e.target.value)}
+                  disabled={!classId}
+                  customPlaceholder="Select student"
+                  options={studentList.map((s) => ({
+                    value: s.id,
+                    label: `${s.first_name} ${s.last_name ?? ""}`,
+                  }))}
+                />
               </FormField>
             </Div>
           )}
 
           {tab === "staff" && (
             <FormField label="Staff Member">
-              <Select value={staffId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStaffId(e.target.value)}>
-                <option value="">Select staff</option>
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.first_name} {s.last_name ?? ""}{s.employee_code ? ` (${s.employee_code})` : ""}
-                  </option>
-                ))}
-              </Select>
+              <ResponsiveSelect
+                value={staffId}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStaffId(e.target.value)}
+                customPlaceholder="Select staff"
+                options={staffList.map((s) => ({
+                  value: s.id,
+                  label: `${s.first_name} ${s.last_name ?? ""}${s.employee_code ? ` (${s.employee_code})` : ""}`,
+                }))}
+              />
             </FormField>
           )}
         </Div>
-      </ModalBody>
-      <ModalFooter>
+      </div>
+      <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button onClick={handleAssign} disabled={!canAssign} loading={assigning}>
           Assign
         </Button>
-      </ModalFooter>
-    </Modal>
+      </div>
+    </ResponsiveModalContainer>
   );
 }
 

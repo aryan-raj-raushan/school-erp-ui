@@ -12,16 +12,14 @@ import {
   P,
   Button,
   Input,
-  Select,
   Badge,
   Spinner,
   DataTable,
   type ColumnDef,
-  Modal,
-  ModalBody,
-  ModalFooter,
   FormField,
   FilterBar,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from "@/components/ui";
 import {
   LEAVE_ASSIGNED_PAGE,
@@ -318,20 +316,14 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
 
       {/* Filter by academic year */}
       <FilterBar>
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={filters.academic_year_id ?? ""}
           onChange={(e) =>
             updateFilters({ academic_year_id: e.target.value || undefined })
           }
-        >
-          <option value="">{LEAVE_ASSIGNED_PAGE.filters.allYears}</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </Select>
+          customPlaceholder={LEAVE_ASSIGNED_PAGE.filters.allYears}
+          options={years.map((y) => ({ value: y.id, label: y.name }))}
+        />
       </FilterBar>
 
       {/* Assignments table - using DataTable with custom columns */}
@@ -344,51 +336,42 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
       />
 
       {/* Assign Leave Modal */}
-      {showAssignModal && (
-        <Modal
-          onClose={closeAssignModal}
-          title={LEAVE_ASSIGNED_PAGE.modal.title}
-          size="sm"
-        >
+      <ResponsiveModalContainer
+        isOpen={showAssignModal}
+        onClose={closeAssignModal}
+        title={LEAVE_ASSIGNED_PAGE.modal.title}
+      >
           <form onSubmit={handleAssign}>
-            <ModalBody>
+            <div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField
                   label={`${LEAVE_ASSIGNED_PAGE.labels.leaveType} *`}
                   error={errors.leave_type_id?.message}
                 >
-                  <Select
+                  <ResponsiveSelect
                     {...register("leave_type_id")}
                     disabled={isLoadingLeaveTypes}
-                  >
-                    <option value="">
-                      {isLoadingLeaveTypes ? "Loading…" : "Select leave type"}
-                    </option>
-                    {availableLeaveTypes.map((lt) => (
-                      <option key={lt.id} value={lt.id}>
-                        {lt.leave_name} ({lt.leave_count_days} days ·{" "}
-                        {LEAVE_PAY_TYPE_LABEL[lt.leave_pay_type]})
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder={isLoadingLeaveTypes ? "Loading…" : "Select leave type"}
+                    options={availableLeaveTypes.map((lt) => ({
+                      value: lt.id,
+                      label: `${lt.leave_name} (${lt.leave_count_days} days · ${LEAVE_PAY_TYPE_LABEL[lt.leave_pay_type]})`,
+                    }))}
+                  />
                 </FormField>
 
                 <FormField
                   label={`${LEAVE_ASSIGNED_PAGE.labels.academicYear} *`}
                   error={errors.academic_year_id?.message}
                 >
-                  <Select {...register("academic_year_id")}>
-                    <option value="">Select academic year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    {...register("academic_year_id")}
+                    customPlaceholder="Select academic year"
+                    options={years.map((y) => ({ value: y.id, label: y.name }))}
+                  />
                 </FormField>
               </Div>
-            </ModalBody>
-            <ModalFooter>
+            </div>
+            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button
                 type="button"
                 variant="outline"
@@ -399,10 +382,9 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
               <Button type="submit" loading={isAssigning}>
                 {LEAVE_ASSIGNED_PAGE.buttons.save}
               </Button>
-            </ModalFooter>
+            </div>
           </form>
-        </Modal>
-      )}
+      </ResponsiveModalContainer>
     </Div>
   );
 }

@@ -7,7 +7,6 @@ import {
   H2,
   P,
   Button,
-  Select,
   Input,
   PageHeader,
   PageCol,
@@ -21,11 +20,12 @@ import {
   TableEmptyRow,
   Badge,
   Spinner,
-  Modal,
   FormField,
   FilterLabel,
   Icon,
   CheckboxLabel,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from "@/components/ui";
 import { Plus, ChevronRight, Trash2, Settings } from "lucide-react";
 
@@ -147,10 +147,9 @@ export default function LeavePolicyPage() {
       </Div>
 
       {/* Create Policy Modal */}
-      {showModal && (
-        <Modal title={LEAVE_POLICY_PAGE.form.title} onClose={() => setShowModal(false)} size="lg">
+      <ResponsiveModalContainer isOpen={showModal} title={LEAVE_POLICY_PAGE.form.title} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit(handleCreate)}>
-            <Div type="col" gap="md" padding="px-6 py-5">
+            <Div type="col" gap="md" className="px-4 py-4">
               <FormField label={LEAVE_POLICY_PAGE.form.policyName} error={errors.name?.message}>
                 <Input {...register("name")} placeholder="Annual Leave Policy 2025-26" />
               </FormField>
@@ -233,26 +232,19 @@ export default function LeavePolicyPage() {
               </Div>
             </Div>
           </form>
-        </Modal>
-      )}
+      </ResponsiveModalContainer>
 
       {/* Provision Modal */}
-      {showProvisionModal && (
-        <Modal title={LEAVE_POLICY_PAGE.provision.title} onClose={() => setShowProvisionModal(false)}>
-          <Div type="col" gap="md" padding="px-6 py-5">
+      <ResponsiveModalContainer isOpen={showProvisionModal} title={LEAVE_POLICY_PAGE.provision.title} onClose={() => setShowProvisionModal(false)}>
+          <Div type="col" gap="md" className="px-4 py-4">
             <P>{LEAVE_POLICY_PAGE.provision.desc}</P>
             <FormField label={LEAVE_POLICY_PAGE.provision.academicYear}>
-              <Select
+              <ResponsiveSelect
                 value={provisionAcademicYearId}
                 onChange={(e) => setProvisionAcademicYearId(e.target.value)}
-              >
-                <option value="">Select academic year</option>
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {y.name}{y.is_current ? " (Current)" : ""}
-                  </option>
-                ))}
-              </Select>
+                customPlaceholder="Select academic year"
+                options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? " (Current)" : ""}` }))}
+              />
             </FormField>
             <Div type="row" justify="end" gap="sm">
               <Button variant="outline" onClick={() => setShowProvisionModal(false)}>
@@ -267,8 +259,7 @@ export default function LeavePolicyPage() {
               </Button>
             </Div>
           </Div>
-        </Modal>
-      )}
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

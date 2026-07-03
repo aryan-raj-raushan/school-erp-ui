@@ -6,15 +6,13 @@ import {
   PageHeader,
   Div,
   Button,
-  Select,
   Badge,
   DataTable,
-  Modal,
-  ModalBody,
-  ModalFooter,
   Spinner,
   P,
   type ColumnDef,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from '@/components/ui';
 import type { AcademicYear } from '@/types';
 
@@ -89,29 +87,35 @@ export default function AcademicYearPage() {
         <DataTable columns={columns} data={years} />
       )}
 
-      {isRolloverOpen && (
-        <Modal title="Academic Year Rollover" onClose={() => setIsRolloverOpen(false)}>
-          <ModalBody>
-            <Div type="col" gap="md">
-              <P>Copies leave policies and carries forward balances to the target year.</P>
-              <P>From year:</P>
-              <Select value={rolloverFromId} onChange={e => setRolloverFromId(e.target.value)}>
-                <option value="">Select source year</option>
-                {years.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-              </Select>
-              <P>To year:</P>
-              <Select value={rolloverToId} onChange={e => setRolloverToId(e.target.value)}>
-                <option value="">Select target year</option>
-                {years.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-              </Select>
-            </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" onClick={() => setIsRolloverOpen(false)}>Cancel</Button>
-            <Button onClick={rollover}>Run Rollover</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+      <ResponsiveModalContainer
+        isOpen={isRolloverOpen}
+        title="Academic Year Rollover"
+        onClose={() => setIsRolloverOpen(false)}
+      >
+        <div className="px-4 py-4">
+          <Div type="col" gap="md">
+            <P>Copies leave policies and carries forward balances to the target year.</P>
+            <P>From year:</P>
+            <ResponsiveSelect
+              value={rolloverFromId}
+              onChange={e => setRolloverFromId(e.target.value)}
+              customPlaceholder="Select source year"
+              options={years.map(y => ({ value: y.id, label: y.name }))}
+            />
+            <P>To year:</P>
+            <ResponsiveSelect
+              value={rolloverToId}
+              onChange={e => setRolloverToId(e.target.value)}
+              customPlaceholder="Select target year"
+              options={years.map(y => ({ value: y.id, label: y.name }))}
+            />
+          </Div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="outline" onClick={() => setIsRolloverOpen(false)}>Cancel</Button>
+          <Button onClick={rollover}>Run Rollover</Button>
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

@@ -22,6 +22,8 @@ import {
   FormField,
   P,
   type ColumnDef,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from '@/components/ui';
 import type { GatePassRecord } from '@/types';
 
@@ -130,10 +132,12 @@ export default function GatePassPage() {
       <FilterBar>
         <FilterLabel>Date</FilterLabel>
         <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-        <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="">All Statuses</option>
-          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-        </Select>
+        <ResponsiveSelect
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          customPlaceholder="All Statuses"
+          options={STATUS_OPTIONS.map(s => ({ value: s, label: s }))}
+        />
         <Button variant="outline" onClick={fetch}>Search</Button>
       </FilterBar>
 
@@ -145,88 +149,85 @@ export default function GatePassPage() {
         <DataTable columns={columns} data={records} />
       )}
 
-      {isDialogOpen && (
-        <Modal title="Create Gate Pass" onClose={() => setIsDialogOpen(false)} size="md">
-          <ModalBody>
-            <Div type="col" gap="sm">
-              {/* Header Info */}
-              <Div type="col" gap="xs">
-                <P size="sm" color="muted" className="uppercase tracking-wide font-semibold">
-                  Gate Pass Details
-                </P>
-                <P size="xs" color="muted">
-                  Fill in all required fields to create a new gate pass request
-                </P>
-              </Div>
+      <ResponsiveModalContainer
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        title="Create Gate Pass"
+      >
+        <Div type="col" gap="sm" className="px-4 py-4">
+          {/* Header Info */}
+          <Div type="col" gap="xs">
+            <P size="sm" color="muted" className="uppercase tracking-wide font-semibold">
+              Gate Pass Details
+            </P>
+            <P size="xs" color="muted">
+              Fill in all required fields to create a new gate pass request
+            </P>
+          </Div>
 
-              {/* Grid Layout - 2 columns */}
-              <Div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Full width - Student */}
-                <Div className="md:col-span-2">
-                  <FormField label="Student *" error={!studentId ? 'Required' : ''}>
-                    <Select
-                      value={studentId}
-                      onChange={e => setStudentId(e.target.value)}
-                      disabled={isLoadingStudents}
-                    >
-                      <option value="">
-                        {isLoadingStudents ? 'Loading students...' : 'Select Student'}
-                      </option>
-                      {studentOptions.map(s => (
-                        <option key={s.id} value={s.id}>{s.label}</option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </Div>
-
-                {/* Full width - Reason */}
-                <Div className="md:col-span-2">
-                  <FormField label="Reason *" error={!reason ? 'Required' : ''}>
-                    <Input
-                      placeholder="e.g. Doctor appointment, Home emergency"
-                      value={reason}
-                      onChange={e => setReason(e.target.value)}
-                    />
-                  </FormField>
-                </Div>
-
-                {/* Half width - Exit Time */}
-                <Div>
-                  <FormField label="Exit Time *" error={!exitTime ? 'Required' : ''}>
-                    <Input
-                      type="time"
-                      value={exitTime}
-                      onChange={e => setExitTime(e.target.value)}
-                    />
-                  </FormField>
-                </Div>
-
-                {/* Half width - Return Time */}
-                <Div>
-                  <FormField label="Return Time *" error={!returnTime ? 'Required' : ''}>
-                    <Input
-                      type="time"
-                      value={returnTime}
-                      onChange={e => setReturnTime(e.target.value)}
-                    />
-                  </FormField>
-                </Div>
-              </Div>
-
-              {/* Validation Message */}
-              {!isFormValid && (
-                <Div type="row" align="center" gap="sm" className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 -mt-1">
-                  <P size="xs" color="muted">⚠️ All fields are required</P>
-                </Div>
-              )}
+          {/* Grid Layout - 2 columns */}
+          <Div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* Full width - Student */}
+            <Div className="md:col-span-2">
+              <FormField label="Student *" error={!studentId ? 'Required' : ''} htmlFor="student">
+                <ResponsiveSelect
+                  id="student"
+                  value={studentId}
+                  onChange={e => setStudentId(e.target.value)}
+                  disabled={isLoadingStudents}
+                  customPlaceholder={isLoadingStudents ? 'Loading students...' : 'Select Student'}
+                  options={studentOptions.map(s => ({ value: s.id, label: s.label }))}
+                />
+              </FormField>
             </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={!isFormValid}>Create Gate Pass</Button>
-          </ModalFooter>
-        </Modal>
-      )}
+
+            {/* Full width - Reason */}
+            <Div className="md:col-span-2">
+              <FormField label="Reason *" error={!reason ? 'Required' : ''}>
+                <Input
+                  placeholder="e.g. Doctor appointment, Home emergency"
+                  value={reason}
+                  onChange={e => setReason(e.target.value)}
+                />
+              </FormField>
+            </Div>
+
+            {/* Half width - Exit Time */}
+            <Div>
+              <FormField label="Exit Time *" error={!exitTime ? 'Required' : ''}>
+                <Input
+                  type="time"
+                  value={exitTime}
+                  onChange={e => setExitTime(e.target.value)}
+                />
+              </FormField>
+            </Div>
+
+            {/* Half width - Return Time */}
+            <Div>
+              <FormField label="Return Time *" error={!returnTime ? 'Required' : ''}>
+                <Input
+                  type="time"
+                  value={returnTime}
+                  onChange={e => setReturnTime(e.target.value)}
+                />
+              </FormField>
+            </Div>
+          </Div>
+
+          {/* Validation Message */}
+          {!isFormValid && (
+            <Div type="row" align="center" gap="sm" className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 -mt-1">
+              <P size="xs" color="muted">⚠️ All fields are required</P>
+            </Div>
+          )}
+        </Div>
+
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!isFormValid}>Create Gate Pass</Button>
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

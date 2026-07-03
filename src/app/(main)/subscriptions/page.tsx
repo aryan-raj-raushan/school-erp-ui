@@ -6,9 +6,10 @@ import { SUBSCRIPTIONS_PAGE, SUBSCRIPTION_STATUS_BADGE, PLAN_TYPE_OPTIONS } from
 import {
   Div, P, Button,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
-  Modal, ModalBody, ModalFooter, FormField, Input, Select,
+  FormField, Input,
   Badge, Spinner,
   PageHeader, PageCol,
+  ResponsiveSelect, ResponsiveModalContainer,
 } from '@/components/ui';
 
 export default function SubscriptionsPage() {
@@ -66,56 +67,52 @@ export default function SubscriptionsPage() {
         <TablePagination total={pagination.total} page={pagination.page} totalPages={pagination.totalPages} />
       )}
 
-      {showModal && (
-        <Modal onClose={closeModal} title={SUBSCRIPTIONS_PAGE.form.title}>
-          <form onSubmit={handleSubmit}>
-            <ModalBody>
-              <Div type="col" gap="md">
-                <FormField label={SUBSCRIPTIONS_PAGE.form.school} error={form.formState.errors.school_id?.message}>
-                  <Select {...form.register('school_id')}>
-                    <option value="">{SUBSCRIPTIONS_PAGE.placeholders.selectSchool}</option>
-                    {schools.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </Select>
+      <ResponsiveModalContainer isOpen={showModal} onClose={closeModal} title={SUBSCRIPTIONS_PAGE.form.title}>
+        <form onSubmit={handleSubmit}>
+          <div className="px-4 py-4">
+            <Div type="col" gap="md">
+              <FormField label={SUBSCRIPTIONS_PAGE.form.school} error={form.formState.errors.school_id?.message}>
+                <ResponsiveSelect
+                  {...form.register('school_id')}
+                  customPlaceholder={SUBSCRIPTIONS_PAGE.placeholders.selectSchool}
+                  options={schools.map((s) => ({ value: s.id, label: s.name }))}
+                />
+              </FormField>
+              <Div type="grid" cols={2} gap="md">
+                <FormField label={SUBSCRIPTIONS_PAGE.form.planName} error={form.formState.errors.plan_name?.message}>
+                  <Input placeholder={SUBSCRIPTIONS_PAGE.placeholders.planName} {...form.register('plan_name')} />
                 </FormField>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={SUBSCRIPTIONS_PAGE.form.planName} error={form.formState.errors.plan_name?.message}>
-                    <Input placeholder={SUBSCRIPTIONS_PAGE.placeholders.planName} {...form.register('plan_name')} />
-                  </FormField>
-                  <FormField label={SUBSCRIPTIONS_PAGE.form.planType} error={form.formState.errors.plan_type?.message}>
-                    <Select {...form.register('plan_type')}>
-                      {PLAN_TYPE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </Select>
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={SUBSCRIPTIONS_PAGE.form.amount} error={form.formState.errors.amount?.message}>
-                    <Input type="number" placeholder={SUBSCRIPTIONS_PAGE.placeholders.amount} {...form.register('amount')} />
-                  </FormField>
-                  <FormField label={SUBSCRIPTIONS_PAGE.form.maxStudents} error={form.formState.errors.max_students?.message}>
-                    <Input type="number" placeholder={SUBSCRIPTIONS_PAGE.placeholders.maxStudents} {...form.register('max_students')} />
-                  </FormField>
-                </Div>
-                <Div type="grid" cols={2} gap="md">
-                  <FormField label={SUBSCRIPTIONS_PAGE.form.startDate} error={form.formState.errors.start_date?.message}>
-                    <Input type="date" {...form.register('start_date')} />
-                  </FormField>
-                  <FormField label={SUBSCRIPTIONS_PAGE.form.endDate} error={form.formState.errors.end_date?.message}>
-                    <Input type="date" {...form.register('end_date')} />
-                  </FormField>
-                </Div>
+                <FormField label={SUBSCRIPTIONS_PAGE.form.planType} error={form.formState.errors.plan_type?.message}>
+                  <ResponsiveSelect
+                    {...form.register('plan_type')}
+                    options={PLAN_TYPE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  />
+                </FormField>
               </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="outline" onClick={closeModal}>{SUBSCRIPTIONS_PAGE.form.cancel}</Button>
-              <Button type="submit" loading={isSubmitting}>{SUBSCRIPTIONS_PAGE.form.submit}</Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
+              <Div type="grid" cols={2} gap="md">
+                <FormField label={SUBSCRIPTIONS_PAGE.form.amount} error={form.formState.errors.amount?.message}>
+                  <Input type="number" placeholder={SUBSCRIPTIONS_PAGE.placeholders.amount} {...form.register('amount')} />
+                </FormField>
+                <FormField label={SUBSCRIPTIONS_PAGE.form.maxStudents} error={form.formState.errors.max_students?.message}>
+                  <Input type="number" placeholder={SUBSCRIPTIONS_PAGE.placeholders.maxStudents} {...form.register('max_students')} />
+                </FormField>
+              </Div>
+              <Div type="grid" cols={2} gap="md">
+                <FormField label={SUBSCRIPTIONS_PAGE.form.startDate} error={form.formState.errors.start_date?.message}>
+                  <Input type="date" {...form.register('start_date')} />
+                </FormField>
+                <FormField label={SUBSCRIPTIONS_PAGE.form.endDate} error={form.formState.errors.end_date?.message}>
+                  <Input type="date" {...form.register('end_date')} />
+                </FormField>
+              </Div>
+            </Div>
+          </div>
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            <Button type="button" variant="outline" onClick={closeModal}>{SUBSCRIPTIONS_PAGE.form.cancel}</Button>
+            <Button type="submit" loading={isSubmitting}>{SUBSCRIPTIONS_PAGE.form.submit}</Button>
+          </div>
+        </form>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

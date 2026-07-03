@@ -12,6 +12,8 @@ import {
   Modal, ModalBody, ModalFooter, FormField, PhoneField,
   Badge, Spinner,
   type ColumnDef,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 
 type SchoolRow = {
@@ -133,9 +135,9 @@ export default function SchoolsPage() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <Modal onClose={closeCreateModal} title={CREATE_SCHOOL_FORM.title}>
+        <ResponsiveModalContainer isOpen={showCreateModal} onClose={closeCreateModal} title={CREATE_SCHOOL_FORM.title}>
           <form onSubmit={handleCreateSubmit}>
-            <ModalBody>
+            <div className="px-4 py-4">
               <Div type="col" gap="lg">
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.basic}</P>
@@ -148,10 +150,11 @@ export default function SchoolsPage() {
                     </FormField>
                   </Div>
                   <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
-                    <Select {...createForm.register('board_type')}>
-                      <option value="">{CREATE_SCHOOL_FORM.placeholders.board_type}</option>
-                      {BOARD_TYPES.map((b) => <option key={b} value={b}>{b}</option>)}
-                    </Select>
+                    <ResponsiveSelect
+                      {...createForm.register('board_type')}
+                      customPlaceholder={CREATE_SCHOOL_FORM.placeholders.board_type}
+                      options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
+                    />
                   </FormField>
                 </Div>
                 <Div type="col" gap="md">
@@ -187,20 +190,20 @@ export default function SchoolsPage() {
                   </Div>
                 </Div>
               </Div>
-            </ModalBody>
-            <ModalFooter>
+            </div>
+            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeCreateModal}>{CREATE_SCHOOL_FORM.cancel}</Button>
               <Button type="submit" loading={isCreating}>{CREATE_SCHOOL_FORM.submit.idle}</Button>
-            </ModalFooter>
+            </div>
           </form>
-        </Modal>
+        </ResponsiveModalContainer>
       )}
 
       {/* Edit Modal */}
       {editingSchool && (
-        <Modal onClose={closeEditModal} title={`Edit — ${editingSchool.name}`}>
+        <ResponsiveModalContainer isOpen={!!editingSchool} onClose={closeEditModal} title={`Edit — ${editingSchool.name}`}>
           <form onSubmit={handleEditSubmit}>
-            <ModalBody>
+            <div className="px-4 py-4">
               <Div type="col" gap="lg">
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.basic}</P>
@@ -213,10 +216,11 @@ export default function SchoolsPage() {
                     </FormField>
                   </Div>
                   <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
-                    <Select {...editForm.register('board_type')}>
-                      <option value="">{CREATE_SCHOOL_FORM.placeholders.board_type}</option>
-                      {BOARD_TYPES.map((b) => <option key={b} value={b}>{b}</option>)}
-                    </Select>
+                    <ResponsiveSelect
+                      {...editForm.register('board_type')}
+                      customPlaceholder={CREATE_SCHOOL_FORM.placeholders.board_type}
+                      options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
+                    />
                   </FormField>
                 </Div>
                 <Div type="col" gap="md">
@@ -252,13 +256,13 @@ export default function SchoolsPage() {
                   </Div>
                 </Div>
               </Div>
-            </ModalBody>
-            <ModalFooter>
+            </div>
+            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeEditModal}>{CREATE_SCHOOL_FORM.cancel}</Button>
               <Button type="submit" loading={isUpdating}>Save Changes</Button>
-            </ModalFooter>
+            </div>
           </form>
-        </Modal>
+        </ResponsiveModalContainer>
       )}
     </PageCol>
   );

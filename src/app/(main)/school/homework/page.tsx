@@ -12,7 +12,7 @@ import {
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge, Spinner, Modal, FormField, FilterLabel, Icon,
+  Badge, Spinner, Modal, FormField, FilterLabel, Icon, ResponsiveSelect, ResponsiveModalContainer,
 } from '@/components/ui';
 import { Plus, Pencil, Trash2, ListChecks } from 'lucide-react';
 
@@ -136,58 +136,56 @@ export default function HomeworkPage() {
       </Table>
 
       {showSubmissionsModal && (
-        <Modal
+        <ResponsiveModalContainer
+          isOpen={showSubmissionsModal}
           title={HOMEWORK_PAGE.submissions.title}
           onClose={() => setShowSubmissionsModal(false)}
-          size="lg"
         >
-          <Div type="col" gap="md" padding="px-6 py-5">
-            <Table>
-              <TableHead>
-                <TableHeadRow>
-                  <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.student}</TableHeaderCell>
-                  <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.status}</TableHeaderCell>
-                  <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.remarks}</TableHeaderCell>
-                </TableHeadRow>
-              </TableHead>
-              <TableBody>
-                {students.length === 0 ? (
-                  <TableEmptyRow colSpan={3}>{HOMEWORK_PAGE.submissions.empty}</TableEmptyRow>
-                ) : (
-                  students.map((s) => (
-                    <TableRow key={s.id}>
-                      <TableCell primary>{s.first_name} {s.last_name ?? ''}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={submissionMap[s.id]?.status ?? 'PENDING'}
-                          onChange={(e) => setSubmission(s.id, 'status', e.target.value)}
-                          width="sm"
-                        >
-                          {SUBMISSION_STATUS_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          placeholder="Remarks"
-                          value={submissionMap[s.id]?.remarks ?? ''}
-                          onChange={(e) => setSubmission(s.id, 'remarks', e.target.value)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            <Div type="row" justify="end" gap="sm">
-              <Button variant="outline" onClick={() => setShowSubmissionsModal(false)}>Cancel</Button>
-              <Button loading={isSaving} onClick={saveSubmissions}>
-                {HOMEWORK_PAGE.submissions.save}
-              </Button>
+          <div className="px-4 py-4">
+            <Div type="col" gap="md">
+              <Table>
+                <TableHead>
+                  <TableHeadRow>
+                    <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.student}</TableHeaderCell>
+                    <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.status}</TableHeaderCell>
+                    <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.remarks}</TableHeaderCell>
+                  </TableHeadRow>
+                </TableHead>
+                <TableBody>
+                  {students.length === 0 ? (
+                    <TableEmptyRow colSpan={3}>{HOMEWORK_PAGE.submissions.empty}</TableEmptyRow>
+                  ) : (
+                    students.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell primary>{s.first_name} {s.last_name ?? ''}</TableCell>
+                        <TableCell>
+                          <ResponsiveSelect
+                            value={submissionMap[s.id]?.status ?? 'PENDING'}
+                            onChange={(e) => setSubmission(s.id, 'status', e.target.value)}
+                            options={SUBMISSION_STATUS_OPTIONS}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            placeholder="Remarks"
+                            value={submissionMap[s.id]?.remarks ?? ''}
+                            onChange={(e) => setSubmission(s.id, 'remarks', e.target.value)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              <Div type="row" justify="end" gap="sm">
+                <Button variant="outline" onClick={() => setShowSubmissionsModal(false)}>Cancel</Button>
+                <Button loading={isSaving} onClick={saveSubmissions}>
+                  {HOMEWORK_PAGE.submissions.save}
+                </Button>
+              </Div>
             </Div>
-          </Div>
-        </Modal>
+          </div>
+        </ResponsiveModalContainer>
       )}
     </PageCol>
   );

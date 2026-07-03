@@ -5,7 +5,8 @@ import {
   Div, Button, Span, P,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge, Spinner, Icon, FormField, Input, Select, FormCard,
+  Badge, Spinner, Icon, FormField, Input, FormCard,
+  ResponsiveSelect,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFinanceLedger, LEDGER_TABS } from '@/hooks/useFinanceLedger';
@@ -39,16 +40,16 @@ export default function FinanceLedgerPage() {
           <FormCard title="Record Finance Expense">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2 lg:grid-cols-3">
               <FormField label="Expense Head" required>
-                <Select value={expenseForm.expense_head_id} onChange={e => setExpenseForm(f => ({ ...f, expense_head_id: e.target.value }))}>
-                  <option value="">Select Expense Head</option>
-                  {expenseHeads.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={expenseForm.expense_head_id} onChange={e => setExpenseForm(f => ({ ...f, expense_head_id: e.target.value }))}
+                  customPlaceholder="Select Expense Head"
+                  options={expenseHeads.map(h => ({ value: h.id, label: h.name }))}
+                />
               </FormField>
               <FormField label="From Account" required>
-                <Select value={expenseForm.from_account_id} onChange={e => setExpenseForm(f => ({ ...f, from_account_id: e.target.value }))}>
-                  <option value="">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} — ₹{parseFloat(a.current_balance).toLocaleString('en-IN')}</option>)}
-                </Select>
+                <ResponsiveSelect value={expenseForm.from_account_id} onChange={e => setExpenseForm(f => ({ ...f, from_account_id: e.target.value }))}
+                  customPlaceholder="Select Account"
+                  options={accounts.map(a => ({ value: a.id, label: `${a.name} — ₹${parseFloat(a.current_balance).toLocaleString('en-IN')}` }))}
+                />
               </FormField>
               <FormField label="Total Expense Amount" required>
                 <Input type="number" min="0" step="0.01" placeholder="Enter Expense Amount" value={expenseForm.total_amount || ''} onChange={e => setExpenseForm(f => ({ ...f, total_amount: parseFloat(e.target.value) || 0 }))} />
@@ -57,10 +58,10 @@ export default function FinanceLedgerPage() {
                 <Input type="date" value={expenseForm.date_of_expense} onChange={e => setExpenseForm(f => ({ ...f, date_of_expense: e.target.value }))} />
               </FormField>
               <FormField label="Select Employee">
-                <Select value={expenseForm.employee_id ?? ''} onChange={e => setExpenseForm(f => ({ ...f, employee_id: e.target.value || undefined }))}>
-                  <option value="">Select Employee (optional)</option>
-                  {staffList.map(s => <option key={s.id} value={s.id}>{s.first_name}{s.last_name ? ` ${s.last_name}` : ''}{s.employee_code ? ` (${s.employee_code})` : ''}</option>)}
-                </Select>
+                <ResponsiveSelect value={expenseForm.employee_id ?? ''} onChange={e => setExpenseForm(f => ({ ...f, employee_id: e.target.value || undefined }))}
+                  customPlaceholder="Select Employee (optional)"
+                  options={staffList.map(s => ({ value: s.id, label: `${s.first_name}${s.last_name ? ` ${s.last_name}` : ''}${s.employee_code ? ` (${s.employee_code})` : ''}` }))}
+                />
               </FormField>
               <FormField label="Remarks" required>
                 <Input placeholder="Enter Remarks" value={expenseForm.remarks ?? ''} onChange={e => setExpenseForm(f => ({ ...f, remarks: e.target.value }))} />
@@ -119,16 +120,16 @@ export default function FinanceLedgerPage() {
           <FormCard title="Record Finance Income">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2 lg:grid-cols-3">
               <FormField label="Income Head" required>
-                <Select value={incomeForm.income_head_id} onChange={e => setIncomeForm(f => ({ ...f, income_head_id: e.target.value }))}>
-                  <option value="">Select Income Head</option>
-                  {incomeHeads.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={incomeForm.income_head_id} onChange={e => setIncomeForm(f => ({ ...f, income_head_id: e.target.value }))}
+                  customPlaceholder="Select Income Head"
+                  options={incomeHeads.map(h => ({ value: h.id, label: h.name }))}
+                />
               </FormField>
               <FormField label="In Account" required>
-                <Select value={incomeForm.to_account_id} onChange={e => setIncomeForm(f => ({ ...f, to_account_id: e.target.value }))}>
-                  <option value="">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} — ₹{parseFloat(a.current_balance).toLocaleString('en-IN')}</option>)}
-                </Select>
+                <ResponsiveSelect value={incomeForm.to_account_id} onChange={e => setIncomeForm(f => ({ ...f, to_account_id: e.target.value }))}
+                  customPlaceholder="Select Account"
+                  options={accounts.map(a => ({ value: a.id, label: `${a.name} — ₹${parseFloat(a.current_balance).toLocaleString('en-IN')}` }))}
+                />
               </FormField>
               <FormField label="Amount" required>
                 <Input type="number" min="0" step="0.01" placeholder="Enter Income Amount" value={incomeForm.amount || ''} onChange={e => setIncomeForm(f => ({ ...f, amount: parseFloat(e.target.value) || 0 }))} />
@@ -137,10 +138,10 @@ export default function FinanceLedgerPage() {
                 <Input type="date" value={incomeForm.date_of_income} onChange={e => setIncomeForm(f => ({ ...f, date_of_income: e.target.value }))} />
               </FormField>
               <FormField label="Select Student">
-                <Select value={incomeForm.student_id ?? ''} onChange={e => setIncomeForm(f => ({ ...f, student_id: e.target.value || undefined }))}>
-                  <option value="">Select Student (optional)</option>
-                  {studentList.map(s => <option key={s.id} value={s.id}>{s.first_name}{s.last_name ? ` ${s.last_name}` : ''}{s.admission_number ? ` — ${s.admission_number}` : ''}{s.class_name ? ` (${s.class_name}${s.section_name ? ` ${s.section_name}` : ''})` : ''}</option>)}
-                </Select>
+                <ResponsiveSelect value={incomeForm.student_id ?? ''} onChange={e => setIncomeForm(f => ({ ...f, student_id: e.target.value || undefined }))}
+                  customPlaceholder="Select Student (optional)"
+                  options={studentList.map(s => ({ value: s.id, label: `${s.first_name}${s.last_name ? ` ${s.last_name}` : ''}${s.admission_number ? ` — ${s.admission_number}` : ''}${s.class_name ? ` (${s.class_name}${s.section_name ? ` ${s.section_name}` : ''})` : ''}` }))}
+                />
               </FormField>
               <FormField label="Remarks" required>
                 <Input placeholder="Enter Remarks" value={incomeForm.remarks ?? ''} onChange={e => setIncomeForm(f => ({ ...f, remarks: e.target.value }))} />
@@ -199,16 +200,16 @@ export default function FinanceLedgerPage() {
           <FormCard title="Account Balance Transfer">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-2 lg:grid-cols-3">
               <FormField label="From Account" required>
-                <Select value={transferForm.from_account_id} onChange={e => setTransferForm(f => ({ ...f, from_account_id: e.target.value }))}>
-                  <option value="">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} — ₹{parseFloat(a.current_balance).toLocaleString('en-IN')}</option>)}
-                </Select>
+                <ResponsiveSelect value={transferForm.from_account_id} onChange={e => setTransferForm(f => ({ ...f, from_account_id: e.target.value }))}
+                  customPlaceholder="Select Account"
+                  options={accounts.map(a => ({ value: a.id, label: `${a.name} — ₹${parseFloat(a.current_balance).toLocaleString('en-IN')}` }))}
+                />
               </FormField>
               <FormField label="To Account" required>
-                <Select value={transferForm.to_account_id} onChange={e => setTransferForm(f => ({ ...f, to_account_id: e.target.value }))}>
-                  <option value="">Select Account</option>
-                  {accounts.filter(a => a.id !== transferForm.from_account_id).map(a => <option key={a.id} value={a.id}>{a.name} — ₹{parseFloat(a.current_balance).toLocaleString('en-IN')}</option>)}
-                </Select>
+                <ResponsiveSelect value={transferForm.to_account_id} onChange={e => setTransferForm(f => ({ ...f, to_account_id: e.target.value }))}
+                  customPlaceholder="Select Account"
+                  options={accounts.filter(a => a.id !== transferForm.from_account_id).map(a => ({ value: a.id, label: `${a.name} — ₹${parseFloat(a.current_balance).toLocaleString('en-IN')}` }))}
+                />
               </FormField>
               <FormField label="Amount" required>
                 <Input type="number" min="0" step="0.01" placeholder="Enter Amount" value={transferForm.amount || ''} onChange={e => setTransferForm(f => ({ ...f, amount: parseFloat(e.target.value) || 0 }))} />
@@ -275,10 +276,10 @@ export default function FinanceLedgerPage() {
           <FormCard title="Account Statement">
             <Div type="grid" cols={1} gap="md" className="sm:grid-cols-3">
               <FormField label="Account" required>
-                <Select value={statementFilters.account_id} onChange={e => setStatementFilters(f => ({ ...f, account_id: e.target.value }))}>
-                  <option value="">Select Account</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={statementFilters.account_id} onChange={e => setStatementFilters(f => ({ ...f, account_id: e.target.value }))}
+                  customPlaceholder="Select Account"
+                  options={accounts.map(a => ({ value: a.id, label: a.name }))}
+                />
               </FormField>
               <FormField label="Start Date" required>
                 <Input type="date" value={statementFilters.start_date} onChange={e => setStatementFilters(f => ({ ...f, start_date: e.target.value }))} />
@@ -351,17 +352,19 @@ export default function FinanceLedgerPage() {
                 <Input type="date" value={registerFilters.end_date} onChange={e => setRegisterFilters(f => ({ ...f, end_date: e.target.value }))} />
               </FormField>
               <FormField label="Account">
-                <Select value={registerFilters.account_id} onChange={e => setRegisterFilters(f => ({ ...f, account_id: e.target.value }))}>
-                  <option value="">All Accounts</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </Select>
+                <ResponsiveSelect value={registerFilters.account_id} onChange={e => setRegisterFilters(f => ({ ...f, account_id: e.target.value }))}
+                  customPlaceholder="All Accounts"
+                  options={accounts.map(a => ({ value: a.id, label: a.name }))}
+                />
               </FormField>
               <FormField label="Head Type">
-                <Select value={registerFilters.head_type} onChange={e => setRegisterFilters(f => ({ ...f, head_type: e.target.value }))}>
-                  <option value="">Income & Expense</option>
-                  <option value="Income">Income</option>
-                  <option value="Expense">Expense</option>
-                </Select>
+                <ResponsiveSelect value={registerFilters.head_type} onChange={e => setRegisterFilters(f => ({ ...f, head_type: e.target.value }))}
+                  customPlaceholder="Income & Expense"
+                  options={[
+                    { value: 'Income', label: 'Income' },
+                    { value: 'Expense', label: 'Expense' },
+                  ]}
+                />
               </FormField>
             </Div>
             <Div className="mt-4 flex justify-end">

@@ -10,7 +10,6 @@ import type { AdmissionSource } from "@/types/admissions.types";
 import {
   Div,
   Button,
-  Select,
   Badge,
   Spinner,
   DataTable,
@@ -18,6 +17,7 @@ import {
   PageHeader,
   PageCol,
   FilterBar,
+  ResponsiveSelect,
 } from "@/components/ui";
 
 function AdmissionSourcesContent() {
@@ -155,22 +155,24 @@ function AdmissionSourcesContent() {
       />
 
       <FilterBar>
-        <Select
-          width="sm"
-          value={
-            filters.is_enabled === undefined ? "" : String(filters.is_enabled)
-          }
-          onChange={(e) =>
-            handleFilterChange({
-              is_enabled:
-                e.target.value === "" ? undefined : e.target.value === "true",
-            })
-          }
-        >
-          <option value="">All Statuses</option>
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
-        </Select>
+        <Div className="w-full sm:w-48">
+          <ResponsiveSelect
+            value={
+              filters.is_enabled === undefined ? "" : String(filters.is_enabled)
+            }
+            onChange={(e) =>
+              handleFilterChange({
+                is_enabled:
+                  e.target.value === "" ? undefined : e.target.value === "true",
+              })
+            }
+            customPlaceholder="All Statuses"
+            options={[
+              { value: "true", label: "Enabled" },
+              { value: "false", label: "Disabled" },
+            ]}
+          />
+        </Div>
       </FilterBar>
 
       <DataTable

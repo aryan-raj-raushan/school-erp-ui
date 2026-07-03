@@ -11,11 +11,11 @@ import {
   P,
   Button,
   Input,
-  Select,
   FormField,
   Badge,
   Spinner,
   InfoRow,
+  ResponsiveSelect,
 } from '@/components/ui';
 import {
   LEAVE_TYPE_PAGE,
@@ -169,30 +169,20 @@ function LeaveTypeViewContent() {
                   label={`${LEAVE_TYPE_PAGE.labels.leaveValidity} *`}
                   error={errors.leave_validity?.message}
                 >
-                  <Select {...register('leave_validity')}>
-                    {LEAVE_VALIDITY_OPTIONS.filter((o) => o.value !== '').map(
-                      (o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ),
-                    )}
-                  </Select>
+                  <ResponsiveSelect
+                    {...register('leave_validity')}
+                    options={LEAVE_VALIDITY_OPTIONS.filter((o) => o.value !== '').map((o) => ({ value: o.value, label: o.label }))}
+                  />
                 </FormField>
 
                 <FormField
                   label={`${LEAVE_TYPE_PAGE.labels.leavePayType} *`}
                   error={errors.leave_pay_type?.message}
                 >
-                  <Select {...register('leave_pay_type')}>
-                    {LEAVE_PAY_TYPE_OPTIONS.filter((o) => o.value !== '').map(
-                      (o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ),
-                    )}
-                  </Select>
+                  <ResponsiveSelect
+                    {...register('leave_pay_type')}
+                    options={LEAVE_PAY_TYPE_OPTIONS.filter((o) => o.value !== '').map((o) => ({ value: o.value, label: o.label }))}
+                  />
                 </FormField>
               </Div>
 

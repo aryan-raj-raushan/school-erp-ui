@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
+  FileText,
+  Clock,
 } from "lucide-react";
 import { useAdmissionEnquiryDetail } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
@@ -46,16 +48,18 @@ import {
   TableRow,
   TableCell,
   TableEmptyRow,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from "@/components/ui";
 import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
 import { GENDER_OPTIONS } from "@/constants";
 import { CATEGORY_OPTIONS, RELIGION_OPTIONS } from "@/constants/shared/index.constant";
 
 const ACTION_ICON: Record<EnquiryAction, React.ReactNode> = {
-  NEW_ENQUIRY: <Plus size={14} />,
-  NEXT_FOLLOW_UP_UPDATE: <RefreshCw size={14} className="text-blue-500" />,
-  ADMISSION_CONFIRMED: <CheckCircle2 size={14} className="text-emerald-500" />,
-  ENQUIRY_REJECTED: <XCircle size={14} className="text-red-500" />,
+  NEW_ENQUIRY: <FileText size={16} className="text-slate-500" />,
+  NEXT_FOLLOW_UP_UPDATE: <Clock size={16} className="text-blue-500" />,
+  ADMISSION_CONFIRMED: <CheckCircle2 size={16} className="text-emerald-500" />,
+  ENQUIRY_REJECTED: <XCircle size={16} className="text-red-500" />,
 };
 
 export function AdmissionEnquiryDetail({ id }: { id: string }) {
@@ -163,7 +167,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
         }
         actions={
           <Div type="row" gap="sm" align="center" wrap>
-            <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <Button variant="outline" size="sm" onClick={() => router.back()}>
               <ArrowLeft size={14} /> Back
             </Button>
             {!isNew && !isEditing && enquiry && (
@@ -500,32 +504,29 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                 >
                   <Input type="date" {...register("date_of_birth")} />
                 </FormField>
-                <FormField label="Gender" error={errors.gender?.message}>
-                  <Select {...register("gender")}>
-                    {GENDER_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                <FormField label="Gender" error={errors.gender?.message} htmlFor="gender">
+                  <ResponsiveSelect
+                    id="gender"
+                    {...register("gender")}
+                    customPlaceholder="Select gender"
+                    options={GENDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  />
                 </FormField>
-                <FormField label="Category" error={errors.category?.message}>
-                  <Select {...register("category")}>
-                    {CATEGORY_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                <FormField label="Category" error={errors.category?.message} htmlFor="category">
+                  <ResponsiveSelect
+                    id="category"
+                    {...register("category")}
+                    customPlaceholder="Select category"
+                    options={CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  />
                 </FormField>
-                <FormField label="Religion" error={errors.religion?.message}>
-                  <Select {...register("religion")}>
-                    {RELIGION_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
+                <FormField label="Religion" error={errors.religion?.message} htmlFor="religion">
+                  <ResponsiveSelect
+                    id="religion"
+                    {...register("religion")}
+                    customPlaceholder="Select religion"
+                    options={RELIGION_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  />
                 </FormField>
                 <FormField label="Current Address" className="col-span-full">
                   <Input
@@ -550,43 +551,40 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                   label="Academic Year"
                   required
                   error={errors.academic_year_id?.message}
+                  htmlFor="academic_year_id"
                 >
-                  <Select {...register("academic_year_id")}>
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    id="academic_year_id"
+                    {...register("academic_year_id")}
+                    customPlaceholder="Select year"
+                    options={years.map((y) => ({ value: y.id, label: y.name }))}
+                  />
                 </FormField>
                 <FormField
                   label="Applying Academic Year"
                   required
                   error={errors.applying_academic_year_id?.message}
+                  htmlFor="applying_academic_year_id"
                 >
-                  <Select {...register("applying_academic_year_id")}>
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    id="applying_academic_year_id"
+                    {...register("applying_academic_year_id")}
+                    customPlaceholder="Select year"
+                    options={years.map((y) => ({ value: y.id, label: y.name }))}
+                  />
                 </FormField>
                 <FormField
                   label="Applying Class"
                   required
                   error={errors.applying_class_id?.message}
+                  htmlFor="applying_class_id"
                 >
-                  <Select {...register("applying_class_id")}>
-                    <option value="">Select class</option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    id="applying_class_id"
+                    {...register("applying_class_id")}
+                    customPlaceholder="Select class"
+                    options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                  />
                 </FormField>
                 <FormField label="Previous School">
                   <Input
@@ -626,25 +624,21 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                 Enquiry Information
               </H2>
               <FormGrid>
-                <FormField label="Enquiry Source">
-                  <Select {...register("enquiry_source_id")}>
-                    <option value="">Select source</option>
-                    {sources.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </Select>
+                <FormField label="Enquiry Source" htmlFor="enquiry_source_id">
+                  <ResponsiveSelect
+                    id="enquiry_source_id"
+                    {...register("enquiry_source_id")}
+                    customPlaceholder="Select source"
+                    options={sources.map((s) => ({ value: s.id, label: s.name }))}
+                  />
                 </FormField>
-                <FormField label="Assigned Teacher">
-                  <Select {...register("assigned_teacher_id")}>
-                    <option value="">Select teacher</option>
-                    {teachers.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.first_name} {t.last_name ?? ""}
-                      </option>
-                    ))}
-                  </Select>
+                <FormField label="Assigned Teacher" htmlFor="assigned_teacher_id">
+                  <ResponsiveSelect
+                    id="assigned_teacher_id"
+                    {...register("assigned_teacher_id")}
+                    customPlaceholder="Select teacher"
+                    options={teachers.map((t) => ({ value: t.id, label: `${t.first_name} ${t.last_name ?? ""}` }))}
+                  />
                 </FormField>
                 <FormField label="Next Follow-up Date">
                   <Input type="date" {...register("next_followup_date")} />
@@ -653,14 +647,14 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                   <Input type="time" {...register("next_followup_time")} />
                 </FormField>
                 {!isNew && (
-                  <FormField label="Status" error={errors.status?.message}>
-                    <Select {...register("status")} disabled={isTerminal}>
-                      {STATUS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </Select>
+                  <FormField label="Status" error={errors.status?.message} htmlFor="status">
+                    <ResponsiveSelect
+                      id="status"
+                      {...register("status")}
+                      disabled={isTerminal}
+                      customPlaceholder="Select status"
+                      options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                    />
                   </FormField>
                 )}
                 <FormField
@@ -795,96 +789,97 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
         </Div>
       )}
 
-      {/* Add History Modal */}
-      {showHistoryModal && (
-        <Modal onClose={closeHistoryModal} title="Add History Entry" size="md">
-          <form onSubmit={historyForm.handleSubmit(handleAddHistory as any)}>
-            <ModalBody>
-              <Div type="col" gap="md">
+      {/* Add History Modal - Responsive */}
+      <ResponsiveModalContainer
+        isOpen={showHistoryModal}
+        onClose={closeHistoryModal}
+        title="Add History Entry"
+      >
+        <form onSubmit={historyForm.handleSubmit(handleAddHistory as any)}>
+          <div className="px-4 py-4 space-y-4">
+            <FormField
+              label="Action"
+              required
+              error={historyForm.formState.errors.action?.message}
+            >
+              <Select
+                {...historyForm.register("action")}
+                disabled={lockedAction}
+              >
+                {ACTION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            {/* Conditionally show follow-up date/time */}
+            {historyForm.watch("action") === "NEXT_FOLLOW_UP_UPDATE" && (
+              <Div type="grid" cols={2} gap="md">
                 <FormField
-                  label="Action"
+                  label="Next Follow-up Date"
                   required
-                  error={historyForm.formState.errors.action?.message}
-                >
-                  <Select
-                    {...historyForm.register("action")}
-                    disabled={lockedAction}
-                  >
-                    {ACTION_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </Select>
-                </FormField>
-
-                {/* Conditionally show follow-up date/time */}
-                {historyForm.watch("action") === "NEXT_FOLLOW_UP_UPDATE" && (
-                  <Div type="grid" cols={2} gap="md">
-                    <FormField
-                      label="Next Follow-up Date"
-                      required
-                      error={
-                        historyForm.formState.errors.next_followup_date?.message
-                      }
-                    >
-                      <Input
-                        type="date"
-                        {...historyForm.register("next_followup_date")}
-                      />
-                    </FormField>
-                    <FormField
-                      label="Next Follow-up Time"
-                      error={
-                        historyForm.formState.errors.next_followup_time?.message
-                      }
-                    >
-                      <Input
-                        type="time"
-                        {...historyForm.register("next_followup_time")}
-                      />
-                    </FormField>
-                  </Div>
-                )}
-
-                <FormField
-                  label="Details"
-                  error={historyForm.formState.errors.details?.message}
+                  error={
+                    historyForm.formState.errors.next_followup_date?.message
+                  }
                 >
                   <Input
-                    placeholder="Brief summary of what happened"
-                    {...historyForm.register("details")}
+                    type="date"
+                    {...historyForm.register("next_followup_date")}
                   />
                 </FormField>
                 <FormField
-                  label="Remarks"
-                  required
-                  error={historyForm.formState.errors.remarks?.message}
+                  label="Next Follow-up Time"
+                  error={
+                    historyForm.formState.errors.next_followup_time?.message
+                  }
                 >
-                  <textarea
-                    rows={3}
-                    placeholder="Add detailed remarks…"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                    {...historyForm.register("remarks")}
+                  <Input
+                    type="time"
+                    {...historyForm.register("next_followup_time")}
                   />
                 </FormField>
               </Div>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeHistoryModal}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" loading={isHistorySubmitting}>
-                Add Entry
-              </Button>
-            </ModalFooter>
-          </form>
-        </Modal>
-      )}
+            )}
+
+            <FormField
+              label="Details"
+              error={historyForm.formState.errors.details?.message}
+            >
+              <Input
+                placeholder="Brief summary of what happened"
+                {...historyForm.register("details")}
+              />
+            </FormField>
+            <FormField
+              label="Remarks"
+              required
+              error={historyForm.formState.errors.remarks?.message}
+            >
+              <textarea
+                rows={3}
+                placeholder="Add detailed remarks…"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                {...historyForm.register("remarks")}
+              />
+            </FormField>
+          </div>
+
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeHistoryModal}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={isHistorySubmitting}>
+              Add Entry
+            </Button>
+          </div>
+        </form>
+      </ResponsiveModalContainer>
     </Div>
   );
 }

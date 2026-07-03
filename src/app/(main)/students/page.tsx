@@ -26,7 +26,6 @@ import {
   P,
   Button,
   Input,
-  Select,
   Badge,
   Spinner,
   DataTable,
@@ -34,6 +33,7 @@ import {
   PageCol,
   FilterBar,
   PageHeader,
+  ResponsiveSelect,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -322,8 +322,8 @@ function StudentsContent() {
             handleFilterChange({ search: e.target.value || undefined })
           }
         />
-        <Select
-          width="sm"
+        <ResponsiveSelect
+          className="w-32 max-w-full"
           value={filters.academic_year_id ?? ""}
           onChange={(e) =>
             handleFilterChange({
@@ -332,17 +332,14 @@ function StudentsContent() {
               section_id: undefined,
             })
           }
-        >
-          <option value="">{STUDENT_PAGE.filters.allYears}</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-              {y.is_current ? " (Current)" : ""}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+          customPlaceholder={STUDENT_PAGE.filters.allYears}
+          options={years.map((y) => ({
+            value: y.id,
+            label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+          }))}
+        />
+        <ResponsiveSelect
+          className="w-32 max-w-full"
           value={filters.class_id ?? ""}
           onChange={(e) =>
             handleFilterChange({
@@ -351,61 +348,41 @@ function StudentsContent() {
             })
           }
           disabled={!filters.academic_year_id}
-        >
-          <option value="">{STUDENT_PAGE.filters.allClasses}</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+          customPlaceholder={STUDENT_PAGE.filters.allClasses}
+          options={classes.map((c) => ({ value: c.id, label: c.name }))}
+        />
+        <ResponsiveSelect
+          className="w-32 max-w-full"
           value={filters.section_id ?? ""}
           onChange={(e) =>
             handleFilterChange({ section_id: e.target.value || undefined })
           }
           disabled={!filters.class_id}
-        >
-          <option value="">{STUDENT_PAGE.filters.allSections}</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+          customPlaceholder={STUDENT_PAGE.filters.allSections}
+          options={sections.map((s) => ({ value: s.id, label: s.name }))}
+        />
+        <ResponsiveSelect
+          className="w-32 max-w-full"
           value={filters.status ?? ""}
           onChange={(e) =>
             handleFilterChange({
               status: (e.target.value as StudentStatus) || undefined,
             })
           }
-        >
-          <option value="">{STUDENT_PAGE.filters.allStatus}</option>
-          {STUDENT_STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+          customPlaceholder={STUDENT_PAGE.filters.allStatus}
+          options={STUDENT_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+        />
+        <ResponsiveSelect
+          className="w-32 max-w-full"
           value={filters.gender ?? ""}
           onChange={(e) =>
             handleFilterChange({
               gender: (e.target.value as Gender) || undefined,
             })
           }
-        >
-          <option value="">{STUDENT_PAGE.filters.allGender}</option>
-          {GENDER_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          customPlaceholder={STUDENT_PAGE.filters.allGender}
+          options={GENDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+        />
       </FilterBar>
 
       <DataTable

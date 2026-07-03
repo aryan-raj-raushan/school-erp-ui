@@ -10,7 +10,6 @@ import {
   Div,
   P,
   Button,
-  Select,
   Input,
   PageHeader,
   PageCol,
@@ -18,6 +17,7 @@ import {
   MiniStat,
   FilterLabel,
   DataTable,
+  ResponsiveSelect,
   type ColumnDef,
 } from "@/components/ui";
 
@@ -180,50 +180,37 @@ export default function StudentAttendancePage() {
         <Div type="grid" cols={3} gap="md">
           <Div type="col" gap="xs">
             <FilterLabel>Academic Year</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={selectedAcademicYearId}
               onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-            >
-              <option value="">Select year</option>
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name}
-                  {y.is_current ? " (Current)" : ""}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="Select year"
+              options={years.map((y) => ({
+                value: y.id,
+                label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+              }))}
+            />
           </Div>
 
           <Div type="col" gap="xs">
             <FilterLabel>Class</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={selectedClassId}
               onChange={(e) => handleClassChange(e.target.value)}
               disabled={!selectedAcademicYearId || isLoadingClasses}
-            >
-              <option value="">Select class</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.display_name}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="Select class"
+              options={classes.map((c) => ({ value: c.id, label: c.display_name }))}
+            />
           </Div>
 
           <Div type="col" gap="xs">
             <FilterLabel>Section</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={selectedSectionId}
               onChange={(e) => handleSectionChange(e.target.value)}
               disabled={!selectedClassId}
-            >
-              <option value="">Select section</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  Section {s.name}
-                </option>
-              ))}
-            </Select>
+              customPlaceholder="Select section"
+              options={sections.map((s) => ({ value: s.id, label: `Section ${s.name}` }))}
+            />
           </Div>
 
           <Div type="col" gap="xs">
@@ -237,14 +224,11 @@ export default function StudentAttendancePage() {
 
           <Div type="col" gap="xs">
             <FilterLabel>Session</FilterLabel>
-            <Select
+            <ResponsiveSelect
               value={session}
               onChange={(e) => setSession(e.target.value as typeof session)}
-            >
-              {ATTENDANCE_SESSION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </Select>
+              options={ATTENDANCE_SESSION_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+            />
           </Div>
         </Div>
       </Div>

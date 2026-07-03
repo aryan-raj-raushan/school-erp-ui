@@ -8,7 +8,7 @@ import {
   Div, Button, Select,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Spinner, FilterLabel, Icon, Modal,
+  Spinner, FilterLabel, Icon, Modal, ResponsiveSelect, ResponsiveModalContainer,
 } from "@/components/ui";
 import { Plus, Pencil, Trash2, Eye, FileText, PlayCircle } from "lucide-react";
 import type { StudyMaterial } from '@/types';
@@ -125,49 +125,51 @@ export default function StudyMaterialsPage() {
 
       {/* View Modal */}
       {viewingMaterial && (
-        <Modal
+        <ResponsiveModalContainer
+          isOpen={!!viewingMaterial}
           title={viewingMaterial.title}
-          size="lg"
           onClose={() => setViewingMaterial(null)}
         >
-          <Div type="col" gap="md" padding="px-6 py-5">
-            {viewingMaterial.content_type === 'text' && (
-              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
-                {viewingMaterial.content_text || '—'}
-              </div>
-            )}
+          <div className="px-4 py-4">
+            <Div type="col" gap="md">
+              {viewingMaterial.content_type === 'text' && (
+                <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
+                  {viewingMaterial.content_text || '—'}
+                </div>
+              )}
 
-            {viewingMaterial.content_type === 'file' && viewingMaterial.file_url && (
-              viewingMaterial.file_type?.includes('pdf') || viewingMaterial.file_url.endsWith('.pdf') ? (
-                <iframe
-                  src={viewingMaterial.file_url}
-                  className="w-full rounded"
-                  style={{ height: '60vh' }}
-                  title={viewingMaterial.title}
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={viewingMaterial.file_url}
-                  alt={viewingMaterial.title}
-                  className="w-full rounded object-contain max-h-[60vh]"
-                />
-              )
-            )}
+              {viewingMaterial.content_type === 'file' && viewingMaterial.file_url && (
+                viewingMaterial.file_type?.includes('pdf') || viewingMaterial.file_url.endsWith('.pdf') ? (
+                  <iframe
+                    src={viewingMaterial.file_url}
+                    className="w-full rounded"
+                    style={{ height: '60vh' }}
+                    title={viewingMaterial.title}
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={viewingMaterial.file_url}
+                    alt={viewingMaterial.title}
+                    className="w-full rounded object-contain max-h-[60vh]"
+                  />
+                )
+              )}
 
-            {viewingMaterial.content_type === 'youtube' && viewingMaterial.youtube_url && (
-              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-                <iframe
-                  src={getYoutubeEmbedUrl(viewingMaterial.youtube_url)}
-                  className="absolute inset-0 w-full h-full rounded"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title={viewingMaterial.title}
-                />
-              </div>
-            )}
-          </Div>
-        </Modal>
+              {viewingMaterial.content_type === 'youtube' && viewingMaterial.youtube_url && (
+                <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                  <iframe
+                    src={getYoutubeEmbedUrl(viewingMaterial.youtube_url)}
+                    className="absolute inset-0 w-full h-full rounded"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={viewingMaterial.title}
+                  />
+                </div>
+              )}
+            </Div>
+          </div>
+        </ResponsiveModalContainer>
       )}
     </PageCol>
   );

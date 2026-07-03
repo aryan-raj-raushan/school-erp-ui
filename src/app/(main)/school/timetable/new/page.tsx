@@ -7,10 +7,11 @@ import { useCreateTimetable } from '@/hooks/useCreateTimetable';
 import { useAutoGenerateTimetable } from '@/hooks/useAutoGenerateTimetable';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS, MAX_PERIODS_OPTIONS, ROUTES } from '@/constants';
 import {
-  Div, Button, Spinner, Input, Select, FormField, P, Badge, Tabs,
+  Div, Button, Spinner, Input, FormField, P, Badge, Tabs,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 const TAB_OPTIONS = [
@@ -66,21 +67,27 @@ function AutoGenerateForm() {
             <Input placeholder={SCHOOL_TIMETABLE_PAGE.placeholders.name} value={name} onChange={(e) => setName(e.target.value)} />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.academicYear}>
-            <Select value={academicYearId} onChange={(e) => setAcademicYearId(e.target.value)}>
-              {years.map((y) => <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={academicYearId}
+              onChange={(e) => setAcademicYearId(e.target.value)}
+              options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.class}>
-            <Select value={classId} onChange={(e) => setClassId(e.target.value)}>
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}
+              options={classes.map((c) => ({ value: c.id, label: c.name }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.autoGenerate.timingLabel}>
-            <Select value={schoolTimingId} onChange={(e) => setSchoolTimingId(e.target.value)}>
-              <option value="">{SCHOOL_TIMETABLE_PAGE.autoGenerate.selectTiming}</option>
-              {timings.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={schoolTimingId}
+              onChange={(e) => setSchoolTimingId(e.target.value)}
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.autoGenerate.selectTiming}
+              options={timings.map((t) => ({ value: t.id, label: t.name }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.autoGenerate.lunchAfterLabel}>
             <Input
@@ -181,27 +188,38 @@ function ManualForm() {
             <Input placeholder={SCHOOL_TIMETABLE_PAGE.placeholders.name} value={name} onChange={(e) => setName(e.target.value)} />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.maxPeriods}>
-            <Select value={String(maxPeriods)} onChange={(e) => setMaxPeriods(Number(e.target.value))}>
-              {MAX_PERIODS_OPTIONS.map((n) => <option key={n} value={n}>{n} Periods</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={String(maxPeriods)}
+              onChange={(e) => setMaxPeriods(Number(e.target.value))}
+              options={MAX_PERIODS_OPTIONS.map((n) => ({ value: String(n), label: `${n} Periods` }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.academicYear}>
-            <Select value={academicYearId} onChange={(e) => setAcademicYearId(e.target.value)} defaultValue="">
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectAcademicYear}</option>
-              {years.map((y) => <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={academicYearId}
+              onChange={(e) => setAcademicYearId(e.target.value)}
+              defaultValue=""
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectAcademicYear}
+              options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.class}>
-            <Select value={classId} onChange={(e) => setClassId(e.target.value)} defaultValue="">
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              defaultValue=""
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}
+              options={classes.map((c) => ({ value: c.id, label: c.name }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.classTeacher}>
-            <Select value={classTeacherId} onChange={(e) => setClassTeacherId(e.target.value)} defaultValue="">
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectTeacher}</option>
-              {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={classTeacherId}
+              onChange={(e) => setClassTeacherId(e.target.value)}
+              defaultValue=""
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectTeacher}
+              options={staff.map((s) => ({ value: s.id, label: s.name }))}
+            />
           </FormField>
         </Div>
       </Div>
@@ -269,22 +287,20 @@ function ManualForm() {
                   {periods.map((p) => (
                     <TableCell key={p}>
                       <Div type="col" gap="xs">
-                        <Select
+                        <ResponsiveSelect
                           value={grid[day]?.[p]?.subject_id ?? ''}
                           onChange={(e) => setCellValue(day, p, 'subject_id', e.target.value)}
                           className="text-xs"
-                        >
-                          <option value="">Subject</option>
-                          {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </Select>
-                        <Select
+                          customPlaceholder="Subject"
+                          options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+                        />
+                        <ResponsiveSelect
                           value={grid[day]?.[p]?.teacher_id ?? ''}
                           onChange={(e) => setCellValue(day, p, 'teacher_id', e.target.value)}
                           className="text-xs"
-                        >
-                          <option value="">Teacher</option>
-                          {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </Select>
+                          customPlaceholder="Teacher"
+                          options={staff.map((s) => ({ value: s.id, label: s.name }))}
+                        />
                       </Div>
                     </TableCell>
                   ))}

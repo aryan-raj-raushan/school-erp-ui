@@ -14,6 +14,7 @@ import {
   FilterLabel,
   EmptyState,
   type ColumnDef,
+  ResponsiveSelect,
 } from '@/components/ui';
 import type { LeaveBalance } from '@/types';
 
@@ -56,18 +57,15 @@ export default function LeaveBalancePage() {
 
       <FilterBar>
         <FilterLabel>Academic Year</FilterLabel>
-        <Select
+        <ResponsiveSelect
           value={academicYearId}
           onChange={(e) => setAcademicYearId(e.target.value)}
-          width="sm"
-        >
-          <option value="">Select year</option>
-          {academicYears.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}{y.is_current ? ' (Current)' : ''}
-            </option>
-          ))}
-        </Select>
+          customPlaceholder="Select year"
+          options={academicYears.map((y) => ({
+            value: y.id,
+            label: `${y.name}${y.is_current ? ' (Current)' : ''}`,
+          }))}
+        />
       </FilterBar>
 
       {!academicYearId ? (

@@ -72,7 +72,7 @@ function EventPill({ ev }: { ev: SchoolEvent }) {
   return (
     <div
       title={ev.name}
-      className={`truncate rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight cursor-default select-none ${
+      className={`truncate rounded px-0.5 py-0 text-[8px] font-medium leading-none cursor-default select-none ${
         isHoliday
           ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
           : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
@@ -181,13 +181,13 @@ function CalendarGrid({
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div>
+    <div className="space-y-2">
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 mb-1">
+      <div className="grid grid-cols-7 mb-0 shrink-0">
         {WEEKDAYS.map((wd, i) => (
           <div
             key={wd}
-            className={`py-2 text-center text-xs font-semibold uppercase tracking-wide ${
+            className={`py-0.5 text-center text-[9px] font-semibold uppercase tracking-tight ${
               i === 0 || i === 6
                 ? "text-muted-foreground/60"
                 : "text-muted-foreground"
@@ -199,7 +199,7 @@ function CalendarGrid({
       </div>
 
       {/* Date grid */}
-      <div className="grid grid-cols-7 gap-px bg-border rounded-xl overflow-hidden border border-border">
+      <div className="grid grid-cols-7 gap-px bg-border rounded-xl overflow-hidden border border-border max-h-60" style={{gridAutoRows: 'minmax(36px, 1fr)'}}>
         {cells.map((day, idx) => {
           const ymd = day
             ? `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
@@ -216,7 +216,7 @@ function CalendarGrid({
                 if (!ymd) return;
                 setSelectedDay(isSelected ? null : ymd);
               }}
-              className={`relative min-h-[90px] p-1.5 flex flex-col gap-1 bg-card transition-colors ${
+              className={`relative p-0 flex flex-col gap-0 bg-card transition-colors overflow-hidden ${
                 !day ? "bg-muted/30" : ""
               } ${isWeekend && day ? "bg-muted/20" : ""} ${
                 day ? "cursor-pointer hover:bg-muted/50" : ""
@@ -226,9 +226,9 @@ function CalendarGrid({
                 <>
                   {/* Day number */}
                   <span
-                    className={`self-start text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full transition-colors ${
+                    className={`self-start text-[8px] font-bold leading-none flex-shrink-0 px-0.5 ${
                       isToday
-                        ? "bg-primary text-primary-foreground"
+                        ? "text-primary"
                         : isWeekend
                           ? "text-muted-foreground"
                           : "text-foreground"
@@ -237,14 +237,14 @@ function CalendarGrid({
                     {day}
                   </span>
 
-                  {/* Event pills — show up to 2, then "+N more" */}
-                  <div className="flex flex-col gap-0.5 overflow-hidden">
-                    {events.slice(0, 2).map((ev) => (
+                  {/* Event pills — show up to 1 only */}
+                  <div className="flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
+                    {events.slice(0, 1).map((ev) => (
                       <EventPill key={ev.id} ev={ev} />
                     ))}
-                    {events.length > 2 && (
-                      <span className="text-[10px] text-muted-foreground px-1">
-                        +{events.length - 2} more
+                    {events.length > 1 && (
+                      <span className="text-[8px] text-muted-foreground px-0 leading-none">
+                        +{events.length - 1}
                       </span>
                     )}
                   </div>

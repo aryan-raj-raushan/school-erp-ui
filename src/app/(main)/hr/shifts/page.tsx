@@ -16,6 +16,8 @@ import {
   Input,
   FormField,
   EmptyState,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import {
   STAFF_SHIFTS_PAGE,
@@ -125,29 +127,32 @@ export default function StaffShiftsPage() {
       )}
 
       {isDialogOpen && (
-        <Modal onClose={closeDialog} title={editingShift ? 'Edit Shift' : 'Assign Shift'}>
-          <ModalBody>
+        <ResponsiveModalContainer isOpen={isDialogOpen} onClose={closeDialog} title={editingShift ? 'Edit Shift' : 'Assign Shift'}>
+          <div className="px-4 py-4">
             <Div type="col" gap="md">
               <Div type="grid" cols={2} gap="md">
                 {!editingShift && (
                   <FormField label="Staff Member">
-                    <Select value={form.staff_id} onChange={(e) => updateForm('staff_id', e.target.value)}>
-                      <option value="">Select staff</option>
-                      {staff.map((s) => (
-                        <option key={s.id} value={s.id}>{`${s.first_name} ${s.last_name ?? ''}`.trim()}</option>
-                      ))}
-                    </Select>
+                    <ResponsiveSelect
+                      value={form.staff_id}
+                      onChange={(e) => updateForm('staff_id', e.target.value)}
+                      customPlaceholder="Select staff"
+                      options={staff.map((s) => ({
+                        value: s.id,
+                        label: `${s.first_name} ${s.last_name ?? ''}`.trim(),
+                      }))}
+                    />
                   </FormField>
                 )}
                 <FormField label="Shift Name">
                   <Input value={form.shift_name} onChange={(e) => updateForm('shift_name', e.target.value)} placeholder="Morning Shift" />
                 </FormField>
                 <FormField label="Shift Type">
-                  <Select value={form.shift_type} onChange={(e) => updateForm('shift_type', e.target.value as ShiftType)}>
-                    {SHIFT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    value={form.shift_type}
+                    onChange={(e) => updateForm('shift_type', e.target.value as ShiftType)}
+                    options={SHIFT_TYPE_OPTIONS}
+                  />
                 </FormField>
                 <FormField label="Start Time">
                   <Input type="time" value={form.shift_start} onChange={(e) => updateForm('shift_start', e.target.value)} />
@@ -183,14 +188,14 @@ export default function StaffShiftsPage() {
                 </Div>
               </FormField>
             </Div>
-          </ModalBody>
-          <ModalFooter>
+          </div>
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             <Button loading={isSubmitting} onClick={() => submit(form)}>
               {editingShift ? 'Update' : 'Assign'}
             </Button>
-          </ModalFooter>
-        </Modal>
+          </div>
+        </ResponsiveModalContainer>
       )}
     </PageCol>
   );

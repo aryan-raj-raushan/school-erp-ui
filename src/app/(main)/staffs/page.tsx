@@ -21,6 +21,8 @@ import {
   PageCol,
   FilterBar,
   PageHeader,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import { Pencil, Eye, UserX, UserCheck, Mail, Trash2, Plus } from 'lucide-react';
 import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS } from '@/constants';
@@ -196,40 +198,25 @@ export default function StaffsPage() {
             updateFilters({ search: e.target.value || undefined })
           }
         />
-        <Select
-          width="sm"
+        <ResponsiveSelect
+          options={STAFF_STATUS_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
           value={filters.status ?? ''}
           onChange={(e) =>
             updateFilters({
               status: (e.target.value as any) || undefined,
             })
           }
-        >
-          {STAFF_STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
+        />
+        <ResponsiveSelect
+          customPlaceholder="All Roles"
+          options={systemRoles.map((r) => ({ value: r.name.toUpperCase().replace(/ /g, '_'), label: r.name }))}
           value={filters.role ?? ''}
           onChange={(e) =>
             updateFilters({
               role: (e.target.value as any) || undefined,
             })
           }
-        >
-          <option value="">All Roles</option>
-          {systemRoles.map((r) => (
-            <option
-              key={r.id}
-              value={r.name.toUpperCase().replace(/ /g, '_')}
-            >
-              {r.name}
-            </option>
-          ))}
-        </Select>
+        />
       </FilterBar>
 
       <DataTable
@@ -241,36 +228,37 @@ export default function StaffsPage() {
         fillViewport
       />
 
-      {showBulkModal && (
-        <Modal onClose={closeBulkModal} title="Bulk Import Staff">
-          <ModalBody>
-            <Div type="col" gap="md">
-              <FormField label="Excel File *">
-                <FileInput
-                  ref={bulkFileRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                />
-              </FormField>
-              <P color="muted" size="xs">
-                Download the template above to see the required format.
-              </P>
-            </Div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={closeBulkModal}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => bulkImport()}
-              loading={isImporting}
-              disabled={!bulkFileRef.current?.files?.length}
-            >
-              Import
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+      <ResponsiveModalContainer
+        isOpen={showBulkModal}
+        onClose={closeBulkModal}
+        title="Bulk Import Staff"
+      >
+        <Div type="col" gap="md" className="px-4 py-4">
+          <FormField label="Excel File *">
+            <FileInput
+              ref={bulkFileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+            />
+          </FormField>
+          <P color="muted" size="xs">
+            Download the template above to see the required format.
+          </P>
+        </Div>
+
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <Button variant="secondary" onClick={closeBulkModal}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => bulkImport()}
+            loading={isImporting}
+            disabled={!bulkFileRef.current?.files?.length}
+          >
+            Import
+          </Button>
+        </div>
+      </ResponsiveModalContainer>
     </PageCol>
   );
 }

@@ -22,6 +22,8 @@ import {
   FormField,
   PageCol,
   FilterBar,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import {
   LEAVE_APPLICATION_PAGE,
@@ -222,53 +224,36 @@ function LeaveApplicationsContent() {
       />
 
       <FilterBar>
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={filters.status ?? ''}
           onChange={(e) =>
             handleFilterChange({ status: (e.target.value as any) || undefined })
           }
-        >
-          {LEAVE_STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          options={LEAVE_STATUS_OPTIONS}
+          customPlaceholder={LEAVE_APPLICATION_PAGE.filters.allStatus || 'All Statuses'}
+        />
 
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={filters.academic_year_id ?? ''}
           onChange={(e) =>
             handleFilterChange({
               academic_year_id: e.target.value || undefined,
             })
           }
-        >
-          <option value="">{LEAVE_APPLICATION_PAGE.filters.allYears}</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-            </option>
-          ))}
-        </Select>
+          options={years.map((y) => ({ value: y.id, label: y.name }))}
+          customPlaceholder={LEAVE_APPLICATION_PAGE.filters.allYears}
+        />
 
-        <Select
-          width="sm"
+        <ResponsiveSelect
           value={filters.leave_type_id ?? ''}
           onChange={(e) =>
             handleFilterChange({
               leave_type_id: e.target.value || undefined,
             })
           }
-        >
-          <option value="">{LEAVE_APPLICATION_PAGE.filters.allLeaveTypes}</option>
-          {allLeaveTypes.map((lt) => (
-            <option key={lt.id} value={lt.id}>
-              {lt.leave_name}
-            </option>
-          ))}
-        </Select>
+          options={allLeaveTypes.map((lt) => ({ value: lt.id, label: lt.leave_name }))}
+          customPlaceholder={LEAVE_APPLICATION_PAGE.filters.allLeaveTypes}
+        />
 
         {/* Date range */}
         <Input
@@ -301,48 +286,42 @@ function LeaveApplicationsContent() {
 
       {/* ─── Apply Leave Modal ────────────────────────────────────────── */}
       {showApplyModal && (
-        <Modal
+        <ResponsiveModalContainer
+          isOpen={showApplyModal}
           onClose={closeApplyModal}
           title={LEAVE_APPLICATION_PAGE.modal.applyTitle}
-          size="md"
         >
           <form onSubmit={handleApply}>
-            <ModalBody>
+            <div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField
                   label={`${LEAVE_APPLICATION_PAGE.labels.academicYear} *`}
                   error={applyErrors.academic_year_id?.message}
                 >
-                  <Select {...applyRegister('academic_year_id')}>
-                    <option value="">Select academic year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    {...applyRegister('academic_year_id')}
+                    customPlaceholder="Select academic year"
+                    options={years.map((y) => ({ value: y.id, label: y.name }))}
+                  />
                 </FormField>
 
                 <FormField
                   label={`${LEAVE_APPLICATION_PAGE.labels.leaveType} *`}
                   error={applyErrors.leave_type_id?.message}
                 >
-                  <Select
+                  <ResponsiveSelect
                     {...applyRegister('leave_type_id')}
                     disabled={isLoadingEmployeeLeaves}
-                  >
-                    <option value="">
-                      {isLoadingEmployeeLeaves
+                    customPlaceholder={
+                      isLoadingEmployeeLeaves
                         ? 'Loading your leaves…'
-                        : 'Select leave type'}
-                    </option>
-                    {employeeLeaves.map((el) => (
-                      <option key={el.leave_type_id} value={el.leave_type_id}>
-                        {el.leave_type.leave_name} ({el.remaining_days} days
-                        remaining · {LEAVE_PAY_TYPE_LABEL[el.leave_type.leave_pay_type]})
-                      </option>
-                    ))}
-                  </Select>
+                        : 'Select leave type'
+                    }
+                    options={employeeLeaves.map((el) => ({
+                      value: el.leave_type_id,
+                      label: `${el.leave_type.leave_name} (${el.remaining_days} days remaining · ${LEAVE_PAY_TYPE_LABEL[el.leave_type.leave_pay_type]})`,
+                    }))}
+                  />
                 </FormField>
 
                 <Div type="grid" cols={2} gap="md">
@@ -372,28 +351,28 @@ function LeaveApplicationsContent() {
                   />
                 </FormField>
               </Div>
-            </ModalBody>
-            <ModalFooter>
+            </div>
+            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeApplyModal}>
                 {LEAVE_APPLICATION_PAGE.buttons.cancel}
               </Button>
               <Button type="submit" loading={isApplying}>
                 {LEAVE_APPLICATION_PAGE.buttons.save}
               </Button>
-            </ModalFooter>
+            </div>
           </form>
-        </Modal>
+        </ResponsiveModalContainer>
       )}
 
       {/* ─── Review Leave Modal ───────────────────────────────────────── */}
       {showReviewModal && selectedApplication && (
-        <Modal
+        <ResponsiveModalContainer
+          isOpen={showReviewModal}
           onClose={closeReviewModal}
           title={LEAVE_APPLICATION_PAGE.modal.reviewTitle}
-          size="sm"
         >
           <form onSubmit={handleReview}>
-            <ModalBody>
+            <div className="px-4 py-4">
               <Div type="col" gap="md">
                 {/* Summary of what is being reviewed */}
                 <Div
@@ -455,8 +434,8 @@ function LeaveApplicationsContent() {
                   />
                 </FormField>
               </Div>
-            </ModalBody>
-            <ModalFooter>
+            </div>
+            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeReviewModal}>
                 {LEAVE_APPLICATION_PAGE.buttons.cancel}
               </Button>
@@ -471,9 +450,9 @@ function LeaveApplicationsContent() {
                   ? LEAVE_APPLICATION_PAGE.buttons.approve
                   : LEAVE_APPLICATION_PAGE.buttons.reject}
               </Button>
-            </ModalFooter>
+            </div>
           </form>
-        </Modal>
+        </ResponsiveModalContainer>
       )}
     </PageCol>
   );

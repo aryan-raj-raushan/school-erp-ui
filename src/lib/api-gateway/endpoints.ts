@@ -117,6 +117,7 @@ export const ENDPOINTS = {
     base: "/staff-attendance",
     staff: "/staff-attendance/staff",
     daily: "/staff-attendance/daily",
+    export: "/staff-attendance/export",
   },
   staff: {
     list: "/staff",

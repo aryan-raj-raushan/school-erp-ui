@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -20,13 +20,14 @@ import {
   P,
   Button,
   Input,
-  Select,
   FormField,
   Badge,
   Spinner,
   InfoRow,
+  ResponsiveSelect,
 } from "@/components/ui";
 import { SchoolEventsService } from "@/services/school-events.service";
+import { RolesService, type Role } from "@/services/roles.service";
 import { toast } from "sonner";
 
 const TYPE_OPTIONS = [
@@ -34,11 +35,19 @@ const TYPE_OPTIONS = [
   { value: "HOLIDAY", label: "Holiday" },
 ];
 
+const APPLIES_TO_OPTIONS = [
+  { value: "STUDENTS", label: "Students Only" },
+  { value: "STAFF", label: "Staff Only" },
+  { value: "BOTH", label: "Students & Staff" },
+];
+
 export function HolidayEventDetail({ id }: { id: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const startEditing = searchParams.get("edit") === "true";
   const isNew = id === "create-new";
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   const { years } = useAcademicYears();
   const {
@@ -50,6 +59,21 @@ export function HolidayEventDetail({ id }: { id: string }) {
     handleSubmit,
     isSubmitting,
   } = useSchoolEventDetail(id);
+
+  useEffect(() => {
+    async function fetchRoles() {
+      setRolesLoading(true);
+      try {
+        const result = await RolesService.list({ limit: 100 });
+        setRoles(result.items);
+      } catch (err: unknown) {
+        console.error('Failed to load roles:', err);
+      } finally {
+        setRolesLoading(false);
+      }
+    }
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     if (startEditing && !isNew) setIsEditing(true);
@@ -103,7 +127,7 @@ export function HolidayEventDetail({ id }: { id: string }) {
     <Div type="col" gap="lg" className="max-w-3xl">
       {/* Header */}
       <Div type="row" align="center" gap="md">
-        <Button variant="ghost" size="sm" onClick={handleBack}>
+        <Button variant="outline" size="sm" onClick={handleBack}>
           <ArrowLeft size={16} />
           Back
         </Button>
@@ -239,6 +263,40 @@ export function HolidayEventDetail({ id }: { id: string }) {
               </Div>
             </Div>
           </Div>
+
+          <Div
+            type="col"
+            gap="sm"
+            className="rounded-xl border border-border bg-card p-5"
+          >
+            <H3
+              color="muted"
+              className="mb-2 uppercase tracking-wider text-xs font-semibold"
+            >
+              Applicability
+            </H3>
+            <InfoRow
+              label="Applies To"
+              value={
+                event.applies_to === "BOTH"
+                  ? "Students & Staff"
+                  : event.applies_to === "STUDENTS"
+                    ? "Students Only"
+                    : "Staff Only"
+              }
+            />
+            {(event.applies_to === "STAFF" || event.applies_to === "BOTH") && event.exempt_role_ids?.length > 0 && (
+              <InfoRow
+                label="Staff Working"
+                value={
+                  roles
+                    .filter((r) => event.exempt_role_ids.includes(r.id))
+                    .map((r) => r.name)
+                    .join(", ") || "—"
+                }
+              />
+            )}
+          </Div>
         </Div>
       )}
 
@@ -273,13 +331,11 @@ export function HolidayEventDetail({ id }: { id: string }) {
                   error={errors.type?.message}
                   htmlFor="type"
                 >
-                  <Select id="type" {...register("type")}>
-                    {TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    id="type"
+                    {...register("type")}
+                    options={TYPE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  />
                 </FormField>
 
                 <FormField
@@ -287,17 +343,12 @@ export function HolidayEventDetail({ id }: { id: string }) {
                   error={errors.academic_year_id?.message}
                   htmlFor="academic_year_id"
                 >
-                  <Select
+                  <ResponsiveSelect
                     id="academic_year_id"
                     {...register("academic_year_id")}
-                  >
-                    <option value="">Select year</option>
-                    {years.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {y.name}
-                      </option>
-                    ))}
-                  </Select>
+                    customPlaceholder="Select year"
+                    options={years.map((y) => ({ value: y.id, label: y.name }))}
+                  />
                 </FormField>
               </Div>
 
@@ -366,6 +417,64 @@ export function HolidayEventDetail({ id }: { id: string }) {
                   <Input id="to_time" type="time" {...register("to_time")} />
                 </FormField>
               </Div>
+            </Div>
+
+            <Div
+              type="col"
+              gap="md"
+              className="rounded-xl border border-border bg-card p-5"
+            >
+              <H2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                Applicability (Staff & Students)
+              </H2>
+
+              <FormField
+                label="Applies To *"
+                error={errors.applies_to?.message}
+                htmlFor="applies_to"
+              >
+                <ResponsiveSelect
+                  id="applies_to"
+                  {...register("applies_to")}
+                  options={APPLIES_TO_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                />
+              </FormField>
+
+              {(form.watch("applies_to") === "STAFF" || form.watch("applies_to") === "BOTH") && (
+                <FormField
+                  label="Staff Who Work During This Holiday"
+                  hint="Select staff roles that are required to work on this holiday (e.g., Peon, Gate Guard). Selected staff will receive salary during this holiday."
+                  htmlFor="exempt_role_ids"
+                >
+                  <div className="space-y-2 border border-border rounded-lg p-3 bg-muted/20">
+                    {rolesLoading ? (
+                      <P color="muted" className="text-sm">Loading roles...</P>
+                    ) : roles.length === 0 ? (
+                      <P color="muted" className="text-sm">No roles available</P>
+                    ) : (
+                      roles.map((role) => (
+                        <label key={role.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            value={role.id}
+                            checked={form.watch("exempt_role_ids")?.includes(role.id) ?? false}
+                            onChange={(e) => {
+                              const current = form.watch("exempt_role_ids") ?? [];
+                              if (e.target.checked) {
+                                form.setValue("exempt_role_ids", [...current, role.id]);
+                              } else {
+                                form.setValue("exempt_role_ids", current.filter(id => id !== role.id));
+                              }
+                            }}
+                            className="w-4 h-4 rounded cursor-pointer accent-primary"
+                          />
+                          <span className="text-sm text-foreground">{role.name}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </FormField>
+              )}
             </Div>
 
             <Div type="row" justify="end" gap="sm">

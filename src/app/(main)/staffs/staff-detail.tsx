@@ -10,7 +10,6 @@ import {
   P,
   Button,
   Input,
-  Select,
   Textarea,
   FormField,
   Badge,
@@ -19,6 +18,7 @@ import {
   FormGrid,
   PhotoUpload,
   PhoneField,
+  ResponsiveSelect,
 } from "@/components/ui";
 
 export function StaffDetail({ id }: { id: string }) {
@@ -66,7 +66,7 @@ export function StaffDetail({ id }: { id: string }) {
         }
         actions={
           <Div type="row" gap="sm" align="center">
-            <Button variant="ghost" size="sm" onClick={handleBack}>
+            <Button variant="outline" size="sm" onClick={handleBack}>
               <ArrowLeft size={14} /> Back
             </Button>
             {!isNew && !isEditing && (
@@ -316,12 +316,15 @@ export function StaffDetail({ id }: { id: string }) {
                   required
                   error={form.formState.errors.gender?.message}
                 >
-                  <Select {...form.register("gender")}>
-                    <option value="">Select gender</option>
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </Select>
+                  <ResponsiveSelect
+                    {...form.register("gender")}
+                    customPlaceholder="Select gender"
+                    options={[
+                      { value: "MALE", label: "Male" },
+                      { value: "FEMALE", label: "Female" },
+                      { value: "OTHER", label: "Other" },
+                    ]}
+                  />
                 </FormField>
                 <FormField
                   label="Date of Birth"
@@ -331,14 +334,11 @@ export function StaffDetail({ id }: { id: string }) {
                   <Input type="date" {...form.register("date_of_birth")} />
                 </FormField>
                 <FormField label="Blood Group">
-                  <Select {...form.register("blood_group")}>
-                    <option value="">Select blood group</option>
-                    {BLOOD_GROUPS.map((bg) => (
-                      <option key={bg.value} value={bg.value}>
-                        {bg.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    {...form.register("blood_group")}
+                    customPlaceholder="Select blood group"
+                    options={BLOOD_GROUPS.map((bg) => ({ value: bg.value, label: bg.label }))}
+                  />
                 </FormField>
                 <FormField label="City">
                   <Input placeholder="Enter city" {...form.register("city")} />
@@ -388,29 +388,26 @@ export function StaffDetail({ id }: { id: string }) {
                   required
                   error={form.formState.errors.role?.message}
                 >
-                  <Select {...form.register("role")}>
-                    <option value="">Select role</option>
-                    {systemRoles.map((r) => (
-                      <option
-                        key={r.id}
-                        value={r.name.toUpperCase().replace(/ /g, "_")}
-                      >
-                        {r.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <ResponsiveSelect
+                    {...form.register("role")}
+                    customPlaceholder="Select role"
+                    options={systemRoles.map((r) => ({
+                      value: r.name.toUpperCase().replace(/ /g, "_"),
+                      label: r.name,
+                    }))}
+                  />
                 </FormField>
                 <FormField label="Reporting To">
-                  <Select {...form.register("reporting_to_id")}>
-                    <option value="">Select manager</option>
-                    {staffMembers
+                  <ResponsiveSelect
+                    {...form.register("reporting_to_id")}
+                    customPlaceholder="Select manager"
+                    options={staffMembers
                       .filter((s) => s.id !== (resolvedId ?? ""))
-                      .map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.first_name} {s.last_name ?? ""}
-                        </option>
-                      ))}
-                  </Select>
+                      .map((s) => ({
+                        value: s.id,
+                        label: `${s.first_name} ${s.last_name ?? ""}`,
+                      }))}
+                  />
                 </FormField>
                 <FormField label="Joining Date">
                   <Input type="date" {...form.register("joining_date")} />

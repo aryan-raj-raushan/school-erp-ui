@@ -11,6 +11,8 @@ export interface CreateSchoolEventPayload {
   from_time?: string;
   to_date: string;
   to_time?: string;
+  applies_to?: 'STUDENTS' | 'STAFF' | 'BOTH';
+  exempt_role_ids?: string[];
 }
 
 export interface UpdateSchoolEventPayload extends Partial<CreateSchoolEventPayload> {}

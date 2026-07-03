@@ -1,4 +1,5 @@
 export type SchoolEventType = 'EVENT' | 'HOLIDAY';
+export type AppliesToType = 'STUDENTS' | 'STAFF' | 'BOTH';
 
 export type SchoolEvent = {
   id: string;
@@ -11,6 +12,8 @@ export type SchoolEvent = {
   from_time?: string | null;
   to_date: string;
   to_time?: string | null;
+  applies_to: AppliesToType;
+  exempt_role_ids: string[];
   is_active: boolean;
   deleted: boolean;
   created_at: string;

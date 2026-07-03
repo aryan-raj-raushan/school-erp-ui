@@ -10,8 +10,9 @@ import { timeToMinutes, formatDuration } from '@/lib/time.utils';
 import { cn } from '@/lib/utils';
 import type { DayOfWeek, PeriodTimeDto } from '@/services/timetable.service';
 import {
-  Div, Button, Spinner, Input, Select, FormField, P, Badge,
+  Div, Button, Spinner, Input, FormField, P, Badge,
   PageHeader, SectionCard,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 interface DragPayload {
@@ -88,22 +89,28 @@ function EditTimetablePageInner() {
             <Input placeholder={SCHOOL_TIMETABLE_PAGE.placeholders.name} value={name} onChange={(e) => setName(e.target.value)} />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.academicYear}>
-            <Select value={academicYearId} onChange={(e) => setAcademicYearId(e.target.value)}>
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectAcademicYear}</option>
-              {years.map((y) => <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={academicYearId}
+              onChange={(e) => setAcademicYearId(e.target.value)}
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectAcademicYear}
+              options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.class}>
-            <Select value={classId} onChange={(e) => setClassId(e.target.value)}>
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectClass}
+              options={classes.map((c) => ({ value: c.id, label: c.name }))}
+            />
           </FormField>
           <FormField label={SCHOOL_TIMETABLE_PAGE.form.classTeacher}>
-            <Select value={classTeacherId} onChange={(e) => setClassTeacherId(e.target.value)}>
-              <option value="">{SCHOOL_TIMETABLE_PAGE.placeholders.selectTeacher}</option>
-              {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
+            <ResponsiveSelect
+              value={classTeacherId}
+              onChange={(e) => setClassTeacherId(e.target.value)}
+              customPlaceholder={SCHOOL_TIMETABLE_PAGE.placeholders.selectTeacher}
+              options={staff.map((s) => ({ value: s.id, label: s.name }))}
+            />
           </FormField>
         </Div>
       </SectionCard>
@@ -235,22 +242,20 @@ function EditTimetablePageInner() {
                           <GripVertical size={12} />
                         </button>
                       </div>
-                      <Select
+                      <ResponsiveSelect
                         value={cell?.subject_id ?? ''}
                         onChange={(e) => setCellValue(day, p, 'subject_id', e.target.value)}
                         className="text-xs"
-                      >
-                        <option value="">Subject</option>
-                        {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </Select>
-                      <Select
+                        customPlaceholder="Subject"
+                        options={subjects.map((s) => ({ value: s.id, label: s.name }))}
+                      />
+                      <ResponsiveSelect
                         value={cell?.teacher_id ?? ''}
                         onChange={(e) => setCellValue(day, p, 'teacher_id', e.target.value)}
                         className="text-xs"
-                      >
-                        <option value="">Teacher</option>
-                        {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </Select>
+                        customPlaceholder="Teacher"
+                        options={staff.map((s) => ({ value: s.id, label: s.name }))}
+                      />
                     </div>
                   );
                 })}

@@ -25,11 +25,10 @@ import {
   P,
   Button,
   Spinner,
-  Select,
   FormField,
   Tabs,
-  Modal,
-  ModalBody,
+  ResponsiveModalContainer,
+  ResponsiveSelect,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -1412,64 +1411,48 @@ function GeneratePageContent() {
           </H3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <FormField label="Academic Year">
-              <Select
+              <ResponsiveSelect
                 value={selectedAcademicYearId}
                 onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-              >
-                <option value="">Select year</option>
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {y.name}
-                    {y.is_current ? " (Current)" : ""}
-                  </option>
-                ))}
-              </Select>
+                customPlaceholder="Select year"
+                options={years.map((y) => ({
+                  value: y.id,
+                  label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+                }))}
+              />
             </FormField>
 
             <FormField label="Class">
-              <Select
+              <ResponsiveSelect
                 value={selectedClassId}
                 onChange={(e) => handleClassChange(e.target.value)}
                 disabled={!selectedAcademicYearId || isLoadingClasses}
-              >
-                <option value="">Select class</option>
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+                customPlaceholder="Select class"
+                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </FormField>
 
             <FormField label="Section">
-              <Select
+              <ResponsiveSelect
                 value={selectedSectionId}
                 onChange={(e) => handleSectionChange(e.target.value)}
                 disabled={!selectedClassId}
-              >
-                <option value="">All sections</option>
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
+                customPlaceholder="All sections"
+                options={sections.map((s) => ({ value: s.id, label: s.name }))}
+              />
             </FormField>
 
             <FormField label="Student">
-              <Select
+              <ResponsiveSelect
                 value={selectedStudentId ?? ""}
                 onChange={(e) => e.target.value && loadCardData(e.target.value)}
                 disabled={!selectedClassId || isStudentsLoading}
-              >
-                <option value="">{!selectedClassId ? "Select a class first" : "Select student"}</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.first_name} {s.last_name ?? ""}
-                    {s.roll_number ? ` — Roll ${s.roll_number}` : ""}
-                  </option>
-                ))}
-              </Select>
+                customPlaceholder={!selectedClassId ? "Select a class first" : "Select student"}
+                options={students.map((s) => ({
+                  value: s.id,
+                  label: `${s.first_name} ${s.last_name ?? ""}${s.roll_number ? ` — Roll ${s.roll_number}` : ""}`,
+                }))}
+              />
             </FormField>
           </div>
         </Div>
@@ -1558,36 +1541,38 @@ function GeneratePageContent() {
       </Div>
 
       {/* ── Template sandbox modal ────────────────────────────────────── */}
-      {galleryOpen && (
-        <Modal onClose={() => setGalleryOpen(false)} title="Template Sandbox" size="lg">
-          <ModalBody>
-            <P color="muted" className="text-xs mb-3">
-              Pick a design for the {cardMode === "student" ? "Student ID Card" : "Pickup Card"}. Previews use sample data.
-            </P>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {CARD_TEMPLATES.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedTemplate(t.id);
-                    setGalleryOpen(false);
-                  }}
-                  className="text-left rounded-xl border p-2.5 transition-all hover:shadow-md"
-                  style={{
-                    borderColor: selectedTemplate === t.id ? "hsl(var(--primary))" : "hsl(var(--border))",
-                    background: selectedTemplate === t.id ? "hsl(var(--primary) / 0.05)" : "hsl(var(--card))",
-                  }}
-                >
-                  <TemplateThumb templateId={t.id} mode={cardMode} />
-                  <p className="text-xs font-semibold text-foreground mt-2">{t.label}</p>
-                  <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</p>
-                </button>
-              ))}
-            </div>
-          </ModalBody>
-        </Modal>
-      )}
+      <ResponsiveModalContainer
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title="Template Sandbox"
+      >
+        <div className="px-4 py-4">
+          <P color="muted" className="text-xs mb-3">
+            Pick a design for the {cardMode === "student" ? "Student ID Card" : "Pickup Card"}. Previews use sample data.
+          </P>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {CARD_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  setSelectedTemplate(t.id);
+                  setGalleryOpen(false);
+                }}
+                className="text-left rounded-xl border p-2.5 transition-all hover:shadow-md"
+                style={{
+                  borderColor: selectedTemplate === t.id ? "hsl(var(--primary))" : "hsl(var(--border))",
+                  background: selectedTemplate === t.id ? "hsl(var(--primary) / 0.05)" : "hsl(var(--card))",
+                }}
+              >
+                <TemplateThumb templateId={t.id} mode={cardMode} />
+                <p className="text-xs font-semibold text-foreground mt-2">{t.label}</p>
+                <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </ResponsiveModalContainer>
     </>
   );
 }

@@ -27,6 +27,8 @@ import {
   ModalFooter,
   DataTable,
   PageCol,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from "@/components/ui";
 import {
   RESULT_MARKS_PAGE,
@@ -49,19 +51,19 @@ function ConfirmModal({
   isLoading: boolean;
 }) {
   return (
-    <Modal onClose={onClose} title={title} size="sm">
-      <ModalBody>
+    <ResponsiveModalContainer isOpen={true} onClose={onClose} title={title}>
+      <div className="px-4 py-4">
         <P>{description}</P>
-      </ModalBody>
-      <ModalFooter>
+      </div>
+      <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
         <Button variant="outline" onClick={onClose} disabled={isLoading}>
           {RESULT_MARKS_PAGE.confirmPublish.cancel}
         </Button>
         <Button onClick={onConfirm} loading={isLoading}>
           {confirmLabel}
         </Button>
-      </ModalFooter>
-    </Modal>
+      </div>
+    </ResponsiveModalContainer>
   );
 }
 

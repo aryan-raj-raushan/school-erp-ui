@@ -4,7 +4,8 @@ import { useClassSubjectTeacherMap } from '@/hooks/useClassSubjectTeacherMap';
 import { CLASS_SUBJECT_TEACHER_PAGE } from '@/constants';
 import {
   Div, Button, PageHeader, PageCol,
-  FormField, Select, Spinner, EmptyState,
+  FormField, Spinner, EmptyState,
+  ResponsiveSelect,
 } from '@/components/ui';
 
 export default function SubjectTeacherMapPage() {
@@ -25,21 +26,21 @@ export default function SubjectTeacherMapPage() {
       <Div type="row" gap="md" align="end" wrap>
         <Div type="col" gap="xs">
           <FormField label={CLASS_SUBJECT_TEACHER_PAGE.academicYearLabel}>
-            <Select value={academicYearId} onChange={(e) => setAcademicYearId(e.target.value)} width="md">
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>{y.name}</option>
-              ))}
-            </Select>
+            <ResponsiveSelect
+              value={academicYearId}
+              onChange={(e) => setAcademicYearId(e.target.value)}
+              options={years.map((y) => ({ value: y.id, label: y.name }))}
+            />
           </FormField>
         </Div>
         <Div type="col" gap="xs">
           <FormField label={CLASS_SUBJECT_TEACHER_PAGE.classLabel}>
-            <Select value={classId} onChange={(e) => setClassId(e.target.value)} width="md">
-              <option value="">Select Class</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
+            <ResponsiveSelect
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              customPlaceholder="Select Class"
+              options={classes.map((c) => ({ value: c.id, label: c.name }))}
+            />
           </FormField>
         </Div>
       </Div>
@@ -62,16 +63,12 @@ export default function SubjectTeacherMapPage() {
             {subjects.map((subject) => (
               <Div type="grid" cols={2} gap="sm" key={subject.id} className="items-center py-1">
                 <span className="text-sm font-medium">{subject.name}</span>
-                <Select
+                <ResponsiveSelect
                   value={teacherBySubject[subject.id] ?? ''}
                   onChange={(e) => setTeacherForSubject(subject.id, e.target.value)}
-                  width="md"
-                >
-                  <option value="">{CLASS_SUBJECT_TEACHER_PAGE.teacherPlaceholder}</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>{[t.first_name, t.last_name].filter(Boolean).join(' ')}</option>
-                  ))}
-                </Select>
+                  customPlaceholder={CLASS_SUBJECT_TEACHER_PAGE.teacherPlaceholder}
+                  options={teachers.map((t) => ({ value: t.id, label: [t.first_name, t.last_name].filter(Boolean).join(' ') }))}
+                />
               </Div>
             ))}
           </Div>
