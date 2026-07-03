@@ -9,10 +9,15 @@ import { toast } from 'sonner';
 import { HomeworkService } from '@/services/homework.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { SubjectsService, type Subject } from '@/services/subjects.service';
+import { ClassSubjectTeacherService } from '@/services/class-subject-teacher.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class, HomeworkAttachment } from '@/types';
+
+export interface HomeworkSubjectOption {
+  id: string;
+  name: string;
+}
 
 export interface PendingAttachment {
   id: string;
@@ -51,7 +56,8 @@ export function useEditHomework(homeworkId: string) {
   const { years } = useAcademicYears();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<HomeworkSubjectOption[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [savedAttachments, setSavedAttachments] = useState<HomeworkAttachment[]>([]);
   const [newAttachments, setNewAttachments] = useState<PendingAttachment[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -67,17 +73,16 @@ export function useEditHomework(homeworkId: string) {
   });
 
   const watchedClassId = form.watch('class_id');
+  const watchedAcademicYearId = form.watch('academic_year_id');
 
   const fetchInitialData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [clsRes, subRes, hwRes] = await Promise.all([
+      const [clsRes, hwRes] = await Promise.all([
         ClassesService.list({ limit: 100 }),
-        SubjectsService.list({ limit: 100 }),
         HomeworkService.getById(homeworkId),
       ]);
       setClasses(clsRes.items);
-      setSubjects(subRes.items);
       setSavedAttachments(hwRes.attachments);
 
       const hw = hwRes.homework;
@@ -102,6 +107,32 @@ export function useEditHomework(homeworkId: string) {
   }, [homeworkId, form]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+
+  // Subjects are scoped to the selected class — only subjects mapped to
+  // that class (via Subject-Teacher Map) for the selected academic year.
+  const fetchSubjectsForClass = useCallback(async () => {
+    if (!watchedClassId || !watchedAcademicYearId) {
+      setSubjects([]);
+      return;
+    }
+    setIsLoadingSubjects(true);
+    try {
+      const mappings = await ClassSubjectTeacherService.list({
+        academic_year_id: watchedAcademicYearId,
+        class_id: watchedClassId,
+      });
+      const unique = new Map<string, HomeworkSubjectOption>();
+      mappings.forEach((m) => unique.set(m.subject_id, { id: m.subject_id, name: m.subject_name }));
+      setSubjects(Array.from(unique.values()));
+    } catch {
+      toast.error('Failed to load subjects for this class');
+      setSubjects([]);
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  }, [watchedClassId, watchedAcademicYearId]);
+
+  useEffect(() => { fetchSubjectsForClass(); }, [fetchSubjectsForClass]);
 
   const prevClassId = useRef<string>('');
   useEffect(() => {
@@ -206,7 +237,7 @@ export function useEditHomework(homeworkId: string) {
 
   return {
     form, years, classes, subjects,
-    isLoadingData, savedAttachments, newAttachments, fileInputRef,
+    isLoadingData, isLoadingSubjects, savedAttachments, newAttachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(updateHomework),
     handleFileChange, removeSavedAttachment, removeNewAttachment,

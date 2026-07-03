@@ -16,7 +16,7 @@ const CONTENT_TYPE_OPTIONS = [
 export default function NewStudyMaterialPage() {
   const {
     form, years, classes, subjects,
-    isLoadingData, isSubmitting, isUploading,
+    isLoadingData, isLoadingSubjects, isSubmitting, isUploading,
     contentType, fileRef,
     handleSubmit, handleBack,
   } = useCreateStudyMaterial();
@@ -67,8 +67,16 @@ export default function NewStudyMaterialPage() {
               <ResponsiveSelect
                 {...register('subject_id')}
                 defaultValue=""
-                disabled={!watch('class_id')}
-                customPlaceholder="Select subject"
+                disabled={!watch('class_id') || isLoadingSubjects}
+                customPlaceholder={
+                  !watch('class_id')
+                    ? 'Select subject'
+                    : isLoadingSubjects
+                      ? 'Loading subjects…'
+                      : subjects.length === 0
+                        ? 'No subjects mapped to this class'
+                        : 'Select subject'
+                }
                 options={subjects.map((s) => ({ value: s.id, label: s.name }))}
               />
             </FormField>
