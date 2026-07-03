@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -231,8 +232,16 @@ export function useAdmissionEnquiries(
   };
 }
 
+function todayDateString(): string {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
 // Enquiry detail hook
 export function useAdmissionEnquiryDetail(id?: string) {
+  const router = useRouter();
   const isNew = id === "create-new";
   const [enquiry, setEnquiry] = useState<AdmissionEnquiry | null>(null);
   const [history, setHistory] = useState<EnquiryHistory[]>([]);
@@ -251,7 +260,10 @@ export function useAdmissionEnquiryDetail(id?: string) {
 
   const historyForm = useForm<EnquiryHistoryFormValues>({
     resolver: zodResolver(enquiryHistorySchema),
-    defaultValues: { action: "NEXT_FOLLOW_UP_UPDATE" },
+    defaultValues: {
+      action: "NEXT_FOLLOW_UP_UPDATE",
+      next_followup_date: todayDateString(),
+    },
   });
 
   const isTerminal =
@@ -356,9 +368,19 @@ export function useAdmissionEnquiryDetail(id?: string) {
 
       const entry = await AdmissionEnquiriesService.addHistory(id, payload);
       setHistory((prev) => [...prev, entry]);
-      toast.success("History entry added");
       setShowHistoryModal(false);
-      historyForm.reset({ action: "NEXT_FOLLOW_UP_UPDATE" });
+      historyForm.reset({
+        action: "NEXT_FOLLOW_UP_UPDATE",
+        next_followup_date: todayDateString(),
+      });
+
+      if (values.action === "ADMISSION_CONFIRMED") {
+        toast.success("Admission confirmed — let's onboard the student");
+        router.push(`/students/create-new?entry_id=${id}`);
+        return;
+      }
+
+      toast.success("History entry added");
       // Refresh enquiry to get updated status
       const updated = await AdmissionEnquiriesService.getById(id);
       setEnquiry(updated);
@@ -386,7 +408,10 @@ export function useAdmissionEnquiryDetail(id?: string) {
     openHistoryModal: () => setShowHistoryModal(true),
     closeHistoryModal: () => {
       setShowHistoryModal(false);
-      historyForm.reset({ action: "NEXT_FOLLOW_UP_UPDATE" });
+      historyForm.reset({
+        action: "NEXT_FOLLOW_UP_UPDATE",
+        next_followup_date: todayDateString(),
+      });
     },
     historyForm,
     handleAddHistory: historyForm.handleSubmit(addHistory),

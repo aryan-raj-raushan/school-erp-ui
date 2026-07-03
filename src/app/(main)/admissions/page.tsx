@@ -89,7 +89,7 @@ function AdmissionsContent() {
         header: "Status",
         cell: ({ row }) => (
           <Badge variant={STATUS_BADGE[row.original.status]}>
-            {row.original.status.replace("_", " ")}
+            {row.original.status.replace(/_/g, " ")}
           </Badge>
         ),
       },

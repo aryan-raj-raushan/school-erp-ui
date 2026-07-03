@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil } from "lucide-react";
 import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -57,12 +57,8 @@ function AdmissionsContent() {
     page: urlFilters.page ? Number(urlFilters.page) : 1,
   };
 
-  const {
-    enquiries,
-    pagination,
-    isLoading,
-    deleteEnquiry,
-  } = useAdmissionEnquiries(initialFilters);
+  const { enquiries, pagination, isLoading } =
+    useAdmissionEnquiries(initialFilters);
 
   const columns = useMemo<ColumnDef<AdmissionFollowupRow>[]>(
     () => [
@@ -81,7 +77,7 @@ function AdmissionsContent() {
         header: "Status",
         cell: ({ row }) => (
           <Badge variant={STATUS_BADGE[row.original.status]}>
-            {row.original.status.replace("_", " ")}
+            {row.original.status.replace(/_/g, " ")}
           </Badge>
         ),
       },

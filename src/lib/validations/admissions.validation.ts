@@ -50,7 +50,7 @@ export const admissionEnquirySchema = z.object({
   remarks: z.string().min(1, 'Remarks are required'),
 
   // Status (for update only)
-  status: z.enum(['NEW', 'FOLLOW_UP', 'ADMISSION_CONFIRMED', 'REJECTED']).optional(),
+  status: z.enum(['NEW', 'FOLLOW_UP', 'ADMISSION_CONFIRMED', 'ONBOARDING_IN_PROGRESS', 'REJECTED']).optional(),
 });
 
 export type AdmissionEnquiryFormValues = z.infer<typeof admissionEnquirySchema>;
