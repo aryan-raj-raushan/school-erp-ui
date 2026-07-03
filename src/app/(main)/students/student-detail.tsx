@@ -117,6 +117,8 @@ export function StudentDetail({ id }: { id: string }) {
     handleSubmit,
     isSubmitting,
     handleDocumentUpload,
+    sourceEnquiry,
+    isPrefilling,
   } = useStudentDetail(id);
 
   const { years, currentYear } = useAcademicYears();
@@ -233,6 +235,30 @@ export function StudentDetail({ id }: { id: string }) {
           </Div>
         }
       />
+
+      {isNew && (sourceEnquiry || isPrefilling) && (
+        <Div
+          type="col"
+          gap="xs"
+          className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-4"
+        >
+          {isPrefilling ? (
+            <P size="sm">Loading enquiry details…</P>
+          ) : (
+            <>
+              <P size="sm" className="font-medium">
+                Prefilled from admission enquiry — {sourceEnquiry?.student_name}
+              </P>
+              {sourceEnquiry?.registration_fee_required && (
+                <P size="sm" color="muted">
+                  ⚠️ Registration fee is marked as required for this admission.
+                  Please collect it separately via the Fees module.
+                </P>
+              )}
+            </>
+          )}
+        </Div>
+      )}
 
       <form id="student-form" onSubmit={handleSubmit}>
         <Div type="col" gap="md">

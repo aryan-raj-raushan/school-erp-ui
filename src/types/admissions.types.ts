@@ -2,6 +2,7 @@ export type EnquiryStatus =
   | "NEW"
   | "FOLLOW_UP"
   | "ADMISSION_CONFIRMED"
+  | "ONBOARDING_IN_PROGRESS"
   | "REJECTED";
 export type EnquiryGender = "MALE" | "FEMALE" | "OTHER";
 export type EnquiryReligion =
