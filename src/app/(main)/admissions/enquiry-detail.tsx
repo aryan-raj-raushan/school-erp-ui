@@ -864,7 +864,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                 {...historyForm.register("remarks")}
               />
             </FormField>
-          </div>
+          </Div>
 
           <div className="flex justify-end gap-2 px-4 py-2.5 border-t border-border/30">
             <Button
