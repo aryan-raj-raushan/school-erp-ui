@@ -26,4 +26,4 @@ export const schoolEventSchema = z
     path: ['to_date'],
   });
 
-export type SchoolEventFormValues = z.infer<typeof schoolEventSchema>;
+export type SchoolEventFormValues = z.input<typeof schoolEventSchema>;
