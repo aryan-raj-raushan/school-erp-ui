@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, BookOpen, Wand2, Copy, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, BookOpen, Wand2 } from "lucide-react";
 import { useFieldArray, Controller } from "react-hook-form";
 import { useExamScheduleForm } from "@/hooks/exam/useExamSchedule";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
@@ -19,9 +19,7 @@ import {
   FormField,
   Input,
   Select,
-  Modal,
-  ModalBody,
-  ModalFooter,
+  MultiSelect,
 } from "@/components/ui";
 import {
   SCHEDULE_PAGE,
@@ -223,73 +221,6 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
   );
 }
 
-// ── Sibling Copy Modal ────────────────────────────────────────────────────────
-
-function SiblingCopyModal({
-  siblings,
-  isCopying,
-  onCopy,
-  onDismiss,
-}: {
-  siblings: { classId: string; className?: string }[];
-  isCopying: boolean;
-  onCopy: (ids: string[]) => void;
-  onDismiss: () => void;
-}) {
-  const [selected, setSelected] = useState<string[]>(siblings.map((s) => s.classId));
-
-  function toggle(id: string) {
-    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  }
-
-  return (
-    <Modal title="Copy schedule to other classes?" onClose={onDismiss} size="sm">
-      <ModalBody>
-        <P className="text-sm text-muted-foreground mb-4">
-          This exam covers other classes too. Apply the same dates, times and marks to:
-        </P>
-        <Div type="col" gap="sm">
-          {siblings.map((s) => {
-            const checked = selected.includes(s.classId);
-            return (
-              <Button
-                key={s.classId}
-                type="button"
-                variant="outline"
-                onClick={() => toggle(s.classId)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left justify-start"
-              >
-                {checked ? (
-                  <CheckSquare size={14} className="text-primary shrink-0" />
-                ) : (
-                  <Square size={14} className="text-muted-foreground shrink-0" />
-                )}
-                <Span className="text-sm">{s.className ?? s.classId}</Span>
-              </Button>
-            );
-          })}
-        </Div>
-        <P className="text-xs text-muted-foreground mt-3">
-          Subjects are matched by name — mismatches are skipped.
-        </P>
-      </ModalBody>
-      <ModalFooter>
-        <Button variant="outline" size="sm" onClick={onDismiss}>
-          Skip
-        </Button>
-        <Button
-          size="sm"
-          loading={isCopying}
-          disabled={selected.length === 0}
-          onClick={() => onCopy(selected)}
-        >
-          <Copy size={13} /> Copy to {selected.length} class{selected.length !== 1 ? "es" : ""}
-        </Button>
-      </ModalFooter>
-    </Modal>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 function ScheduleCreateContent() {
@@ -303,10 +234,6 @@ function ScheduleCreateContent() {
     addScheduleRow,
     loadAllSubjects,
     applyToAll,
-    pendingSiblings,
-    isCopyingToSiblings,
-    copyToSiblings,
-    dismissSiblingCopy,
   } = useExamScheduleForm();
 
   const {
@@ -318,22 +245,15 @@ function ScheduleCreateContent() {
   } = form;
 
   const watchedYearId = watch("academic_year_id");
-  const watchedClassId = watch("class_id");
+  const watchedClassIds = watch("class_ids");
   const watchedExamId = watch("exam_id");
   const watchedSchedules = watch("schedules");
 
-  const {
-    years,
-    classes,
-    sections,
-    setSelectedAcademicYearId,
-    handleClassChange,
-    handleSectionChange,
-  } = useAcademicClassSection({ autoSelectCurrentYear: true });
+  const { years, classes, setSelectedAcademicYearId } = useAcademicClassSection({
+    autoSelectCurrentYear: true,
+  });
 
-  const { exams } = useExams(
-    watchedYearId ? { academic_year_id: watchedYearId, class_id: watchedClassId } : {},
-  );
+  const { exams } = useExams(watchedYearId ? { academic_year_id: watchedYearId } : {});
   const { details: hallRooms } = useHallDetails();
 
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
@@ -360,24 +280,10 @@ function ScheduleCreateContent() {
     setExpandedRows((p) => ({ ...p, [i]: !p[i] }));
   }
 
-  const canLoadSubjects = !!watchedClassId;
-
-  // Build class name map for sibling copy modal
-  const classNameById = useMemo(
-    () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
-    [classes],
-  );
+  const classOptions = useMemo(() => classes.map((c) => ({ value: c.id, label: c.name })), [classes]);
+  const canLoadSubjects = (watchedClassIds?.length ?? 0) > 0;
 
   return (
-    <>
-    {pendingSiblings.length > 0 && (
-      <SiblingCopyModal
-        siblings={pendingSiblings.map((s) => ({ classId: s.classId, className: classNameById[s.classId] }))}
-        isCopying={isCopyingToSiblings}
-        onCopy={copyToSiblings}
-        onDismiss={dismissSiblingCopy}
-      />
-    )}
     <Div type="row" align="start" gap="lg">
       {/* ── Left: form ────────────────────────────────────────────────────── */}
       <Div className="flex-1 min-w-0">
@@ -395,17 +301,15 @@ function ScheduleCreateContent() {
 
             {/* Header selectors */}
             <Div variant="card" className="p-5">
-              <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField label={SCHEDULE_PAGE.labels.academicYear + " *"} error={errors.academic_year_id?.message}>
                   <Select
                     {...register("academic_year_id")}
                     onChange={(e) => {
                       setValue("academic_year_id", e.target.value);
-                      setValue("class_id", "");
-                      setValue("section_id", "");
+                      setValue("class_ids", []);
                       setValue("exam_id", "");
                       setSelectedAcademicYearId(e.target.value);
-                      handleClassChange("");
                     }}
                   >
                     <option value="">Select year</option>
@@ -417,43 +321,21 @@ function ScheduleCreateContent() {
                   </Select>
                 </FormField>
 
-                <FormField label={SCHEDULE_PAGE.labels.class + " *"} error={errors.class_id?.message}>
-                  <Select
-                    {...register("class_id")}
+                <FormField
+                  label={SCHEDULE_PAGE.labels.class + " *"}
+                  error={(errors.class_ids as { message?: string } | undefined)?.message}
+                >
+                  <MultiSelect
+                    options={classOptions}
+                    value={watchedClassIds ?? []}
+                    onChange={(ids) => setValue("class_ids", ids, { shouldValidate: true })}
+                    placeholder={!watchedYearId ? "Select academic year first" : "Select class(es)..."}
                     disabled={!watchedYearId}
-                    onChange={(e) => {
-                      setValue("class_id", e.target.value);
-                      setValue("section_id", "");
-                      setValue("exam_id", "");
-                      handleClassChange(e.target.value);
-                      handleSectionChange("");
-                    }}
-                  >
-                    <option value="">Select class</option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </Select>
-                </FormField>
-
-                <FormField label={SCHEDULE_PAGE.labels.section}>
-                  <Select
-                    {...register("section_id")}
-                    disabled={!watchedClassId}
-                    onChange={(e) => {
-                      setValue("section_id", e.target.value);
-                      handleSectionChange(e.target.value);
-                    }}
-                  >
-                    <option value="">All sections</option>
-                    {sections.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </Select>
+                  />
                 </FormField>
 
                 <FormField label={SCHEDULE_PAGE.labels.exam + " *"} error={errors.exam_id?.message}>
-                  <Select {...register("exam_id")} disabled={!watchedClassId}>
+                  <Select {...register("exam_id")} disabled={!canLoadSubjects}>
                     <option value="">Select exam</option>
                     {deduplicatedExams.map((e) => (
                       <option key={e.id} value={e.id}>{e.exam_name}</option>
@@ -618,7 +500,6 @@ function ScheduleCreateContent() {
         <ScheduleSummary schedules={watchedSchedules ?? []} />
       </Div>
     </Div>
-    </>
   );
 }
 

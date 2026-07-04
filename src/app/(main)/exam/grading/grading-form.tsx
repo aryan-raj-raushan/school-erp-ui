@@ -16,7 +16,7 @@ export function GradingFormContent({ slug }: { slug: string }) {
   const isEditMode = searchParams.get("edit") === "true";
 
   const {
-    grade, isLoading, isNew, isEditing, setIsEditing,
+    grade, isLoading, isEditing, setIsEditing,
     form, isSubmitting, onSubmit,
   } = useExamGradingDetail(slug);
 
@@ -35,19 +35,19 @@ export function GradingFormContent({ slug }: { slug: string }) {
   return (
     <Div type="col" gap="lg" className="max-w-2xl">
       <PageHeader
-        title={isNew ? "Add Grade" : `Grade – ${grade?.grade_name ?? ""}`}
-        subtitle={!isNew ? `Sequence: #${grade?.sequence_index}` : ""}
+        title={`Grade – ${grade?.grade_name ?? ""}`}
+        subtitle={`Sequence: #${grade?.sequence_index}`}
         actions={
           <Div type="row" gap="sm" align="center">
             <Button variant="outline" size="sm" onClick={() => router.push(EXAM_ROUTES.grading.list)}>
               <ArrowLeft size={14} /> {GRADING_PAGE.buttons.back}
             </Button>
-            {!isNew && !isEditing && (
+            {!isEditing && (
               <Button size="sm" onClick={() => setIsEditing(true)}>
                 <Pencil size={14} /> {GRADING_PAGE.buttons.edit}
               </Button>
             )}
-            {isEditing && !isNew && (
+            {isEditing && (
               <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
                 {GRADING_PAGE.buttons.cancel}
               </Button>
@@ -93,8 +93,7 @@ export function GradingFormContent({ slug }: { slug: string }) {
 
             {isEditing && (
               <Div type="row" gap="md" className="pt-2">
-                <Button type="button" variant="outline"
-                  onClick={() => isNew ? router.push(EXAM_ROUTES.grading.list) : setIsEditing(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
                   {GRADING_PAGE.buttons.cancel}
                 </Button>
                 <Button type="submit" loading={isSubmitting}>

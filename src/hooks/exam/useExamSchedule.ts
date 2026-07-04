@@ -6,15 +6,11 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { ExamScheduleService, ExamsService } from "@/services/exam.service";
+import { ExamScheduleService } from "@/services/exam.service";
 import { SubjectsService } from "@/services/subjects.service";
 import type { ExamSchedule, ScheduleFilters } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SCHEDULE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
-
-export interface SiblingCopyTask {
-  classId: string;
-}
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -62,8 +58,7 @@ const scheduleItemSchema = z.object({
 export const scheduleFormSchema = z.object({
   exam_id: z.string().uuid("Select an exam"),
   academic_year_id: z.string().uuid("Required"),
-  class_id: z.string().uuid("Required"),
-  section_id: z.string().optional(),
+  class_ids: z.array(z.string().uuid()).min(1, "Select at least one class"),
   schedules: z.array(scheduleItemSchema).min(1, "Add at least one subject"),
 });
 
@@ -141,18 +136,13 @@ export function useExamSchedules(initialFilters: ScheduleFilters = {}) {
 export function useExamScheduleForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingSiblings, setPendingSiblings] = useState<SiblingCopyTask[]>([]);
-  const [isCopyingToSiblings, setIsCopyingToSiblings] = useState(false);
-  // Store the last submitted payload so we can copy it to siblings
-  const lastPayloadRef = { current: null as Parameters<typeof ExamScheduleService.bulkCreate>[0] | null };
 
   const form = useForm<ScheduleFormInput, unknown, ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
       exam_id: "",
       academic_year_id: "",
-      class_id: "",
-      section_id: "",
+      class_ids: [],
       schedules: [defaultScheduleItem],
     },
   });
@@ -167,7 +157,6 @@ export function useExamScheduleForm() {
     try {
       const payload = {
         ...values,
-        section_id: values.section_id || undefined,
         schedules: values.schedules.map((s) => ({
           ...s,
           exam_invigilator_id: s.exam_invigilator_id || undefined,
@@ -179,21 +168,8 @@ export function useExamScheduleForm() {
           })),
         })),
       };
-      await ExamScheduleService.bulkCreate(payload);
-      lastPayloadRef.current = payload;
+      await ExamScheduleService.bulkCreateMultiClass(payload);
       toast.success(SCHEDULE_PAGE.toasts.createSuccess);
-
-      // This exam may span other classes too — offer to copy the same schedule to them
-      try {
-        const submittedExam = await ExamsService.getById(values.exam_id);
-        const otherClassIds = submittedExam.class_ids.filter((cid) => cid !== values.class_id);
-        if (otherClassIds.length > 0) {
-          setPendingSiblings(otherClassIds.map((classId) => ({ classId })));
-          return; // Stay on page to show copy dialog
-        }
-      } catch {
-        // Non-fatal — just navigate away
-      }
       router.push(EXAM_ROUTES.schedule.list);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -201,47 +177,6 @@ export function useExamScheduleForm() {
       setIsSubmitting(false);
     }
   });
-
-  async function copyToSiblings(selectedClassIds: string[]) {
-    const payload = lastPayloadRef.current;
-    if (!payload || selectedClassIds.length === 0) {
-      router.push(EXAM_ROUTES.schedule.list);
-      return;
-    }
-    setIsCopyingToSiblings(true);
-    try {
-      // Remap subject_ids by name against the school's subject list (once, shared across classes)
-      const subjectsRes = await SubjectsService.list({ limit: 100 });
-      const subjectByName: Record<string, string> = {};
-      subjectsRes.items.forEach((s) => { subjectByName[s.name.toLowerCase()] = s.id; });
-
-      await Promise.all(
-        selectedClassIds.map(async (classId) => {
-          const siblingSchedules = payload.schedules.map((s) => ({
-            ...s,
-            subject_id: subjectByName[s.subject_name.toLowerCase()] ?? s.subject_id,
-          }));
-
-          await ExamScheduleService.bulkCreate({
-            ...payload,
-            class_id: classId,
-            schedules: siblingSchedules,
-          });
-        }),
-      );
-      toast.success(`Schedule copied to ${selectedClassIds.length} more class${selectedClassIds.length > 1 ? "es" : ""}`);
-      router.push(EXAM_ROUTES.schedule.list);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to copy schedule");
-    } finally {
-      setIsCopyingToSiblings(false);
-    }
-  }
-
-  function dismissSiblingCopy() {
-    setPendingSiblings([]);
-    router.push(EXAM_ROUTES.schedule.list);
-  }
 
   function addScheduleRow() {
     schedulesField.append({ ...defaultScheduleItem });
@@ -294,10 +229,6 @@ export function useExamScheduleForm() {
     loadAllSubjects,
     applyToAll,
     defaultScheduleItem,
-    pendingSiblings,
-    isCopyingToSiblings,
-    copyToSiblings,
-    dismissSiblingCopy,
   };
 }
 

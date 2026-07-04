@@ -6,7 +6,7 @@ export const EXAM_ROUTES = {
   // Grading
   grading: {
     list: '/exam/grading',
-    create: '/exam/grading/view?id=create-new',
+    create: '/exam/grading/create-new',
     view: (id: string) => `/exam/grading/view?id=${id}`,
     edit: (id: string) => `/exam/grading/view?id=${id}&edit=true`,
   },
@@ -113,12 +113,25 @@ export const GRADING_PAGE = {
   },
   toasts: {
     createSuccess: 'Grade created successfully',
+    bulkCreateSuccess: 'Grades created successfully',
     updateSuccess: 'Grade updated successfully',
     deleteSuccess: 'Grade deleted',
     deleteError: 'Failed to delete grade',
     fetchError: 'Failed to load grades',
   },
 } as const;
+
+/** Prefilled by the "Auto Generate" button — fully editable before submit. */
+export const DEFAULT_GRADE_BANDS = [
+  { grade_name: 'A+', from_percentage: '90', to_percentage: '100' },
+  { grade_name: 'A', from_percentage: '80', to_percentage: '90' },
+  { grade_name: 'B+', from_percentage: '70', to_percentage: '80' },
+  { grade_name: 'B', from_percentage: '60', to_percentage: '70' },
+  { grade_name: 'C+', from_percentage: '50', to_percentage: '60' },
+  { grade_name: 'C', from_percentage: '40', to_percentage: '50' },
+  { grade_name: 'D', from_percentage: '33', to_percentage: '40' },
+  { grade_name: 'F', from_percentage: '0', to_percentage: '33' },
+] as const;
 
 // ── Exams Page ────────────────────────────────────────────────────────────────
 
@@ -169,6 +182,8 @@ export const EXAMS_PAGE = {
     unpublishSuccess: 'Exam unpublished',
     fetchError: 'Failed to load exams',
   },
+  confirmDelete:
+    'Delete this exam? This will permanently remove its schedules, attendance records, and sitting-plan seat assignments. This cannot be undone.',
 } as const;
 
 // ── Schedule Page ─────────────────────────────────────────────────────────────

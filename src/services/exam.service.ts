@@ -19,6 +19,7 @@ import type {
   CopyExamPayload,
   ExamSchedule,
   BulkCreateSchedulePayload,
+  BulkCreateScheduleMultiClassPayload,
   BulkLockSchedulePayload,
   BulkUpdateSchedulePayload,
   BulkUpdateScheduleResult,
@@ -55,6 +56,11 @@ export const ExamGradingService = {
 
   async create(payload: CreateExamGradingPayload): Promise<ExamGrading> {
     const res = await apiGateway.post<ExamGrading>(EXAM_ENDPOINTS.grading.list, payload);
+    return res.data;
+  },
+
+  async bulkCreate(grades: CreateExamGradingPayload[]): Promise<ExamGrading[]> {
+    const res = await apiGateway.post<ExamGrading[]>(EXAM_ENDPOINTS.grading.bulk, { grades });
     return res.data;
   },
 
@@ -193,6 +199,16 @@ export const ExamScheduleService = {
 
   async bulkCreate(payload: BulkCreateSchedulePayload): Promise<ExamSchedule[]> {
     const res = await apiGateway.post<ExamSchedule[]>(EXAM_ENDPOINTS.schedules.bulk, payload);
+    return res.data;
+  },
+
+  async bulkCreateMultiClass(
+    payload: BulkCreateScheduleMultiClassPayload,
+  ): Promise<ExamSchedule[]> {
+    const res = await apiGateway.post<ExamSchedule[]>(
+      EXAM_ENDPOINTS.schedules.bulkMultiClass,
+      payload,
+    );
     return res.data;
   },
 

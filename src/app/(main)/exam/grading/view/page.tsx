@@ -7,7 +7,7 @@ import { GradingFormContent } from "../grading-form";
 
 function GradingViewContent() {
   const searchParams = useSearchParams();
-  const id = searchParams.get("id") ?? "create-new";
+  const id = searchParams.get("id") ?? "";
   return <GradingFormContent slug={id} />;
 }
 

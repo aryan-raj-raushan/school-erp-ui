@@ -354,6 +354,7 @@ EXAM_ENDPOINTS
 export const EXAM_ENDPOINTS = {
   grading: {
     list: "/exam/grading",
+    bulk: "/exam/grading/bulk",
     byId: (id: string) => `/exam/grading/${id}`,
   },
   exams: {
@@ -375,6 +376,7 @@ export const EXAM_ENDPOINTS = {
     list: "/exam/schedules",
     byId: (id: string) => `/exam/schedules/${id}`,
     bulk: "/exam/schedules/bulk",
+    bulkMultiClass: "/exam/schedules/bulk-multi-class",
     bulkLock: "/exam/schedules/bulk-lock",
     bulkUpdate: "/exam/schedules/bulk-update",
   },

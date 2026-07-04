@@ -233,6 +233,13 @@ export interface BulkCreateSchedulePayload {
   schedules: ExamScheduleItem[];
 }
 
+export interface BulkCreateScheduleMultiClassPayload {
+  exam_id: string;
+  academic_year_id: string;
+  class_ids: string[];
+  schedules: ExamScheduleItem[];
+}
+
 export interface ScheduleFilters {
   academic_year_id?: string;
   class_id?: string;

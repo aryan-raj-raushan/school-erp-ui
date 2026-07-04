@@ -2,13 +2,13 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { ExamGradingService } from "@/services/exam.service";
 import type { ExamGrading } from "@/types/exam.types";
-import { GRADING_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import { GRADING_PAGE, EXAM_ROUTES, DEFAULT_GRADE_BANDS } from "@/constants/exam.constants";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -72,15 +72,87 @@ export function useExamGrading() {
   return { grades, isLoading, refetch: fetch, remove };
 }
 
-// ── Detail / Form Hook ────────────────────────────────────────────────────────
+// ── Bulk Create Hook ──────────────────────────────────────────────────────────
+
+const defaultGradeRow: GradingFormInput = {
+  grade_name: "",
+  from_percentage: "",
+  to_percentage: "",
+  sequence_index: 0,
+  description: "",
+  is_enabled: true,
+};
+
+const bulkGradingFormSchema = z.object({
+  grades: z.array(gradingSchema).min(1, "Add at least one grade"),
+});
+
+export function useExamGradingBulkForm() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<{ grades: GradingFormInput[] }, unknown, { grades: GradingFormOutput[] }>({
+    resolver: zodResolver(bulkGradingFormSchema) as any,
+    defaultValues: { grades: [{ ...defaultGradeRow }] },
+  });
+
+  const gradesField = useFieldArray({ control: form.control, name: "grades" });
+
+  function addGradeRow() {
+    gradesField.append({ ...defaultGradeRow, sequence_index: gradesField.fields.length });
+  }
+
+  function removeGradeRow(index: number) {
+    gradesField.remove(index);
+  }
+
+  /** Fills the rows with a standard grade scale — fully editable before submit. */
+  function autoGenerate() {
+    gradesField.replace(
+      DEFAULT_GRADE_BANDS.map((band, i) => ({
+        grade_name: band.grade_name,
+        from_percentage: band.from_percentage,
+        to_percentage: band.to_percentage,
+        sequence_index: i,
+        description: "",
+        is_enabled: true,
+      })),
+    );
+    toast.success(`${DEFAULT_GRADE_BANDS.length} default grade bands loaded — review and save`);
+  }
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    setIsSubmitting(true);
+    try {
+      await ExamGradingService.bulkCreate(values.grades);
+      toast.success(GRADING_PAGE.toasts.bulkCreateSuccess);
+      router.push(EXAM_ROUTES.grading.list);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
+
+  return {
+    form,
+    gradesField,
+    isSubmitting,
+    onSubmit,
+    addGradeRow,
+    removeGradeRow,
+    autoGenerate,
+  };
+}
+
+// ── Detail / Form Hook (view/edit an existing grade) ─────────────────────────
 
 export function useExamGradingDetail(id: string) {
   const router = useRouter();
-  const isNew = id === "create-new";
 
   const [grade, setGrade] = useState<ExamGrading | null>(null);
-  const [isLoading, setIsLoading] = useState(!isNew);
-  const [isEditing, setIsEditing] = useState(isNew);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<GradingFormInput, unknown, GradingFormOutput>({
@@ -96,7 +168,6 @@ export function useExamGradingDetail(id: string) {
   });
 
   useEffect(() => {
-    if (isNew) return;
     setIsLoading(true);
     ExamGradingService.getById(id)
       .then((data) => {
@@ -112,18 +183,13 @@ export function useExamGradingDetail(id: string) {
       })
       .catch(() => toast.error(GRADING_PAGE.toasts.fetchError))
       .finally(() => setIsLoading(false));
-  }, [id, isNew, form]);
+  }, [id, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     setIsSubmitting(true);
     try {
-      if (isNew) {
-        await ExamGradingService.create(values);
-        toast.success(GRADING_PAGE.toasts.createSuccess);
-      } else {
-        await ExamGradingService.update(id, values);
-        toast.success(GRADING_PAGE.toasts.updateSuccess);
-      }
+      await ExamGradingService.update(id, values);
+      toast.success(GRADING_PAGE.toasts.updateSuccess);
       router.push(EXAM_ROUTES.grading.list);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -135,7 +201,6 @@ export function useExamGradingDetail(id: string) {
   return {
     grade,
     isLoading,
-    isNew,
     isEditing,
     setIsEditing,
     form,

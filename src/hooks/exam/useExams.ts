@@ -67,6 +67,7 @@ export function useExams(initialFilters: ExamFilters = {}) {
   }
 
   async function remove(id: string) {
+    if (!confirm(EXAMS_PAGE.confirmDelete)) return;
     try {
       await ExamsService.remove(id);
       toast.success(EXAMS_PAGE.toasts.deleteSuccess);

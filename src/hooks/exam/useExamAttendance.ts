@@ -102,16 +102,19 @@ export function useMarkAttendance({
       .catch(() => toast.error("Failed to load students"));
   }, [classId, sectionId, academicYearId]);
 
-  // Load schedules + derive dates when exam changes
+  // Load schedules + derive dates when exam or class changes.
+  // class_id is required here — without it, every schedule row for the exam
+  // (across all classes it spans) comes back, so students get cross-joined
+  // against schedules that belong to a different class entirely.
   useEffect(() => {
-    if (!examId) {
+    if (!examId || !classId) {
       setSchedules([]);
       setAvailableDates([]);
       setRows([]);
       return;
     }
     setIsLoadingSchedules(true);
-    ExamScheduleService.list({ exam_id: examId, limit: 200 })
+    ExamScheduleService.list({ exam_id: examId, class_id: classId, limit: 200 })
       .then((r) => {
         setSchedules(r.items);
         const dates = [...new Set(r.items.map((s) => s.exam_date))].sort();
@@ -119,7 +122,7 @@ export function useMarkAttendance({
       })
       .catch(() => toast.error("Failed to load schedules"))
       .finally(() => setIsLoadingSchedules(false));
-  }, [examId]);
+  }, [examId, classId]);
 
   // Build attendance rows automatically when all data is ready
   useEffect(() => {
