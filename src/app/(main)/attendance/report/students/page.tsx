@@ -101,20 +101,17 @@ export default function StudentAttendanceReportPage() {
     isLoadingSections,
     isLoadingClassSection,
 
-    dailyClassId,
-    setDailyClassId,
-    dailySectionId,
-    setDailySectionId,
+    selectedClassId,
+    setSelectedClassId,
+    selectedSectionId,
+    setSelectedSectionId,
+
     dailyDate,
     setDailyDate,
     dailyReport,
     isLoadingDaily,
     fetchDailyReport,
 
-    monthlyClassId,
-    setMonthlyClassId,
-    monthlySectionId,
-    setMonthlySectionId,
     monthlyMonth,
     setMonthlyMonth,
     monthlyYear,
@@ -123,10 +120,6 @@ export default function StudentAttendanceReportPage() {
     isLoadingMonthly,
     fetchMonthlyReport,
 
-    defaulterClassId,
-    setDefaulterClassId,
-    defaulterSectionId,
-    setDefaulterSectionId,
     defaulterMonth,
     setDefaulterMonth,
     defaulterYear,
@@ -137,10 +130,6 @@ export default function StudentAttendanceReportPage() {
     isLoadingDefaulters,
     fetchDefaulters,
 
-    historyClassId,
-    setHistoryClassId,
-    historySectionId,
-    setHistorySectionId,
     historyStudents,
     isLoadingHistoryStudents,
     historyStudentId,
@@ -150,10 +139,6 @@ export default function StudentAttendanceReportPage() {
     isLoadingHistory,
     fetchStudentHistory,
 
-    exportClassId,
-    setExportClassId,
-    exportSectionId,
-    setExportSectionId,
     exportStartDate,
     setExportStartDate,
     exportEndDate,
@@ -163,10 +148,6 @@ export default function StudentAttendanceReportPage() {
     selectedAuditId,
     setSelectedAuditId,
 
-    heatmapClassId,
-    setHeatmapClassId,
-    heatmapSectionId,
-    setHeatmapSectionId,
     heatmapStudents,
     isLoadingHeatmapStudents,
     heatmapStudentId,
@@ -177,10 +158,6 @@ export default function StudentAttendanceReportPage() {
     isLoadingHeatmap,
     fetchHeatmap,
 
-    lateTrendClassId,
-    setLateTrendClassId,
-    lateTrendSectionId,
-    setLateTrendSectionId,
     lateTrendMonth,
     setLateTrendMonth,
     lateTrendYear,
@@ -392,7 +369,9 @@ export default function StudentAttendanceReportPage() {
     <PageCol>
       <PageHeader title={ATTENDANCE_REPORT_PAGE.title} />
 
-      {/* Academic Year + Export options in one row card */}
+      {/* Shared filters (Academic Year, Class, Section) + Export — used by
+          whichever report tab is active below, so there's one filter set
+          instead of a separate one duplicated per tab */}
       <Div variant="card" className="p-4">
         <Div type="row" gap="md" align="end" wrap>
           <Div type="col" gap="xs">
@@ -413,11 +392,8 @@ export default function StudentAttendanceReportPage() {
             <P size="xs" color="muted">Class</P>
             <ResponsiveSelect
               className="w-32 max-w-full"
-              value={exportClassId}
-              onChange={(e) => {
-                setExportClassId(e.target.value);
-                setExportSectionId("");
-              }}
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
               disabled={isLoadingClassSection}
               customPlaceholder="Select Class"
               options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
@@ -427,11 +403,11 @@ export default function StudentAttendanceReportPage() {
             <P size="xs" color="muted">Section</P>
             <ResponsiveSelect
               className="w-32 max-w-full"
-              value={exportSectionId}
-              onChange={(e) => setExportSectionId(e.target.value)}
-              disabled={!exportClassId || isLoadingClassSection}
+              value={selectedSectionId}
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              disabled={!selectedClassId || isLoadingClassSection}
               customPlaceholder="Select Section"
-              options={getFilteredSections(exportClassId).map((s) => ({ value: s.id, label: s.label }))}
+              options={getFilteredSections(selectedClassId).map((s) => ({ value: s.id, label: s.label }))}
             />
           </Div>
           <Div type="col" gap="xs">
@@ -492,32 +468,13 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "daily" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={dailyClassId}
-              onChange={(e) => {
-                setDailyClassId(e.target.value);
-                setDailySectionId("");
-              }}
-              disabled={isLoadingClassSection}
-              customPlaceholder="Select Class"
-              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={dailySectionId}
-              onChange={(e) => setDailySectionId(e.target.value)}
-              disabled={!dailyClassId || isLoadingClassSection}
-              customPlaceholder={ATTENDANCE_REPORT_PAGE.daily.selectSection}
-              options={getFilteredSections(dailyClassId).map((s) => ({ value: s.id, label: s.label }))}
-            />
             <Input
               type="date"
               width="sm"
               value={dailyDate}
               onChange={(e) => setDailyDate(e.target.value)}
             />
-            <Button onClick={fetchDailyReport} loading={isLoadingDaily}>
+            <Button onClick={fetchDailyReport} loading={isLoadingDaily} disabled={!selectedSectionId}>
               {ATTENDANCE_REPORT_PAGE.daily.fetch}
             </Button>
           </Div>
@@ -578,25 +535,6 @@ export default function StudentAttendanceReportPage() {
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
             <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={monthlyClassId}
-              onChange={(e) => {
-                setMonthlyClassId(e.target.value);
-                setMonthlySectionId("");
-              }}
-              disabled={isLoadingClassSection}
-              customPlaceholder="Select Class"
-              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={monthlySectionId}
-              onChange={(e) => setMonthlySectionId(e.target.value)}
-              disabled={!monthlyClassId || isLoadingClassSection}
-              customPlaceholder={ATTENDANCE_REPORT_PAGE.monthly.selectSection}
-              options={getFilteredSections(monthlyClassId).map((s) => ({ value: s.id, label: s.label }))}
-            />
-            <ResponsiveSelect
               className="w-32 max-w-full"
               value={String(monthlyMonth)}
               onChange={(e) => setMonthlyMonth(Number(e.target.value))}
@@ -608,7 +546,7 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setMonthlyYear(Number(e.target.value))}
               options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
             />
-            <Button onClick={fetchMonthlyReport} loading={isLoadingMonthly}>
+            <Button onClick={fetchMonthlyReport} loading={isLoadingMonthly} disabled={!selectedSectionId}>
               {ATTENDANCE_REPORT_PAGE.monthly.fetch}
             </Button>
           </Div>
@@ -641,25 +579,6 @@ export default function StudentAttendanceReportPage() {
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
             <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={defaulterClassId}
-              onChange={(e) => {
-                setDefaulterClassId(e.target.value);
-                setDefaulterSectionId("");
-              }}
-              disabled={isLoadingClassSection}
-              customPlaceholder="Select Class"
-              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={defaulterSectionId}
-              onChange={(e) => setDefaulterSectionId(e.target.value)}
-              disabled={!defaulterClassId || isLoadingClassSection}
-              customPlaceholder={ATTENDANCE_REPORT_PAGE.defaulters.selectSection}
-              options={getFilteredSections(defaulterClassId).map((s) => ({ value: s.id, label: s.label }))}
-            />
-            <ResponsiveSelect
               className="w-32 max-w-full"
               value={String(defaulterMonth)}
               onChange={(e) => setDefaulterMonth(Number(e.target.value))}
@@ -683,7 +602,7 @@ export default function StudentAttendanceReportPage() {
               />
               <P color="default">%</P>
             </Div>
-            <Button onClick={fetchDefaulters} loading={isLoadingDefaulters}>
+            <Button onClick={fetchDefaulters} loading={isLoadingDefaulters} disabled={!selectedSectionId}>
               {ATTENDANCE_REPORT_PAGE.defaulters.fetch}
             </Button>
           </Div>
@@ -721,28 +640,9 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <ResponsiveSelect
               className="w-48 max-w-full"
-              value={historyClassId}
-              onChange={(e) => {
-                setHistoryClassId(e.target.value);
-                setHistorySectionId("");
-              }}
-              disabled={isLoadingClassSection}
-              customPlaceholder="Select Class"
-              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={historySectionId}
-              onChange={(e) => setHistorySectionId(e.target.value)}
-              disabled={!historyClassId || isLoadingClassSection}
-              customPlaceholder="Select Section"
-              options={getFilteredSections(historyClassId).map((s) => ({ value: s.id, label: s.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
               value={historyStudentId}
               onChange={(e) => setHistoryStudentId(e.target.value)}
-              disabled={!historySectionId || isLoadingHistoryStudents}
+              disabled={!selectedSectionId || isLoadingHistoryStudents}
               customPlaceholder={isLoadingHistoryStudents ? "Loading students…" : "Select Student"}
               options={historyStudents.map((s) => ({
                 value: s.id,
@@ -752,6 +652,7 @@ export default function StudentAttendanceReportPage() {
             <Button
               onClick={() => fetchStudentHistory(1)}
               loading={isLoadingHistory}
+              disabled={!historyStudentId}
             >
               {ATTENDANCE_REPORT_PAGE.studentHistory.fetch}
             </Button>
@@ -882,28 +783,9 @@ export default function StudentAttendanceReportPage() {
           <Div type="row" gap="md" align="center" wrap>
             <ResponsiveSelect
               className="w-48 max-w-full"
-              value={heatmapClassId}
-              onChange={(e) => {
-                setHeatmapClassId(e.target.value);
-                setHeatmapSectionId("");
-              }}
-              disabled={isLoadingClassSection}
-              customPlaceholder="Select Class"
-              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={heatmapSectionId}
-              onChange={(e) => setHeatmapSectionId(e.target.value)}
-              disabled={!heatmapClassId || isLoadingClassSection}
-              customPlaceholder="Select Section"
-              options={getFilteredSections(heatmapClassId).map((s) => ({ value: s.id, label: s.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
               value={heatmapStudentId}
               onChange={(e) => setHeatmapStudentId(e.target.value)}
-              disabled={!heatmapSectionId || isLoadingHeatmapStudents}
+              disabled={!selectedSectionId || isLoadingHeatmapStudents}
               customPlaceholder={isLoadingHeatmapStudents ? "Loading students…" : "Select Student"}
               options={heatmapStudents.map((s) => ({
                 value: s.id,
@@ -916,7 +798,7 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setHeatmapYear(Number(e.target.value))}
               options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
             />
-            <Button onClick={fetchHeatmap} loading={isLoadingHeatmap}>Load Heatmap</Button>
+            <Button onClick={fetchHeatmap} loading={isLoadingHeatmap} disabled={!heatmapStudentId}>Load Heatmap</Button>
           </Div>
           {isLoadingHeatmap ? (
             <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>
@@ -992,25 +874,6 @@ export default function StudentAttendanceReportPage() {
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
             <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={lateTrendClassId}
-              onChange={(e) => {
-                setLateTrendClassId(e.target.value);
-                setLateTrendSectionId("");
-              }}
-              disabled={isLoadingClassSection}
-              customPlaceholder="Select Class"
-              options={classOptions.map((c) => ({ value: c.id, label: c.label }))}
-            />
-            <ResponsiveSelect
-              className="w-48 max-w-full"
-              value={lateTrendSectionId}
-              onChange={(e) => setLateTrendSectionId(e.target.value)}
-              disabled={!lateTrendClassId || isLoadingClassSection}
-              customPlaceholder="Select Section"
-              options={getFilteredSections(lateTrendClassId).map((s) => ({ value: s.id, label: s.label }))}
-            />
-            <ResponsiveSelect
               className="w-32 max-w-full"
               value={String(lateTrendMonth)}
               onChange={(e) => setLateTrendMonth(Number(e.target.value))}
@@ -1022,7 +885,7 @@ export default function StudentAttendanceReportPage() {
               onChange={(e) => setLateTrendYear(Number(e.target.value))}
               options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
             />
-            <Button onClick={fetchLateTrend} loading={isLoadingLateTrend}>Load Trend</Button>
+            <Button onClick={fetchLateTrend} loading={isLoadingLateTrend} disabled={!selectedSectionId}>Load Trend</Button>
           </Div>
           {isLoadingLateTrend ? (
             <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>

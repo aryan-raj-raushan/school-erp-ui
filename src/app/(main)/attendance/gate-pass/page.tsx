@@ -40,10 +40,10 @@ const STATUS_OPTIONS = ['PENDING', 'APPROVED', 'USED', 'EXPIRED', 'REJECTED'];
 export default function GatePassPage() {
   const {
     records, isLoading, date, setDate, statusFilter, setStatusFilter, actionId,
-    isDialogOpen, setIsDialogOpen, fetch,
+    isDialogOpen, openDialog, closeDialog, fetch,
     studentId, setStudentId, reason, setReason,
     exitTime, setExitTime, returnTime, setReturnTime,
-    handleSubmit, approve, reject,
+    handleSubmit, approve, reject, attemptedSubmit,
   } = useGatePass();
 
   const { students, isLoading: isLoadingStudents } = useStudents({ limit: 500 });
@@ -126,13 +126,14 @@ export default function GatePassPage() {
       <PageHeader
         title="Gate Passes"
         subtitle="Manage student gate pass requests"
-        actions={<Button onClick={() => setIsDialogOpen(true)}>+ Create Gate Pass</Button>}
+        actions={<Button onClick={openDialog}>+ Create Gate Pass</Button>}
       />
 
       <FilterBar>
         <FilterLabel>Date</FilterLabel>
         <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
         <ResponsiveSelect
+          width="sm"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
           customPlaceholder="All Statuses"
@@ -151,7 +152,7 @@ export default function GatePassPage() {
 
       <ResponsiveModalContainer
         isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={closeDialog}
         title="Create Gate Pass"
       >
         <Div type="col" gap="sm" className="px-4 py-4">
@@ -169,7 +170,7 @@ export default function GatePassPage() {
           <Div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {/* Full width - Student */}
             <Div className="md:col-span-2">
-              <FormField label="Student *" error={!studentId ? 'Required' : ''} htmlFor="student">
+              <FormField label="Student *" error={attemptedSubmit && !studentId ? 'Required' : ''} htmlFor="student">
                 <ResponsiveSelect
                   id="student"
                   value={studentId}
@@ -183,7 +184,7 @@ export default function GatePassPage() {
 
             {/* Full width - Reason */}
             <Div className="md:col-span-2">
-              <FormField label="Reason *" error={!reason ? 'Required' : ''}>
+              <FormField label="Reason *" error={attemptedSubmit && !reason ? 'Required' : ''}>
                 <Input
                   placeholder="e.g. Doctor appointment, Home emergency"
                   value={reason}
@@ -194,7 +195,7 @@ export default function GatePassPage() {
 
             {/* Half width - Exit Time */}
             <Div>
-              <FormField label="Exit Time *" error={!exitTime ? 'Required' : ''}>
+              <FormField label="Exit Time *" error={attemptedSubmit && !exitTime ? 'Required' : ''}>
                 <Input
                   type="time"
                   value={exitTime}
@@ -205,7 +206,7 @@ export default function GatePassPage() {
 
             {/* Half width - Return Time */}
             <Div>
-              <FormField label="Return Time *" error={!returnTime ? 'Required' : ''}>
+              <FormField label="Return Time *" error={attemptedSubmit && !returnTime ? 'Required' : ''}>
                 <Input
                   type="time"
                   value={returnTime}
@@ -216,7 +217,7 @@ export default function GatePassPage() {
           </Div>
 
           {/* Validation Message */}
-          {!isFormValid && (
+          {attemptedSubmit && !isFormValid && (
             <Div type="row" align="center" gap="sm" className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 -mt-1">
               <P size="xs" color="muted">⚠️ All fields are required</P>
             </Div>
@@ -224,8 +225,8 @@ export default function GatePassPage() {
         </Div>
 
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
-          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!isFormValid}>Create Gate Pass</Button>
+          <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+          <Button onClick={handleSubmit}>Create Gate Pass</Button>
         </div>
       </ResponsiveModalContainer>
     </PageCol>

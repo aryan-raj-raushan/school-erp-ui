@@ -139,6 +139,7 @@ function LeaveTypeContent() {
 
       <FilterBar>
         <ResponsiveSelect
+          width="sm"
           value={filters.leave_validity ?? ''}
           onChange={(e) =>
             handleFilterChange({
@@ -150,6 +151,7 @@ function LeaveTypeContent() {
         />
 
         <ResponsiveSelect
+          width="sm"
           value={filters.leave_pay_type ?? ''}
           onChange={(e) =>
             handleFilterChange({
@@ -161,6 +163,7 @@ function LeaveTypeContent() {
         />
 
         <ResponsiveSelect
+          width="sm"
           value={
             filters.is_enabled === undefined ? '' : String(filters.is_enabled)
           }

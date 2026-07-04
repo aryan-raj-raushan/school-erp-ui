@@ -317,6 +317,7 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
       {/* Filter by academic year */}
       <FilterBar>
         <ResponsiveSelect
+          width="sm"
           value={filters.academic_year_id ?? ""}
           onChange={(e) =>
             updateFilters({ academic_year_id: e.target.value || undefined })

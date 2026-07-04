@@ -53,10 +53,16 @@ export function useAttendanceReports() {
   const [classSection, setClassSection] = useState<Class[]>([]);
   const [isLoadingClassSection, setIsLoadingClassSection] = useState(false);
 
+  // Class/Section — shared across every tab and the export card, so there's
+  // a single filter instead of a separate one duplicated everywhere.
+  const [selectedClassId, setSelectedClassIdRaw] = useState("");
+  const [selectedSectionId, setSelectedSectionId] = useState("");
+  const setSelectedClassId = useCallback((classId: string) => {
+    setSelectedClassIdRaw(classId);
+    setSelectedSectionId("");
+  }, []);
 
   // Daily
-  const [dailyClassId, setDailyClassId] = useState("");
-  const [dailySectionId, setDailySectionId] = useState("");
   const [dailyDate, setDailyDate] = useState(todayISO());
   const [dailyReport, setDailyReport] = useState<DailyAttendanceReport | null>(
     null,
@@ -64,16 +70,12 @@ export function useAttendanceReports() {
   const [isLoadingDaily, setIsLoadingDaily] = useState(false);
 
   // Monthly
-  const [monthlyClassId, setMonthlyClassId] = useState("");
-  const [monthlySectionId, setMonthlySectionId] = useState("");
   const [monthlyMonth, setMonthlyMonth] = useState(currentMonth());
   const [monthlyYear, setMonthlyYear] = useState(currentYear());
   const [monthlyReport, setMonthlyReport] = useState<MonthlyAttendanceReport | null>(null);
   const [isLoadingMonthly, setIsLoadingMonthly] = useState(false);
 
   // Defaulters
-  const [defaulterClassId, setDefaulterClassId] = useState("");
-  const [defaulterSectionId, setDefaulterSectionId] = useState("");
   const [defaulterMonth, setDefaulterMonth] = useState(currentMonth());
   const [defaulterYear, setDefaulterYear] = useState(currentYear());
   const [defaulterThreshold, setDefaulterThreshold] = useState(75);
@@ -81,8 +83,6 @@ export function useAttendanceReports() {
   const [isLoadingDefaulters, setIsLoadingDefaulters] = useState(false);
 
   // Student history
-  const [historyClassId, setHistoryClassId] = useState("");
-  const [historySectionId, setHistorySectionId] = useState("");
   const [historyStudents, setHistoryStudents] = useState<Student[]>([]);
   const [isLoadingHistoryStudents, setIsLoadingHistoryStudents] = useState(false);
   const [historyStudentId, setHistoryStudentId] = useState("");
@@ -95,8 +95,6 @@ export function useAttendanceReports() {
   const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
 
   // Heatmap
-  const [heatmapClassId, setHeatmapClassId] = useState("");
-  const [heatmapSectionId, setHeatmapSectionId] = useState("");
   const [heatmapStudents, setHeatmapStudents] = useState<Student[]>([]);
   const [isLoadingHeatmapStudents, setIsLoadingHeatmapStudents] = useState(false);
   const [heatmapStudentId, setHeatmapStudentId] = useState("");
@@ -105,16 +103,12 @@ export function useAttendanceReports() {
   const [isLoadingHeatmap, setIsLoadingHeatmap] = useState(false);
 
   // Late trend
-  const [lateTrendClassId, setLateTrendClassId] = useState("");
-  const [lateTrendSectionId, setLateTrendSectionId] = useState("");
   const [lateTrendMonth, setLateTrendMonth] = useState(currentMonth());
   const [lateTrendYear, setLateTrendYear] = useState(currentYear());
   const [lateTrendData, setLateTrendData] = useState<LateTrendEntry[]>([]);
   const [isLoadingLateTrend, setIsLoadingLateTrend] = useState(false);
 
   // Export
-  const [exportClassId, setExportClassId] = useState("");
-  const [exportSectionId, setExportSectionId] = useState("");
   const [exportStartDate, setExportStartDate] = useState(firstOfMonthISO());
   const [exportEndDate, setExportEndDate] = useState(todayISO());
   const [isExporting, setIsExporting] = useState(false);
@@ -152,14 +146,14 @@ export function useAttendanceReports() {
   }, []);
 
   async function fetchDailyReport() {
-    if (!dailySectionId) {
+    if (!selectedSectionId) {
       toast.error("Select a section");
       return;
     }
     setIsLoadingDaily(true);
     try {
       const report = await AttendanceService.getDailyReport({
-        class_section_id: dailySectionId,
+        class_section_id: selectedSectionId,
         date: dailyDate,
       });
       setDailyReport(report);
@@ -173,14 +167,14 @@ export function useAttendanceReports() {
   }
 
   async function fetchMonthlyReport() {
-    if (!monthlySectionId) {
+    if (!selectedSectionId) {
       toast.error("Select a section");
       return;
     }
     setIsLoadingMonthly(true);
     try {
       const report = await AttendanceService.getMonthlyReport({
-        class_section_id: monthlySectionId,
+        class_section_id: selectedSectionId,
         month: monthlyMonth,
         year: monthlyYear,
       });
@@ -195,14 +189,14 @@ export function useAttendanceReports() {
   }
 
   async function fetchDefaulters() {
-    if (!defaulterSectionId) {
+    if (!selectedSectionId) {
       toast.error("Select a section");
       return;
     }
     setIsLoadingDefaulters(true);
     try {
       const data = await AttendanceService.getDefaulters({
-        class_section_id: defaulterSectionId,
+        class_section_id: selectedSectionId,
         month: defaulterMonth,
         year: defaulterYear,
         threshold: defaulterThreshold,
@@ -289,10 +283,10 @@ export function useAttendanceReports() {
   }
 
   async function fetchLateTrend() {
-    if (!lateTrendSectionId) { toast.error('Select a section'); return; }
+    if (!selectedSectionId) { toast.error('Select a section'); return; }
     setIsLoadingLateTrend(true);
     try {
-      const data = await AttendanceService.getLateTrend(lateTrendSectionId, lateTrendMonth, lateTrendYear);
+      const data = await AttendanceService.getLateTrend(selectedSectionId, lateTrendMonth, lateTrendYear);
       setLateTrendData(data);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to load late trend');
@@ -305,7 +299,7 @@ export function useAttendanceReports() {
     setIsExporting(true);
     try {
       const buffer = await AttendanceService.exportToFile({
-        ...(exportSectionId && { class_section_id: exportSectionId }),
+        ...(selectedSectionId && { class_section_id: selectedSectionId }),
         ...(exportStartDate && { start_date: exportStartDate }),
         ...(exportEndDate && { end_date: exportEndDate }),
         format: "xlsx",
@@ -340,12 +334,12 @@ export function useAttendanceReports() {
   }, [fetchClasses]);
 
   useEffect(() => {
-    fetchHistoryStudents(historySectionId);
-  }, [historySectionId, fetchHistoryStudents]);
+    fetchHistoryStudents(selectedSectionId);
+  }, [selectedSectionId, fetchHistoryStudents]);
 
   useEffect(() => {
-    fetchHeatmapStudents(heatmapSectionId);
-  }, [heatmapSectionId, fetchHeatmapStudents]);
+    fetchHeatmapStudents(selectedSectionId);
+  }, [selectedSectionId, fetchHeatmapStudents]);
 
   return {
     activeTab,
@@ -358,11 +352,13 @@ export function useAttendanceReports() {
     isLoadingSections,
     isLoadingClassSection,
 
+    // Class/Section — shared across all tabs and export
+    selectedClassId,
+    setSelectedClassId,
+    selectedSectionId,
+    setSelectedSectionId,
+
     // Daily
-    dailyClassId,
-    setDailyClassId,
-    dailySectionId,
-    setDailySectionId,
     dailyDate,
     setDailyDate,
     dailyReport,
@@ -370,10 +366,6 @@ export function useAttendanceReports() {
     fetchDailyReport,
 
     // Monthly
-    monthlyClassId,
-    setMonthlyClassId,
-    monthlySectionId,
-    setMonthlySectionId,
     monthlyMonth,
     setMonthlyMonth,
     monthlyYear,
@@ -383,10 +375,6 @@ export function useAttendanceReports() {
     fetchMonthlyReport,
 
     // Defaulters
-    defaulterClassId,
-    setDefaulterClassId,
-    defaulterSectionId,
-    setDefaulterSectionId,
     defaulterMonth,
     setDefaulterMonth,
     defaulterYear,
@@ -398,10 +386,6 @@ export function useAttendanceReports() {
     fetchDefaulters,
 
     // Student history
-    historyClassId,
-    setHistoryClassId,
-    historySectionId,
-    setHistorySectionId,
     historyStudents,
     isLoadingHistoryStudents,
     historyStudentId,
@@ -416,10 +400,6 @@ export function useAttendanceReports() {
     setSelectedAuditId,
 
     // Heatmap
-    heatmapClassId,
-    setHeatmapClassId,
-    heatmapSectionId,
-    setHeatmapSectionId,
     heatmapStudents,
     isLoadingHeatmapStudents,
     heatmapStudentId,
@@ -431,10 +411,6 @@ export function useAttendanceReports() {
     fetchHeatmap,
 
     // Late Trend
-    lateTrendClassId,
-    setLateTrendClassId,
-    lateTrendSectionId,
-    setLateTrendSectionId,
     lateTrendMonth,
     setLateTrendMonth,
     lateTrendYear,
@@ -444,10 +420,6 @@ export function useAttendanceReports() {
     fetchLateTrend,
 
     // Export
-    exportClassId,
-    setExportClassId,
-    exportSectionId,
-    setExportSectionId,
     exportStartDate,
     setExportStartDate,
     exportEndDate,

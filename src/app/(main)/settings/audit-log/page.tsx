@@ -74,6 +74,7 @@ export default function AuditLogPage() {
       <FilterBar>
         <FilterLabel>Entity</FilterLabel>
         <ResponsiveSelect
+          width="sm"
           value={entity}
           onChange={e => setEntity(e.target.value as AuditEntity | '')}
           customPlaceholder="All Entities"
@@ -82,6 +83,7 @@ export default function AuditLogPage() {
 
         <FilterLabel>Action</FilterLabel>
         <ResponsiveSelect
+          width="sm"
           value={action}
           onChange={e => setAction(e.target.value as AuditAction | '')}
           customPlaceholder="All Actions"
