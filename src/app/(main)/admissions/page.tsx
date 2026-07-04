@@ -89,7 +89,7 @@ function AdmissionsContent() {
         header: "Status",
         cell: ({ row }) => (
           <Badge variant={STATUS_BADGE[row.original.status]}>
-            {row.original.status.replace("_", " ")}
+            {row.original.status.replace(/_/g, " ")}
           </Badge>
         ),
       },
@@ -181,6 +181,7 @@ function AdmissionsContent() {
           }
         />
         <ResponsiveSelect
+          width="sm"
           customPlaceholder="All Years"
           options={years.map((y) => ({ value: y.id, label: y.name }))}
           value={filters.academic_year_id ?? ""}
@@ -191,6 +192,7 @@ function AdmissionsContent() {
           }
         />
         <ResponsiveSelect
+          width="sm"
           customPlaceholder="All Classes"
           options={classes.map((c) => ({ value: c.id, label: c.name }))}
           value={filters.applying_class_id ?? ""}
@@ -201,6 +203,7 @@ function AdmissionsContent() {
           }
         />
         <ResponsiveSelect
+          width="sm"
           customPlaceholder="All Status"
           options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
           value={filters.status ?? ""}

@@ -23,7 +23,7 @@ function EditHomeworkPageInner() {
 
   const {
     form, years, classes, subjects,
-    isLoadingData, savedAttachments, newAttachments, fileInputRef,
+    isLoadingData, isLoadingSubjects, savedAttachments, newAttachments, fileInputRef,
     isSubmitting,
     handleSubmit, handleFileChange, removeSavedAttachment, removeNewAttachment,
     handleBack,
@@ -66,8 +66,16 @@ function EditHomeworkPageInner() {
               <ResponsiveSelect
                 {...register('subject_id')}
                 defaultValue=""
-                disabled={!watch('class_id')}
-                customPlaceholder={HOMEWORK_PAGE.placeholders.selectSubject}
+                disabled={!watch('class_id') || isLoadingSubjects}
+                customPlaceholder={
+                  !watch('class_id')
+                    ? HOMEWORK_PAGE.placeholders.selectSubject
+                    : isLoadingSubjects
+                      ? 'Loading subjects…'
+                      : subjects.length === 0
+                        ? 'No subjects mapped to this class'
+                        : HOMEWORK_PAGE.placeholders.selectSubject
+                }
                 options={subjects.map((s) => ({ value: s.id, label: s.name }))}
               />
             </FormField>

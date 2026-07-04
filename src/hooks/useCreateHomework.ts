@@ -10,10 +10,15 @@ import { toast } from 'sonner';
 import { HomeworkService } from '@/services/homework.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { SubjectsService, type Subject } from '@/services/subjects.service';
+import { ClassSubjectTeacherService } from '@/services/class-subject-teacher.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
+
+export interface HomeworkSubjectOption {
+  id: string;
+  name: string;
+}
 
 export interface PendingAttachment {
   id: string;
@@ -52,7 +57,8 @@ export function useCreateHomework() {
   const { years, currentYear } = useAcademicYears();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<HomeworkSubjectOption[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +74,7 @@ export function useCreateHomework() {
   });
 
   const watchedClassId = form.watch('class_id');
+  const watchedAcademicYearId = form.watch('academic_year_id');
 
   useEffect(() => {
     if (currentYear && !form.getValues('academic_year_id')) {
@@ -78,17 +85,39 @@ export function useCreateHomework() {
   const fetchData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const [clsRes, subRes] = await Promise.all([
-        ClassesService.list({ limit: 100 }),
-        SubjectsService.list({ limit: 100 }),
-      ]);
+      const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
-      setSubjects(subRes.items);
     } catch { toast.error('Failed to load form data'); }
     finally { setIsLoadingData(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Subjects are scoped to the selected class — only subjects mapped to
+  // that class (via Subject-Teacher Map) for the selected academic year.
+  const fetchSubjectsForClass = useCallback(async () => {
+    if (!watchedClassId || !watchedAcademicYearId) {
+      setSubjects([]);
+      return;
+    }
+    setIsLoadingSubjects(true);
+    try {
+      const mappings = await ClassSubjectTeacherService.list({
+        academic_year_id: watchedAcademicYearId,
+        class_id: watchedClassId,
+      });
+      const unique = new Map<string, HomeworkSubjectOption>();
+      mappings.forEach((m) => unique.set(m.subject_id, { id: m.subject_id, name: m.subject_name }));
+      setSubjects(Array.from(unique.values()));
+    } catch {
+      toast.error('Failed to load subjects for this class');
+      setSubjects([]);
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  }, [watchedClassId, watchedAcademicYearId]);
+
+  useEffect(() => { fetchSubjectsForClass(); }, [fetchSubjectsForClass]);
 
   useEffect(() => {
     form.setValue('subject_id', '');
@@ -182,7 +211,7 @@ export function useCreateHomework() {
 
   return {
     form, years, classes, subjects,
-    isLoadingData, attachments, fileInputRef,
+    isLoadingData, isLoadingSubjects, attachments, fileInputRef,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(createHomework),
     handleFileChange, handleNativeFilePick, isNative, removeAttachment,

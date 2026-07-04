@@ -5,6 +5,7 @@ export const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "NEW", label: "New" },
   { value: "FOLLOW_UP", label: "Follow Up" },
   { value: "ADMISSION_CONFIRMED", label: "Admission Confirmed" },
+  { value: "ONBOARDING_IN_PROGRESS", label: "Student Onboarding - Progress" },
   { value: "REJECTED", label: "Rejected" },
 ];
 
@@ -15,6 +16,7 @@ export const STATUS_BADGE: Record<
   NEW: "info",
   FOLLOW_UP: "warning",
   ADMISSION_CONFIRMED: "success",
+  ONBOARDING_IN_PROGRESS: "warning",
   REJECTED: "danger",
 };
 

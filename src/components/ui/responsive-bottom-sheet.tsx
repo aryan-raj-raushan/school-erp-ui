@@ -157,13 +157,13 @@ export function ResponsiveBottomSheet({
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
           {title && (
-            <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-border/40">
-              <h2 className="text-base font-semibold text-foreground">{title}</h2>
+            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-border/40">
+              <h2 className="text-sm sm:text-base font-semibold text-foreground">{title}</h2>
               <Button
                 variant="ghost"
                 size="icon-xs"
                 onClick={onClose}
-                className="min-w-11 min-h-11"
+                className="min-w-9 min-h-9 sm:min-w-11 sm:min-h-11"
               >
                 <X size={15} />
               </Button>

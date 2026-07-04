@@ -86,6 +86,9 @@ export const studentDocumentSchema = z.object({
 // ─── Main Form Schema ──────────────────────────────────────────────────────────
 
 export const studentFormSchema = z.object({
+  // Onboarding link — set when this student is created from a confirmed admission enquiry
+  admission_enquiry_id: z.string().optional(),
+
   // Basic Info
   first_name: requiredNameSchema(100),
   last_name: optionalNameSchema(100),

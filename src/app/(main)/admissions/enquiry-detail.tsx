@@ -173,7 +173,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
             {!isNew && !isEditing && enquiry && (
               <>
                 <Badge variant={STATUS_BADGE[enquiry.status]}>
-                  {enquiry.status.replace("_", " ")}
+                  {enquiry.status.replace(/_/g, " ")}
                 </Badge>
                 {showActionButtons && (
                   <>
@@ -796,7 +796,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
         title="Add History Entry"
       >
         <form onSubmit={historyForm.handleSubmit(handleAddHistory as any)}>
-          <div className="px-4 py-4 space-y-4">
+          <Div type="col" gap="sm" className="px-4 py-3 sm:py-3.5">
             <FormField
               label="Action"
               required
@@ -816,7 +816,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
             {/* Conditionally show follow-up date/time */}
             {historyForm.watch("action") === "NEXT_FOLLOW_UP_UPDATE" && (
-              <Div type="grid" cols={2} gap="md">
+              <Div type="grid" cols={2} gap="sm">
                 <FormField
                   label="Next Follow-up Date"
                   required
@@ -858,15 +858,15 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
               error={historyForm.formState.errors.remarks?.message}
             >
               <textarea
-                rows={3}
+                rows={2}
                 placeholder="Add detailed remarks…"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 {...historyForm.register("remarks")}
               />
             </FormField>
-          </div>
+          </Div>
 
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          <div className="flex justify-end gap-2 px-4 py-2.5 border-t border-border/30">
             <Button
               type="button"
               variant="outline"

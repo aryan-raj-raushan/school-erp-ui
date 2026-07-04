@@ -5,9 +5,11 @@ import { usePlatformFilePicker } from './usePlatformFilePicker';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { StudentsService } from "@/services/students-v2.service";
 import { UploadsService } from "@/services/uploads.service";
+import { AdmissionEnquiriesService } from "@/services/admissions.service";
+import type { AdmissionEnquiry } from "@/types/admissions.types";
 import {
   studentFormSchema,
   type StudentFormValues,
@@ -17,7 +19,11 @@ import { STUDENT_ROUTES } from "@/constants/students.constants";
 
 export function useStudentDetail(id?: string) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const entryId = searchParams.get("entry_id");
   const isNew = id === "create-new";
+  const [sourceEnquiry, setSourceEnquiry] = useState<AdmissionEnquiry | null>(null);
+  const [isPrefilling, setIsPrefilling] = useState(false);
 
   const [student, setStudent] = useState<StudentFull | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -153,6 +159,74 @@ export function useStudentDetail(id?: string) {
     fetchStudent();
   }, [fetchStudent]);
 
+  const prefillFromEnquiry = useCallback(async () => {
+    if (!isNew || !entryId) return;
+    setIsPrefilling(true);
+    try {
+      const enquiry = await AdmissionEnquiriesService.getById(entryId);
+      setSourceEnquiry(enquiry);
+
+      const [firstName, ...rest] = enquiry.student_name.trim().split(/\s+/);
+      const parentName = enquiry.father_name || enquiry.mother_name || "";
+      const [parentFirst, ...parentRest] = parentName.trim().split(/\s+/);
+
+      form.reset({
+        admission_enquiry_id: enquiry.id,
+        first_name: firstName || enquiry.student_name,
+        last_name: rest.join(" "),
+        date_of_birth: enquiry.date_of_birth ?? "",
+        gender: enquiry.gender ?? undefined,
+        religion: enquiry.religion ?? undefined,
+        category: enquiry.category ?? undefined,
+        nationality: "Indian",
+        academic_info: {
+          academic_year_id: enquiry.applying_academic_year_id,
+          class_id: enquiry.applying_class_id,
+          admission_number: "",
+        },
+        previous_academics: {
+          previous_school_name: enquiry.previous_school_name ?? "",
+          previous_class: enquiry.previous_class ?? "",
+        },
+        address: {
+          address: enquiry.student_current_address ?? "",
+          city: enquiry.city ?? "",
+          state: enquiry.state ?? "",
+          country: enquiry.country ?? "India",
+        },
+        parents: parentName
+          ? [
+              {
+                relation: enquiry.father_name ? "FATHER" : "MOTHER",
+                first_name: parentFirst || parentName,
+                last_name: parentRest.join(" "),
+                email: enquiry.email ?? "",
+                dial_code: enquiry.dial_code,
+                phone_number: enquiry.phone,
+                occupation:
+                  (enquiry.father_name
+                    ? enquiry.father_occupation
+                    : enquiry.mother_occupation) ?? "",
+                is_primary: true,
+                can_pickup: true,
+              },
+            ]
+          : [],
+        documents: [],
+      });
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load enquiry details",
+      );
+    } finally {
+      setIsPrefilling(false);
+    }
+  }, [isNew, entryId, form]);
+
+  useEffect(() => {
+    prefillFromEnquiry();
+  }, [prefillFromEnquiry]);
+
   async function handleImageUpload(file: File, studentId: string) {
     setIsUploadingImage(true);
     try {
@@ -283,6 +357,8 @@ export function useStudentDetail(id?: string) {
     profileImageUrl,
     isUploadingImage,
     imageInputRef,
+    sourceEnquiry,
+    isPrefilling,
     onImageChange,
     handleNativeImagePick,
     isNative,

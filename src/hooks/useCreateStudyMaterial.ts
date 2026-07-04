@@ -10,10 +10,15 @@ import { toast } from 'sonner';
 import { StudyMaterialsService } from '@/services/study-materials.service';
 import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
-import { SubjectsService, type Subject } from '@/services/subjects.service';
+import { ClassSubjectTeacherService } from '@/services/class-subject-teacher.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
+
+export interface StudyMaterialSubjectOption {
+  id: string;
+  name: string;
+}
 
 const schema = z.object({
   academic_year_id: z.string().min(1, 'Session is required'),
@@ -32,8 +37,9 @@ export function useCreateStudyMaterial() {
   const { years, currentYear } = useAcademicYears();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<StudyMaterialSubjectOption[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -57,28 +63,45 @@ export function useCreateStudyMaterial() {
     }
   }, [currentYear, watchedAcademicYearId, setValue]);
 
-  // Load classes + subjects when academic year changes
+  // Load classes when academic year changes
   useEffect(() => {
     if (!watchedAcademicYearId) return;
     setIsLoadingData(true);
-    Promise.all([
-      ClassesService.list({ academic_year_id: watchedAcademicYearId, limit: 100 }),
-      SubjectsService.list({ limit: 100 }),
-    ])
-      .then(([clsRes, subRes]) => {
-        setClasses(clsRes.items);
-        setSubjects(subRes.items);
-      })
+    ClassesService.list({ academic_year_id: watchedAcademicYearId, limit: 100 })
+      .then((clsRes) => setClasses(clsRes.items))
       .catch(() => {})
       .finally(() => setIsLoadingData(false));
   }, [watchedAcademicYearId]);
 
-  // Reset subject when class changes
+  // Subjects are scoped to the selected class — only subjects mapped to
+  // that class (via Subject-Teacher Map) for the selected academic year.
   useEffect(() => {
-    if (!watchedClassId) {
-      setValue('subject_id', '');
+    if (!watchedClassId || !watchedAcademicYearId) {
+      setSubjects([]);
+      return;
     }
-  }, [watchedClassId, setValue]);
+    setIsLoadingSubjects(true);
+    ClassSubjectTeacherService.list({
+      academic_year_id: watchedAcademicYearId,
+      class_id: watchedClassId,
+    })
+      .then((mappings) => {
+        const unique = new Map<string, StudyMaterialSubjectOption>();
+        mappings.forEach((m) => unique.set(m.subject_id, { id: m.subject_id, name: m.subject_name }));
+        setSubjects(Array.from(unique.values()));
+      })
+      .catch(() => {
+        toast.error('Failed to load subjects for this class');
+        setSubjects([]);
+      })
+      .finally(() => setIsLoadingSubjects(false));
+  }, [watchedClassId, watchedAcademicYearId]);
+
+  // Reset subject whenever the class changes
+  useEffect(() => {
+    setValue('subject_id', '');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedClassId]);
 
   async function handleSubmit(values: CreateStudyMaterialFormValues) {
     setIsSubmitting(true);
@@ -139,6 +162,7 @@ export function useCreateStudyMaterial() {
     classes,
     subjects,
     isLoadingData,
+    isLoadingSubjects,
     isSubmitting,
     isUploading,
     contentType,

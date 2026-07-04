@@ -16,12 +16,24 @@ export function useGatePass() {
   const [date, setDate] = useState(todayISO());
   const [statusFilter, setStatusFilter] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   // Form state
   const [studentId, setStudentId] = useState('');
   const [reason, setReason] = useState('');
   const [exitTime, setExitTime] = useState('');
   const [returnTime, setReturnTime] = useState('');
+
+  function openDialog() {
+    setAttemptedSubmit(false);
+    setIsDialogOpen(true);
+  }
+
+  function closeDialog() {
+    setIsDialogOpen(false);
+    setAttemptedSubmit(false);
+    setStudentId(''); setReason(''); setExitTime(''); setReturnTime('');
+  }
 
   const fetch = useCallback(async () => {
     setIsLoading(true);
@@ -36,7 +48,8 @@ export function useGatePass() {
   }, [date, statusFilter]);
 
   const handleSubmit = useCallback(async () => {
-    if (!studentId || !reason) { toast.error('Student and reason required'); return; }
+    setAttemptedSubmit(true);
+    if (!studentId || !reason || !exitTime || !returnTime) return;
     const payload: CreateGatePassPayload = {
       student_id: studentId,
       date,
@@ -47,8 +60,7 @@ export function useGatePass() {
     try {
       const created = await GatePassService.create(payload);
       setRecords(prev => [created, ...prev]);
-      setIsDialogOpen(false);
-      setStudentId(''); setReason(''); setExitTime(''); setReturnTime('');
+      closeDialog();
       toast.success('Gate pass created');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create gate pass');
@@ -79,8 +91,8 @@ export function useGatePass() {
 
   return {
     records, isLoading, date, setDate, statusFilter, setStatusFilter, actionId,
-    isDialogOpen, setIsDialogOpen, fetch,
+    isDialogOpen, openDialog, closeDialog, fetch,
     studentId, setStudentId, reason, setReason, exitTime, setExitTime,
-    returnTime, setReturnTime, handleSubmit, approve, reject,
+    returnTime, setReturnTime, handleSubmit, approve, reject, attemptedSubmit,
   };
 }
