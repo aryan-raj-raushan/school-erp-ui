@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, inputBase } from './form';
@@ -57,7 +58,10 @@ export const ResponsiveSelect = React.forwardRef<
     const [isOpen, setIsOpen] = useState(false);
     const selectRef = useRef<HTMLSelectElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const triggerRef = useRef<HTMLButtonElement | null>(null);
+    const popoverRef = useRef<HTMLDivElement | null>(null);
     const [displayValue, setDisplayValue] = useState('');
+    const [popoverRect, setPopoverRect] = useState<{ top: number; left: number; width: number } | null>(null);
 
     // Re-sync after every render so this reflects both user interaction and
     // programmatic changes (e.g. react-hook-form's reset()/setValue()).
@@ -65,11 +69,33 @@ export const ResponsiveSelect = React.forwardRef<
       setDisplayValue(selectRef.current?.value ?? '');
     });
 
-    // Close the desktop popover on outside click.
+    // Position the portaled popover against the trigger button, and keep it
+    // anchored on scroll/resize while open.
+    useLayoutEffect(() => {
+      if (isMobile || !isOpen) return;
+      function updatePosition() {
+        const rect = triggerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        setPopoverRect({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      }
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }, [isMobile, isOpen]);
+
+    // Close the desktop popover on outside click (trigger or portaled panel).
     useEffect(() => {
       if (isMobile || !isOpen) return;
       function handleClickOutside(e: MouseEvent) {
-        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        const target = e.target as Node;
+        if (
+          containerRef.current && !containerRef.current.contains(target) &&
+          popoverRef.current && !popoverRef.current.contains(target)
+        ) {
           setIsOpen(false);
         }
       }
@@ -103,7 +129,7 @@ export const ResponsiveSelect = React.forwardRef<
       'Select...';
 
     return (
-      <div ref={containerRef} className={cn('relative', widthMap[width])}>
+      <div ref={containerRef} className={cn('relative', widthMap[width], className)}>
         {label && <label className="block text-sm font-medium mb-2">{label}</label>}
 
         {/* Always mounted — the single source of truth for value/ref/form wiring */}
@@ -112,7 +138,7 @@ export const ResponsiveSelect = React.forwardRef<
           error={error}
           width={width}
           disabled={disabled}
-          className={cn('sr-only absolute pointer-events-none', className)}
+          className="sr-only absolute pointer-events-none"
           {...props}
         >
           <option value="">{customPlaceholder || 'Select...'}</option>
@@ -125,6 +151,7 @@ export const ResponsiveSelect = React.forwardRef<
 
         <button
           type="button"
+          ref={triggerRef}
           onClick={() => !disabled && (isMobile ? setIsOpen(true) : setIsOpen((p) => !p))}
           disabled={disabled}
           className={cn(
@@ -146,9 +173,14 @@ export const ResponsiveSelect = React.forwardRef<
           />
         </button>
 
-        {/* Desktop: custom popover listbox */}
-        {!isMobile && isOpen && !disabled && (
-          <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-[8px] border border-border bg-popover shadow-md">
+        {/* Desktop: custom popover listbox, portaled so it always renders above
+            page content regardless of any ancestor's stacking/overflow context */}
+        {!isMobile && isOpen && !disabled && popoverRect && createPortal(
+          <div
+            ref={popoverRef}
+            className="fixed z-[1000] max-h-60 overflow-auto rounded-[8px] border border-border bg-popover shadow-md"
+            style={{ top: popoverRect.top, left: popoverRect.left, width: popoverRect.width }}
+          >
             {options.length === 0 ? (
               <div className="px-4 py-3 text-sm text-muted-foreground">No options available</div>
             ) : (
@@ -166,7 +198,8 @@ export const ResponsiveSelect = React.forwardRef<
                 </button>
               ))
             )}
-          </div>
+          </div>,
+          document.body,
         )}
 
         {/* Mobile: bottom sheet */}

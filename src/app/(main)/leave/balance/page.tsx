@@ -58,6 +58,7 @@ export default function LeaveBalancePage() {
       <FilterBar>
         <FilterLabel>Academic Year</FilterLabel>
         <ResponsiveSelect
+          width="sm"
           value={academicYearId}
           onChange={(e) => setAcademicYearId(e.target.value)}
           customPlaceholder="Select year"

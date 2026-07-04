@@ -199,6 +199,7 @@ export default function StaffsPage() {
           }
         />
         <ResponsiveSelect
+          width="sm"
           options={STAFF_STATUS_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
           value={filters.status ?? ''}
           onChange={(e) =>
@@ -208,6 +209,7 @@ export default function StaffsPage() {
           }
         />
         <ResponsiveSelect
+          width="sm"
           customPlaceholder="All Roles"
           options={systemRoles.map((r) => ({ value: r.name.toUpperCase().replace(/ /g, '_'), label: r.name }))}
           value={filters.role ?? ''}

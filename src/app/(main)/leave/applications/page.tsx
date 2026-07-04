@@ -225,6 +225,7 @@ function LeaveApplicationsContent() {
 
       <FilterBar>
         <ResponsiveSelect
+          width="sm"
           value={filters.status ?? ''}
           onChange={(e) =>
             handleFilterChange({ status: (e.target.value as any) || undefined })
@@ -234,6 +235,7 @@ function LeaveApplicationsContent() {
         />
 
         <ResponsiveSelect
+          width="sm"
           value={filters.academic_year_id ?? ''}
           onChange={(e) =>
             handleFilterChange({
@@ -245,6 +247,7 @@ function LeaveApplicationsContent() {
         />
 
         <ResponsiveSelect
+          width="sm"
           value={filters.leave_type_id ?? ''}
           onChange={(e) =>
             handleFilterChange({

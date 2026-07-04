@@ -94,6 +94,11 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
         url: "/admissions/follow-up",
         permissions: [PERMISSIONS.admissions.view],
       },
+      {
+        title: "Enquiry Source",
+        url: "/admissions/source",
+        permissions: [PERMISSIONS.admissions.view],
+      },
     ],
   },
 
