@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +44,22 @@ export function useExams(initialFilters: ExamFilters = {}) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<ExamFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Callers commonly re-derive the filters object from external state (e.g.
+  // `useExams(academicYearId ? { academic_year_id: academicYearId } : {})`)
+  // expecting the list to refetch when that state changes. Since useState's
+  // initializer only runs once, that re-derived object is otherwise ignored
+  // after mount — sync it in whenever its content actually changes.
+  const initialFiltersKey = JSON.stringify(initialFilters);
+  const hasMounted = useRef(false);
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    setFilters(initialFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFiltersKey]);
 
   const fetch = useCallback(async () => {
     setIsLoading(true);
@@ -113,6 +129,7 @@ export function useExamDetail(id: string) {
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isEditing, setIsEditing] = useState(isNew);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [overlapWarning, setOverlapWarning] = useState<string | null>(null);
 
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
@@ -149,7 +166,62 @@ export function useExamDetail(id: string) {
       .finally(() => setIsLoading(false));
   }, [id, isNew, form]);
 
+  const watchedAcademicYearId = form.watch("academic_year_id");
+  const watchedClassIds = form.watch("class_ids");
+  const watchedStartDate = form.watch("start_date");
+  const watchedEndDate = form.watch("end_date");
+
+  // Client-side heads-up for the same overlap check the backend enforces on submit —
+  // lets the user fix the date/class clash before hitting save instead of after.
+  useEffect(() => {
+    if (
+      !watchedAcademicYearId ||
+      !watchedClassIds?.length ||
+      !watchedStartDate ||
+      !watchedEndDate ||
+      watchedEndDate <= watchedStartDate
+    ) {
+      setOverlapWarning(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const { items } = await ExamsService.list({
+          academic_year_id: watchedAcademicYearId,
+          limit: 1000,
+        });
+        if (cancelled) return;
+        const classIdSet = new Set(watchedClassIds);
+        const conflict = items.find(
+          (e) =>
+            e.id !== id &&
+            e.class_ids.some((cid) => classIdSet.has(cid)) &&
+            e.start_date <= watchedEndDate &&
+            e.end_date >= watchedStartDate,
+        );
+        setOverlapWarning(
+          conflict
+            ? `Exam dates overlap with "${conflict.exam_name}" (${conflict.start_date} to ${conflict.end_date}) for a shared class — adjust the dates or classes.`
+            : null,
+        );
+      } catch {
+        // Ignore — backend will still reject an overlapping save.
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [watchedAcademicYearId, watchedClassIds, watchedStartDate, watchedEndDate, id]);
+
   const onSubmit = form.handleSubmit(async (values) => {
+    if (overlapWarning) {
+      toast.error(overlapWarning);
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (isNew) {
@@ -177,5 +249,6 @@ export function useExamDetail(id: string) {
     form,
     isSubmitting,
     onSubmit,
+    overlapWarning,
   };
 }

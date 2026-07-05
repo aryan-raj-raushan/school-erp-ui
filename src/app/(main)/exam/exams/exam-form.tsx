@@ -105,6 +105,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
     form,
     isSubmitting,
     onSubmit,
+    overlapWarning,
   } = useExamDetail(slug);
 
   const { allowedNextStatuses, isChangingStatus, changeStatus, isCopying, copyExam } =
@@ -344,6 +345,14 @@ export function ExamFormContent({ slug }: { slug: string }) {
               </Div>
             </Div>
 
+            {isEditing && overlapWarning && (
+              <Div className="rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/30 p-3">
+                <P size="sm" className="text-red-700 dark:text-red-400">
+                  {overlapWarning}
+                </P>
+              </Div>
+            )}
+
             {isEditing && (
               <Div type="row" gap="md" className="pt-2">
                 <Button
@@ -357,7 +366,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
                 >
                   {EXAMS_PAGE.buttons.cancel}
                 </Button>
-                <Button type="submit" loading={isSubmitting}>
+                <Button type="submit" loading={isSubmitting} disabled={!!overlapWarning}>
                   {EXAMS_PAGE.buttons.save}
                 </Button>
               </Div>

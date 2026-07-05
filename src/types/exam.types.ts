@@ -306,6 +306,7 @@ export interface AttendanceFilters {
   academic_year_id?: string;
   exam_id?: string;
   schedule_id?: string;
+  class_id?: string;
   student_id?: string;
   status?: AttendanceStatus;
   page?: number;

@@ -56,7 +56,7 @@ function ViewAttendanceContent() {
   const {
     examId,
     setExamId,
-    availableDates,
+    schedules,
     isLoadingSchedules,
     rows,
   } = useMarkAttendance({
@@ -80,12 +80,13 @@ function ViewAttendanceContent() {
     });
   }, [exams]);
 
-  const { attendanceCardUrl } = useExamAttendanceCard({
-    examId,
-    classId: selectedClassId,
-    academicYearId: selectedAcademicYearId,
-    sectionId: selectedSectionId,
-  });
+  const { canDownload: canDownloadCard, isDownloading: isDownloadingCard, downloadAttendanceCard } =
+    useExamAttendanceCard({
+      examId,
+      classId: selectedClassId,
+      academicYearId: selectedAcademicYearId,
+      sectionId: selectedSectionId,
+    });
 
   const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
     const baseCols: ColumnDef<AttendanceRow>[] = [
@@ -106,12 +107,12 @@ function ViewAttendanceContent() {
       },
     ];
 
-    const dateCols = availableDates.map(
-      (date): ColumnDef<AttendanceRow> => ({
-        id: `date-${date}`,
-        header: fmtDate(date),
+    const scheduleCols = schedules.map(
+      (schedule): ColumnDef<AttendanceRow> => ({
+        id: `schedule-${schedule.id}`,
+        header: `${schedule.subject_name} – ${fmtDate(schedule.exam_date)}`,
         cell: ({ row }) => {
-          const entry = row.original.entries[date] ?? {
+          const entry = row.original.entries[schedule.id] ?? {
             status: "ABSENT" as AttendanceStatus,
             source: "manual" as AttendanceSource,
           };
@@ -125,8 +126,8 @@ function ViewAttendanceContent() {
       })
     );
 
-    return [...baseCols, ...dateCols];
-  }, [availableDates]);
+    return [...baseCols, ...scheduleCols];
+  }, [schedules]);
 
   return (
     <Div type="col" gap="lg">
@@ -135,11 +136,12 @@ function ViewAttendanceContent() {
         subtitle="Read-only view of attendance records"
         actions={
           <Div type="row" gap="sm">
-            {attendanceCardUrl && (
+            {canDownloadCard && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(attendanceCardUrl, "_blank")}
+                loading={isDownloadingCard}
+                onClick={downloadAttendanceCard}
               >
                 <Download size={14} /> {ATTENDANCE_PAGE.buttons.downloadCard}
               </Button>
@@ -239,7 +241,7 @@ function ViewAttendanceContent() {
             <Div type="row" justify="center" className="py-10">
               <Spinner size="lg" />
             </Div>
-          ) : availableDates.length === 0 ? (
+          ) : schedules.length === 0 ? (
             <Div variant="card-dashed">
               <P color="muted">No exam schedules found for this exam.</P>
             </Div>

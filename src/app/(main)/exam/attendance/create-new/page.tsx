@@ -59,11 +59,11 @@ function MarkAttendanceContent() {
   const {
     examId,
     setExamId,
-    availableDates,
+    schedules,
     isLoadingSchedules,
     rows,
     cycleStatus,
-    setDateStatus,
+    setScheduleStatus,
     markAllPresent,
     markAllAbsent,
     isSaving,
@@ -80,14 +80,22 @@ function MarkAttendanceContent() {
       : {}
   );
 
-  const { attendanceCardUrl } = useExamAttendanceCard({
-    examId,
-    classId: selectedClassId,
-    academicYearId: selectedAcademicYearId,
-    sectionId: selectedSectionId,
-  });
+  const selectedExam = useMemo(
+    () => exams.find((e) => e.id === examId),
+    [exams, examId]
+  );
+  const canMarkAttendance = !examId || !!selectedExam?.is_published;
 
-  // Dynamic columns: one per available date
+  const { canDownload: canDownloadCard, isDownloading: isDownloadingCard, downloadAttendanceCard } =
+    useExamAttendanceCard({
+      examId,
+      classId: selectedClassId,
+      academicYearId: selectedAcademicYearId,
+      sectionId: selectedSectionId,
+    });
+
+  // Dynamic columns: one per scheduled subject (not per date — two subjects
+  // can share the same exam date and must stay independently markable).
   const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
     const baseCols: ColumnDef<AttendanceRow>[] = [
       {
@@ -107,12 +115,12 @@ function MarkAttendanceContent() {
       },
     ];
 
-    const dateCols = availableDates.map(
-      (date): ColumnDef<AttendanceRow> => ({
-        id: `date-${date}`,
-        header: fmtDate(date),
+    const scheduleCols = schedules.map(
+      (schedule): ColumnDef<AttendanceRow> => ({
+        id: `schedule-${schedule.id}`,
+        header: `${schedule.subject_name} – ${fmtDate(schedule.exam_date)}`,
         cell: ({ row }) => {
-          const entry = row.original.entries[date] ?? {
+          const entry = row.original.entries[schedule.id] ?? {
             status: "PRESENT" as AttendanceStatus,
             source: "manual" as AttendanceSource,
           };
@@ -121,7 +129,7 @@ function MarkAttendanceContent() {
               <Badge
                 variant={ATTENDANCE_BADGE[entry.status]}
                 className="text-xs cursor-pointer select-none"
-                onClick={() => cycleStatus(row.original.student_id, date)}
+                onClick={() => cycleStatus(row.original.student_id, schedule.id)}
                 title={`${entry.status}${entry.source === "rfid-auto" ? " (RFID)" : ""} — click to change`}
               >
                 {entry.status.charAt(0)}
@@ -131,7 +139,7 @@ function MarkAttendanceContent() {
                 width="sm"
                 value={entry.status}
                 onChange={(e) =>
-                  setDateStatus(row.original.student_id, date, e.target.value as AttendanceStatus)
+                  setScheduleStatus(row.original.student_id, schedule.id, e.target.value as AttendanceStatus)
                 }
                 className="text-xs"
               >
@@ -145,8 +153,8 @@ function MarkAttendanceContent() {
       })
     );
 
-    return [...baseCols, ...dateCols];
-  }, [availableDates, cycleStatus, setDateStatus]);
+    return [...baseCols, ...scheduleCols];
+  }, [schedules, cycleStatus, setScheduleStatus]);
 
   return (
     <Div type="col" gap="lg">
@@ -155,11 +163,12 @@ function MarkAttendanceContent() {
         subtitle="Click any cell to cycle: Present → Absent → Late. 📡 = RFID auto-marked."
         actions={
           <Div type="row" gap="sm">
-            {attendanceCardUrl && (
+            {canDownloadCard && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(attendanceCardUrl, "_blank")}
+                loading={isDownloadingCard}
+                onClick={downloadAttendanceCard}
               >
                 <Download size={14} /> {ATTENDANCE_PAGE.buttons.downloadCard}
               </Button>
@@ -245,6 +254,7 @@ function MarkAttendanceContent() {
               {exams.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.exam_name}
+                  {e.is_published ? "" : ` (${e.status} — not published)`}
                 </option>
               ))}
             </Select>
@@ -255,11 +265,18 @@ function MarkAttendanceContent() {
       {/* Grid */}
       {examId && (
         <>
-          {isLoadingSchedules ? (
+          {!canMarkAttendance ? (
+            <Div variant="card-dashed">
+              <P color="muted">
+                Attendance can only be marked once "{selectedExam?.exam_name}" is published
+                (currently {selectedExam?.status}).
+              </P>
+            </Div>
+          ) : isLoadingSchedules ? (
             <Div type="row" justify="center" className="py-10">
               <Spinner size="lg" />
             </Div>
-          ) : availableDates.length === 0 ? (
+          ) : schedules.length === 0 ? (
             <Div variant="card-dashed">
               <P color="muted">No exam schedules found for this exam.</P>
             </Div>

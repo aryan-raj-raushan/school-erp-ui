@@ -6,14 +6,18 @@ import { StudentsService } from "@/services/students.service";
 import type { Student } from "@/types";
 
 export function useAdmitCardSelectors(examId: string, academicYearId: string) {
-  const [sections, setSections] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [classId, setClassId] = useState("");
+  const [allSections, setAllSections] = useState<{ id: string; name: string; class_id: string }[]>([]);
   const [sectionId, setSectionId] = useState("");
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
 
   useEffect(() => {
+    setClassId("");
     setSectionId("");
-    setSections([]);
+    setClasses([]);
+    setAllSections([]);
     setAllStudents([]);
     if (!examId || !academicYearId) return;
     setStudentsLoading(true);
@@ -31,18 +35,37 @@ export function useAdmitCardSelectors(examId: string, academicYearId: string) {
         ]);
         setAllStudents(studentsResults.flatMap((r) => r.items));
         const classIdSet = new Set(exam.class_ids);
+        setClasses(classesRes.items.filter((c) => classIdSet.has(c.id)));
         const classSections = classesRes.sections.filter(
           (s: { class_id: string; id: string; name: string }) => classIdSet.has(s.class_id)
         );
-        setSections(classSections);
+        setAllSections(classSections);
       })
       .catch(() => {})
       .finally(() => setStudentsLoading(false));
   }, [examId, academicYearId]);
 
-  const students = sectionId
-    ? allStudents.filter((s) => s.section_id === sectionId)
-    : allStudents;
+  const sections = classId
+    ? allSections.filter((s) => s.class_id === classId)
+    : allSections;
 
-  return { sections, sectionId, setSectionId, students, studentsLoading };
+  const students = allStudents.filter(
+    (s) =>
+      (!classId || s.class_id === classId) &&
+      (!sectionId || s.section_id === sectionId)
+  );
+
+  return {
+    classes,
+    classId,
+    setClassId: (id: string) => {
+      setClassId(id);
+      setSectionId("");
+    },
+    sections,
+    sectionId,
+    setSectionId,
+    students,
+    studentsLoading,
+  };
 }

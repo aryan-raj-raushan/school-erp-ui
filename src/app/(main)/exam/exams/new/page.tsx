@@ -63,8 +63,10 @@ function AutoGenerateExamForm() {
     setExamTerm,
     startDate,
     setStartDate,
+    startDateError,
     endDate,
     setEndDate,
+    endDateError,
     dailyStartTime,
     setDailyStartTime,
     dailyEndTime,
@@ -144,10 +146,10 @@ function AutoGenerateExamForm() {
               ))}
             </Select>
           </FormField>
-          <FormField label="Start Date *">
+          <FormField label="Start Date *" error={startDateError}>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </FormField>
-          <FormField label="End Date *">
+          <FormField label="End Date *" error={endDateError}>
             <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </FormField>
           <FormField label="Daily Start Time">

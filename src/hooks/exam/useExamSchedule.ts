@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,6 +88,24 @@ export function useExamSchedules(initialFilters: ScheduleFilters = {}) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<ScheduleFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Callers commonly re-derive the filters object from external state (e.g.
+  // `useExamSchedules(examId ? { exam_id: examId } : {})`) expecting the
+  // list to refetch when that state changes. Since useState's initializer
+  // only runs once, that re-derived object is otherwise ignored after mount
+  // (this was the cause of the schedule filter dropdown showing every
+  // exam's schedules instead of just the selected one) — sync it in
+  // whenever its content actually changes.
+  const initialFiltersKey = JSON.stringify(initialFilters);
+  const hasMounted = useRef(false);
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    setFilters(initialFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFiltersKey]);
 
   const fetch = useCallback(async () => {
     setIsLoading(true);

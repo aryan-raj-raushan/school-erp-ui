@@ -295,6 +295,7 @@ export const ATTENDANCE_PAGE = {
   },
   filters: {
     allYears: 'All Years',
+    allClasses: 'All Classes',
     allExams: 'All Exams',
     allSchedules: 'All Schedules',
     allStatus: 'All Status',

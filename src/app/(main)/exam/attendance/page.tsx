@@ -43,6 +43,7 @@ function AttendanceListContent() {
     classes,
     selectedAcademicYearId,
     setSelectedAcademicYearId,
+    selectedClassId,
     handleClassChange,
   } = useAcademicClassSection({ autoSelectCurrentYear: false });
 
@@ -63,7 +64,9 @@ function AttendanceListContent() {
   }, [exams]);
 
   const { schedules } = useExamSchedules(
-    filters.exam_id ? { exam_id: filters.exam_id, limit: 100 } : {}
+    filters.exam_id
+      ? { exam_id: filters.exam_id, class_id: filters.class_id, limit: 100 }
+      : {}
   );
 
   function handleYearChange(val: string) {
@@ -71,9 +74,15 @@ function AttendanceListContent() {
     handleClassChange("");
     updateFilters({
       academic_year_id: val || undefined,
+      class_id: undefined,
       exam_id: undefined,
       schedule_id: undefined,
     });
+  }
+
+  function handleAttendanceClassChange(val: string) {
+    handleClassChange(val);
+    updateFilters({ class_id: val || undefined, schedule_id: undefined });
   }
 
   return (
@@ -105,6 +114,20 @@ function AttendanceListContent() {
             <option key={y.id} value={y.id}>
               {y.name}
               {y.is_current ? " (Current)" : ""}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          width="sm"
+          value={selectedClassId}
+          disabled={!selectedAcademicYearId}
+          onChange={(e) => handleAttendanceClassChange(e.target.value)}
+        >
+          <option value="">{ATTENDANCE_PAGE.filters.allClasses}</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
             </option>
           ))}
         </Select>

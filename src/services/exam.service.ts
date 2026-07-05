@@ -262,16 +262,26 @@ export const ExamAttendanceService = {
     return res.data;
   },
 
-  getAttendanceCardPdfUrl(params: {
+  /**
+   * The PDF endpoint requires the same Bearer auth as every other API call,
+   * so it can't be opened as a plain URL (window.open sends no auth header
+   * and would hit the frontend's own origin besides) — fetch the bytes
+   * through apiGateway instead and hand the caller a Blob to download.
+   */
+  async downloadAttendanceCardPdf(params: {
     exam_id: string;
     class_id: string;
     academic_year_id: string;
     section_id?: string;
-  }): string {
-    const q = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => !!v) as [string, string][],
-    );
-    return `${EXAM_ENDPOINTS.attendanceCard.pdf}?${q.toString()}`;
+  }): Promise<Blob> {
+    const query: Record<string, string> = {};
+    Object.entries(params).forEach(([k, v]) => {
+      if (v) query[k] = v;
+    });
+    const response = await apiGateway.axiosInstance.get(EXAM_ENDPOINTS.attendanceCard.pdf, {
+      params: query,
+    });
+    return new Blob([response.data as ArrayBuffer], { type: 'application/pdf' });
   },
 };
 

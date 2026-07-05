@@ -87,6 +87,12 @@ export function useAutoGenerateExam() {
     loadMappings();
   }, [loadMappings]);
 
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const startDateError =
+    startDate && startDate < today ? "Start date cannot be in the past" : "";
+  const endDateError =
+    startDate && endDate && endDate <= startDate ? "End date must be after start date" : "";
+
   const totalSubjectCount = useMemo(
     () => Object.values(mappingsByClass).reduce((sum, list) => sum + list.length, 0),
     [mappingsByClass],
@@ -104,12 +110,16 @@ export function useAutoGenerateExam() {
     !!examName &&
     !!startDate &&
     !!endDate &&
+    !startDateError &&
+    !endDateError &&
     classesMissingMapping.length < classIds.length && // at least one class has subjects to schedule
     (!autoAssignSeating || seatingHallIds.length > 0); // seating needs at least one room picked
 
   async function generate() {
     if (!canGenerate) {
-      toast.error("Fill in academic year, class(es), exam name and date range");
+      toast.error(
+        startDateError || endDateError || "Fill in academic year, class(es), exam name and date range",
+      );
       return;
     }
     setIsSubmitting(true);
@@ -191,8 +201,10 @@ export function useAutoGenerateExam() {
     setExamTerm,
     startDate,
     setStartDate,
+    startDateError,
     endDate,
     setEndDate,
+    endDateError,
     dailyStartTime,
     setDailyStartTime,
     dailyEndTime,

@@ -189,8 +189,16 @@ function AdmitCardContent() {
     if (selectedAcademicYearId) setAcademicYearId(selectedAcademicYearId);
   }, [selectedAcademicYearId, setAcademicYearId]);
 
-  const { sections, sectionId, setSectionId, students, studentsLoading } =
-    useAdmitCardSelectors(examId, selectedAcademicYearId);
+  const {
+    classes,
+    classId,
+    setClassId,
+    sections,
+    sectionId,
+    setSectionId,
+    students,
+    studentsLoading,
+  } = useAdmitCardSelectors(examId, selectedAcademicYearId);
 
   return (
     <Div type="col" gap="lg">
@@ -241,6 +249,22 @@ function AdmitCardContent() {
                 ))}
               </Select>
             </Div>
+
+            {classes.length > 0 && (
+              <Div type="col" gap="xs">
+                <P color="muted" className="text-xs font-medium">Class</P>
+                <Select
+                  value={classId}
+                  onChange={(e) => { setClassId(e.target.value); setStudentId(""); }}
+                  disabled={!examId}
+                >
+                  <option value="">All classes</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </Select>
+              </Div>
+            )}
 
             {sections.length > 0 && (
               <Div type="col" gap="xs">
