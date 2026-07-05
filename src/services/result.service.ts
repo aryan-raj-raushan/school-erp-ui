@@ -42,11 +42,13 @@ export const ExamResultsService = {
     await apiGateway.patch(RESULT_ENDPOINTS.examResults.publish, payload);
   },
 
-  // Uses the schedules LIST endpoint filtered by exam_id — NOT /schedules/:id
-  async getSchedules(examId: string): Promise<ExamScheduleItem[]> {
+  // Uses the schedules LIST endpoint filtered by exam_id + class_id — NOT /schedules/:id.
+  // class_id is required: an exam can span multiple classes, and without it every
+  // class's subjects (including ones deleted only for this class) bleed into the grid.
+  async getSchedules(examId: string, classId: string): Promise<ExamScheduleItem[]> {
     const res = await apiGateway.get<ExamScheduleItem[]>(
       EXAM_ENDPOINTS.schedules.list,
-      { params: { exam_id: examId } },
+      { params: { exam_id: examId, class_id: classId } },
     );
     // res.data may be a paginated wrapper or a flat array depending on the gateway
     // The list endpoint returns items inside pagination so unwrap if needed

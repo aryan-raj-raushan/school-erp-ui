@@ -111,12 +111,15 @@ export function useExamResults() {
     setValue("exam_id", eId);
   }
 
-  // ── 1. Load schedules when exam changes ───────────────────────────────────
-  const fetchSchedules = useCallback(async (eId: string) => {
-    if (!eId) { setSchedules([]); return; }
+  // ── 1. Load schedules when exam or class changes ─────────────────────────
+  // Must be keyed on both: an exam can span multiple classes, so filtering by
+  // exam_id alone pulls in every other class's subjects (including duplicates
+  // and schedules already deleted for this class).
+  const fetchSchedules = useCallback(async (eId: string, cId: string) => {
+    if (!eId || !cId) { setSchedules([]); return; }
     setIsLoadingSchedules(true);
     try {
-      const data = await ExamResultsService.getSchedules(eId);
+      const data = await ExamResultsService.getSchedules(eId, cId);
       setSchedules(data);
     } catch {
       toast.error(RESULT_MARKS_PAGE.toasts.loadScheduleError);
@@ -125,7 +128,7 @@ export function useExamResults() {
     }
   }, []);
 
-  useEffect(() => { fetchSchedules(examId); }, [examId, fetchSchedules]);
+  useEffect(() => { fetchSchedules(examId, classId); }, [examId, classId, fetchSchedules]);
 
   // ── 2. Load saved marks when exam + class + year are ready ───────────────
   const fetchSavedMarks = useCallback(async () => {
