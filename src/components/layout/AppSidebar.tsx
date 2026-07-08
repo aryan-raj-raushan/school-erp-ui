@@ -20,7 +20,7 @@ import { SchoolProfileService } from "@/services/school-profile.service";
 import { Capacitor } from "@capacitor/core";
 
 // Add titles here as mobile screens are built out
-const MOBILE_ENABLED_NAV = ["Dashboard"];
+const MOBILE_ENABLED_NAV = ["Dashboard", "Teams"];
 
 const EXPANDED_W = 272;
 const ICON_W = 76;
