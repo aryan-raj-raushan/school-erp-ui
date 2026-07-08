@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Calendar, PartyPopper, Pencil, Trash2, Eye, CalendarDays, Search } from "lucide-react";
 import { useSchoolEvents } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
+import { HolidayEventDetail } from "./holiday-event-detail";
 import type { SchoolEventFilters } from "@/types/setting/school-events.types";
 import {
   Div,
@@ -39,6 +40,8 @@ const TYPE_TABS = [
 
 function SchoolEventsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const detailId = searchParams.get("id");
   const { years } = useAcademicYears();
 
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -94,6 +97,10 @@ function SchoolEventsContent() {
   }
 
   const activeTab = filters.type ?? "";
+
+  if (detailId) {
+    return <HolidayEventDetail id={detailId} />;
+  }
 
   return (
     <PageCol>
@@ -236,7 +243,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/school/holidays-events/${ev.id}`)
+                        router.push(`/school/holidays-events?id=${ev.id}`)
                       }
                       title="View"
                     >
@@ -246,7 +253,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/school/holidays-events/${ev.id}?edit=true`)
+                        router.push(`/school/holidays-events?id=${ev.id}&edit=true`)
                       }
                       title="Edit"
                     >

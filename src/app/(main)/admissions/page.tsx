@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useFilterParams } from "@/hooks/useFilterParams";
+import { AdmissionEnquiryDetail } from "./enquiry-detail";
 import type {
   AdmissionEnquiryFilters,
   EnquiryStatus,
@@ -33,6 +34,8 @@ import {
 
 function AdmissionsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const detailId = searchParams.get("id");
   const { years } = useAcademicYears();
   const { classes, teachers } = useAdmissionLookups();
 
@@ -129,7 +132,7 @@ function AdmissionsContent() {
             <Button
               size="icon-sm"
               variant="ghost"
-              onClick={() => router.push(`/admissions/${row.original.id}`)}
+              onClick={() => router.push(`/admissions?id=${row.original.id}`)}
               title="View"
             >
               <Eye size={14} />
@@ -138,7 +141,7 @@ function AdmissionsContent() {
               size="icon-sm"
               variant="ghost"
               onClick={() =>
-                router.push(`/admissions/${row.original.id}?edit=true`)
+                router.push(`/admissions?id=${row.original.id}&edit=true`)
               }
               title="Edit"
             >
@@ -150,6 +153,10 @@ function AdmissionsContent() {
     ],
     [router, classes],
   );
+
+  if (detailId) {
+    return <AdmissionEnquiryDetail id={detailId} />;
+  }
 
   return (
     <PageCol>

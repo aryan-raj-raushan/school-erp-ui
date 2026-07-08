@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useStaffsPage } from '@/hooks/useStaffsPage';
 import type { Staff } from '@/types';
 import {
@@ -26,8 +27,11 @@ import {
 } from '@/components/ui';
 import { Pencil, Eye, UserX, UserCheck, Mail, Trash2, Plus } from 'lucide-react';
 import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS } from '@/constants';
+import { StaffDetail } from './staff-detail';
 
-export default function StaffsPage() {
+function StaffsPageContent() {
+  const searchParams = useSearchParams();
+  const detailId = searchParams.get('id');
   const {
     staffList,
     pagination,
@@ -166,6 +170,10 @@ export default function StaffsPage() {
     [isAdmin, navigateToView, navigateToEdit, resendInvite, offboardStaff, reonboardStaff, removeStaff],
   );
 
+  if (detailId) {
+    return <StaffDetail id={detailId} />;
+  }
+
   return (
     <PageCol>
       <PageHeader
@@ -262,5 +270,19 @@ export default function StaffsPage() {
         </div>
       </ResponsiveModalContainer>
     </PageCol>
+  );
+}
+
+export default function StaffsPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <StaffsPageContent />
+    </Suspense>
   );
 }

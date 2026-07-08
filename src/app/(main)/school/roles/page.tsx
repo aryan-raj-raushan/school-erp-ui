@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRolesPage } from '@/hooks/useRolesPage';
 import {
   Div, Button,
@@ -12,6 +13,7 @@ import {
 import { Pencil, Trash2, Lock, Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { Role } from '@/types';
+import { RoleDetail } from './role-detail';
 
 type RoleRow = {
   id: string;
@@ -21,7 +23,9 @@ type RoleRow = {
   is_active: boolean;
 };
 
-export default function RolesPage() {
+function RolesPageContent() {
+  const searchParams = useSearchParams();
+  const detailId = searchParams.get('id');
   const { roles, isLoading, removeRole, navigateToNew, navigateToEdit } = useRolesPage();
   const user = useAuthStore((s) => s.user);
   const isSchoolAdmin = user?.role === Role.SCHOOL_ADMIN;
@@ -82,6 +86,10 @@ export default function RolesPage() {
     [navigateToEdit, removeRole, isSchoolAdmin]
   );
 
+  if (detailId) {
+    return <RoleDetail id={detailId} />;
+  }
+
   return (
     <PageCol>
       <PageHeader
@@ -104,5 +112,19 @@ export default function RolesPage() {
         emptyText="No roles found."
       />
     </PageCol>
+  );
+}
+
+export default function RolesPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <RolesPageContent />
+    </Suspense>
   );
 }

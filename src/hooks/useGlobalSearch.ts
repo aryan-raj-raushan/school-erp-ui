@@ -14,13 +14,13 @@ export type { SearchResultItem, SearchResultType, GlobalSearchResult };
 
 export const RECORD_URL: Record<SearchResultType, (id: string) => string> = {
   student:       (id) => `/students/view?id=${id}`,
-  staff:         (id) => `/staffs/${id}`,
+  staff:         (id) => `/staffs?id=${id}`,
   parent:        ()   => `/parents`,
-  admission:     (id) => `/admissions/${id}`,
+  admission:     (id) => `/admissions?id=${id}`,
   class:         (id) => `/school/classes/${id}`,
   subject:       (id) => `/school/subjects/${id}`,
   fee_type:      ()   => `/fees/setup`,
-  event:         (id) => `/school/holidays-events/${id}`,
+  event:         (id) => `/school/holidays-events?id=${id}`,
   academic_year: (id) => `/school/academic-years/${id}`,
   homework:      (id) => `/school/homework/${id}`,
 };
