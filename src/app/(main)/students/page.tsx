@@ -375,9 +375,7 @@ function StudentsContent() {
 
   return (
     <PageCol>
-      {/* <div className="bg-red-100"> */}
       <PageHeader {...pageHeaderConfig} />
-      {/* </div> */}
 
       <FilterToolbar
         fields={filterFields}
