@@ -10,10 +10,12 @@ import {
   CreditCard,
   ToggleLeft,
   ToggleRight,
+  X,
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudentV2";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useFilterParams } from "@/hooks/useFilterParams";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import type { Class, Section } from "@/types";
 import type {
   StudentFilters,
@@ -86,27 +88,20 @@ function StudentsContent() {
   const router = useRouter();
   const { years } = useAcademicYears();
 
-  const [urlFilters, setUrlFilters] = useFilterParams<
-    Record<string, string | undefined>
-  >({
-    academic_year_id: undefined,
-    class_id: undefined,
-    section_id: undefined,
-    status: undefined,
-    gender: undefined,
-    search: undefined,
-    page: undefined,
-  });
+  type PersistedStudentFilters = Pick<
+    StudentFilters,
+    "academic_year_id" | "class_id" | "section_id" | "status" | "gender"
+  >;
 
-  const initialFilters: StudentFilters = {
-    academic_year_id: urlFilters.academic_year_id,
-    class_id: urlFilters.class_id,
-    section_id: urlFilters.section_id,
-    status: urlFilters.status as StudentStatus | undefined,
-    gender: urlFilters.gender as Gender | undefined,
-    search: urlFilters.search,
-    page: urlFilters.page ? Number(urlFilters.page) : 1,
-  };
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedStudentFilters>({
+    key: STORAGE_FILTER_KEYS.STUDENTS,
+    defaultValue: {},
+  });
 
   const {
     students,
@@ -116,7 +111,7 @@ function StudentsContent() {
     updateFilters,
     deleteStudent,
     toggleEnabled,
-  } = useStudents(initialFilters);
+  } = useStudents({ page: 1 });
 
   const { classes, sections } = useClassesAndSections(
     filters.academic_year_id,
@@ -125,21 +120,48 @@ function StudentsContent() {
 
   function handleFilterChange(next: Partial<StudentFilters>) {
     updateFilters(next);
-    const urlNext: Record<string, string | undefined> = {};
-    if ("academic_year_id" in next)
-      urlNext.academic_year_id = next.academic_year_id;
-    if ("class_id" in next) {
-      urlNext.class_id = next.class_id;
-      urlNext.section_id = undefined;
-    }
-    if ("section_id" in next) urlNext.section_id = next.section_id;
-    if ("status" in next) urlNext.status = next.status;
-    if ("gender" in next) urlNext.gender = next.gender;
-    if ("search" in next) urlNext.search = next.search;
-    if ("page" in next)
-      urlNext.page = next.page ? String(next.page) : undefined;
-    setUrlFilters(urlNext);
+
+    const persisted: Partial<PersistedStudentFilters> = {};
+    (
+      ["academic_year_id", "class_id", "section_id", "status", "gender"] as const
+    ).forEach((field) => {
+      if (field in next) persisted[field] = next[field] as never;
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
+
+  function handleClearFilters() {
+    handleFilterChange({
+      academic_year_id: undefined,
+      class_id: undefined,
+      section_id: undefined,
+      status: undefined,
+      gender: undefined,
+      search: undefined,
+      page: 1,
+    });
+    clearStoredFilters();
+  }
+
+  // One-time: once storage has hydrated, apply any filters saved from a
+  // previous visit.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) {
+      updateFilters(storedFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const hasActiveFilters = Boolean(
+    filters.search ||
+      filters.academic_year_id ||
+      filters.class_id ||
+      filters.section_id ||
+      filters.status ||
+      filters.gender,
+  );
 
   const columns = useMemo<ColumnDef<StudentListItem>[]>(
     () => [
@@ -298,15 +320,8 @@ function StudentsContent() {
         subtitle={pagination ? `${pagination.total} students` : ""}
         actions={
           <>
-            <Button
-              variant="outline"
-              onClick={() => router.push(STUDENT_ROUTES.generate)}
-            >
-              <CreditCard size={16} />
-              {STUDENT_PAGE.buttons.generateCards}
-            </Button>
             <Button onClick={() => router.push(STUDENT_ROUTES.createNew)}>
-              <Plus size={16} />
+              <Plus size={14} />
               {STUDENT_PAGE.buttons.addStudent}
             </Button>
           </>
@@ -383,6 +398,16 @@ function StudentsContent() {
           customPlaceholder={STUDENT_PAGE.filters.allGender}
           options={GENDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
         />
+        {hasActiveFilters && (
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            title="Clear filters"
+            onClick={handleClearFilters}
+          >
+            <X size={14} />
+          </Button>
+        )}
       </FilterBar>
 
       <DataTable

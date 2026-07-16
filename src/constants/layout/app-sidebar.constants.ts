@@ -47,28 +47,79 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
   },
 
   /* ---------------------------------------------------
-  People
+  Student
   --------------------------------------------------- */
+
   {
-    title: "Teams",
+    title: "Students",
     url: "#",
-    icon: Users,
-    permissions: [
-      PERMISSIONS.students.view,
-      PERMISSIONS.staff.view,
-      PERMISSIONS.parents.view,
-    ],
+    icon: GraduationCap,
+    permissions: [PERMISSIONS.students.view],
     items: [
       {
-        title: "Students",
+        title: "Add Student",
+        url: "/students/create-new",
+        permissions: [PERMISSIONS.students.view],
+      },
+      {
+        title: "Student Record",
         url: "/students",
         permissions: [PERMISSIONS.students.view],
       },
-      { title: "Staff", url: "/staffs", permissions: [PERMISSIONS.staff.view] },
       {
         title: "Parents",
         url: "/parents",
         permissions: [PERMISSIONS.parents.view],
+      },
+      {
+        title: "Generate Id/Pick-Up Card",
+        url: "/students/generate",
+        permissions: [PERMISSIONS.students.view],
+      },
+      {
+        title: "Attendance",
+        url: "/attendance/students",
+        permissions: [
+          PERMISSIONS.attendance.view,
+          PERMISSIONS.attendance.create,
+        ],
+      },
+      {
+        title: "Attendance Report",
+        url: "/attendance/report/students",
+        permissions: [PERMISSIONS.attendance.view],
+      },
+      {
+        title: "Gate Pass",
+        url: "/attendance/gate-pass",
+        permissions: [PERMISSIONS.attendance.view],
+      },
+    ],
+  },
+
+  /* ---------------------------------------------------
+  Staff
+  --------------------------------------------------- */
+
+  {
+    title: "Staff",
+    url: "#",
+    icon: Users,
+    permissions: [PERMISSIONS.staff.view],
+    items: [
+      { title: "Staff", url: "/staffs", permissions: [PERMISSIONS.staff.view] },
+      {
+        title: "Attendance",
+        url: "/attendance/staffs",
+        permissions: [
+          PERMISSIONS.attendance.view,
+          PERMISSIONS.attendance.create,
+        ],
+      },
+      {
+        title: "Attendance Report",
+        url: "/attendance/report/staffs",
+        permissions: [PERMISSIONS.attendance.view],
       },
     ],
   },
@@ -105,57 +156,57 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
   /* ---------------------------------------------------
   Attendance
   --------------------------------------------------- */
-  {
-    title: "Attendance",
-    url: "#",
-    icon: ClipboardCheck,
-    permissions: [
-      PERMISSIONS.attendance.view,
-      PERMISSIONS.attendance.create,
-      PERMISSIONS.attendance.update,
-    ],
-    items: [
-      {
-        title: "Students Attendance",
-        url: "/attendance/students",
-        permissions: [
-          PERMISSIONS.attendance.view,
-          PERMISSIONS.attendance.create,
-        ],
-      },
-      {
-        title: "Staff Attendance",
-        url: "/attendance/staffs",
-        permissions: [
-          PERMISSIONS.attendance.view,
-          PERMISSIONS.attendance.create,
-        ],
-      },
-      {
-        title: "Gate Passes",
-        url: "/attendance/gate-pass",
-        permissions: [PERMISSIONS.attendance.view],
-      },
-    ],
-  },
-  {
-    title: "Attendance Report",
-    url: "#",
-    icon: CalendarCheck,
-    permissions: [PERMISSIONS.attendance.view],
-    items: [
-      {
-        title: "Students Attendance Reports",
-        url: "/attendance/report/students",
-        permissions: [PERMISSIONS.attendance.view],
-      },
-      {
-        title: "Staffs Attendance Reports",
-        url: "/attendance/report/staffs",
-        permissions: [PERMISSIONS.attendance.view],
-      },
-    ],
-  },
+  // {
+  //   title: "Attendance",
+  //   url: "#",
+  //   icon: ClipboardCheck,
+  //   permissions: [
+  //     PERMISSIONS.attendance.view,
+  //     PERMISSIONS.attendance.create,
+  //     PERMISSIONS.attendance.update,
+  //   ],
+  //   items: [
+  //     {
+  //       title: "Students Attendance",
+  //       url: "/attendance/students",
+  //       permissions: [
+  //         PERMISSIONS.attendance.view,
+  //         PERMISSIONS.attendance.create,
+  //       ],
+  //     },
+  //     {
+  //       title: "Staff Attendance",
+  //       url: "/attendance/staffs",
+  //       permissions: [
+  //         PERMISSIONS.attendance.view,
+  //         PERMISSIONS.attendance.create,
+  //       ],
+  //     },
+  //     {
+  //       title: "Gate Passes",
+  //       url: "/attendance/gate-pass",
+  //       permissions: [PERMISSIONS.attendance.view],
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Attendance Report",
+  //   url: "#",
+  //   icon: CalendarCheck,
+  //   permissions: [PERMISSIONS.attendance.view],
+  //   items: [
+  //     {
+  //       title: "Students Attendance Reports",
+  //       url: "/attendance/report/students",
+  //       permissions: [PERMISSIONS.attendance.view],
+  //     },
+  //     {
+  //       title: "Staffs Attendance Reports",
+  //       url: "/attendance/report/staffs",
+  //       permissions: [PERMISSIONS.attendance.view],
+  //     },
+  //   ],
+  // },
 
   /* ---------------------------------------------------
   Academics
