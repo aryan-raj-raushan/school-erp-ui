@@ -7,3 +7,4 @@ export * from './useClasses';
 export * from './useStudents';
 export * from './useSubscriptions';
 export * from './useSchoolDashboard';
+export * from './useStorageFilter';
