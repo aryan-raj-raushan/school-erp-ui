@@ -27,6 +27,7 @@ import {
   type ColumnDef,
   PageCol,
   PageHeader,
+  type PageHeaderConfig,
   FilterToolbar,
   type FilterField,
 } from "@/components/ui";
@@ -359,20 +360,24 @@ function StudentsContent() {
     [router, deleteStudent, toggleEnabled],
   );
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: STUDENT_PAGE.pageHeading.title,
+    subtitle: pagination ? `${pagination.total} students` : "",
+    backButton: true,
+    actions: [
+      {
+        label: STUDENT_PAGE.buttons.addStudent,
+        icon: <Plus size={14} />,
+        onClick: () => router.push(STUDENT_ROUTES.createNew),
+      },
+    ],
+  };
+
   return (
-    <PageCol className="pt-4 md:pt-5">
-      <PageHeader
-        title={STUDENT_PAGE.pageHeading.title}
-        subtitle={pagination ? `${pagination.total} students` : ""}
-        actions={
-          <>
-            <Button onClick={() => router.push(STUDENT_ROUTES.createNew)}>
-              <Plus size={14} />
-              {STUDENT_PAGE.buttons.addStudent}
-            </Button>
-          </>
-        }
-      />
+    <PageCol>
+      {/* <div className="bg-red-100"> */}
+      <PageHeader {...pageHeaderConfig} />
+      {/* </div> */}
 
       <FilterToolbar
         fields={filterFields}

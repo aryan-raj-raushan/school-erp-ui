@@ -176,7 +176,7 @@ export function StudentDetail({ id }: { id: string }) {
   const isReadOnly = !isEditing;
 
   return (
-    <PageCol className="pt-4 md:pt-5">
+    <PageCol>
       <Div type="col" gap="md" className="max-w-7xl">
         <PageHeader
           sticky
