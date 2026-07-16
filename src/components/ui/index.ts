@@ -28,3 +28,4 @@ export * from './photo-upload';
 export * from './phone-field';
 export * from './responsive-bottom-sheet';
 export * from './responsive-select';
+export * from './filter-toolbar';

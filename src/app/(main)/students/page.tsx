@@ -10,32 +10,25 @@ import {
   CreditCard,
   ToggleLeft,
   ToggleRight,
-  X,
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudentV2";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import type { Class, Section } from "@/types";
-import type {
-  StudentFilters,
-  StudentStatus,
-  Gender,
-  StudentListItem,
-} from "@/types/students.types";
+import type { StudentFilters, StudentListItem } from "@/types/students.types";
 import {
   Div,
   P,
   Button,
-  Input,
   Badge,
   Spinner,
   DataTable,
   type ColumnDef,
   PageCol,
-  FilterBar,
   PageHeader,
-  ResponsiveSelect,
+  FilterToolbar,
+  type FilterField,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -154,14 +147,67 @@ function StudentsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStorageHydrated]);
 
-  const hasActiveFilters = Boolean(
-    filters.search ||
-      filters.academic_year_id ||
-      filters.class_id ||
-      filters.section_id ||
-      filters.status ||
-      filters.gender,
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "search",
+        key: "search",
+        placeholder: STUDENT_PAGE.filters.search,
+      },
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: STUDENT_PAGE.filters.allYears,
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+        resetKeys: ["class_id", "section_id"],
+      },
+      {
+        type: "select",
+        key: "class_id",
+        label: "Class",
+        placeholder: STUDENT_PAGE.filters.allClasses,
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+        disabled: !filters.academic_year_id,
+        resetKeys: ["section_id"],
+      },
+      {
+        type: "select",
+        key: "section_id",
+        label: "Section",
+        placeholder: STUDENT_PAGE.filters.allSections,
+        options: sections.map((s) => ({ value: s.id, label: s.name })),
+        disabled: !filters.class_id,
+      },
+      {
+        type: "select",
+        key: "status",
+        label: "Status",
+        placeholder: STUDENT_PAGE.filters.allStatus,
+        options: STUDENT_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+      },
+      {
+        type: "select",
+        key: "gender",
+        label: "Gender",
+        placeholder: STUDENT_PAGE.filters.allGender,
+        options: GENDER_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+      },
+    ],
+    [years, classes, sections, filters.academic_year_id, filters.class_id],
   );
+
+  const filterValues: Record<string, string | undefined> = {
+    search: filters.search,
+    academic_year_id: filters.academic_year_id,
+    class_id: filters.class_id,
+    section_id: filters.section_id,
+    status: filters.status,
+    gender: filters.gender,
+  };
 
   const columns = useMemo<ColumnDef<StudentListItem>[]>(
     () => [
@@ -328,87 +374,13 @@ function StudentsContent() {
         }
       />
 
-      <FilterBar>
-        <Input
-          width="md"
-          placeholder={STUDENT_PAGE.filters.search}
-          value={filters.search ?? ""}
-          onChange={(e) =>
-            handleFilterChange({ search: e.target.value || undefined })
-          }
-        />
-        <ResponsiveSelect
-          className="w-32 max-w-full"
-          value={filters.academic_year_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              academic_year_id: e.target.value || undefined,
-              class_id: undefined,
-              section_id: undefined,
-            })
-          }
-          customPlaceholder={STUDENT_PAGE.filters.allYears}
-          options={years.map((y) => ({
-            value: y.id,
-            label: `${y.name}${y.is_current ? " (Current)" : ""}`,
-          }))}
-        />
-        <ResponsiveSelect
-          className="w-32 max-w-full"
-          value={filters.class_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              class_id: e.target.value || undefined,
-              section_id: undefined,
-            })
-          }
-          disabled={!filters.academic_year_id}
-          customPlaceholder={STUDENT_PAGE.filters.allClasses}
-          options={classes.map((c) => ({ value: c.id, label: c.name }))}
-        />
-        <ResponsiveSelect
-          className="w-32 max-w-full"
-          value={filters.section_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({ section_id: e.target.value || undefined })
-          }
-          disabled={!filters.class_id}
-          customPlaceholder={STUDENT_PAGE.filters.allSections}
-          options={sections.map((s) => ({ value: s.id, label: s.name }))}
-        />
-        <ResponsiveSelect
-          className="w-32 max-w-full"
-          value={filters.status ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              status: (e.target.value as StudentStatus) || undefined,
-            })
-          }
-          customPlaceholder={STUDENT_PAGE.filters.allStatus}
-          options={STUDENT_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        />
-        <ResponsiveSelect
-          className="w-32 max-w-full"
-          value={filters.gender ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              gender: (e.target.value as Gender) || undefined,
-            })
-          }
-          customPlaceholder={STUDENT_PAGE.filters.allGender}
-          options={GENDER_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        />
-        {hasActiveFilters && (
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            title="Clear filters"
-            onClick={handleClearFilters}
-          >
-            <X size={14} />
-          </Button>
-        )}
-      </FilterBar>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={(next) => handleFilterChange(next as Partial<StudentFilters>)}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Students"
+      />
 
       <DataTable
         columns={columns}
