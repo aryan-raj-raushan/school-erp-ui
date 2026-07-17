@@ -13,7 +13,8 @@ export function useGatePass() {
   const [records, setRecords] = useState<GatePassRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
-  const [date, setDate] = useState(todayISO());
+  // List filter — no date selected by default, so all gate passes show.
+  const [date, setDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -21,11 +22,13 @@ export function useGatePass() {
   // Form state
   const [studentId, setStudentId] = useState('');
   const [reason, setReason] = useState('');
+  const [formDate, setFormDate] = useState(todayISO());
   const [exitTime, setExitTime] = useState('');
   const [returnTime, setReturnTime] = useState('');
 
   function openDialog() {
     setAttemptedSubmit(false);
+    setFormDate(todayISO());
     setIsDialogOpen(true);
   }
 
@@ -52,7 +55,7 @@ export function useGatePass() {
     if (!studentId || !reason || !exitTime || !returnTime) return;
     const payload: CreateGatePassPayload = {
       student_id: studentId,
-      date,
+      date: formDate,
       reason,
       ...(exitTime && { exit_time: exitTime }),
       ...(returnTime && { return_time: returnTime }),
@@ -65,7 +68,7 @@ export function useGatePass() {
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create gate pass');
     }
-  }, [studentId, reason, date, exitTime, returnTime]);
+  }, [studentId, reason, formDate, exitTime, returnTime]);
 
   const approve = useCallback(async (id: string) => {
     setActionId(id);
@@ -92,7 +95,7 @@ export function useGatePass() {
   return {
     records, isLoading, date, setDate, statusFilter, setStatusFilter, actionId,
     isDialogOpen, openDialog, closeDialog, fetch,
-    studentId, setStudentId, reason, setReason, exitTime, setExitTime,
+    studentId, setStudentId, reason, setReason, formDate, setFormDate, exitTime, setExitTime,
     returnTime, setReturnTime, handleSubmit, approve, reject, attemptedSubmit,
   };
 }

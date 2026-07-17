@@ -1,30 +1,29 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useFilterParams } from "@/hooks/useFilterParams";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { AdmissionEnquiryDetail } from "./enquiry-detail";
 import type {
   AdmissionEnquiryFilters,
-  EnquiryStatus,
   AdmissionEnquiry,
 } from "@/types/admissions.types";
 import {
   Div,
-  Button,
-  Input,
-  Select,
   Badge,
   Spinner,
   DataTable,
+  RowActions,
   type ColumnDef,
   PageCol,
-  FilterBar,
   PageHeader,
-  ResponsiveSelect,
+  type PageHeaderConfig,
+  FilterToolbar,
+  type FilterField,
 } from "@/components/ui";
 import {
   ADMISSION_PAGE,
@@ -32,30 +31,17 @@ import {
   STATUS_OPTIONS,
 } from "@/constants/admission.constants";
 
+type PersistedAdmissionFilters = Pick<
+  AdmissionEnquiryFilters,
+  "academic_year_id" | "applying_class_id" | "status"
+>;
+
 function AdmissionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const detailId = searchParams.get("id");
   const { years } = useAcademicYears();
-  const { classes, teachers } = useAdmissionLookups();
-
-  const [urlFilters, setUrlFilters] = useFilterParams<
-    Record<string, string | undefined>
-  >({
-    academic_year_id: undefined,
-    applying_class_id: undefined,
-    status: undefined,
-    search: undefined,
-    page: undefined,
-  });
-
-  const initialFilters: AdmissionEnquiryFilters = {
-    academic_year_id: urlFilters.academic_year_id || undefined,
-    applying_class_id: urlFilters.applying_class_id || undefined,
-    status: (urlFilters.status as EnquiryStatus) || undefined,
-    search: urlFilters.search || undefined,
-    page: urlFilters.page ? Number(urlFilters.page) : 1,
-  };
+  const { classes } = useAdmissionLookups();
 
   const {
     enquiries,
@@ -64,21 +50,103 @@ function AdmissionsContent() {
     isLoading,
     updateFilters,
     deleteEnquiry,
-  } = useAdmissionEnquiries(initialFilters);
+  } = useAdmissionEnquiries({ page: 1 });
+
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedAdmissionFilters>({
+    key: STORAGE_FILTER_KEYS.ADMISSIONS,
+    defaultValue: {},
+  });
 
   function handleFilterChange(next: Partial<AdmissionEnquiryFilters>) {
     updateFilters(next);
-    const urlNext: Record<string, string | undefined> = {};
-    if ("academic_year_id" in next)
-      urlNext.academic_year_id = next.academic_year_id || undefined;
-    if ("applying_class_id" in next)
-      urlNext.applying_class_id = next.applying_class_id || undefined;
-    if ("status" in next) urlNext.status = next.status || undefined;
-    if ("search" in next) urlNext.search = next.search || undefined;
-    if ("page" in next)
-      urlNext.page = next.page ? String(next.page) : undefined;
-    setUrlFilters(urlNext);
+
+    const persisted: Partial<PersistedAdmissionFilters> = {};
+    (["academic_year_id", "applying_class_id", "status"] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field] as never;
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
+
+  function handleClearFilters() {
+    handleFilterChange({
+      academic_year_id: undefined,
+      applying_class_id: undefined,
+      status: undefined,
+      search: undefined,
+      page: 1,
+    });
+    clearStoredFilters();
+  }
+
+  // One-time: once storage has hydrated, apply any filters saved from a
+  // previous visit.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) updateFilters(storedFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "search",
+        key: "search",
+        placeholder: "Search student name or phone…",
+      },
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: "All Years",
+        options: years.map((y) => ({ value: y.id, label: y.name })),
+      },
+      {
+        type: "select",
+        key: "applying_class_id",
+        label: "Applying Class",
+        placeholder: "All Classes",
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+      },
+      {
+        type: "select",
+        key: "status",
+        label: "Status",
+        placeholder: "All Status",
+        options: STATUS_OPTIONS.filter((o) => o.value).map((o) => ({ value: o.value, label: o.label })),
+      },
+    ],
+    [years, classes],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    search: filters.search,
+    academic_year_id: filters.academic_year_id,
+    applying_class_id: filters.applying_class_id,
+    status: filters.status,
+  };
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: ADMISSION_PAGE.pageHeading.title,
+    subtitle: pagination ? `${pagination.total} enquiries` : "",
+    actions: [
+      {
+        label: ADMISSION_PAGE.buttons.manage,
+        variant: "outline",
+        onClick: () => router.push("/admissions/source"),
+      },
+      {
+        label: ADMISSION_PAGE.buttons.addEnquiry,
+        icon: <Plus size={16} />,
+        onClick: () => router.push("/admissions/create-new"),
+      },
+    ],
+  };
 
   const columns = useMemo<ColumnDef<AdmissionEnquiry>[]>(
     () => [
@@ -128,30 +196,30 @@ function AdmissionsContent() {
         id: "actions",
         header: ADMISSION_PAGE.table.actions,
         cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => router.push(`/admissions?id=${row.original.id}`)}
-              title="View"
-            >
-              <Eye size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() =>
-                router.push(`/admissions?id=${row.original.id}&edit=true`)
-              }
-              title="Edit"
-            >
-              <Pencil size={14} />
-            </Button>
-          </Div>
+          <RowActions
+            onView={() => router.push(`/admissions?id=${row.original.id}`)}
+            actions={[
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () =>
+                  router.push(`/admissions?id=${row.original.id}&edit=true`),
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 size={14} />,
+                variant: "destructive",
+                confirm: {
+                  description: `Are you sure you want to delete the enquiry for ${row.original.student_name}? This action cannot be undone.`,
+                },
+                onClick: () => deleteEnquiry(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],
-    [router, classes],
+    [router, classes, deleteEnquiry],
   );
 
   if (detailId) {
@@ -160,67 +228,17 @@ function AdmissionsContent() {
 
   return (
     <PageCol>
-      <PageHeader
-        title={ADMISSION_PAGE.pageHeading.title}
-        subtitle={pagination ? `${pagination.total} enquiries` : ""}
-        actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/admissions/source")}
-            >
-              {ADMISSION_PAGE.buttons.manage}
-            </Button>
-            <Button onClick={() => router.push("/admissions/create-new")}>
-              <Plus size={16} /> {ADMISSION_PAGE.buttons.addEnquiry}
-            </Button>
-          </>
-        }
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
 
-      <FilterBar>
-        <Input
-          width="md"
-          placeholder="Search student name or phone…"
-          value={filters.search ?? ""}
-          onChange={(e) =>
-            handleFilterChange({ search: e.target.value || undefined })
-          }
+      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={(next) => handleFilterChange(next as Partial<AdmissionEnquiryFilters>)}
+          onClear={handleClearFilters}
+          sheetTitle="Filter Enquiries"
         />
-        <ResponsiveSelect
-          width="sm"
-          customPlaceholder="All Years"
-          options={years.map((y) => ({ value: y.id, label: y.name }))}
-          value={filters.academic_year_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              academic_year_id: e.target.value || undefined,
-            })
-          }
-        />
-        <ResponsiveSelect
-          width="sm"
-          customPlaceholder="All Classes"
-          options={classes.map((c) => ({ value: c.id, label: c.name }))}
-          value={filters.applying_class_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              applying_class_id: e.target.value || undefined,
-            })
-          }
-        />
-        <ResponsiveSelect
-          width="sm"
-          customPlaceholder="All Status"
-          options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-          value={filters.status ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              status: (e.target.value as EnquiryStatus) || undefined,
-            })
-          }
-        />
-      </FilterBar>
+      </Div>
 
       <DataTable
         columns={columns}
@@ -228,6 +246,7 @@ function AdmissionsContent() {
         isLoading={isLoading}
         emptyText={ADMISSION_PAGE.table.noEntry}
         pagination={pagination ?? undefined}
+        fillViewport
       />
     </PageCol>
   );

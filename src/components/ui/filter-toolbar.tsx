@@ -30,6 +30,15 @@ export type FilterField =
       disabled?: boolean;
       /** Other field keys to clear whenever this field's value changes (e.g. class depends on year). */
       resetKeys?: string[];
+    }
+  | {
+      type: "custom";
+      key: string;
+      label: string;
+      /** Renders arbitrary content (e.g. a date picker) in place of a select. */
+      render: () => React.ReactNode;
+      /** Label shown for this field's active-filter chip; falls back to the raw value. */
+      chipLabel?: string;
     };
 
 type SelectField = Extract<FilterField, { type: "select" }>;
@@ -205,6 +214,9 @@ export function FilterToolbar({
       if (field.type === "search") {
         return { key: field.key, label: `"${values[field.key]}"` };
       }
+      if (field.type === "custom") {
+        return { key: field.key, label: `${field.label}: ${field.chipLabel ?? values[field.key]}` };
+      }
       const optionLabel = field.options.find((o) => o.value === values[field.key])?.label;
       return { key: field.key, label: `${field.label}: ${optionLabel ?? values[field.key]}` };
     });
@@ -273,21 +285,34 @@ export function FilterToolbar({
           title={sheetTitle}
         >
           <Div gap="lg">
-            {fields.map((field) =>
-              field.type === "search" ? (
-                <Div key={field.key} className="relative">
-                  <Search
-                    size={14}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  />
-                  <input
-                    value={values[field.key] ?? ""}
-                    onChange={(e) => handleFieldChange(field, e.target.value || undefined)}
-                    placeholder={field.placeholder}
-                    className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
-                  />
-                </Div>
-              ) : (
+            {fields.map((field) => {
+              if (field.type === "search") {
+                return (
+                  <Div key={field.key} className="relative">
+                    <Search
+                      size={14}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <input
+                      value={values[field.key] ?? ""}
+                      onChange={(e) => handleFieldChange(field, e.target.value || undefined)}
+                      placeholder={field.placeholder}
+                      className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
+                    />
+                  </Div>
+                );
+              }
+
+              if (field.type === "custom") {
+                return (
+                  <Div key={field.key}>
+                    <FilterLabel className="mb-2">{field.label}</FilterLabel>
+                    {field.render()}
+                  </Div>
+                );
+              }
+
+              return (
                 <Div key={field.key}>
                   <FilterLabel className="mb-2">{field.label}</FilterLabel>
                   <Div type="row" wrap gap="sm">
@@ -322,8 +347,8 @@ export function FilterToolbar({
                     ))}
                   </Div>
                 </Div>
-              ),
-            )}
+              );
+            })}
           </Div>
 
           <Div type="row" gap="sm" className="mt-6 border-t border-border/50 pt-4">
@@ -355,29 +380,41 @@ export function FilterToolbar({
       gap="sm"
       className={cn("flex-nowrap overflow-x-auto pb-1", className)}
     >
-      {fields.map((field) =>
-        field.type === "search" ? (
-          <Div key={field.key} className="relative shrink-0">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <input
-              value={values[field.key] ?? ""}
-              onChange={(e) => handleFieldChange(field, e.target.value || undefined)}
-              placeholder={field.placeholder}
-              className="h-9 w-40 rounded-lg border border-input bg-transparent pl-8 pr-3 text-[0.8rem] outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 sm:w-48 lg:w-72 xl:w-80"
-            />
-          </Div>
-        ) : (
+      {fields.map((field) => {
+        if (field.type === "search") {
+          return (
+            <Div key={field.key} className="relative shrink-0">
+              <Search
+                size={13}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <input
+                value={values[field.key] ?? ""}
+                onChange={(e) => handleFieldChange(field, e.target.value || undefined)}
+                placeholder={field.placeholder}
+                className="h-9 w-40 rounded-lg border border-input bg-transparent pl-8 pr-3 text-[0.8rem] outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 sm:w-48 lg:w-72 xl:w-80"
+              />
+            </Div>
+          );
+        }
+
+        if (field.type === "custom") {
+          return (
+            <div key={field.key} className="shrink-0">
+              {field.render()}
+            </div>
+          );
+        }
+
+        return (
           <CompactSelect
             key={field.key}
             field={field}
             value={values[field.key]}
             onSelect={(val) => handleFieldChange(field, val)}
           />
-        ),
-      )}
+        );
+      })}
 
       {activeCount > 0 && (
         <Button

@@ -1,30 +1,31 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { Plus, Check, X } from 'lucide-react';
 import { useGatePass } from '@/hooks/useGatePass';
 import { useStudents } from '@/hooks/useStudentV2';
+import { useStorageFilter } from '@/hooks/useStorageFilter';
+import { STORAGE_FILTER_KEYS } from '@/constants/storage-filter-keys.constants';
 import {
   PageCol,
   PageHeader,
-  FilterBar,
+  type PageHeaderConfig,
   Div,
   Button,
   Input,
-  Select,
   Badge,
   DataTable,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  FilterLabel,
-  Spinner,
-  EmptyState,
+  RowActions,
+  FilterToolbar,
+  type FilterField,
+  DatePicker,
   FormField,
   P,
   type ColumnDef,
   ResponsiveModalContainer,
   ResponsiveSelect,
 } from '@/components/ui';
+import { formatDate } from '@/lib/utils';
 import type { GatePassRecord } from '@/types';
 
 const STATUS_BADGE: Record<string, 'warning' | 'success' | 'info' | 'danger' | 'secondary'> = {
@@ -37,18 +38,90 @@ const STATUS_BADGE: Record<string, 'warning' | 'success' | 'info' | 'danger' | '
 
 const STATUS_OPTIONS = ['PENDING', 'APPROVED', 'USED', 'EXPIRED', 'REJECTED'];
 
+type PersistedGatePassFilters = Pick<{ status?: string }, 'status'>;
+
 export default function GatePassPage() {
   const {
     records, isLoading, date, setDate, statusFilter, setStatusFilter, actionId,
     isDialogOpen, openDialog, closeDialog, fetch,
     studentId, setStudentId, reason, setReason,
-    exitTime, setExitTime, returnTime, setReturnTime,
+    formDate, setFormDate, exitTime, setExitTime, returnTime, setReturnTime,
     handleSubmit, approve, reject, attemptedSubmit,
   } = useGatePass();
 
   const { students, isLoading: isLoadingStudents } = useStudents({ limit: 500 });
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedGatePassFilters>({
+    key: STORAGE_FILTER_KEYS.GATE_PASS,
+    defaultValue: {},
+  });
+
   useEffect(() => { fetch(); }, [fetch]);
+
+  // One-time: apply a previously persisted status filter once storage hydrates.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    if (storedFilters.status) setStatusFilter(storedFilters.status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ('date' in next) setDate(next.date ?? '');
+    if ('status' in next) {
+      setStatusFilter(next.status ?? '');
+      persistFilters({ status: next.status });
+    }
+  }
+
+  function handleClearFilters() {
+    setDate('');
+    setStatusFilter('');
+    clearStoredFilters();
+  }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: 'custom',
+        key: 'date',
+        label: 'Date',
+        chipLabel: date ? formatDate(date) : undefined,
+        render: () => (
+          <DatePicker value={date} onChange={setDate} size="compact" placeholder="All dates" className="w-40" />
+        ),
+      },
+      {
+        type: 'select',
+        key: 'status',
+        label: 'Status',
+        placeholder: 'All Statuses',
+        options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+      },
+    ],
+    [date, setDate],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    date: date || undefined,
+    status: statusFilter || undefined,
+  };
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: 'Gate Passes',
+    subtitle: `${records.length} gate pass requests`,
+    actions: [
+      {
+        label: 'Create Gate Pass',
+        icon: <Plus size={14} />,
+        onClick: openDialog,
+      },
+    ],
+  };
 
   const studentOptions = useMemo(
     () => students.map(s => ({
@@ -71,6 +144,7 @@ export default function GatePassPage() {
     {
       header: 'Student',
       accessorKey: 'student_id',
+      meta: { primary: true },
       cell: ({ row }) => studentNameMap[row.original.student_id] || row.original.student_name || '—',
     },
     { header: 'Date', accessorKey: 'date' },
@@ -94,61 +168,64 @@ export default function GatePassPage() {
     {
       header: 'Actions',
       id: 'actions',
-      cell: ({ row }) => (
-        <Div type="row" gap="sm">
-          {row.original.status === 'PENDING' && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                loading={actionId === row.original.id}
-                onClick={() => approve(row.original.id)}
-              >
-                Approve
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                loading={actionId === row.original.id}
-                onClick={() => reject(row.original.id)}
-              >
-                Reject
-              </Button>
-            </>
-          )}
-        </Div>
-      ),
+      cell: ({ row }) => {
+        const isPending = row.original.status === 'PENDING';
+        const studentLabel = studentNameMap[row.original.student_id] || row.original.student_name;
+        return (
+          <RowActions
+            actions={[
+              {
+                label: 'Approve',
+                icon: <Check size={14} />,
+                hidden: !isPending,
+                disabled: actionId === row.original.id,
+                confirm: {
+                  title: 'Approve Gate Pass',
+                  description: `Approve the gate pass request for ${studentLabel}?`,
+                  confirmLabel: 'Approve',
+                },
+                onClick: () => approve(row.original.id),
+              },
+              {
+                label: 'Reject',
+                icon: <X size={14} />,
+                variant: 'destructive',
+                hidden: !isPending,
+                disabled: actionId === row.original.id,
+                confirm: {
+                  title: 'Reject Gate Pass',
+                  description: `Reject the gate pass request for ${studentLabel}?`,
+                  confirmLabel: 'Reject',
+                },
+                onClick: () => reject(row.original.id),
+              },
+            ]}
+          />
+        );
+      },
     },
   ];
 
   return (
     <PageCol>
-      <PageHeader
-        title="Gate Passes"
-        subtitle="Manage student gate pass requests"
-        actions={<Button onClick={openDialog}>+ Create Gate Pass</Button>}
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
 
-      <FilterBar>
-        <FilterLabel>Date</FilterLabel>
-        <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-        <ResponsiveSelect
-          width="sm"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          customPlaceholder="All Statuses"
-          options={STATUS_OPTIONS.map(s => ({ value: s, label: s }))}
+      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={handleFilterChange}
+          onClear={handleClearFilters}
+          sheetTitle="Filter Gate Passes"
         />
-        <Button variant="outline" onClick={fetch}>Search</Button>
-      </FilterBar>
+      </Div>
 
-      {isLoading ? (
-        <Spinner />
-      ) : records.length === 0 ? (
-        <EmptyState title="No gate passes" description="No gate passes found for these filters." />
-      ) : (
-        <DataTable columns={columns} data={records} />
-      )}
+      <DataTable
+        columns={columns}
+        data={records}
+        isLoading={isLoading}
+        emptyText="No gate passes found for these filters."
+      />
 
       <ResponsiveModalContainer
         isOpen={isDialogOpen}
@@ -193,6 +270,13 @@ export default function GatePassPage() {
               </FormField>
             </Div>
 
+            {/* Half width - Date */}
+            <Div>
+              <FormField label="Date *">
+                <DatePicker value={formDate} onChange={setFormDate} />
+              </FormField>
+            </Div>
+
             {/* Half width - Exit Time */}
             <Div>
               <FormField label="Exit Time *" error={attemptedSubmit && !exitTime ? 'Required' : ''}>
@@ -224,10 +308,10 @@ export default function GatePassPage() {
           )}
         </Div>
 
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        <Div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="outline" onClick={closeDialog}>Cancel</Button>
           <Button onClick={handleSubmit}>Create Gate Pass</Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
     </PageCol>
   );

@@ -1,8 +1,26 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useStaffAttendance } from "@/hooks/useStaffAttendance";
-import { Div, P, Button, Input, PageHeader, PageCol, Spinner, MiniStat, FilterLabel, DataTable, type ColumnDef } from "@/components/ui";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
+import { StaffAttendanceStats } from "@/components/staff/staff-attendance-stats";
+import {
+  Div,
+  P,
+  Button,
+  Input,
+  PageHeader,
+  type PageHeaderConfig,
+  PageCol,
+  DataTable,
+  FilterToolbar,
+  type FilterField,
+  DatePicker,
+  Switch,
+  type ColumnDef,
+} from "@/components/ui";
+import { formatDate } from "@/lib/utils";
 
 type StaffAttendanceRow = {
   id: string;
@@ -11,6 +29,8 @@ type StaffAttendanceRow = {
   employee_code?: string;
   role?: string;
 };
+
+type PersistedStaffAttendanceFilters = Pick<{ date?: string }, "date">;
 
 export default function StaffAttendancePage() {
   const {
@@ -30,9 +50,60 @@ export default function StaffAttendancePage() {
     absentCount,
   } = useStaffAttendance();
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedStaffAttendanceFilters>({
+    key: STORAGE_FILTER_KEYS.ATTENDANCE,
+    defaultValue: {},
+  });
+
+  // One-time: once storage has hydrated, apply a previously saved date.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    if (storedFilters.date) setDate(storedFilters.date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  function handleDateChange(value: string) {
+    setDate(value);
+    persistFilters({ date: value });
+  }
+
+  function handleClearFilters() {
+    const today = new Date().toISOString().split("T")[0];
+    setDate(today);
+    clearStoredFilters();
+  }
+
   const hasStaff = staff.length > 0;
+  const lateCount = staff.filter((s) => attendanceMap[s.id]?.is_late).length;
   const attendancePct = hasStaff ? Math.round((presentCount / staff.length) * 100) : 0;
   const isLoading = isLoadingStaff || isLoadingAttendance;
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "custom",
+        key: "date",
+        label: "Date",
+        chipLabel: date ? formatDate(date) : undefined,
+        render: () => (
+          <DatePicker value={date} onChange={handleDateChange} size="compact" className="w-40" />
+        ),
+      },
+    ],
+    [date],
+  );
+
+  const filterValues: Record<string, string | undefined> = { date };
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: "Staff Attendance",
+    subtitle: date ? formatDate(date) : undefined
+  };
 
   const columns = useMemo<ColumnDef<StaffAttendanceRow>[]>(
     () => [
@@ -93,10 +164,9 @@ export default function StaffAttendancePage() {
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
-            <Input
-              type="checkbox"
+            <Switch
               checked={entry.is_late ?? false}
-              onChange={(e) => setLate(row.original.id, e.target.checked)}
+              onCheckedChange={(checked) => setLate(row.original.id, checked)}
             />
           );
         },
@@ -111,6 +181,7 @@ export default function StaffAttendancePage() {
               placeholder="Optional remarks"
               value={entry.remarks ?? ""}
               onChange={(e) => setRemarks(row.original.id, e.target.value)}
+              className="h-8 max-w-xs border-transparent bg-muted/40 text-xs placeholder:text-muted-foreground/70 hover:bg-muted/60 focus:border-input focus:bg-background"
             />
           );
         },
@@ -121,62 +192,38 @@ export default function StaffAttendancePage() {
 
   return (
     <PageCol>
-      <PageHeader
-        title="Staff Attendance"
-        subtitle={date}
-        actions={
-          hasStaff ? (
-            <Button loading={isSaving} onClick={saveAttendance}>
-              Save Attendance
-            </Button>
-          ) : undefined
-        }
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
 
-      {/* Date filter */}
-      <Div variant="card" padding="p-4">
-        <Div type="row" gap="md" align="end">
-          <Div type="col" gap="xs">
-            <FilterLabel>Date</FilterLabel>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </Div>
-        </Div>
+      {/* Filters */}
+      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={(next) => {
+            if ("date" in next) handleDateChange(next.date ?? "");
+          }}
+          onClear={handleClearFilters}
+          sheetTitle="Filter Attendance"
+        />
       </Div>
 
       {/* Stats + quick actions */}
       {hasStaff && (
-        <Div type="row" justify="between" align="center">
-          <Div type="row" gap="sm">
-            <MiniStat label="Total" value={staff.length} />
-            <MiniStat label="Present" value={presentCount} color="green" />
-            <MiniStat label="Absent" value={absentCount} color="red" />
-            <MiniStat
-              label="Attendance"
-              value={`${attendancePct}%`}
-              color={attendancePct >= 75 ? "green" : "red"}
-            />
-          </Div>
-          <Div type="row" gap="sm">
-            <Button size="sm" variant="outline" onClick={() => markAll("PRESENT")}>
-              Mark All Present
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => markAll("ABSENT")}>
-              Mark All Absent
-            </Button>
-          </Div>
-        </Div>
+        <StaffAttendanceStats
+          total={staff.length}
+          presentCount={presentCount}
+          absentCount={absentCount}
+          lateCount={lateCount}
+          attendancePct={attendancePct}
+          onMarkAllPresent={() => markAll("PRESENT")}
+          onMarkAllAbsent={() => markAll("ABSENT")}
+          onSaveAttendance={saveAttendance}
+          isSaving={isSaving}
+        />
       )}
 
       {/* Staff attendance table */}
-      {isLoading ? (
-        <Div type="row" justify="center" className="py-20">
-          <Spinner size="lg" />
-        </Div>
-      ) : staff.length === 0 ? (
+      {staff.length === 0 && !isLoading ? (
         <Div
           type="col"
           gap="sm"
@@ -201,7 +248,7 @@ export default function StaffAttendancePage() {
 
       {hasStaff && (
         <Div type="row" justify="end">
-          <Button loading={isSaving} onClick={saveAttendance}>
+          <Button loading={isSaving} onClick={saveAttendance} variant={"success"}>
             Save Attendance
           </Button>
         </Div>

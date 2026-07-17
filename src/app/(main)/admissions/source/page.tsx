@@ -4,7 +4,6 @@ import { Suspense, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, X } from "lucide-react";
 import { useAdmissionSources, useAdmissionSourceDetail } from "@/hooks/useAdmissions";
-import { useFilterParams } from "@/hooks/useFilterParams";
 import type { AdmissionSourceFilters } from "@/types/admissions.types";
 import type { AdmissionSource } from "@/types/admissions.types";
 import {
@@ -21,9 +20,10 @@ import {
   DataTable,
   type ColumnDef,
   PageHeader,
+  type PageHeaderConfig,
   PageCol,
-  FilterBar,
-  ResponsiveSelect,
+  FilterToolbar,
+  type FilterField,
 } from "@/components/ui";
 
 function AdmissionSourceDetailContent({ id }: { id: string }) {
@@ -234,21 +234,6 @@ function AdmissionSourcesContent() {
   const searchParams = useSearchParams();
   const detailId = searchParams.get("id");
 
-  const [urlFilters, setUrlFilters] = useFilterParams<
-    Record<string, string | undefined>
-  >({
-    is_enabled: undefined,
-    page: undefined,
-  });
-
-  const initialFilters: AdmissionSourceFilters = {
-    is_enabled:
-      urlFilters.is_enabled !== undefined
-        ? urlFilters.is_enabled === "true"
-        : undefined,
-    page: urlFilters.page ? Number(urlFilters.page) : 1,
-  };
-
   const {
     sources,
     pagination,
@@ -256,18 +241,47 @@ function AdmissionSourcesContent() {
     isLoading,
     updateFilters,
     deleteSource,
-  } = useAdmissionSources(initialFilters);
+  } = useAdmissionSources({ page: 1 });
 
-  function handleFilterChange(next: Partial<AdmissionSourceFilters>) {
-    updateFilters(next);
-    const urlNext: Record<string, string | undefined> = {};
-    if ("is_enabled" in next)
-      urlNext.is_enabled =
-        next.is_enabled !== undefined ? String(next.is_enabled) : undefined;
-    if ("page" in next)
-      urlNext.page = next.page ? String(next.page) : undefined;
-    setUrlFilters(urlNext);
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "is_enabled",
+        label: "Status",
+        placeholder: "All Statuses",
+        options: [
+          { value: "true", label: "Enabled" },
+          { value: "false", label: "Disabled" },
+        ],
+      },
+    ],
+    [],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    is_enabled: filters.is_enabled === undefined ? undefined : String(filters.is_enabled),
+  };
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ("is_enabled" in next) {
+      updateFilters({
+        is_enabled: next.is_enabled === undefined ? undefined : next.is_enabled === "true",
+      });
+    }
   }
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: "Admission Sources",
+    subtitle: pagination ? `${pagination.total} sources` : "Where students hear about you",
+    actions: [
+      {
+        label: "Add Source",
+        icon: <Plus size={16} />,
+        onClick: () => router.push("/admissions/source/create-new"),
+      },
+    ],
+  };
 
   const columns = useMemo<ColumnDef<AdmissionSource>[]>(
     () => [
@@ -355,40 +369,16 @@ function AdmissionSourcesContent() {
 
   return (
     <PageCol>
-      <PageHeader
-        title="Admission Sources"
-        subtitle={
-          pagination
-            ? `${pagination.total} sources`
-            : "Where students hear about you"
-        }
-        actions={
-          <Button onClick={() => router.push("/admissions/source/create-new")}>
-            <Plus size={16} /> Add Source
-          </Button>
-        }
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
 
-      <FilterBar>
-        <Div className="w-full sm:w-48">
-          <ResponsiveSelect
-            value={
-              filters.is_enabled === undefined ? "" : String(filters.is_enabled)
-            }
-            onChange={(e) =>
-              handleFilterChange({
-                is_enabled:
-                  e.target.value === "" ? undefined : e.target.value === "true",
-              })
-            }
-            customPlaceholder="All Statuses"
-            options={[
-              { value: "true", label: "Enabled" },
-              { value: "false", label: "Disabled" },
-            ]}
-          />
-        </Div>
-      </FilterBar>
+      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={handleFilterChange}
+          sheetTitle="Filter Sources"
+        />
+      </Div>
 
       <DataTable
         columns={columns}
