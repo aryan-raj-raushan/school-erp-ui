@@ -12,7 +12,7 @@ import { useClassSections } from './useClassSections';
 
 export type { GuardianFormValues };
 
-interface GuardianFilters {
+export interface GuardianFilters {
   search?: string;
   relation?: string;
   is_primary?: string;

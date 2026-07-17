@@ -83,7 +83,7 @@ export function ResponsiveBottomSheet({
           {/* Bottom Sheet */}
           <motion.div
             className={cn(
-              'relative mt-auto w-full rounded-t-2xl border-t border-border/50 bg-background shadow-lg',
+              'relative mt-auto w-full rounded-t-2xl border-t border-border/50 bg-white shadow-lg',
               className,
             )}
             style={{ maxHeight }}
@@ -144,7 +144,7 @@ export function ResponsiveBottomSheet({
         {/* Dialog */}
         <motion.div
           className={cn(
-            'relative z-10 w-full rounded-2xl sm:rounded-[32px] border border-border/50 max-h-[90vh] overflow-y-auto glass-card sm:max-w-lg',
+            'relative z-10 w-full rounded-2xl border border-border/50 max-h-[90vh] overflow-y-auto glass-card sm:max-w-lg',
             className,
           )}
           style={{
