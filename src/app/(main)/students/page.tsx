@@ -4,7 +4,6 @@ import { Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
-  Eye,
   Pencil,
   Trash2,
   CreditCard,
@@ -20,7 +19,6 @@ import type { StudentFilters, StudentListItem } from "@/types/students.types";
 import {
   Div,
   P,
-  Button,
   Badge,
   Spinner,
   DataTable,
@@ -30,6 +28,7 @@ import {
   type PageHeaderConfig,
   FilterToolbar,
   type FilterField,
+  RowActions,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -299,61 +298,43 @@ function StudentsContent() {
         id: "actions",
         header: STUDENT_PAGE.table.actions,
         cell: ({ row }) => (
-          <Div type="row" gap="xs">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title="View"
-              onClick={() => router.push(STUDENT_ROUTES.view(row.original.id))}
-            >
-              <Eye size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title="Edit"
-              onClick={() => router.push(STUDENT_ROUTES.edit(row.original.id))}
-            >
-              <Pencil size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title={row.original.is_enabled ? "Disable" : "Enable"}
-              onClick={() =>
-                toggleEnabled(row.original.id, !row.original.is_enabled)
-              }
-            >
-              {row.original.is_enabled ? (
-                <ToggleRight size={14} className="text-emerald-500" />
-              ) : (
-                <ToggleLeft
-                  size={14}
-                  className="text-muted-foreground"
-                />
-              )}
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title="Generate ID Card"
-              onClick={() =>
-                router.push(
-                  `${STUDENT_ROUTES.generate}?studentId=${row.original.id}`,
-                )
-              }
-            >
-              <CreditCard size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              title="Delete"
-              onClick={() => deleteStudent(row.original.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Div>
+          <RowActions
+            onView={() => router.push(STUDENT_ROUTES.view(row.original.id))}
+            actions={[
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () => router.push(STUDENT_ROUTES.edit(row.original.id)),
+              },
+              {
+                label: row.original.is_enabled ? "Disable" : "Enable",
+                icon: row.original.is_enabled ? (
+                  <ToggleRight size={14} className="text-emerald-500" />
+                ) : (
+                  <ToggleLeft size={14} className="text-muted-foreground" />
+                ),
+                onClick: () =>
+                  toggleEnabled(row.original.id, !row.original.is_enabled),
+              },
+              {
+                label: "Generate ID Card",
+                icon: <CreditCard size={14} />,
+                onClick: () =>
+                  router.push(
+                    `${STUDENT_ROUTES.generate}?studentId=${row.original.id}`,
+                  ),
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 size={14} />,
+                variant: "destructive",
+                confirm: {
+                  description: `Are you sure you want to delete ${row.original.first_name} ${row.original.last_name ?? ""}? This action cannot be undone.`,
+                },
+                onClick: () => deleteStudent(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],
@@ -363,7 +344,6 @@ function StudentsContent() {
   const pageHeaderConfig: PageHeaderConfig = {
     title: STUDENT_PAGE.pageHeading.title,
     subtitle: pagination ? `${pagination.total} students` : "",
-    backButton: true,
     actions: [
       {
         label: STUDENT_PAGE.buttons.addStudent,
