@@ -219,7 +219,7 @@ export function FilterToolbar({
             onClick={() => setIsSheetOpen(true)}
             className="w-fit gap-2"
           >
-            <SlidersHorizontal size={15} />
+            <SlidersHorizontal size={14} />
             Filter
             {activeCount > 0 && (
               <Badge variant="primary" className="ml-0.5 h-4 min-w-4 px-1 text-[10px]">
