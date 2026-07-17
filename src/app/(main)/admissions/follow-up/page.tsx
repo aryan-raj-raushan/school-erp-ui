@@ -2,20 +2,19 @@
 
 import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useFilterParams } from "@/hooks/useFilterParams";
 import type {
   AdmissionEnquiryFilters,
   EnquiryStatus,
 } from "@/types/admissions.types";
-import { PageHeader } from "@/components/ui/page-header";
 import {
+  PageHeader,
+  type PageHeaderConfig,
   Div,
-  P,
-  Button,
   DataTable,
+  RowActions,
   Badge,
   Spinner,
   type ColumnDef,
@@ -43,22 +42,18 @@ function AdmissionsContent() {
   const { years } = useAcademicYears();
   const { classes, teachers } = useAdmissionLookups();
 
-  const [urlFilters, setUrlFilters] = useFilterParams<
-    Record<string, string | undefined>
-  >({
-    next_followup_date: undefined,
-    search: undefined,
-    page: undefined,
-  });
-
   const initialFilters: AdmissionEnquiryFilters = {
     next_followup_date: getTodayDate(),
-    search: urlFilters.search || undefined,
-    page: urlFilters.page ? Number(urlFilters.page) : 1,
+    page: 1,
   };
 
   const { enquiries, pagination, isLoading } =
     useAdmissionEnquiries(initialFilters);
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: "Today's Followup Admission Enquiry",
+    subtitle: pagination ? `${pagination.total} followup schedule today` : "",
+  };
 
   const columns = useMemo<ColumnDef<AdmissionFollowupRow>[]>(
     () => [
@@ -113,26 +108,17 @@ function AdmissionsContent() {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => router.push(`/admissions/${row.original.id}`)}
-              title="View"
-            >
-              <Eye size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() =>
-                router.push(`/admissions/${row.original.id}?edit=true`)
-              }
-              title="Edit"
-            >
-              <Pencil size={14} />
-            </Button>
-          </Div>
+          <RowActions
+            onView={() => router.push(`/admissions?id=${row.original.id}`)}
+            actions={[
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () =>
+                  router.push(`/admissions?id=${row.original.id}&edit=true`),
+              },
+            ]}
+          />
         ),
       },
     ],
@@ -141,14 +127,7 @@ function AdmissionsContent() {
 
   return (
     <Div type="col" gap="lg">
-      <PageHeader
-        title="Today's Followup Admission Enquiry"
-        subtitle={
-          pagination
-            ? `${pagination.total} followup schedule today`
-            : ""
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       <DataTable
         columns={columns}

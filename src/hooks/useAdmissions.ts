@@ -86,6 +86,9 @@ export function useAdmissionSources(
 
 // Source detail hook
 export function useAdmissionSourceDetail(id?: string) {
+
+  const router = useRouter();
+
   const isNew = id === "create-new";
   const [source, setSource] = useState<AdmissionSource | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -141,6 +144,17 @@ export function useAdmissionSourceDetail(id?: string) {
     }
   }
 
+  async function onSubmit(values: AdmissionSourceFormValues) {
+      const payload = {
+        ...values,
+        start_date: values.start_date || undefined,
+        end_date: values.end_date || undefined,
+      };
+      const created = await AdmissionSourcesService.create(payload);
+      toast.success(`"${created.name}" created`);
+      router.push("/admissions/source");
+    }
+
   useEffect(() => {
     fetchSource();
   }, [fetchSource]);
@@ -152,6 +166,7 @@ export function useAdmissionSourceDetail(id?: string) {
     setIsEditing,
     form,
     isNew,
+    onSubmit,
     handleSubmit: form.handleSubmit(submit),
     isSubmitting: form.formState.isSubmitting,
   };
@@ -248,6 +263,19 @@ export function useAdmissionEnquiryDetail(id?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(isNew);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [sources, setSources] = useState<AdmissionSource[]>([]);
+  const [teachers, setTeachers] = useState<Staff[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      ClassesService.list().then((r) => setClasses(r.items)),
+      AdmissionSourcesService.list({ is_enabled: true }).then((r) =>
+        setSources(r.items),
+      ),
+      StaffService.list().then((r) => setTeachers(r.items)),
+    ]).catch(() => {});
+  }, []);
 
   const form = useForm<AdmissionEnquiryFormValues>({
     resolver: zodResolver(admissionEnquirySchema),
@@ -402,6 +430,9 @@ export function useAdmissionEnquiryDetail(id?: string) {
     form,
     isNew,
     isTerminal,
+    classes,
+    sources,
+    teachers,
     handleSubmit: form.handleSubmit(submit),
     isSubmitting: form.formState.isSubmitting,
     showHistoryModal,

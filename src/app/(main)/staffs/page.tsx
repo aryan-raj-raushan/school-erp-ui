@@ -1,33 +1,35 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStaffsPage } from '@/hooks/useStaffsPage';
+import { useStorageFilter } from '@/hooks/useStorageFilter';
+import { STORAGE_FILTER_KEYS } from '@/constants/storage-filter-keys.constants';
 import type { Staff } from '@/types';
+import type { StaffFilters } from '@/services/staff.service';
 import {
   Div,
   P,
   Button,
-  Input,
-  Select,
   DataTable,
   type ColumnDef,
-  Modal,
-  ModalBody,
-  ModalFooter,
   FormField,
   Badge,
   Spinner,
   FileInput,
   PageCol,
-  FilterBar,
   PageHeader,
-  ResponsiveSelect,
+  type PageHeaderConfig,
+  FilterToolbar,
+  type FilterField,
+  RowActions,
   ResponsiveModalContainer,
 } from '@/components/ui';
-import { Pencil, Eye, UserX, UserCheck, Mail, Trash2, Plus } from 'lucide-react';
-import { STAFF_STATUS_BADGE, STAFF_STATUS_OPTIONS } from '@/constants';
+import { Pencil, UserX, UserCheck, Mail, Trash2, Plus, Download, Upload } from 'lucide-react';
+import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from '@/constants';
 import { StaffDetail } from './staff-detail';
+
+type PersistedStaffFilters = Pick<StaffFilters, 'status' | 'role'>;
 
 function StaffsPageContent() {
   const searchParams = useSearchParams();
@@ -56,11 +58,104 @@ function StaffsPageContent() {
     systemRoles,
   } = useStaffsPage();
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedStaffFilters>({
+    key: STORAGE_FILTER_KEYS.STAFF,
+    defaultValue: {},
+  });
+
+  function handleFilterChange(next: Partial<StaffFilters>) {
+    updateFilters(next);
+
+    const persisted: Partial<PersistedStaffFilters> = {};
+    (['status', 'role'] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field] as never;
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
+  }
+
+  function handleClearFilters() {
+    handleFilterChange({ search: undefined, status: undefined, role: undefined });
+    clearStoredFilters();
+  }
+
+  // One-time: once storage has hydrated, apply any filters saved from a
+  // previous visit.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) updateFilters(storedFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: 'search',
+        key: 'search',
+        placeholder: 'Search by name or phone',
+      },
+      {
+        type: 'select',
+        key: 'status',
+        label: 'Status',
+        placeholder: 'All Status',
+        options: STAFF_STATUS_OPTIONS.filter((o) => o.value).map((o) => ({ value: o.value, label: o.label })),
+      },
+      {
+        type: 'select',
+        key: 'role',
+        label: 'Role',
+        placeholder: 'All Roles',
+        options: systemRoles.map((r) => ({
+          value: r.name.toUpperCase().replace(/ /g, '_'),
+          label: r.name,
+        })),
+      },
+    ],
+    [systemRoles],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    search: filters.search,
+    status: filters.status,
+    role: filters.role,
+  };
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: STAFF_PAGE.title,
+    subtitle: pagination ? `${pagination.total} staff members` : 'Loading...',
+    actions: [
+      // {
+      //   label: STAFF_PAGE.downloadTemplate,
+      //   icon: <Download size={14} />,
+      //   variant: 'outline',
+      //   onClick: downloadTemplate,
+      // },
+      // {
+      //   label: STAFF_PAGE.bulkImport,
+      //   icon: <Upload size={14} />,
+      //   variant: 'outline',
+      //   onClick: openBulkModal,
+      // },
+      {
+        label: STAFF_PAGE.addButton,
+        icon: <Plus size={14} />,
+        onClick: navigateToNew,
+        hidden: !isAdmin,
+      },
+    ],
+  };
+
   const columns = useMemo<ColumnDef<Staff>[]>(
     () => [
       {
         accessorKey: 'first_name',
-        header: 'Name',
+        header: STAFF_PAGE.table.name,
         meta: { primary: true },
         cell: ({ row }) => (
           <Div type="row" align="center" gap="sm">
@@ -77,94 +172,80 @@ function StaffsPageContent() {
       },
       {
         accessorKey: 'role',
-        header: 'Role',
+        header: STAFF_PAGE.table.role,
         cell: ({ row }) => row.original.role ?? '—',
       },
       {
         accessorKey: 'email',
-        header: 'Email',
+        header: STAFF_PAGE.table.email,
         cell: ({ row }) => row.original.email ?? '—',
       },
       {
         accessorKey: 'phone_number',
-        header: 'Phone',
+        header: STAFF_PAGE.table.phone,
         cell: ({ row }) => row.original.phone_number ?? '—',
       },
       {
         accessorKey: 'is_active',
-        header: 'Status',
+        header: STAFF_PAGE.table.status,
         cell: ({ row }) => (
-          <Badge
-            variant={
-              row.original.is_active ? 'success' : 'default'
-            }
-          >
+          <Badge variant={row.original.is_active ? 'success' : 'default'}>
             {row.original.is_active ? 'Active' : 'Inactive'}
           </Badge>
         ),
       },
       {
         id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <Div type="row" gap="xs">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => navigateToView(row.original.id)}
-              title="View"
-            >
-              <Eye size={14} />
-            </Button>
-            {isAdmin && (
-              <>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => navigateToEdit(row.original.id)}
-                  title="Edit"
-                >
-                  <Pencil size={14} />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => resendInvite(row.original.id)}
-                  title="Resend Invite"
-                >
-                  <Mail size={14} />
-                </Button>
-                {row.original.is_active ? (
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => offboardStaff(row.original.id)}
-                    title="Offboard"
-                  >
-                    <UserX size={14} />
-                  </Button>
-                ) : (
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => reonboardStaff(row.original.id)}
-                    title="Re-onboard"
-                  >
-                    <UserCheck size={14} />
-                  </Button>
-                )}
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => removeStaff(row.original.id)}
-                  title="Delete"
-                >
-                  <Trash2 size={14} className="text-destructive" />
-                </Button>
-              </>
-            )}
-          </Div>
-        ),
+        header: STAFF_PAGE.table.actions,
+        cell: ({ row }) => {
+          const name = `${row.original.first_name} ${row.original.last_name ?? ''}`.trim();
+          return (
+            <RowActions
+              onView={() => navigateToView(row.original.id)}
+              actions={[
+                {
+                  label: 'Edit',
+                  icon: <Pencil size={14} />,
+                  onClick: () => navigateToEdit(row.original.id),
+                  hidden: !isAdmin,
+                },
+                {
+                  label: 'Resend Invite',
+                  icon: <Mail size={14} />,
+                  onClick: () => resendInvite(row.original.id),
+                  hidden: !isAdmin,
+                },
+                {
+                  label: 'Offboard',
+                  icon: <UserX size={14} />,
+                  hidden: !isAdmin || !row.original.is_active,
+                  confirm: {
+                    title: 'Offboard Staff',
+                    description: `Offboard ${name}? They will lose access to the system.`,
+                    confirmLabel: 'Offboard',
+                  },
+                  onClick: () => offboardStaff(row.original.id),
+                },
+                {
+                  label: 'Re-onboard',
+                  icon: <UserCheck size={14} />,
+                  hidden: !isAdmin || row.original.is_active,
+                  onClick: () => reonboardStaff(row.original.id),
+                },
+                {
+                  label: 'Delete',
+                  icon: <Trash2 size={14} />,
+                  variant: 'destructive',
+                  hidden: !isAdmin,
+                  confirm: {
+                    description: `Are you sure you want to delete ${name}? This action cannot be undone.`,
+                  },
+                  onClick: () => removeStaff(row.original.id),
+                },
+              ]}
+            />
+          );
+        },
       },
     ],
     [isAdmin, navigateToView, navigateToEdit, resendInvite, offboardStaff, reonboardStaff, removeStaff],
@@ -176,64 +257,23 @@ function StaffsPageContent() {
 
   return (
     <PageCol>
-      <PageHeader
-        title="Staff"
-        subtitle={pagination ? `${pagination.total} staff members` : 'Loading...'}
-        actions={
-          <>
-            <Button variant="outline" onClick={downloadTemplate}>
-              Download Template
-            </Button>
-            <Button variant="outline" onClick={openBulkModal}>
-              Bulk Import
-            </Button>
-            {isAdmin && (
-              <Button onClick={navigateToNew}>
-                <Plus size={16} />
-                Add Staff
-              </Button>
-            )}
-          </>
-        }
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
 
-      <FilterBar>
-        <Input
-          width="md"
-          placeholder="Search by name or phone"
-          value={filters.search ?? ''}
-          onChange={(e) =>
-            updateFilters({ search: e.target.value || undefined })
-          }
+      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={(next) => handleFilterChange(next as Partial<StaffFilters>)}
+          onClear={handleClearFilters}
+          sheetTitle="Filter Staff"
         />
-        <ResponsiveSelect
-          width="sm"
-          options={STAFF_STATUS_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-          value={filters.status ?? ''}
-          onChange={(e) =>
-            updateFilters({
-              status: (e.target.value as any) || undefined,
-            })
-          }
-        />
-        <ResponsiveSelect
-          width="sm"
-          customPlaceholder="All Roles"
-          options={systemRoles.map((r) => ({ value: r.name.toUpperCase().replace(/ /g, '_'), label: r.name }))}
-          value={filters.role ?? ''}
-          onChange={(e) =>
-            updateFilters({
-              role: (e.target.value as any) || undefined,
-            })
-          }
-        />
-      </FilterBar>
+      </Div>
 
       <DataTable
         columns={columns}
         data={staffList}
         isLoading={isLoading}
-        emptyText="No staff members found."
+        emptyText={STAFF_PAGE.empty}
         pagination={pagination ?? undefined}
         fillViewport
       />
@@ -256,7 +296,7 @@ function StaffsPageContent() {
           </P>
         </Div>
 
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        <Div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={closeBulkModal}>
             Cancel
           </Button>
@@ -267,7 +307,7 @@ function StaffsPageContent() {
           >
             Import
           </Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
     </PageCol>
   );

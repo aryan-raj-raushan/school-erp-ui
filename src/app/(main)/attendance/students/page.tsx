@@ -5,21 +5,25 @@ import { useAttendance } from "@/hooks/useAttendance";
 import {
   STUDENT_ATTENDANCE_PAGE,
   ATTENDANCE_SESSION_OPTIONS,
+  type AttendanceSession,
 } from "@/constants";
+import { StudentAttendanceStats } from "@/components/student/student-attendance-stats";
 import {
   Div,
   P,
   Button,
   Input,
   PageHeader,
+  type PageHeaderConfig,
   PageCol,
-  Spinner,
-  MiniStat,
-  FilterLabel,
   DataTable,
-  ResponsiveSelect,
+  FilterToolbar,
+  type FilterField,
+  DatePicker,
+  Switch,
   type ColumnDef,
 } from "@/components/ui";
+import { formatDate } from "@/lib/utils";
 
 type StudentAttendanceRow = {
   id: string;
@@ -31,6 +35,10 @@ type StudentAttendanceRow = {
   isLate?: boolean;
   remarks?: string;
 };
+
+function todayISO() {
+  return new Date().toISOString().split("T")[0];
+}
 
 export default function StudentAttendancePage() {
   const {
@@ -50,7 +58,6 @@ export default function StudentAttendancePage() {
     students,
     attendanceMap,
     isLoadingClasses,
-    isLoadingSections,
     isLoadingStudents,
     isSaving,
     setStudentStatus,
@@ -77,6 +84,83 @@ export default function StudentAttendancePage() {
   const attendancePct = hasStudents
     ? Math.round((presentCount / students.length) * 100)
     : 0;
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ("academic_year_id" in next) setSelectedAcademicYearId(next.academic_year_id ?? "");
+    if ("class_id" in next) handleClassChange(next.class_id ?? "");
+    if ("section_id" in next) handleSectionChange(next.section_id ?? "");
+    if ("session" in next && next.session) setSession(next.session as AttendanceSession);
+  }
+
+  function handleClearFilters() {
+    setSelectedAcademicYearId("");
+    handleClassChange("");
+    setDate(todayISO());
+    setSession("MORNING");
+  }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: "Select year",
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+        resetKeys: ["class_id", "section_id"],
+      },
+      {
+        type: "select",
+        key: "class_id",
+        label: "Class",
+        placeholder: "Select class",
+        options: classes.map((c) => ({ value: c.id, label: c.display_name })),
+        disabled: !selectedAcademicYearId || isLoadingClasses,
+        resetKeys: ["section_id"],
+      },
+      {
+        type: "select",
+        key: "section_id",
+        label: "Section",
+        placeholder: "Select section",
+        options: sections.map((s) => ({ value: s.id, label: `Section ${s.name}` })),
+        disabled: !selectedClassId,
+      },
+      {
+        type: "custom",
+        key: "date",
+        label: "Date",
+        chipLabel: date ? formatDate(date) : undefined,
+        render: () => (
+          <DatePicker value={date} onChange={setDate} size="compact" className="w-40" />
+        ),
+      },
+      {
+        type: "select",
+        key: "session",
+        label: "Session",
+        placeholder: "Select session",
+        options: ATTENDANCE_SESSION_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label })),
+      },
+    ],
+    [years, classes, sections, selectedAcademicYearId, selectedClassId, isLoadingClasses, date, setDate],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: selectedAcademicYearId,
+    class_id: selectedClassId,
+    section_id: selectedSectionId,
+    date,
+    session,
+  };
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: STUDENT_ATTENDANCE_PAGE.title,
+    subtitle: selectedClass ? `${selectedClass.display_name} · ${formatDate(date)}` : undefined,
+  };
 
   const columns = useMemo<ColumnDef<StudentAttendanceRow>[]>(
     () => [
@@ -129,12 +213,9 @@ export default function StudentAttendancePage() {
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
-            <Input
-              type="checkbox"
+            <Switch
               checked={entry.isLate ?? false}
-              onChange={(e) =>
-                setStudentLate(row.original.id, e.target.checked)
-              }
+              onCheckedChange={(checked) => setStudentLate(row.original.id, checked)}
             />
           );
         },
@@ -151,86 +232,29 @@ export default function StudentAttendancePage() {
               onChange={(e) =>
                 setStudentRemarks(row.original.id, e.target.value)
               }
-              className="max-w-xs"
+              className="h-8 max-w-xs border-transparent bg-muted/40 text-xs placeholder:text-muted-foreground/70 hover:bg-muted/60 focus:border-input focus:bg-background"
             />
           );
         },
       },
     ],
-    [attendanceMap, setStudentStatus, setStudentLate, setStudentRemarks]
+    [attendanceMap, isHoliday, setStudentStatus, setStudentLate, setStudentRemarks]
   );
 
   return (
     <PageCol>
       {/* Header */}
-      <PageHeader
-        title={STUDENT_ATTENDANCE_PAGE.title}
-        subtitle={selectedClass ? `${selectedClass.display_name} · ${date}` : undefined}
-        actions={
-          hasStudents ? (
-            <Button loading={isSaving} onClick={saveAttendance}>
-              {STUDENT_ATTENDANCE_PAGE.save}
-            </Button>
-          ) : undefined
-        }
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
 
       {/* Filters */}
-      <Div variant="card" padding="p-4">
-        <Div type="grid" cols={3} gap="md">
-          <Div type="col" gap="xs">
-            <FilterLabel>Academic Year</FilterLabel>
-            <ResponsiveSelect
-              value={selectedAcademicYearId}
-              onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-              customPlaceholder="Select year"
-              options={years.map((y) => ({
-                value: y.id,
-                label: `${y.name}${y.is_current ? " (Current)" : ""}`,
-              }))}
-            />
-          </Div>
-
-          <Div type="col" gap="xs">
-            <FilterLabel>Class</FilterLabel>
-            <ResponsiveSelect
-              value={selectedClassId}
-              onChange={(e) => handleClassChange(e.target.value)}
-              disabled={!selectedAcademicYearId || isLoadingClasses}
-              customPlaceholder="Select class"
-              options={classes.map((c) => ({ value: c.id, label: c.display_name }))}
-            />
-          </Div>
-
-          <Div type="col" gap="xs">
-            <FilterLabel>Section</FilterLabel>
-            <ResponsiveSelect
-              value={selectedSectionId}
-              onChange={(e) => handleSectionChange(e.target.value)}
-              disabled={!selectedClassId}
-              customPlaceholder="Select section"
-              options={sections.map((s) => ({ value: s.id, label: `Section ${s.name}` }))}
-            />
-          </Div>
-
-          <Div type="col" gap="xs">
-            <FilterLabel>Date</FilterLabel>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </Div>
-
-          <Div type="col" gap="xs">
-            <FilterLabel>Session</FilterLabel>
-            <ResponsiveSelect
-              value={session}
-              onChange={(e) => setSession(e.target.value as typeof session)}
-              options={ATTENDANCE_SESSION_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-            />
-          </Div>
-        </Div>
+      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={handleFilterChange}
+          onClear={handleClearFilters}
+          sheetTitle="Filter Attendance"
+        />
       </Div>
 
       {/* Holiday Banner */}
@@ -242,35 +266,17 @@ export default function StudentAttendancePage() {
 
       {/* Stats + quick actions */}
       {hasStudents && !isHoliday && (
-        <Div type="row" justify="between" align="center">
-          <Div type="row" gap="sm">
-            <MiniStat label="Total" value={students.length} />
-            <MiniStat label="Present" value={presentCount} color="green" />
-            <MiniStat label="Absent" value={absentCount} color="red" />
-            <MiniStat label="Late" value={lateCount} color="yellow" />
-            <MiniStat
-              label="Attendance"
-              value={`${attendancePct}%`}
-              color={attendancePct >= 75 ? "green" : "red"}
-            />
-          </Div>
-          <Div type="row" gap="sm">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => markAll("PRESENT")}
-            >
-              {STUDENT_ATTENDANCE_PAGE.markAllPresent}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => markAll("ABSENT")}
-            >
-              {STUDENT_ATTENDANCE_PAGE.markAllAbsent}
-            </Button>
-          </Div>
-        </Div>
+        <StudentAttendanceStats
+          total={students.length}
+          presentCount={presentCount}
+          absentCount={absentCount}
+          lateCount={lateCount}
+          attendancePct={attendancePct}
+          onMarkAllPresent={() => markAll("PRESENT")}
+          onMarkAllAbsent={() => markAll("ABSENT")}
+          onSaveAttendance={saveAttendance}
+          isSaving={isSaving}
+        />
       )}
 
       {/* Attendance table */}
@@ -307,7 +313,7 @@ export default function StudentAttendancePage() {
 
       {hasStudents && !isHoliday && (
         <Div type="row" justify="end">
-          <Button loading={isSaving} onClick={saveAttendance}>
+          <Button loading={isSaving} onClick={saveAttendance} variant="success">
             {STUDENT_ATTENDANCE_PAGE.save}
           </Button>
         </Div>

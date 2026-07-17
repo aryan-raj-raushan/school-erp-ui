@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
   Pencil,
   Plus,
   CheckCircle2,
@@ -14,14 +13,7 @@ import {
 } from "lucide-react";
 import { useAdmissionEnquiryDetail } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { ClassesService } from "@/services/classes.service";
-import { AdmissionSourcesService } from "@/services/admissions.service";
-import { StaffService } from "@/services/staff.service";
-import type { Class, Staff } from "@/types";
-import type {
-  AdmissionSource,
-  EnquiryAction,
-} from "@/types/admissions.types";
+import type { EnquiryAction } from "@/types/admissions.types";
 import {
   Div,
   H2,
@@ -36,10 +28,9 @@ import {
   Badge,
   Spinner,
   InfoRow,
-  Modal,
-  ModalBody,
-  ModalFooter,
   PageHeader,
+  type PageHeaderConfig,
+  type PageHeaderAction,
   Table,
   TableHead,
   TableHeadRow,
@@ -50,6 +41,7 @@ import {
   TableEmptyRow,
   ResponsiveModalContainer,
   ResponsiveSelect,
+  Span,
 } from "@/components/ui";
 import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
 import { GENDER_OPTIONS } from "@/constants";
@@ -70,20 +62,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
   const isNew = id === "create-new";
 
   const { years } = useAcademicYears();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [sources, setSources] = useState<AdmissionSource[]>([]);
-  const [teachers, setTeachers] = useState<Staff[]>([]);
   const [lockedAction, setLockedAction] = useState(false);
-
-  useEffect(() => {
-    Promise.all([
-      ClassesService.list().then((r) => setClasses(r.items)),
-      AdmissionSourcesService.list({ is_enabled: true }).then((r) =>
-        setSources(r.items),
-      ),
-      StaffService.list().then((r) => setTeachers(r.items)),
-    ]).catch(() => {});
-  }, []);
 
   const {
     enquiry,
@@ -93,6 +72,9 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
     setIsEditing,
     form,
     isTerminal,
+    classes,
+    sources,
+    teachers,
     handleSubmit,
     isSubmitting,
     showHistoryModal,
@@ -151,95 +133,76 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
     openHistoryModal();
   };
 
+  const isViewMode = !isNew && !isEditing && !!enquiry;
+  const isFormMode = isEditing || isNew;
+
+  const pageHeaderActions: PageHeaderAction[] = [
+    {
+      label: "Update Follow Up",
+      icon: <RefreshCw size={14} />,
+      variant: "outline",
+      hidden: !isViewMode || !showActionButtons,
+      onClick: () => openHistoryModalWithAction("NEXT_FOLLOW_UP_UPDATE"),
+    },
+    {
+      label: "Confirm Admission",
+      icon: <CheckCircle2 size={14} />,
+      hidden: !isViewMode || !showActionButtons,
+      onClick: () => openHistoryModalWithAction("ADMISSION_CONFIRMED"),
+    },
+    {
+      label: "Reject",
+      icon: <XCircle size={14} />,
+      variant: "destructive",
+      hidden: !isViewMode || !showActionButtons,
+      onClick: () => openHistoryModalWithAction("ENQUIRY_REJECTED"),
+    },
+    {
+      label: "Edit",
+      icon: <Pencil size={14} />,
+      hidden: !isViewMode,
+      onClick: () => setIsEditing(true),
+    },
+    {
+      label: "Cancel",
+      variant: "outline",
+      hidden: !isFormMode || isNew,
+      onClick: () => {
+        setIsEditing(false);
+        reset();
+      },
+    },
+    {
+      label: isNew ? "Create Enquiry" : "Save Changes",
+      hidden: !isFormMode,
+      loading: isSubmitting,
+      onClick: () => onFormSubmit(),
+    },
+  ];
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: isNew
+      ? "New Admission Enquiry"
+      : (enquiry?.student_name ?? "Enquiry Details"),
+    subtitle:
+      !isNew && enquiry
+        ? `Enquiry from ${new Date(enquiry.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}`
+        : undefined,
+    backButton: !isNew,
+    actions: pageHeaderActions,
+  };
+
   return (
     <Div type="col" gap="md" className="max-w-7xl">
-      <PageHeader
-        sticky
-        title={
-          isNew
-            ? "New Admission Enquiry"
-            : (enquiry?.student_name ?? "Enquiry Details")
-        }
-        subtitle={
-          !isNew && enquiry
-            ? `Enquiry from ${new Date(enquiry.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}`
-            : ""
-        }
-        actions={
-          <Div type="row" gap="sm" align="center" wrap>
-            <Button variant="outline" size="sm" onClick={() => router.back()}>
-              <ArrowLeft size={14} /> Back
-            </Button>
-            {!isNew && !isEditing && enquiry && (
-              <>
-                <Badge variant={STATUS_BADGE[enquiry.status]}>
-                  {enquiry.status.replace(/_/g, " ")}
-                </Badge>
-                {showActionButtons && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        openHistoryModalWithAction("NEXT_FOLLOW_UP_UPDATE")
-                      }
-                    >
-                      <RefreshCw size={14} />
-                      Update Follow Up
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        openHistoryModalWithAction("ADMISSION_CONFIRMED")
-                      }
-                    >
-                      <CheckCircle2 size={14} />
-                      Confirm Admission
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() =>
-                        openHistoryModalWithAction("ENQUIRY_REJECTED")
-                      }
-                    >
-                      <XCircle size={14} />
-                      Reject
-                    </Button>
-                  </>
-                )}
-                <Button size="sm" onClick={() => setIsEditing(true)}>
-                  <Pencil size={14} /> Edit
-                </Button>
-              </>
-            )}
-            {(isEditing || isNew) && (
-              <>
-                {!isNew && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setIsEditing(false);
-                      reset();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  form="enquiry-form"
-                  size="sm"
-                  loading={isSubmitting}
-                >
-                  {isNew ? "Create Enquiry" : "Save Changes"}
-                </Button>
-              </>
-            )}
-          </Div>
-        }
-      />
+      <PageHeader sticky {...pageHeaderConfig} />
+
+      {isViewMode && (
+        <Div type="row">
+          <Badge variant={STATUS_BADGE[enquiry.status]}>
+            {enquiry.status.replace(/_/g, " ")}
+          </Badge>
+        </Div>
+      )}
 
       {/* View Mode */}
       {!isEditing && !isNew && enquiry && (
@@ -717,7 +680,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     <TableCell primary>
                       <Div type="row" align="center" gap="xs">
                         {ACTION_ICON[entry.action]}
-                        <span>{entry.action.replace(/_/g, " ")}</span>
+                        <Span>{entry.action.replace(/_/g, " ")}</Span>
                       </Div>
                     </TableCell>
                     <TableCell>
@@ -744,15 +707,15 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
                     </TableCell>
                     <TableCell>
                       <Div type="col" gap="xs">
-                        <span className="font-semibold">{entry.action}</span>
+                        <Span className="font-semibold">{entry.action}</Span>
 
                         {entry.action === "NEXT_FOLLOW_UP_UPDATE" && (
                           <>
                             {entry.next_followup_date && (
                               <P className="text-sm">
-                                <span className="font-medium">
+                                <Span className="font-medium">
                                   Next Followup:
-                                </span>{" "}
+                                </Span>{" "}
                                 {new Date(
                                   entry.next_followup_date,
                                 ).toLocaleDateString("en-IN", {
@@ -775,7 +738,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
                         {entry.remarks && (
                           <P className="text-sm">
-                            <span className="font-medium">Remarks:</span>{" "}
+                            <Span className="font-medium">Remarks:</Span>{" "}
                             {entry.remarks}
                           </P>
                         )}
@@ -866,7 +829,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
             </FormField>
           </Div>
 
-          <div className="flex justify-end gap-2 px-4 py-2.5 border-t border-border/30">
+          <Div className="flex justify-end gap-2 px-4 py-2.5 border-t border-border/30">
             <Button
               type="button"
               variant="outline"
@@ -877,7 +840,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
             <Button type="submit" loading={isHistorySubmitting}>
               Add Entry
             </Button>
-          </div>
+          </Div>
         </form>
       </ResponsiveModalContainer>
     </Div>

@@ -6,6 +6,7 @@ export const STORAGE_FILTER_KEYS = {
   PARENTS: `${PREFIX}:parents`,
   ADMISSIONS: `${PREFIX}:admissions`,
   ATTENDANCE: `${PREFIX}:attendance`,
+  GATE_PASS: `${PREFIX}:gate-pass`,
   FEE_PAYMENTS: `${PREFIX}:fee-payments`,
   EXAMS: `${PREFIX}:exams`,
   HOMEWORK: `${PREFIX}:homework`,

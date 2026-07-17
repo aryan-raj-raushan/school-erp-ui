@@ -70,7 +70,7 @@ export function PageHeader({
       gap="sm"
       className={cn(
         "pt-4",
-        sticky && "sticky top-0 z-20  bg-background/95 backdrop-blur-sm",
+        sticky && "sticky top-0 z-20  bg-background/95  backdrop-blur-sm",
       )}
     >
       <Div type="row" align="center" gap="sm" className="min-w-0">
