@@ -154,13 +154,13 @@ export default function ParentsPage() {
   const pageHeaderConfig: PageHeaderConfig = {
     title: "Parents & Guardians",
     subtitle: `${pagination.total} guardian records`,
-    actions: [
-      {
-        label: "Add Guardian",
-        icon: <Plus size={14} />,
-        onClick: openModal,
-      },
-    ],
+    // actions: [
+    //   {
+    //     label: "Add Guardian",
+    //     icon: <Plus size={14} />,
+    //     onClick: openModal,
+    //   },
+    // ],
   };
 
   const columns = useMemo<ColumnDef<GuardianRow>[]>(
