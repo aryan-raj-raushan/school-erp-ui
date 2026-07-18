@@ -1,4 +1,4 @@
-package com.schoolerp.app;
+package com.myesathi.app;
 
 import com.getcapacitor.BridgeActivity;
 

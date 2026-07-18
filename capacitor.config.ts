@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.schoolerp.app',
+  appId: 'com.myesathi.app',
   appName: 'School ERP',
   webDir: 'out',
   server: {
