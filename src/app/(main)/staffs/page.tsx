@@ -55,7 +55,7 @@ function StaffsPageContent() {
     bulkImport,
     downloadTemplate,
     isAdmin,
-    systemRoles,
+    roles,
   } = useStaffsPage();
 
   const {
@@ -111,13 +111,13 @@ function StaffsPageContent() {
         key: 'role',
         label: 'Role',
         placeholder: 'All Roles',
-        options: systemRoles.map((r) => ({
+        options: roles.map((r) => ({
           value: r.name.toUpperCase().replace(/ /g, '_'),
           label: r.name,
         })),
       },
     ],
-    [systemRoles],
+    [roles],
   );
 
   const filterValues: Record<string, string | undefined> = {

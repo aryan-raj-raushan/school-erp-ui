@@ -216,8 +216,7 @@ export function useStaffDetail(id: string | undefined) {
     if (staff) resetFormFromStaff(staff);
   }
 
-  const systemRoles = allRoles.filter((r) => r.is_system);
-  const customRoles = allRoles.filter((r) => !r.is_system);
+  const roles = allRoles.filter((r) => r.is_active);
 
   const fullName = staff ? `${staff.first_name ?? ''} ${staff.last_name ?? ''}`.trim() : 'New Employee';
   const reportingToName = (() => {
@@ -230,7 +229,7 @@ export function useStaffDetail(id: string | undefined) {
     form, isLoadingData,
     profileImageUrl, isUploadingImage, imageInputRef, onImageChange, handleNativeImagePick,
     isNative,
-    systemRoles, staffMembers,
+    roles, staffMembers,
     fullName, reportingToName,
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(onSubmit),

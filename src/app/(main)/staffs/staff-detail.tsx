@@ -35,7 +35,7 @@ export function StaffDetail({ id }: { id: string }) {
     isUploadingImage,
     imageInputRef,
     onImageChange,
-    systemRoles,
+    roles,
     staffMembers,
     fullName,
     reportingToName,
@@ -124,7 +124,7 @@ export function StaffDetail({ id }: { id: string }) {
                 <H2>{fullName}</H2>
                 <Badge variant="info">
                   {staff?.role
-                    ? systemRoles.find(
+                    ? roles.find(
                         (r) =>
                           r.name.toUpperCase().replace(/ /g, "_") === staff.role
                       )?.name ?? staff.role
@@ -211,7 +211,7 @@ export function StaffDetail({ id }: { id: string }) {
                 label="Role"
                 value={
                   staff?.role
-                    ? systemRoles.find(
+                    ? roles.find(
                         (r) =>
                           r.name.toUpperCase().replace(/ /g, "_") === staff.role
                       )?.name ?? staff.role
@@ -391,7 +391,7 @@ export function StaffDetail({ id }: { id: string }) {
                   <ResponsiveSelect
                     {...form.register("role")}
                     customPlaceholder="Select role"
-                    options={systemRoles.map((r) => ({
+                    options={roles.map((r) => ({
                       value: r.name.toUpperCase().replace(/ /g, "_"),
                       label: r.name,
                     }))}

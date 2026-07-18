@@ -20,7 +20,7 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const [filters, setFilters] = useState<StaffFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
-  const [systemRoles, setSystemRoles] = useState<ApiRole[]>([]);
+  const [roles, setRoles] = useState<ApiRole[]>([]);
   const [bulkJob, setBulkJob] = useState<BulkImportJob | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const bulkFileRef = useRef<HTMLInputElement>(null);
@@ -161,7 +161,7 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
 
   useEffect(() => {
     RolesService.list({ limit: 100 })
-      .then((res) => setSystemRoles(res.items.filter((r) => r.is_system)))
+      .then((res) => setRoles(res.items.filter((r) => r.is_active)))
       .catch(() => {});
   }, []);
 
@@ -193,6 +193,6 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     checkBulkStatus,
     downloadTemplate,
     isAdmin,
-    systemRoles,
+    roles,
   };
 }
