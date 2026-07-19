@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { SchoolsService, type SchoolFilters, type CreateSchoolPayload, type UpdateSchoolPayload } from '@/services/schools.service';
 import { AuthService } from '@/services/auth.service';
-import { AuthContext } from '@/lib/api-gateway/token.storage';
+import { AuthContext, TokenStorage } from '@/lib/api-gateway/token.storage';
+import { ImpersonationStorage } from '@/lib/impersonation.storage';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/constants';
 import {
@@ -27,12 +28,12 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
 
-  const { setAuth } = useAuthStore();
+  const { setAuth, setPermissions } = useAuthStore();
   const router = useRouter();
 
   const createForm = useForm<CreateSchoolFormValues>({
     resolver: zodResolver(createSchoolSchema),
-    defaultValues: { dial_code: '+91' },
+    defaultValues: { dial_code: '+91', admin_dial_code: '+91' },
   });
 
   const editForm = useForm<UpdateSchoolFormValues>({
@@ -64,6 +65,11 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.state && { state: values.state }),
       ...(values.pincode && { pincode: values.pincode }),
       ...(values.board_type && { board_type: values.board_type }),
+      ...(values.admin_first_name && { admin_first_name: values.admin_first_name }),
+      ...(values.admin_last_name && { admin_last_name: values.admin_last_name }),
+      ...(values.admin_phone && { admin_phone: values.admin_phone, admin_dial_code: values.admin_dial_code }),
+      ...(values.admin_email && { admin_email: values.admin_email }),
+      ...(values.admin_password && { admin_password: values.admin_password }),
     };
     try {
       const school = await SchoolsService.create(payload);
@@ -115,11 +121,25 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   async function loginAsSchool(school: School) {
     setSwitchingId(school.id);
     try {
+      const origin = useAuthStore.getState();
+      const originAccessToken = TokenStorage.getAccessToken();
+      const originRefreshToken = TokenStorage.getRefreshToken();
+      if (originAccessToken && originRefreshToken && origin.user && origin.context) {
+        ImpersonationStorage.stash({
+          accessToken: originAccessToken,
+          refreshToken: originRefreshToken,
+          user: origin.user,
+          context: origin.context,
+          permissions: origin.permissions,
+        });
+      }
+
       const result = await AuthService.switchSchool(school.id);
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.SCHOOL);
+      setPermissions(profile.permissions ?? []);
       void result;
-      router.replace(ROUTES.schoolDashboard);
+      router.replace(`${ROUTES.schoolDashboard}?impersonating=1`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to switch school');
     } finally {
@@ -128,7 +148,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   }
 
   function openCreateModal() {
-    createForm.reset({ dial_code: '+91' });
+    createForm.reset({ dial_code: '+91', admin_dial_code: '+91' });
     setShowCreateModal(true);
   }
 

@@ -29,9 +29,17 @@ export interface CreateSchoolPayload {
   pincode?: string;
   website?: string;
   board_type?: BoardType;
+  admin_first_name?: string;
+  admin_last_name?: string;
+  admin_dial_code?: string;
+  admin_phone?: string;
+  admin_email?: string;
+  admin_password?: string;
 }
 
-export interface UpdateSchoolPayload extends Partial<CreateSchoolPayload> {}
+export type UpdateSchoolPayload = Partial<
+  Omit<CreateSchoolPayload, 'admin_first_name' | 'admin_last_name' | 'admin_dial_code' | 'admin_phone' | 'admin_email' | 'admin_password'>
+>;
 
 export const SchoolsService = {
   async list(filters: SchoolFilters = {}): Promise<PaginatedSchools> {

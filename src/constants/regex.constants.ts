@@ -13,4 +13,6 @@ export const REGEX = {
   dialCodeStrict: /^\+[1-9]\d{0,3}$/,
   /** Backend-enforced 12-digit Aadhaar number */
   aadhaar: /^\d{12}$/,
+  /** Digits only, no length constraint (e.g. to detect phone-style input while typing) */
+  digitsOnly: /^\d+$/,
 } as const;

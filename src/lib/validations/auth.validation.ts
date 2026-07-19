@@ -33,7 +33,7 @@ export type CompanyLoginFormValues = z.infer<typeof companyLoginSchema>;
 export type SchoolLoginFormValues = z.infer<typeof schoolLoginSchema>;
 export type UnifiedLoginFormValues = z.infer<typeof unifiedLoginSchema>;
 
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+export const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export const schoolSignupSchema = z.object({
   school_name: z.string().min(1, 'School name is required'),
@@ -67,5 +67,20 @@ export const setupPasswordSchema = z
     path: ['confirm_password'],
   });
 
+export const changePasswordSchema = z
+  .object({
+    change_token: z.string().min(1, 'Change token is required'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(strongPasswordRegex, 'Password must include uppercase, lowercase, number and special character'),
+    confirm_password: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: 'Passwords do not match',
+    path: ['confirm_password'],
+  });
+
 export type SchoolSignupFormValues = z.infer<typeof schoolSignupSchema>;
 export type SetupPasswordFormValues = z.infer<typeof setupPasswordSchema>;
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

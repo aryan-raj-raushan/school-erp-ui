@@ -26,6 +26,7 @@ export const CREATE_SCHOOL_FORM = {
     basic: 'Basic Info',
     contact: 'Contact',
     location: 'Location',
+    admin: 'School Admin Account',
   },
   labels: {
     name: 'School Name',
@@ -39,6 +40,11 @@ export const CREATE_SCHOOL_FORM = {
     city: 'City',
     state: 'State',
     pincode: 'Pincode',
+    admin_first_name: 'First Name',
+    admin_last_name: 'Last Name',
+    admin_phone: 'Phone Number',
+    admin_email: 'Email',
+    admin_password: 'Initial Password',
   },
   placeholders: {
     name: 'Sunrise Academy',
@@ -52,7 +58,13 @@ export const CREATE_SCHOOL_FORM = {
     state: 'Maharashtra',
     pincode: '400001',
     board_type: 'Select board type',
+    admin_first_name: 'Ramesh',
+    admin_last_name: 'Kumar',
+    admin_phone: '9876543210',
+    admin_email: 'admin@school.edu.in',
+    admin_password: 'Admin@1234',
   },
+  adminHint: 'Optional — set an initial password so the admin can log in immediately. They must change it on first login.',
   submit: {
     idle: 'Create School',
     loading: 'Creating…',

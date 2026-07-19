@@ -8,7 +8,7 @@ import { unifiedLoginSchema, type UnifiedLoginFormValues } from '@/lib/validatio
 import { useAuth } from './useAuth';
 
 export function useLoginPage() {
-  const { loginCompany, loginSchool, isLoading } = useAuth();
+  const { loginUnified, isLoading } = useAuth();
 
   const form = useForm<UnifiedLoginFormValues>({
     resolver: zodResolver(unifiedLoginSchema),
@@ -16,19 +16,20 @@ export function useLoginPage() {
   });
 
   const identifier = form.watch('identifier');
-  const isPhone = !identifier.trim().includes('@');
+  const trimmedIdentifier = identifier.trim();
+  // Digits-only means the user is entering a phone number; anything else
+  // (letters, @, .) means they're typing an email, even mid-entry.
+  const isPhone = trimmedIdentifier.length > 0 && REGEX.digitsOnly.test(trimmedIdentifier);
 
   async function onSubmit(values: UnifiedLoginFormValues) {
     try {
-      if (REGEX.email.test(values.identifier.trim())) {
-        await loginCompany({ email: values.identifier.trim().toLowerCase(), password: values.password });
-      } else {
-        await loginSchool({
-          phone_number: values.identifier.trim(),
-          dial_code: values.dial_code ?? '+91',
-          password: values.password,
-        });
-      }
+      // Unified endpoint resolves company vs school users itself (by identifier),
+      // and handles email OR phone for school users — see AuthService.loginUnified.
+      await loginUnified({
+        identifier: values.identifier.trim(),
+        dial_code: values.dial_code ?? '+91',
+        password: values.password,
+      });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Login failed');
     }

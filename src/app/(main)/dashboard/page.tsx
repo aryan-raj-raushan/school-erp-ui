@@ -42,6 +42,8 @@ import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuthStore } from "@/store/auth.store";
 import { ROUTES } from "@/constants";
+import { AuthContext } from "@/types";
+import { SuperAdminDashboard } from "./SuperAdminDashboard";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -474,7 +476,12 @@ function UpcomingList({ title, items, emptyText }: { title: string; items: { id:
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const context = useAuthStore((s) => s.context);
   const { data, isLoading, error } = useDashboard();
+
+  if (context === AuthContext.COMPANY) {
+    return <SuperAdminDashboard />;
+  }
 
   const firstName = user?.first_name ?? "";
   const academicYear = data?.currentAcademicYear?.name ?? "—";

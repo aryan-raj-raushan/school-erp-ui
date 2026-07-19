@@ -4,7 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants';
 import { AuthContext } from '@/types';
-import { AuthService, type LoginCompanyPayload, type LoginSchoolPayload, type SchoolSignupPayload } from '@/services/auth.service';
+import {
+  AuthService,
+  type LoginCompanyPayload,
+  type LoginSchoolPayload,
+  type LoginUnifiedPayload,
+  type SchoolSignupPayload,
+} from '@/services/auth.service';
+import { TokenStorage } from '@/lib/api-gateway/token.storage';
+import { ImpersonationStorage } from '@/lib/impersonation.storage';
 import { useAuthStore } from '@/store/auth.store';
 
 export function useAuth() {
@@ -55,6 +63,35 @@ export function useAuth() {
     }
   }
 
+  async function loginUnified(payload: LoginUnifiedPayload) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await AuthService.loginUnified(payload);
+
+      if ('needs_password_setup' in result) {
+        router.replace(`${ROUTES.setupPassword}?token=${result.setup_token}`);
+        return result;
+      }
+      if ('must_change_password' in result) {
+        router.replace(`${ROUTES.changePassword}?token=${result.change_token}`);
+        return result;
+      }
+
+      const profile = await AuthService.getMe();
+      setAuth(profile, result.user.context);
+      hydratePermissions(profile);
+      router.replace(result.user.context === AuthContext.COMPANY ? ROUTES.dashboard : ROUTES.schoolDashboard);
+      return result;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function switchSchool(schoolId: string) {
     setIsLoading(true);
     setError(null);
@@ -74,6 +111,19 @@ export function useAuth() {
   }
 
   async function logout() {
+    // Exiting an impersonated School Admin session restores the Super Admin's own
+    // session (still valid — switching schools never touched it) instead of a real
+    // logout. A real logout only happens when there's no impersonation to unwind.
+    const origin = ImpersonationStorage.read();
+    if (origin) {
+      ImpersonationStorage.clear();
+      TokenStorage.save({ accessToken: origin.accessToken, refreshToken: origin.refreshToken }, origin.context);
+      setAuth(origin.user, origin.context);
+      setPermissions(origin.permissions);
+      router.replace(ROUTES.dashboard);
+      return;
+    }
+
     setIsLoading(true);
     try {
       await AuthService.logout();
@@ -102,5 +152,5 @@ export function useAuth() {
     }
   }
 
-  return { loginCompany, loginSchool, switchSchool, logout, signup, isLoading, error };
+  return { loginCompany, loginSchool, loginUnified, switchSchool, logout, signup, isLoading, error };
 }

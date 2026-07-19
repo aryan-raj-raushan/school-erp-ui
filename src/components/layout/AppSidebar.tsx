@@ -10,24 +10,27 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { NavMain } from "./NavMain";
 import { NavSecondary } from "./NavSecondary";
 import {
-  APP_NAV_MAIN,
-  APP_NAV_SECONDARY,
+  SCHOOL_NAV_MAIN,
+  SCHOOL_NAV_SECONDARY,
+  SUPER_ADMIN_NAV_MAIN,
+  SUPER_ADMIN_NAV_SECONDARY,
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
+import { AuthContext } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
 import { useSchoolBrandStore } from "@/store/school.store";
 import { SchoolProfileService } from "@/services/school-profile.service";
 import { Capacitor } from "@capacitor/core";
 
 // Add titles here as mobile screens are built out
-const MOBILE_ENABLED_NAV = ["Dashboard", "Teams"];
+const MOBILE_ENABLED_NAV = ["Dashboard", "Teams", "Super Admin Dashboard"];
 
 const EXPANDED_W = 272;
 const ICON_W = 76;
 const SPRING = { type: "spring" as const, stiffness: 280, damping: 26, mass: 0.9 };
 
-type NavItem = (typeof APP_NAV_MAIN)[number];
-type SecondaryItem = (typeof APP_NAV_SECONDARY)[number];
+type NavItem = (typeof SCHOOL_NAV_MAIN)[number];
+type SecondaryItem = (typeof SCHOOL_NAV_SECONDARY)[number];
 
 interface SidebarPanelProps {
   isCollapsed: boolean;
@@ -190,11 +193,18 @@ function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps)
 export function AppSidebar() {
   const { state, isMobile, openMobile, setOpenMobile } = useSidebar();
   const user = useAuthStore((s) => s.user);
+  const context = useAuthStore((s) => s.context);
   const permissions = useAuthStore((s) => s.permissions);
   const isCollapsed = state === "collapsed";
   const isNative = Capacitor.isNativePlatform();
+  const isSuperAdmin = context === AuthContext.COMPANY;
 
-  const navMain = APP_NAV_MAIN
+  const navMainSource: NavItem[] = isSuperAdmin ? SUPER_ADMIN_NAV_MAIN : SCHOOL_NAV_MAIN;
+  const navSecondarySource: SecondaryItem[] = isSuperAdmin
+    ? SUPER_ADMIN_NAV_SECONDARY
+    : SCHOOL_NAV_SECONDARY;
+
+  const navMain = navMainSource
     .map((item) => {
       if (!item.items?.length) return item;
       const visibleItems = item.items.filter(
@@ -212,7 +222,7 @@ export function AppSidebar() {
 
   const navSecondary = isNative
     ? []
-    : APP_NAV_SECONDARY.filter(
+    : navSecondarySource.filter(
         (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
       );
 

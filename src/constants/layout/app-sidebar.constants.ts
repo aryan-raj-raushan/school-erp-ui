@@ -25,7 +25,6 @@ import {
   ScrollText,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
-import { Role } from "@/types";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
 
 export const APP_NAV_USER = {
@@ -34,9 +33,44 @@ export const APP_NAV_USER = {
   avatar: "/avatars/shadcn.jpg",
 };
 
-const SUPER_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
+/* ---------------------------------------------------
+Super Admin — dedicated sidebar, no School Admin modules
+--------------------------------------------------- */
+export const SUPER_ADMIN_NAV_MAIN: NavItemConfig[] = [
+  {
+    title: "Super Admin Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Schools",
+    url: "/schools",
+    icon: Building2,
+  },
+  {
+    title: "Subscriptions",
+    url: "/subscriptions",
+    icon: CircleDollarSign,
+  },
+];
 
-export const APP_NAV_MAIN: NavItemConfig[] = [
+export const SUPER_ADMIN_NAV_SECONDARY: NavItemConfig[] = [
+  {
+    title: "Appearance",
+    url: "/appearance",
+    icon: Palette,
+  },
+  {
+    title: "Get Help",
+    url: "/help",
+    icon: CircleHelp,
+  },
+];
+
+/* ---------------------------------------------------
+School Admin & staff — full operational sidebar
+--------------------------------------------------- */
+export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
   /* ---------------------------------------------------
   Shared — visible to all authenticated school users
   --------------------------------------------------- */
@@ -490,25 +524,9 @@ export const APP_NAV_MAIN: NavItemConfig[] = [
     url: "/rfid-setup",
     icon: Wifi,
   },
-
-  /* ---------------------------------------------------
-  Super admin only
-  --------------------------------------------------- */
-  {
-    title: "Schools",
-    url: "/schools",
-    icon: Building2,
-    roles: SUPER_ROLES,
-  },
-  {
-    title: "Subscriptions",
-    url: "/subscriptions",
-    icon: CircleDollarSign,
-    roles: SUPER_ROLES,
-  },
 ];
 
-export const APP_NAV_SECONDARY: NavItemConfig[] = [
+export const SCHOOL_NAV_SECONDARY: NavItemConfig[] = [
   {
     title: "Appearance",
     url: "/appearance",

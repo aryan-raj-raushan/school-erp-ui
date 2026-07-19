@@ -189,6 +189,30 @@ export default function SchoolsPage() {
                     </FormField>
                   </Div>
                 </Div>
+                <Div type="col" gap="md">
+                  <P color="muted">{CREATE_SCHOOL_FORM.sections.admin}</P>
+                  <P color="muted" className="text-xs">{CREATE_SCHOOL_FORM.adminHint}</P>
+                  <Div type="grid" cols={2} gap="md">
+                    <FormField label={CREATE_SCHOOL_FORM.labels.admin_first_name} error={createForm.formState.errors.admin_first_name?.message}>
+                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.admin_first_name} {...createForm.register('admin_first_name')} />
+                    </FormField>
+                    <FormField label={CREATE_SCHOOL_FORM.labels.admin_last_name}>
+                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.admin_last_name} {...createForm.register('admin_last_name')} />
+                    </FormField>
+                  </Div>
+                  <FormField label={CREATE_SCHOOL_FORM.labels.admin_email} error={createForm.formState.errors.admin_email?.message}>
+                    <Input type="email" placeholder={CREATE_SCHOOL_FORM.placeholders.admin_email} {...createForm.register('admin_email')} />
+                  </FormField>
+                  <PhoneField
+                    label={CREATE_SCHOOL_FORM.labels.admin_phone}
+                    dialCodeProps={createForm.register('admin_dial_code')}
+                    phoneProps={createForm.register('admin_phone')}
+                    phoneError={createForm.formState.errors.admin_phone?.message}
+                  />
+                  <FormField label={CREATE_SCHOOL_FORM.labels.admin_password} error={createForm.formState.errors.admin_password?.message}>
+                    <Input type="password" placeholder={CREATE_SCHOOL_FORM.placeholders.admin_password} {...createForm.register('admin_password')} />
+                  </FormField>
+                </Div>
               </Div>
             </div>
             <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
