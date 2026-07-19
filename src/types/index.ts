@@ -5,6 +5,9 @@ import type { AxiosRequestConfig } from 'axios';
 export const Role = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
+  SUPPORT: 'SUPPORT',
+  SALES: 'SALES',
+  OPERATOR: 'OPERATOR',
   SCHOOL_ADMIN: 'SCHOOL_ADMIN',
   TEACHER: 'TEACHER',
   PARENT: 'PARENT',
@@ -76,6 +79,9 @@ export interface School {
   principal_phone?: string | null;
   is_active: boolean;
   deleted: boolean;
+  restriction_level: RestrictionMode;
+  restriction_applied_at?: string | null;
+  restriction_reason?: string | null;
   created_at: string;
   updated_at?: string | null;
   created_by?: string;
@@ -807,30 +813,161 @@ export interface StudentLeaveRequest {
 
 // ─── Subscription ─────────────────────────────────────────────────────────────
 
-export type SubscriptionStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'CANCELLED' | 'EXPIRED';
-export type PlanType = 'MONTHLY' | 'ANNUAL' | 'LIFETIME' | 'TRIAL';
+export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING' | 'TRIAL';
+export type PlanType = 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'ANNUAL' | 'CUSTOM';
+export type BillingModel = 'PER_STUDENT' | 'FLAT';
+export type RestrictionMode = 'NONE' | 'SOFT' | 'PARTIAL' | 'COMPLETE';
+export type PaymentMethod = 'RAZORPAY' | 'STRIPE' | 'BANK_TRANSFER' | 'QR_CODE' | 'CHEQUE' | 'CASH' | 'OTHER';
 
 export interface Subscription {
   id: string;
   school_id: string;
+  plan_id?: string | null;
   plan_name: string;
   plan_type: PlanType;
   status: SubscriptionStatus;
-  amount: string;
+  billing_model: BillingModel;
+  amount?: string | null;
+  price_per_student?: string | null;
   currency: string;
   max_students?: number | null;
   max_staff?: number | null;
   features?: string[] | null;
   start_date?: string | null;
   end_date?: string | null;
+  next_billing_date?: string | null;
   trial_end_date?: string | null;
   is_trial: boolean;
   auto_renew: boolean;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;
+  grace_period_days: number;
+  restriction_mode: RestrictionMode;
+  restricted_resources: string[];
+  payment_methods_allowed: PaymentMethod[];
   created_at: string;
   updated_at?: string | null;
   created_by?: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  billing_model: BillingModel;
+  flat_amount?: string | null;
+  price_per_student?: string | null;
+  billing_cycle: PlanType;
+  is_active: boolean;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// ─── Invoices & one-time charges ────────────────────────────────────────────────
+
+export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'VOID';
+export type InvoiceLineType = 'SUBSCRIPTION' | 'ONE_TIME_CHARGE';
+export type OneTimeChargeType = 'RFID_DEVICE' | 'RFID_INSTALLATION' | 'SETUP' | 'TRAINING' | 'SUPPORT' | 'OTHER';
+
+export interface InvoiceLineItem {
+  id: string;
+  invoice_id: string;
+  description: string;
+  quantity: number;
+  unit_price: string;
+  amount: string;
+  line_type: InvoiceLineType;
+  created_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  school_id: string;
+  subscription_id?: string | null;
+  billing_period_start?: string | null;
+  billing_period_end?: string | null;
+  student_count_snapshot?: number | null;
+  subtotal: string;
+  tax_amount: string;
+  discount_amount: string;
+  total_amount: string;
+  amount_paid: string;
+  status: InvoiceStatus;
+  due_date: string;
+  issued_at: string;
+  paid_at?: string | null;
+  notes?: string | null;
+  pdf_url?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface InvoiceWithLineItems extends Invoice {
+  line_items: InvoiceLineItem[];
+}
+
+export type InvoicePaymentStatus = 'PENDING' | 'PENDING_VERIFICATION' | 'SUCCESS' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+
+export interface InvoicePayment {
+  id: string;
+  school_id: string;
+  subscription_id?: string | null;
+  invoice_id?: string | null;
+  amount: string;
+  currency: string;
+  status: InvoicePaymentStatus;
+  payment_method?: PaymentMethod | null;
+  gateway_payment_id?: string | null;
+  gateway_order_id?: string | null;
+  proof_url?: string | null;
+  verified_by?: string | null;
+  approved_at?: string | null;
+  rejected_reason?: string | null;
+  notes?: string | null;
+  paid_at?: string | null;
+  is_manual: boolean;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface RazorpayOrder {
+  order_id: string;
+  amount: number;
+  currency: string;
+  key_id: string;
+}
+
+// ─── RFID Inventory ─────────────────────────────────────────────────────────
+
+export type RfidDeviceStatus = 'IN_STOCK' | 'ASSIGNED' | 'INSTALLED' | 'MAINTENANCE' | 'RETURNED' | 'RETIRED';
+
+export interface RfidDevice {
+  id: string;
+  device_identifier: string;
+  device_model?: string | null;
+  purchase_date?: string | null;
+  status: RfidDeviceStatus;
+  assigned_school_id?: string | null;
+  installation_date?: string | null;
+  warranty_expiry?: string | null;
+  notes?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface OneTimeCharge {
+  id: string;
+  school_id: string;
+  subscription_id?: string | null;
+  charge_type: OneTimeChargeType;
+  description?: string | null;
+  amount: string;
+  status: 'PENDING' | 'INVOICED';
+  created_by?: string | null;
+  created_at: string;
 }
 
 // ─── API Gateway types ─────────────────────────────────────────────────────────

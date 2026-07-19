@@ -270,6 +270,30 @@ export function useStudentDetail(id?: string) {
     }
   }
 
+  function onInvalid(formErrors: typeof form.formState.errors) {
+    const messages = new Set<string>();
+    const seen = new WeakSet<object>();
+    const collect = (node: unknown): void => {
+      if (!node || typeof node !== "object") return;
+      if (seen.has(node)) return;
+      seen.add(node);
+      const maybeMessage = (node as { message?: unknown }).message;
+      if (typeof maybeMessage === "string") messages.add(maybeMessage);
+      for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+        if (key === "ref") continue;
+        if (value && typeof value === "object") collect(value);
+      }
+    };
+    collect(formErrors);
+
+    console.error("Student form validation failed:", formErrors);
+    toast.error(
+      messages.size > 0
+        ? `Please fix: ${Array.from(messages).slice(0, 3).join(", ")}${messages.size > 3 ? ` (+${messages.size - 3} more)` : ""}`
+        : "Please fix the highlighted fields before saving",
+    );
+  }
+
   async function handleSubmit(values: StudentFormValues) {
     try {
       // Clean up empty strings to undefined
@@ -294,6 +318,9 @@ export function useStudentDetail(id?: string) {
 
       if (isNew) {
         const created = await StudentsService.create(payload as any);
+        if (!created?.student?.id) {
+          throw new Error("Server did not return the created student — please try again.");
+        }
         const pendingFile = (imageInputRef as any)._pendingFile as File | undefined;
         if (pendingFile) {
           await handleImageUpload(pendingFile, created.student.id);
@@ -307,6 +334,7 @@ export function useStudentDetail(id?: string) {
         setIsEditing(false);
       }
     } catch (err: unknown) {
+      console.error("Student save failed:", err);
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }
@@ -362,7 +390,7 @@ export function useStudentDetail(id?: string) {
     onImageChange,
     handleNativeImagePick,
     isNative,
-    handleSubmit: form.handleSubmit(handleSubmit),
+    handleSubmit: form.handleSubmit(handleSubmit, onInvalid),
     isSubmitting: form.formState.isSubmitting,
     handleDocumentUpload,
     deleteDocument,

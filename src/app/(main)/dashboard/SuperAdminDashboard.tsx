@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Building2, CircleDollarSign, CheckCircle2, PlusCircle } from "lucide-react";
+import { Building2, CircleDollarSign, CheckCircle2, PlusCircle, AlertTriangle } from "lucide-react";
 
 import { Div } from "@/components/ui/layout";
 import { H1, H2, P, SectionLabel } from "@/components/ui/typography";
@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth.store";
 import { SchoolsService } from "@/services/schools.service";
 import { SubscriptionsService } from "@/services/subscriptions.service";
+import { InvoicesService } from "@/services/invoices.service";
 import { ROUTES } from "@/constants";
+import { Role } from "@/types";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -48,14 +50,35 @@ function KpiCard({ label, value, sub, icon: Icon, accent, onClick }: KpiCardProp
   );
 }
 
+const COPY: Record<string, { label: string; title: string; description: string }> = {
+  [Role.SALES]: {
+    label: "Sales Executive",
+    title: "My Schools",
+    description: "Track your assigned schools and their billing status.",
+  },
+  [Role.OPERATOR]: {
+    label: "Operator",
+    title: "Payment Verification",
+    description: "Review pending payments and school billing status.",
+  },
+};
+const DEFAULT_COPY = {
+  label: "Super Admin",
+  title: "Platform Overview",
+  description: "Manage schools and subscriptions across the platform.",
+};
+
 export function SuperAdminDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isSuperAdmin = user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN;
+  const copy = (user?.role && COPY[user.role]) || DEFAULT_COPY;
+
   const [counts, setCounts] = React.useState<{
     totalSchools: number;
     activeSchools: number;
-    totalSubscriptions: number;
     activeSubscriptions: number;
+    overdueInvoices: number;
   } | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -64,16 +87,16 @@ export function SuperAdminDashboard() {
     Promise.all([
       SchoolsService.list({ limit: 1 }),
       SchoolsService.list({ limit: 1, is_active: true }),
-      SubscriptionsService.list({ limit: 1 }),
       SubscriptionsService.list({ limit: 1, status: "ACTIVE" }),
+      InvoicesService.list({ limit: 1, status: "OVERDUE" }),
     ])
-      .then(([schools, activeSchools, subscriptions, activeSubscriptions]) => {
+      .then(([schools, activeSchools, activeSubscriptions, overdueInvoices]) => {
         if (cancelled) return;
         setCounts({
           totalSchools: schools.pagination.total,
           activeSchools: activeSchools.pagination.total,
-          totalSubscriptions: subscriptions.pagination.total,
           activeSubscriptions: activeSubscriptions.pagination.total,
+          overdueInvoices: overdueInvoices.pagination.total,
         });
       })
       .finally(() => {
@@ -104,9 +127,9 @@ export function SuperAdminDashboard() {
             <Building2 size={24} />
           </Div>
           <Div type="col" gap="xs">
-            <SectionLabel>Super Admin</SectionLabel>
-            <H2 className="text-xl font-bold">Platform Overview</H2>
-            <P color="muted" className="hidden sm:block">Manage schools and subscriptions across the platform.</P>
+            <SectionLabel>{copy.label}</SectionLabel>
+            <H2 className="text-xl font-bold">{copy.title}</H2>
+            <P color="muted" className="hidden sm:block">{copy.description}</P>
           </Div>
         </Div>
       </Div>
@@ -115,7 +138,7 @@ export function SuperAdminDashboard() {
         <KpiCard
           label="Total Schools"
           value={isLoading ? "…" : fmt(counts?.totalSchools ?? 0)}
-          sub="All registered schools"
+          sub={isSuperAdmin ? "All registered schools" : "Schools assigned to you"}
           icon={Building2}
           accent="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400"
           onClick={() => router.push(ROUTES.schools)}
@@ -129,14 +152,6 @@ export function SuperAdminDashboard() {
           onClick={() => router.push(ROUTES.schools)}
         />
         <KpiCard
-          label="Total Subscriptions"
-          value={isLoading ? "…" : fmt(counts?.totalSubscriptions ?? 0)}
-          sub="All plans issued"
-          icon={CircleDollarSign}
-          accent="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
-          onClick={() => router.push(ROUTES.subscriptions)}
-        />
-        <KpiCard
           label="Active Subscriptions"
           value={isLoading ? "…" : fmt(counts?.activeSubscriptions ?? 0)}
           sub="Currently billing"
@@ -144,16 +159,29 @@ export function SuperAdminDashboard() {
           accent="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
           onClick={() => router.push(ROUTES.subscriptions)}
         />
+        <KpiCard
+          label="Overdue Invoices"
+          value={isLoading ? "…" : fmt(counts?.overdueInvoices ?? 0)}
+          sub="Need follow-up"
+          icon={AlertTriangle}
+          accent="bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400"
+          onClick={() => router.push("/billing")}
+        />
       </Div>
 
       <Div type="col" gap="sm">
         <SectionLabel>Quick Actions</SectionLabel>
         <Div type="row" gap="sm" className="flex-col sm:flex-row">
-          <Button onClick={() => router.push(ROUTES.schools)}>
-            <PlusCircle size={16} /> Add School
-          </Button>
+          {isSuperAdmin && (
+            <Button onClick={() => router.push(ROUTES.schools)}>
+              <PlusCircle size={16} /> Add School
+            </Button>
+          )}
           <Button variant="outline" onClick={() => router.push(ROUTES.subscriptions)}>
             View Subscriptions
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/billing")}>
+            View Billing
           </Button>
         </Div>
       </Div>

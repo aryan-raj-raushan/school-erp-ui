@@ -1,6 +1,6 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { Subscription, PaginationMeta, PlanType } from '@/types';
+import type { Subscription, PaginationMeta, PlanType, BillingModel, RestrictionMode } from '@/types';
 
 export interface SubscriptionFilters {
   page?: number;
@@ -11,9 +11,12 @@ export interface SubscriptionFilters {
 
 export interface CreateSubscriptionPayload {
   school_id: string;
-  plan_name: string;
-  plan_type: PlanType;
-  amount: number;
+  plan_id?: string;
+  plan_name?: string;
+  plan_type?: PlanType;
+  billing_model?: BillingModel;
+  amount?: number;
+  price_per_student?: number;
   currency?: string;
   max_students?: number;
   max_staff?: number;
@@ -21,9 +24,13 @@ export interface CreateSubscriptionPayload {
   end_date?: string;
   is_trial?: boolean;
   auto_renew?: boolean;
+  grace_period_days?: number;
+  restriction_mode?: RestrictionMode;
+  restricted_resources?: string[];
+  payment_methods_allowed?: string[];
 }
 
-export interface UpdateSubscriptionPayload extends Partial<CreateSubscriptionPayload> {}
+export type UpdateSubscriptionPayload = Partial<CreateSubscriptionPayload>;
 
 export const SubscriptionsService = {
   async list(filters: SubscriptionFilters = {}): Promise<{ items: Subscription[]; pagination: PaginationMeta }> {

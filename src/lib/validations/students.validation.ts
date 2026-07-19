@@ -64,7 +64,7 @@ export const studentParentSchema = z.object({
   qualification: z.enum([
     'BELOW_10TH', 'CLASS_10TH', 'CLASS_12TH', 'UNDERGRADUATE',
     'POSTGRADUATE', 'MASTERS', 'DOCTORATE', 'OTHER',
-  ]).optional(),
+  ]).optional().or(z.literal('')),
   annual_income: z.string().max(50).optional(),
   aadhaar_number: optionalAadhaarSchema,
   is_primary: z.boolean().optional(),
@@ -97,9 +97,9 @@ export const studentFormSchema = z.object({
   blood_group: z.enum([
     'A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE',
     'O_POSITIVE', 'O_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE',
-  ]).optional(),
-  religion: z.enum(['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKH', 'JAIN', 'BUDDHIST', 'OTHER']).optional(),
-  category: z.enum(['GENERAL', 'OBC', 'SC', 'ST', 'OTHER']).optional(),
+  ]).optional().or(z.literal('')),
+  religion: z.enum(['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKH', 'JAIN', 'BUDDHIST', 'OTHER']).optional().or(z.literal('')),
+  category: z.enum(['GENERAL', 'OBC', 'SC', 'ST', 'OTHER']).optional().or(z.literal('')),
   caste: z.string().max(50).optional(),
   nationality: z.string().max(50).optional(),
   aadhaar_number: optionalAadhaarSchema,

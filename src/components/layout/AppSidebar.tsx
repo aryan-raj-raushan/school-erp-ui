@@ -14,9 +14,13 @@ import {
   SCHOOL_NAV_SECONDARY,
   SUPER_ADMIN_NAV_MAIN,
   SUPER_ADMIN_NAV_SECONDARY,
+  SALES_NAV_MAIN,
+  SALES_NAV_SECONDARY,
+  OPERATOR_NAV_MAIN,
+  OPERATOR_NAV_SECONDARY,
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
-import { AuthContext } from "@/types";
+import { AuthContext, Role } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
 import { useSchoolBrandStore } from "@/store/school.store";
 import { SchoolProfileService } from "@/services/school-profile.service";
@@ -45,7 +49,12 @@ function useSchoolLogo() {
   useEffect(() => {
     if (brand || !isAuthenticated) return;
     SchoolProfileService.get()
-      .then((data) => setBrand({ name: data.name, logo_url: data.logo_url ?? null }))
+      .then((data) => setBrand({
+        name: data.name,
+        logo_url: data.logo_url ?? null,
+        restriction_level: data.restriction_level,
+        restriction_reason: data.restriction_reason,
+      }))
       .catch(() => {});
   }, [brand, isAuthenticated, setBrand]);
 
@@ -197,12 +206,22 @@ export function AppSidebar() {
   const permissions = useAuthStore((s) => s.permissions);
   const isCollapsed = state === "collapsed";
   const isNative = Capacitor.isNativePlatform();
-  const isSuperAdmin = context === AuthContext.COMPANY;
+  const isCompanyUser = context === AuthContext.COMPANY;
 
-  const navMainSource: NavItem[] = isSuperAdmin ? SUPER_ADMIN_NAV_MAIN : SCHOOL_NAV_MAIN;
-  const navSecondarySource: SecondaryItem[] = isSuperAdmin
-    ? SUPER_ADMIN_NAV_SECONDARY
-    : SCHOOL_NAV_SECONDARY;
+  let navMainSource: NavItem[] = SCHOOL_NAV_MAIN;
+  let navSecondarySource: SecondaryItem[] = SCHOOL_NAV_SECONDARY;
+  if (isCompanyUser) {
+    if (user?.role === Role.SALES) {
+      navMainSource = SALES_NAV_MAIN;
+      navSecondarySource = SALES_NAV_SECONDARY;
+    } else if (user?.role === Role.OPERATOR) {
+      navMainSource = OPERATOR_NAV_MAIN;
+      navSecondarySource = OPERATOR_NAV_SECONDARY;
+    } else {
+      navMainSource = SUPER_ADMIN_NAV_MAIN;
+      navSecondarySource = SUPER_ADMIN_NAV_SECONDARY;
+    }
+  }
 
   const navMain = navMainSource
     .map((item) => {

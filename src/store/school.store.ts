@@ -1,8 +1,11 @@
 import { create } from 'zustand';
+import type { RestrictionMode } from '@/types';
 
 interface SchoolBrand {
   name: string;
   logo_url: string | null;
+  restriction_level?: RestrictionMode;
+  restriction_reason?: string | null;
 }
 
 interface SchoolBrandState {

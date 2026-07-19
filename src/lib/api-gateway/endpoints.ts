@@ -18,6 +18,12 @@ export const ENDPOINTS = {
     admin: (id: string) => `/schools/${id}/admin`,
     profile: "/schools/profile",
   },
+  companyUsers: {
+    list: "/company-users",
+    byId: (id: string) => `/company-users/${id}`,
+    schools: (id: string) => `/company-users/${id}/schools`,
+    schoolById: (id: string, schoolId: string) => `/company-users/${id}/schools/${schoolId}`,
+  },
   schoolSettings: {
     settings: "/school-settings",
     timings: "/school-settings/timings",
@@ -77,6 +83,37 @@ export const ENDPOINTS = {
     byId: (id: string) => `/subscriptions/${id}`,
     cancel: (id: string) => `/subscriptions/${id}/cancel`,
     payments: (id: string) => `/subscriptions/${id}/payments`,
+  },
+  subscriptionPlans: {
+    list: "/subscription-plans",
+    byId: (id: string) => `/subscription-plans/${id}`,
+  },
+  invoices: {
+    list: "/invoices",
+    my: "/invoices/my",
+    byId: (id: string) => `/invoices/${id}`,
+    pdf: (id: string) => `/invoices/${id}/pdf`,
+    lineItems: (id: string) => `/invoices/${id}/line-items`,
+  },
+  oneTimeCharges: {
+    list: "/one-time-charges",
+  },
+  invoicePayments: {
+    list: (invoiceId: string) => `/invoices/${invoiceId}/payments`,
+    submit: (invoiceId: string) => `/invoices/${invoiceId}/payments`,
+    razorpayOrder: (invoiceId: string) => `/invoices/${invoiceId}/payments/razorpay/order`,
+    approve: (invoiceId: string, paymentId: string) => `/invoices/${invoiceId}/payments/${paymentId}/approve`,
+    reject: (invoiceId: string, paymentId: string) => `/invoices/${invoiceId}/payments/${paymentId}/reject`,
+  },
+  payments: {
+    pending: "/payments/pending",
+  },
+  rfidInventory: {
+    list: "/rfid-inventory",
+    byId: (id: string) => `/rfid-inventory/${id}`,
+    assign: (id: string) => `/rfid-inventory/${id}/assign`,
+    install: (id: string) => `/rfid-inventory/${id}/install`,
+    return: (id: string) => `/rfid-inventory/${id}/return`,
   },
   attendance: {
     base: "/attendance",

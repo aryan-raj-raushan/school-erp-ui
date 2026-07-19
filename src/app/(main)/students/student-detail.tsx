@@ -60,6 +60,7 @@ interface SectionCardProps {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  hasError?: boolean;
 }
 
 function SectionCard({
@@ -67,8 +68,14 @@ function SectionCard({
   title,
   children,
   defaultOpen = true,
+  hasError = false,
 }: SectionCardProps) {
   const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    if (hasError) setOpen(true);
+  }, [hasError]);
+
   return (
     <Div variant="card" className="overflow-hidden">
       <Button
@@ -532,6 +539,7 @@ export function StudentDetail({ id }: { id: string }) {
               icon={<History size={16} />}
               title={STUDENT_PAGE.sections.previousAcademics}
               defaultOpen={false}
+              hasError={!!errors.previous_academics}
             >
               <FormGrid>
                 <FormField label={STUDENT_PAGE.labels.previousSchool}>
@@ -584,6 +592,7 @@ export function StudentDetail({ id }: { id: string }) {
               icon={<MapPin size={16} />}
               title={STUDENT_PAGE.sections.address}
               defaultOpen={false}
+              hasError={!!errors.address}
             >
               <FormGrid>
                 <FormField
@@ -633,6 +642,7 @@ export function StudentDetail({ id }: { id: string }) {
               icon={<Home size={16} />}
               title={STUDENT_PAGE.sections.hostelInfo}
               defaultOpen={false}
+              hasError={!!errors.hostel_info}
             >
               <Div type="col" gap="md">
                 <Div type="row" align="center" gap="sm">
@@ -870,6 +880,7 @@ export function StudentDetail({ id }: { id: string }) {
               icon={<FileText size={16} />}
               title={STUDENT_PAGE.sections.documents}
               defaultOpen={false}
+              hasError={!!errors.documents}
             >
               <Div type="col" gap="md">
                 {documentsArray.fields.map((field, index) => (

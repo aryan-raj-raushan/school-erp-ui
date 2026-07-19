@@ -23,6 +23,7 @@ import {
   BarChart2,
   Bell,
   ScrollText,
+  UsersRound,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -52,6 +53,26 @@ export const SUPER_ADMIN_NAV_MAIN: NavItemConfig[] = [
     url: "/subscriptions",
     icon: CircleDollarSign,
   },
+  {
+    title: "Plans",
+    url: "/plans",
+    icon: Receipt,
+  },
+  {
+    title: "Billing",
+    url: "/billing",
+    icon: Landmark,
+  },
+  {
+    title: "RFID Inventory",
+    url: "/rfid-inventory",
+    icon: Wifi,
+  },
+  {
+    title: "Team",
+    url: "/team",
+    icon: UsersRound,
+  },
 ];
 
 export const SUPER_ADMIN_NAV_SECONDARY: NavItemConfig[] = [
@@ -66,6 +87,63 @@ export const SUPER_ADMIN_NAV_SECONDARY: NavItemConfig[] = [
     icon: CircleHelp,
   },
 ];
+
+/* ---------------------------------------------------
+Sales Executive — scoped to their assigned schools
+--------------------------------------------------- */
+export const SALES_NAV_MAIN: NavItemConfig[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Schools",
+    url: "/schools",
+    icon: Building2,
+  },
+  {
+    title: "Billing",
+    url: "/billing",
+    icon: Landmark,
+  },
+];
+
+export const SALES_NAV_SECONDARY: NavItemConfig[] = [
+  {
+    title: "Appearance",
+    url: "/appearance",
+    icon: Palette,
+  },
+  {
+    title: "Get Help",
+    url: "/help",
+    icon: CircleHelp,
+  },
+];
+
+/* ---------------------------------------------------
+Operator — company-wide payment verification staff
+--------------------------------------------------- */
+export const OPERATOR_NAV_MAIN: NavItemConfig[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Schools",
+    url: "/schools",
+    icon: Building2,
+  },
+  {
+    title: "Billing",
+    url: "/billing",
+    icon: Landmark,
+  },
+];
+
+export const OPERATOR_NAV_SECONDARY: NavItemConfig[] = SALES_NAV_SECONDARY;
 
 /* ---------------------------------------------------
 School Admin & staff — full operational sidebar
@@ -523,6 +601,11 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
     title: "RFID Setup",
     url: "/rfid-setup",
     icon: Wifi,
+  },
+  {
+    title: "Invoices",
+    url: "/invoices",
+    icon: Receipt,
   },
 ];
 

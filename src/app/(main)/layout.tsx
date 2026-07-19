@@ -18,6 +18,11 @@ const AppHeader = dynamic(
   { ssr: false },
 );
 
+const RestrictionBanner = dynamic(
+  () => import("@/components/layout/RestrictionBanner").then((m) => m.RestrictionBanner),
+  { ssr: false },
+);
+
 const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.accessToken,
   STORAGE_KEYS.refreshToken,
@@ -57,6 +62,7 @@ export default function DashboardLayout({
         }}
       >
         <AppHeader />
+        <RestrictionBanner />
         <main style={{ flex: 1, overflow: "auto" }}>
           <div
             className="p-4 sm:p-5 md:px-7 md:py-0"
