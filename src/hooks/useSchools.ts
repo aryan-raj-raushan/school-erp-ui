@@ -95,6 +95,11 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.state && { state: values.state }),
       ...(values.pincode && { pincode: values.pincode }),
       ...(values.board_type && { board_type: values.board_type }),
+      ...(values.admin_first_name && { admin_first_name: values.admin_first_name }),
+      ...(values.admin_last_name && { admin_last_name: values.admin_last_name }),
+      ...(values.admin_phone && { admin_phone: values.admin_phone, admin_dial_code: values.admin_dial_code }),
+      ...(values.admin_email && { admin_email: values.admin_email }),
+      ...(values.admin_password && { admin_password: values.admin_password }),
     };
     try {
       const school = await SchoolsService.update(editingSchool.id, payload);
@@ -157,7 +162,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     createForm.reset();
   }
 
-  function openEditModal(school: School) {
+  async function openEditModal(school: School) {
     editForm.reset({
       name: school.name,
       code: school.code ?? '',
@@ -172,6 +177,22 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       board_type: (school.board_type as any) ?? undefined,
     });
     setEditingSchool(school);
+
+    try {
+      const admin = await SchoolsService.getAdmin(school.id);
+      if (admin) {
+        editForm.reset({
+          ...editForm.getValues(),
+          admin_first_name: admin.first_name,
+          admin_last_name: admin.last_name ?? '',
+          admin_dial_code: admin.dial_code,
+          admin_phone: admin.phone_number,
+          admin_email: admin.email ?? '',
+        });
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load school admin details');
+    }
   }
 
   function closeEditModal() {

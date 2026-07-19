@@ -52,5 +52,31 @@ export const createSchoolSchema = createSchoolObjectSchema.superRefine((data, ct
 
 export type CreateSchoolFormValues = z.infer<typeof createSchoolSchema>;
 
-export const updateSchoolSchema = z.object(schoolFields).partial();
+const updateSchoolObjectSchema = z.object({
+  ...schoolFields,
+  admin_first_name: z.string().optional(),
+  admin_last_name: z.string().optional(),
+  admin_dial_code: z.string().regex(REGEX.dialCode, 'Invalid dial code').optional(),
+  admin_phone: optionalPhone,
+  admin_email: optionalEmail,
+  admin_password: optionalPassword,
+}).partial();
+
+export const updateSchoolSchema = updateSchoolObjectSchema.superRefine((data, ctx) => {
+  if ((data.admin_phone || data.admin_email) && !data.admin_first_name) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['admin_first_name'],
+      message: 'Admin first name is required when an admin phone or email is provided',
+    });
+  }
+  if (data.admin_password && !data.admin_phone && !data.admin_email) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['admin_password'],
+      message: 'Admin phone or email is required to set a password',
+    });
+  }
+});
+
 export type UpdateSchoolFormValues = z.infer<typeof updateSchoolSchema>;

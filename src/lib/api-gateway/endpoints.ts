@@ -15,6 +15,7 @@ export const ENDPOINTS = {
   schools: {
     list: "/schools",
     byId: (id: string) => `/schools/${id}`,
+    admin: (id: string) => `/schools/${id}/admin`,
     profile: "/schools/profile",
   },
   schoolSettings: {

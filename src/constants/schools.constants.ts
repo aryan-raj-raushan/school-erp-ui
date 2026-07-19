@@ -65,6 +65,7 @@ export const CREATE_SCHOOL_FORM = {
     admin_password: 'Admin@1234',
   },
   adminHint: 'Optional — set an initial password so the admin can log in immediately. They must change it on first login.',
+  editAdminHint: 'Leave the password blank to keep it unchanged. Setting a new one forces the admin to change it on next login.',
   submit: {
     idle: 'Create School',
     loading: 'Creating…',

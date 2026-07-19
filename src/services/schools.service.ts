@@ -37,9 +37,16 @@ export interface CreateSchoolPayload {
   admin_password?: string;
 }
 
-export type UpdateSchoolPayload = Partial<
-  Omit<CreateSchoolPayload, 'admin_first_name' | 'admin_last_name' | 'admin_dial_code' | 'admin_phone' | 'admin_email' | 'admin_password'>
->;
+export type UpdateSchoolPayload = Partial<CreateSchoolPayload>;
+
+export interface SchoolAdmin {
+  id: string;
+  first_name: string;
+  last_name?: string | null;
+  email?: string | null;
+  dial_code: string;
+  phone_number: string;
+}
 
 export const SchoolsService = {
   async list(filters: SchoolFilters = {}): Promise<PaginatedSchools> {
@@ -49,6 +56,11 @@ export const SchoolsService = {
 
   async getById(id: string): Promise<School> {
     const res = await apiGateway.get<School>(ENDPOINTS.schools.byId(id));
+    return res.data;
+  },
+
+  async getAdmin(id: string): Promise<SchoolAdmin | null> {
+    const res = await apiGateway.get<SchoolAdmin | null>(ENDPOINTS.schools.admin(id));
     return res.data;
   },
 
