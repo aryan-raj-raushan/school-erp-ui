@@ -1609,10 +1609,9 @@ function GeneratePageContent() {
           </P>
           <Div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {CARD_TEMPLATES.map((t) => (
-              <Button
-              variant={'default'}
+              <Div
                 key={t.id}
-                type="button"
+                // type="button"
                 onClick={() => {
                   setSelectedTemplate(t.id);
                   setGalleryOpen(false);
@@ -1626,7 +1625,7 @@ function GeneratePageContent() {
                 <TemplateThumb templateId={t.id} mode={cardMode} />
                 <P className="text-xs font-semibold text-foreground mt-2">{t.label}</P>
                 <P className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</P>
-              </Button>
+              </Div>
             ))}
           </Div>
         </Div>
