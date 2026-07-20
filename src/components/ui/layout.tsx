@@ -165,6 +165,8 @@ interface DivProps extends React.HTMLAttributes<HTMLDivElement> {
   /** flex-1 */
   grow?: boolean;
   boxCard?: boolean
+           
+  ref?: React.RefObject<HTMLDivElement | null>
 }
 
 export function Div({
@@ -186,6 +188,7 @@ export function Div({
   boxCard,
   className,
   children,
+  ref,
   ...props
 }: DivProps) {
   const base =
