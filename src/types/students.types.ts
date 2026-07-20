@@ -116,6 +116,8 @@ export interface StudentParent {
   profile_image: string | null;
   is_primary: boolean;
   can_pickup: boolean;
+  is_active: boolean;
+  has_login: boolean;
 }
 
 export interface StudentDocument {

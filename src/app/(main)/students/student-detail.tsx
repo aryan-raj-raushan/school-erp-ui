@@ -839,6 +839,41 @@ export function StudentDetail({ id }: { id: string }) {
                           </label>
                         </Div>
                       </Div>
+                      <Div className="flex flex-col gap-3 pt-2 col-span-full border-t border-border mt-2">
+                        <Div type="row" align="center" gap="sm">
+                          <input
+                            type="checkbox"
+                            {...register(`parents.${index}.enable_login`)}
+                            id={`enable-login-${index}`}
+                            disabled={isReadOnly}
+                            className="h-4 w-4 rounded border-border"
+                          />
+                          <label
+                            htmlFor={`enable-login-${index}`}
+                            className="text-sm"
+                          >
+                            Enable login for this parent
+                          </label>
+                        </Div>
+                        {watch(`parents.${index}.enable_login`) && (
+                          <FormField
+                            label="Password"
+                            required={!watch(`parents.${index}.has_login`)}
+                            error={errors.parents?.[index]?.password?.message}
+                          >
+                            <Input
+                              type="password"
+                              placeholder={
+                                watch(`parents.${index}.has_login`)
+                                  ? "Leave blank to keep current password"
+                                  : "Min 6 characters"
+                              }
+                              {...register(`parents.${index}.password`)}
+                              disabled={isReadOnly}
+                            />
+                          </FormField>
+                        )}
+                      </Div>
                     </FormGrid>
                   </Div>
                 ))}

@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES, STORAGE_KEYS } from "@/constants";
+import { AuthContext } from "@/types";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
 import { initAppStorage } from "@/lib/app-storage";
 import { SidebarProvider } from "@/components/ui";
@@ -45,6 +46,8 @@ export default function DashboardLayout({
     initAppStorage(ALL_STORAGE_KEYS).then(() => {
       if (!TokenStorage.isAuthenticated()) {
         router.replace(ROUTES.login);
+      } else if (TokenStorage.getContext() === AuthContext.PARENT) {
+        router.replace(ROUTES.parentPortal);
       }
     });
   }, [router]);

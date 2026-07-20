@@ -23,6 +23,7 @@ import {
   Div,
   H3,
   P,
+  Span,
   Button,
   Spinner,
   FormField,
@@ -386,6 +387,8 @@ const SAMPLE_PICKUP_CARD: PickupCardData = {
       profile_image: null,
       is_primary: true,
       can_pickup: true,
+      is_active: false,
+      has_login: false,
     },
     {
       id: "sample-p2",
@@ -404,8 +407,11 @@ const SAMPLE_PICKUP_CARD: PickupCardData = {
       profile_image: null,
       is_primary: false,
       can_pickup: true,
+      is_active: false,
+      has_login: false,
     },
   ],
+
 };
 
 // ─── Shared card atoms ─────────────────────────────────────────────────────
@@ -429,9 +435,9 @@ function IdBarcode({ value, color }: { value: string; color: string }) {
 
 function IdQrCode({ value, color, size = 96 }: { value: string; color: string; size?: number }) {
   return (
-    <div style={{ padding: 6, background: "#ffffff", borderRadius: 8, lineHeight: 0 }}>
+    <Div style={{ padding: 6, background: "#ffffff", borderRadius: 8, lineHeight: 0 }}>
       <QRCodeSVG value={value || "N/A"} size={size - 12} bgColor="#ffffff" fgColor={color} level="M" />
-    </div>
+    </Div>
   );
 }
 
@@ -445,8 +451,8 @@ function DetailCell({
   value: string;
 }) {
   return (
-    <div className="min-w-0">
-      <p
+    <Div className="min-w-0">
+      <P
         style={{
           color: theme.mutedText,
           fontSize: 9,
@@ -456,14 +462,14 @@ function DetailCell({
         }}
       >
         {label}
-      </p>
-      <p
+      </P>
+      <P
         style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}
         className="truncate"
       >
         {value}
-      </p>
-    </div>
+      </P>
+    </Div>
   );
 }
 
@@ -477,23 +483,26 @@ function InlineDetail({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span style={{ color: theme.mutedText, fontSize: 10.5 }}>{label}</span>
-      <span
+    <Div type="row" align="center" justify="between" className="gap-2">
+      <Span style={{ color: theme.mutedText, fontSize: 10.5 }}>{label}</Span>
+      <Span
         style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 600 }}
         className="truncate text-right"
       >
         {value}
-      </span>
-    </div>
+      </Span>
+    </Div>
   );
 }
 
 function ParentRow({ theme, parent }: { theme: CardTheme; parent: StudentParent }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+    <Div type="row" align="center" className="gap-2.5">
+      <Div
+        type="row"
+        align="center"
+        justify="center"
+        className="h-9 w-9 rounded-full overflow-hidden shrink-0"
         style={{ background: theme.chipBg, border: `1.5px solid ${theme.chipBorder}` }}
       >
         {parent.profile_image ? (
@@ -505,30 +514,30 @@ function ParentRow({ theme, parent }: { theme: CardTheme; parent: StudentParent 
         ) : (
           <UserIconPlaceholder size={22} color={theme.mutedText} />
         )}
-      </div>
-      <div className="min-w-0">
-        <p style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 600 }} className="truncate">
+      </Div>
+      <Div className="min-w-0">
+        <P style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 600 }} className="truncate">
           {parent.first_name} {parent.last_name ?? ""}
-        </p>
-        <p style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
+        </P>
+        <P style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
           {parent.relation} · {parent.phone_number}
-        </p>
-      </div>
-    </div>
+        </P>
+      </Div>
+    </Div>
   );
 }
 
 function PickupParentList({ theme, data }: { theme: CardTheme; data: PickupCardData }) {
   const pickupParents = data.parents.filter((p) => p.can_pickup);
   if (pickupParents.length === 0) {
-    return <p style={{ color: theme.mutedText, fontSize: 12 }}>No pickup contacts assigned</p>;
+    return <P style={{ color: theme.mutedText, fontSize: 12 }}>No pickup contacts assigned</P>;
   }
   return (
-    <div className="space-y-2.5">
+    <Div className="space-y-2.5">
       {pickupParents.slice(0, 3).map((p) => (
         <ParentRow key={p.id} theme={theme} parent={p} />
       ))}
-    </div>
+    </Div>
   );
 }
 
@@ -554,7 +563,7 @@ function CardShell({
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <Div
       className="relative w-[300px] rounded-[24px] overflow-hidden select-none"
       style={{
         background: theme.cardBg,
@@ -562,19 +571,19 @@ function CardShell({
         fontFamily: "system-ui, sans-serif",
       }}
     >
-      <div
+      <Div
         className="absolute left-1/2 top-2 -translate-x-1/2 h-2 w-9 rounded-full z-10"
         style={{ background: theme.punchHole }}
       />
 
-      <div
+      <Div
         className="pt-6 pb-3 px-5"
         style={{
           background: theme.headerBg,
           borderBottom: theme.headerBorder ? `1px solid ${theme.headerBorder}` : "none",
         }}
       >
-        <div className="flex items-center gap-2.5">
+        <Div type="row" align="center" className="gap-2.5">
           {logo ? (
             <img
               src={logo}
@@ -582,53 +591,62 @@ function CardShell({
               className="h-9 w-9 rounded-lg object-contain bg-white/90 p-1 shrink-0"
             />
           ) : (
-            <div
-              className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+            <Div
+              type="row"
+              align="center"
+              justify="center"
+              className="h-9 w-9 rounded-lg shrink-0"
               style={{ background: "rgba(148,163,184,0.15)" }}
             >
               <School size={16} color={theme.accent} />
-            </div>
+            </Div>
           )}
-          <div className="min-w-0 flex-1">
-            <p style={{ color: theme.headerText, fontSize: 12.5, fontWeight: 700 }} className="truncate">
+          <Div className="min-w-0 flex-1">
+            <P style={{ color: theme.headerText, fontSize: 12.5, fontWeight: 700 }} className="truncate">
               {schoolName}
-            </p>
-            <p style={{ color: theme.headerMuted, fontSize: 9.5 }} className="truncate">
+            </P>
+            <P style={{ color: theme.headerMuted, fontSize: 9.5 }} className="truncate">
               {schoolCity}
-            </p>
-          </div>
-        </div>
-        <div className="mt-2.5 flex items-center gap-1.5">
-          <span className="h-[3px] w-5 rounded-full" style={{ background: theme.accent }} />
-          <span style={{ color: theme.accent, fontSize: 9, fontWeight: 700, letterSpacing: 1.5 }}>
+            </P>
+          </Div>
+        </Div>
+        <Div type="row" align="center" className="mt-2.5 gap-1.5">
+          <Span className="h-[3px] w-5 rounded-full" style={{ background: theme.accent }} />
+          <Span style={{ color: theme.accent, fontSize: 9, fontWeight: 700, letterSpacing: 1.5 }}>
             {kicker}
-          </span>
-        </div>
-      </div>
+          </Span>
+        </Div>
+      </Div>
 
-      <div className="px-5 py-4">{children}</div>
+      <Div className="px-5 py-4">{children}</Div>
 
-      <div
-        className="px-5 pt-2.5 pb-3 flex items-end justify-between gap-3"
+      <Div
+        type="row"
+        align="end"
+        justify="between"
+        className="px-5 pt-2.5 pb-3 gap-3"
         style={{ background: theme.footerBg, borderTop: `1px solid ${theme.divider}` }}
       >
-        <div className="min-w-0">
-          <p style={{ color: theme.footerMuted, fontSize: 8.5, letterSpacing: 0.5 }}>{footerLeftLabel}</p>
-          <p style={{ color: theme.footerText, fontSize: 10.5, fontWeight: 600 }} className="truncate">
+        <Div className="min-w-0">
+          <P style={{ color: theme.footerMuted, fontSize: 8.5, letterSpacing: 0.5 }}>{footerLeftLabel}</P>
+          <P style={{ color: theme.footerText, fontSize: 10.5, fontWeight: 600 }} className="truncate">
             {footerLeftValue}
-          </p>
-        </div>
+          </P>
+        </Div>
         <IdBarcode value={footerLeftValue} color={theme.footerText} />
-      </div>
-    </div>
+      </Div>
+    </Div>
   );
 }
 
 function StudentCardBody({ theme, data }: { theme: CardTheme; data: StudentIdCardData }) {
   return (
-    <div className="flex flex-col items-center text-center">
-      <div
-        className="h-24 w-24 rounded-2xl overflow-hidden flex items-center justify-center shrink-0"
+    <Div type="col" align="center" center>
+      <Div
+        type="row"
+        align="center"
+        justify="center"
+        className="h-24 w-24 rounded-2xl overflow-hidden shrink-0"
         style={{ background: theme.chipBg, border: `3px solid ${theme.accent}` }}
       >
         {data.profile_image ? (
@@ -636,63 +654,64 @@ function StudentCardBody({ theme, data }: { theme: CardTheme; data: StudentIdCar
         ) : (
           <UserIconPlaceholder size={56} color={theme.mutedText} />
         )}
-      </div>
+      </Div>
 
-      <p style={{ color: theme.bodyText, fontSize: 16, fontWeight: 700, marginTop: 10 }} className="truncate max-w-full">
+      <P style={{ color: theme.bodyText, fontSize: 16, fontWeight: 700, marginTop: 10 }} className="truncate max-w-full">
         {data.first_name} {data.last_name ?? ""}
-      </p>
+      </P>
 
-      <span
+      <Span
         className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5"
         style={{ background: `${theme.accent}1f` }}
       >
         <GraduationCap size={11} color={theme.accent} />
-        <span style={{ color: theme.accent, fontSize: 11, fontWeight: 700 }}>
+        <Span style={{ color: theme.accent, fontSize: 11, fontWeight: 700 }}>
           {data.class_name ?? "—"} · {data.section_name ?? "—"}
-        </span>
-      </span>
+        </Span>
+      </Span>
 
-      <div className="w-full mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-left">
+      <Div type="grid" cols={2} className="w-full mt-4 gap-x-3 gap-y-3 text-left">
         <DetailCell theme={theme} label="Roll No." value={data.roll_number ?? "—"} />
         <DetailCell theme={theme} label="Blood Group" value={formatBloodGroup(data.blood_group)} />
         <DetailCell theme={theme} label="Adm. No." value={data.admission_number ?? "—"} />
         <DetailCell theme={theme} label="Contact" value={data.phone_number ?? "—"} />
-      </div>
+      </Div>
 
-      <div
-        className="w-full mt-3.5 pt-3 flex items-start gap-1.5 text-left"
+      <Div
+        type="row"
+        className="w-full mt-3.5 pt-3 gap-1.5 text-left items-start"
         style={{ borderTop: `1px dashed ${theme.chipBorder}` }}
       >
         <MapPin size={11} color={theme.mutedText} className="shrink-0 mt-0.5" />
-        <p style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
+        <P style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
           {formatAddress(data)}
-        </p>
-      </div>
-    </div>
+        </P>
+      </Div>
+    </Div>
   );
 }
 
 function PickupCardBody({ theme, data }: { theme: CardTheme; data: PickupCardData }) {
   const student = data.student;
   return (
-    <div>
-      <div
+    <Div>
+      <Div
         className="rounded-xl px-3.5 py-3"
         style={{ background: theme.chipBg, border: `1px solid ${theme.chipBorder}` }}
       >
-        <p style={{ color: theme.mutedText, fontSize: 9, fontWeight: 700, letterSpacing: 0.6 }}>STUDENT</p>
-        <p style={{ color: theme.bodyText, fontSize: 14, fontWeight: 700, marginTop: 2 }} className="truncate">
+        <P style={{ color: theme.mutedText, fontSize: 9, fontWeight: 700, letterSpacing: 0.6 }}>STUDENT</P>
+        <P style={{ color: theme.bodyText, fontSize: 14, fontWeight: 700, marginTop: 2 }} className="truncate">
           {student.first_name} {student.last_name ?? ""}
-        </p>
-        <div className="flex items-center gap-3 mt-1">
-          <span style={{ color: theme.mutedText, fontSize: 11 }}>
+        </P>
+        <Div type="row" align="center" className="mt-1 gap-3">
+          <Span style={{ color: theme.mutedText, fontSize: 11 }}>
             {student.class_name ?? "—"} · {student.section_name ?? "—"}
-          </span>
-          <span style={{ color: theme.mutedText, fontSize: 11 }}>Roll {student.roll_number ?? "—"}</span>
-        </div>
-      </div>
+          </Span>
+          <Span style={{ color: theme.mutedText, fontSize: 11 }}>Roll {student.roll_number ?? "—"}</Span>
+        </Div>
+      </Div>
 
-      <p
+      <P
         style={{
           color: theme.mutedText,
           fontSize: 9.5,
@@ -703,10 +722,10 @@ function PickupCardBody({ theme, data }: { theme: CardTheme; data: PickupCardDat
         }}
       >
         AUTHORISED FOR PICKUP
-      </p>
+      </P>
 
       <PickupParentList theme={theme} data={data} />
-    </div>
+    </Div>
   );
 }
 
@@ -760,37 +779,40 @@ function RibbonCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
   if (!data) return null;
 
   return (
-    <div
+    <Div
       className="relative w-[300px] rounded-[20px] overflow-hidden select-none"
       style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4)" }}
     >
-      <div className="relative h-[108px] overflow-hidden" style={{ background: theme.panelBg }}>
-        <div
+      <Div className="relative h-[108px] overflow-hidden" style={{ background: theme.panelBg }}>
+        <Div
           className="absolute -right-11 top-4 rotate-45 px-11 py-1"
           style={{ background: "rgba(0,0,0,0.18)" }}
         >
-          <span style={{ color: theme.panelText ?? "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 1.5 }}>
+          <Span style={{ color: theme.panelText ?? "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 1.5 }}>
             {mode === "student" ? "STUDENT ID" : "PICKUP CARD"}
-          </span>
-        </div>
-        <div className="absolute left-5 top-4 right-16 flex items-center gap-2">
+          </Span>
+        </Div>
+        <Div type="row" align="center" className="absolute left-5 top-4 right-16 gap-2">
           {data.school_logo ? (
             <img src={data.school_logo} alt="School" className="h-8 w-8 rounded-md object-contain bg-white/90 p-1 shrink-0" />
           ) : (
             <School size={16} color={theme.panelText ?? "#fff"} className="shrink-0" />
           )}
-          <span
+          <Span
             style={{ color: theme.panelText ?? "#fff", fontSize: 11.5, fontWeight: 700 }}
             className="truncate"
           >
             {data.school_name ?? "School Name"}
-          </span>
-        </div>
-      </div>
+          </Span>
+        </Div>
+      </Div>
 
-      <div className="flex justify-center -mt-10">
-        <div
-          className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center"
+      <Div type="row" justify="center" className="-mt-10">
+        <Div
+          type="row"
+          align="center"
+          justify="center"
+          className="h-20 w-20 rounded-full overflow-hidden"
           style={{ background: theme.chipBg, border: `4px solid ${theme.cardBg}`, boxShadow: `0 0 0 2px ${theme.accent}` }}
         >
           {data.profile_image ? (
@@ -798,47 +820,50 @@ function RibbonCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
           ) : (
             <UserIconPlaceholder size={40} color={theme.mutedText} />
           )}
-        </div>
-      </div>
+        </Div>
+      </Div>
 
-      <div className="px-5 pt-2 pb-4 text-center">
-        <p style={{ color: theme.bodyText, fontSize: 15.5, fontWeight: 700 }}>
+      <Div className="px-5 pt-2 pb-4 text-center">
+        <P style={{ color: theme.bodyText, fontSize: 15.5, fontWeight: 700 }}>
           {data.first_name} {data.last_name ?? ""}
-        </p>
-        <p style={{ color: theme.accent, fontSize: 11.5, fontWeight: 700, marginTop: 2 }}>
+        </P>
+        <P style={{ color: theme.accent, fontSize: 11.5, fontWeight: 700, marginTop: 2 }}>
           {data.class_name ?? "—"} · {data.section_name ?? "—"}
-        </p>
+        </P>
 
         {mode === "student" && idCardData ? (
-          <div className="mt-4 space-y-2 text-left">
+          <Div className="mt-4 space-y-2 text-left">
             <InlineDetail theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
             <InlineDetail theme={theme} label="Admission No." value={idCardData.admission_number ?? "—"} />
             <InlineDetail theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
             <InlineDetail theme={theme} label="Contact" value={idCardData.phone_number ?? "—"} />
-          </div>
+          </Div>
         ) : pickupCardData ? (
-          <div className="mt-4 text-left">
-            <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }} className="mb-2">
+          <Div className="mt-4 text-left">
+            <P style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }} className="mb-2">
               AUTHORISED FOR PICKUP
-            </p>
+            </P>
             <PickupParentList theme={theme} data={pickupCardData} />
-          </div>
+          </Div>
         ) : null}
-      </div>
+      </Div>
 
-      <div
-        className="px-5 pt-2.5 pb-3 flex items-end justify-between gap-3"
+      <Div
+        type="row"
+        align="end"
+        justify="between"
+        className="px-5 pt-2.5 pb-3 gap-3"
         style={{ background: theme.footerBg, borderTop: `1px solid ${theme.divider}` }}
       >
-        <div className="min-w-0">
-          <p style={{ color: theme.footerMuted, fontSize: 8.5 }}>Adm. No.</p>
-          <p style={{ color: theme.footerText, fontSize: 10.5, fontWeight: 600 }} className="truncate">
+        <Div className="min-w-0">
+          <P style={{ color: theme.footerMuted, fontSize: 8.5 }}>Adm. No.</P>
+          <P style={{ color: theme.footerText, fontSize: 10.5, fontWeight: 600 }} className="truncate">
             {data.admission_number ?? "—"}
-          </p>
-        </div>
+          </P>
+        </Div>
         <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.footerText} />
-      </div>
-    </div>
+      </Div>
+    </Div>
   );
 }
 
@@ -849,29 +874,33 @@ function BandCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
   if (!data) return null;
 
   return (
-    <div
-      className="relative w-[300px] rounded-[18px] overflow-hidden flex select-none"
+    <Div
+      type="row"
+      className="relative w-[300px] rounded-[18px] overflow-hidden select-none"
       style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4)" }}
     >
-      <div style={{ width: 14, background: theme.panelBg }} />
-      <div className="flex-1 px-4 py-4 min-w-0">
-        <div className="flex items-center gap-2">
+      <Div style={{ width: 14, background: theme.panelBg }} />
+      <Div className="flex-1 px-4 py-4 min-w-0">
+        <Div type="row" align="center" className="gap-2">
           {data.school_logo ? (
             <img src={data.school_logo} alt="School" className="h-7 w-7 rounded object-contain shrink-0" />
           ) : (
             <School size={14} color={theme.accent} className="shrink-0" />
           )}
-          <p
+          <P
             style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}
             className="truncate uppercase"
           >
             {data.school_name ?? "School Name"}
-          </p>
-        </div>
+          </P>
+        </Div>
 
-        <div className="mt-4 flex gap-3 items-start">
-          <div
-            className="h-16 w-16 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
+        <Div type="row" className="mt-4 gap-3 items-start">
+          <Div
+            type="row"
+            align="center"
+            justify="center"
+            className="h-16 w-16 rounded-lg overflow-hidden shrink-0"
             style={{ background: theme.chipBg, border: `1.5px solid ${theme.chipBorder}` }}
           >
             {data.profile_image ? (
@@ -879,59 +908,63 @@ function BandCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
             ) : (
               <UserIconPlaceholder size={34} color={theme.mutedText} />
             )}
-          </div>
-          <div className="min-w-0 pt-1">
-            <p style={{ color: theme.bodyText, fontSize: 14.5, fontWeight: 700 }} className="truncate">
+          </Div>
+          <Div className="min-w-0 pt-1">
+            <P style={{ color: theme.bodyText, fontSize: 14.5, fontWeight: 700 }} className="truncate">
               {data.first_name} {data.last_name ?? ""}
-            </p>
-            <p style={{ color: theme.accent, fontSize: 11, fontWeight: 700, marginTop: 2 }}>
+            </P>
+            <P style={{ color: theme.accent, fontSize: 11, fontWeight: 700, marginTop: 2 }}>
               {data.class_name ?? "—"} · {data.section_name ?? "—"}
-            </p>
-          </div>
-        </div>
+            </P>
+          </Div>
+        </Div>
 
-        <div className="mt-4 space-y-2">
+        <Div className="mt-4 space-y-2">
           {mode === "student" && idCardData ? (
             <>
               <InlineDetail theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
               <InlineDetail theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
               <InlineDetail theme={theme} label="Contact" value={idCardData.phone_number ?? "—"} />
-              <div
-                className="pt-2 mt-1 flex items-start gap-1.5"
+              <Div
+                type="row"
+                className="pt-2 mt-1 gap-1.5 items-start"
                 style={{ borderTop: `1px dashed ${theme.chipBorder}` }}
               >
                 <MapPin size={11} color={theme.mutedText} className="shrink-0 mt-0.5" />
-                <p style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
+                <P style={{ color: theme.mutedText, fontSize: 10.5 }} className="truncate">
                   {formatAddress(idCardData)}
-                </p>
-              </div>
+                </P>
+              </Div>
             </>
           ) : pickupCardData ? (
             <>
-              <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
+              <P style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
                 AUTHORISED FOR PICKUP
-              </p>
-              <div className="pt-1">
+              </P>
+              <Div className="pt-1">
                 <PickupParentList theme={theme} data={pickupCardData} />
-              </div>
+              </Div>
             </>
           ) : null}
-        </div>
+        </Div>
 
-        <div
-          className="mt-4 pt-3 flex items-end justify-between"
+        <Div
+          type="row"
+          align="end"
+          justify="between"
+          className="mt-4 pt-3"
           style={{ borderTop: `1px solid ${theme.divider}` }}
         >
-          <div>
-            <p style={{ color: theme.mutedText, fontSize: 8.5 }}>Adm. No.</p>
-            <p style={{ color: theme.bodyText, fontSize: 10.5, fontWeight: 600 }}>
+          <Div>
+            <P style={{ color: theme.mutedText, fontSize: 8.5 }}>Adm. No.</P>
+            <P style={{ color: theme.bodyText, fontSize: 10.5, fontWeight: 600 }}>
               {data.admission_number ?? "—"}
-            </p>
-          </div>
+            </P>
+          </Div>
           <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
-        </div>
-      </div>
-    </div>
+        </Div>
+      </Div>
+    </Div>
   );
 }
 
@@ -942,16 +975,23 @@ function ExecutiveCard({ theme, mode, idCardData, pickupCardData }: LayoutProps)
   if (!data) return null;
 
   return (
-    <div
-      className="relative w-[440px] rounded-[18px] overflow-hidden flex select-none"
+    <Div
+      type="row"
+      className="relative w-[440px] rounded-[18px] overflow-hidden select-none"
       style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.4)" }}
     >
-      <div
-        className="w-[160px] shrink-0 flex flex-col items-center justify-center px-4 py-5 text-center"
+      <Div
+        type="col"
+        align="center"
+        justify="center"
+        className="w-[160px] shrink-0 px-4 py-5 text-center"
         style={{ background: theme.panelBg }}
       >
-        <div
-          className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center"
+        <Div
+          type="row"
+          align="center"
+          justify="center"
+          className="h-20 w-20 rounded-full overflow-hidden"
           style={{ background: "rgba(255,255,255,0.1)", border: `2px solid ${theme.accent}` }}
         >
           {data.profile_image ? (
@@ -959,62 +999,62 @@ function ExecutiveCard({ theme, mode, idCardData, pickupCardData }: LayoutProps)
           ) : (
             <UserIconPlaceholder size={44} color={theme.accent} />
           )}
-        </div>
-        <p
+        </Div>
+        <P
           style={{ color: theme.panelText ?? "#fff", fontSize: 13, fontWeight: 700, marginTop: 10 }}
           className="truncate max-w-full"
         >
           {data.first_name} {data.last_name ?? ""}
-        </p>
-        <span className="mt-1.5 inline-flex rounded-full px-2 py-0.5" style={{ background: "rgba(255,255,255,0.15)" }}>
-          <span style={{ color: theme.accent, fontSize: 10, fontWeight: 700 }}>
+        </P>
+        <Span className="mt-1.5 inline-flex rounded-full px-2 py-0.5" style={{ background: "rgba(255,255,255,0.15)" }}>
+          <Span style={{ color: theme.accent, fontSize: 10, fontWeight: 700 }}>
             {data.class_name ?? "—"}-{data.section_name ?? "—"}
-          </span>
-        </span>
-      </div>
+          </Span>
+        </Span>
+      </Div>
 
-      <div className="flex-1 px-4 py-4 flex flex-col min-w-0">
-        <div className="flex items-center gap-2">
+      <Div className="flex-1 px-4 py-4 flex flex-col min-w-0">
+        <Div type="row" align="center" className="gap-2">
           {data.school_logo ? (
             <img src={data.school_logo} alt="School" className="h-6 w-6 rounded object-contain shrink-0" />
           ) : (
             <School size={14} color={theme.accent} className="shrink-0" />
           )}
-          <p style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 700 }} className="truncate">
+          <P style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 700 }} className="truncate">
             {data.school_name ?? "School Name"}
-          </p>
-          <span
+          </P>
+          <Span
             style={{ color: theme.mutedText, fontSize: 8.5, fontWeight: 700, letterSpacing: 1, marginLeft: "auto" }}
             className="shrink-0"
           >
             {mode === "student" ? "STUDENT ID CARD" : "PICKUP CARD"}
-          </span>
-        </div>
+          </Span>
+        </Div>
 
-        <div className="flex-1 mt-3">
+        <Div className="flex-1 mt-3">
           {mode === "student" && idCardData ? (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+            <Div type="grid" cols={2} className="gap-x-3 gap-y-2.5">
               <DetailCell theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
               <DetailCell theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
               <DetailCell theme={theme} label="Adm. No." value={idCardData.admission_number ?? "—"} />
               <DetailCell theme={theme} label="Contact" value={idCardData.phone_number ?? "—"} />
-            </div>
+            </Div>
           ) : pickupCardData ? (
-            <div className="space-y-2">
-              <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
+            <Div className="space-y-2">
+              <P style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
                 AUTHORISED FOR PICKUP
-              </p>
+              </P>
               <PickupParentList theme={theme} data={pickupCardData} />
-            </div>
+            </Div>
           ) : null}
-        </div>
+        </Div>
 
-        <div className="pt-2 flex items-end justify-between" style={{ borderTop: `1px solid ${theme.divider}` }}>
-          <p style={{ color: theme.mutedText, fontSize: 9.5 }}>#{data.system_number}</p>
+        <Div type="row" align="end" justify="between" className="pt-2" style={{ borderTop: `1px solid ${theme.divider}` }}>
+          <P style={{ color: theme.mutedText, fontSize: 9.5 }}>#{data.system_number}</P>
           <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
-        </div>
-      </div>
-    </div>
+        </Div>
+      </Div>
+    </Div>
   );
 }
 
@@ -1025,33 +1065,36 @@ function CrestCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
   if (!data) return null;
 
   return (
-    <div
+    <Div
       className="relative w-[300px] rounded-[10px] overflow-hidden select-none"
       style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(15,23,42,0.35)" }}
     >
-      <div className="m-2 rounded-[6px]" style={{ border: `1.5px solid ${theme.accent}`, padding: "18px 20px 16px" }}>
-        <div className="flex flex-col items-center text-center">
+      <Div className="m-2 rounded-[6px]" style={{ border: `1.5px solid ${theme.accent}`, padding: "18px 20px 16px" }}>
+        <Div type="col" align="center" center>
           {data.school_logo ? (
             <img src={data.school_logo} alt="School" className="h-9 w-9 object-contain mb-1.5" />
           ) : (
             <GraduationCap size={26} color={theme.accent} className="mb-1.5" />
           )}
-          <p
+          <P
             style={{ color: theme.bodyText, fontSize: 10.5, fontWeight: 700, letterSpacing: 1.5 }}
             className="uppercase truncate max-w-full font-serif"
           >
             {data.school_name ?? "School Name"}
-          </p>
-          <span className="mt-1 h-px w-10" style={{ background: theme.accent }} />
+          </P>
+          <Span className="mt-1 h-px w-10" style={{ background: theme.accent }} />
 
-          <div className="relative mt-4">
+          <Div className="relative mt-4">
             <GraduationCap
               size={110}
               color={theme.accent}
               className="absolute opacity-[0.08] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
             />
-            <div
-              className="relative h-24 w-24 rounded-full overflow-hidden flex items-center justify-center"
+            <Div
+              type="row"
+              align="center"
+              justify="center"
+              className="relative h-24 w-24 rounded-full overflow-hidden"
               style={{ background: theme.chipBg, border: `3px double ${theme.accent}` }}
             >
               {data.profile_image ? (
@@ -1059,48 +1102,50 @@ function CrestCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
               ) : (
                 <UserIconPlaceholder size={54} color={theme.mutedText} />
               )}
-            </div>
-          </div>
+            </Div>
+          </Div>
 
-          <p className="font-serif" style={{ color: theme.bodyText, fontSize: 16, fontWeight: 700, marginTop: 10 }}>
+          <P className="font-serif" style={{ color: theme.bodyText, fontSize: 16, fontWeight: 700, marginTop: 10 }}>
             {data.first_name} {data.last_name ?? ""}
-          </p>
-          <p style={{ color: theme.accent, fontSize: 11.5, fontWeight: 600, marginTop: 1 }}>
+          </P>
+          <P style={{ color: theme.accent, fontSize: 11.5, fontWeight: 600, marginTop: 1 }}>
             {data.class_name ?? "—"} · Section {data.section_name ?? "—"}
-          </p>
+          </P>
 
           {mode === "student" && idCardData ? (
-            <div className="mt-3.5 flex items-center gap-2 flex-wrap justify-center">
-              <span style={{ color: theme.mutedText, fontSize: 10.5 }}>Roll {idCardData.roll_number ?? "—"}</span>
-              <span style={{ color: theme.chipBorder }}>•</span>
-              <span style={{ color: theme.mutedText, fontSize: 10.5 }}>Adm {idCardData.admission_number ?? "—"}</span>
-              <span style={{ color: theme.chipBorder }}>•</span>
-              <span style={{ color: theme.mutedText, fontSize: 10.5 }}>{formatBloodGroup(idCardData.blood_group)}</span>
-            </div>
+            <Div type="row" align="center" justify="center" wrap className="mt-3.5 gap-2">
+              <Span style={{ color: theme.mutedText, fontSize: 10.5 }}>Roll {idCardData.roll_number ?? "—"}</Span>
+              <Span style={{ color: theme.chipBorder }}>•</Span>
+              <Span style={{ color: theme.mutedText, fontSize: 10.5 }}>Adm {idCardData.admission_number ?? "—"}</Span>
+              <Span style={{ color: theme.chipBorder }}>•</Span>
+              <Span style={{ color: theme.mutedText, fontSize: 10.5 }}>{formatBloodGroup(idCardData.blood_group)}</Span>
+            </Div>
           ) : pickupCardData ? (
-            <div className="mt-3.5 w-full text-left">
-              <p
+            <Div className="mt-3.5 w-full text-left">
+              <P
                 style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}
                 className="text-center mb-2"
               >
                 AUTHORISED FOR PICKUP
-              </p>
+              </P>
               <PickupParentList theme={theme} data={pickupCardData} />
-            </div>
+            </Div>
           ) : null}
 
-          <div
-            className="mt-4 pt-3 w-full flex flex-col items-center gap-1"
+          <Div
+            type="col"
+            align="center"
+            className="mt-4 pt-3 w-full gap-1"
             style={{ borderTop: `1px dashed ${theme.chipBorder}` }}
           >
             <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
-            <p style={{ color: theme.mutedText, fontSize: 9, letterSpacing: 0.5, marginTop: 2 }}>
+            <P style={{ color: theme.mutedText, fontSize: 9, letterSpacing: 0.5, marginTop: 2 }}>
               AUTHORIZED SIGNATORY
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+            </P>
+          </Div>
+        </Div>
+      </Div>
+    </Div>
   );
 }
 
@@ -1111,29 +1156,32 @@ function AccessCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
   if (!data) return null;
 
   return (
-    <div
+    <Div
       className="relative w-[300px] rounded-[20px] overflow-hidden select-none"
       style={{ background: theme.cardBg, boxShadow: "0 24px 48px -18px rgba(0,0,0,0.5)" }}
     >
-      <div className="px-5 pt-5 pb-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${theme.divider}` }}>
+      <Div type="row" align="center" className="px-5 pt-5 pb-3 gap-3" style={{ borderBottom: `1px solid ${theme.divider}` }}>
         {data.school_logo ? (
           <img src={data.school_logo} alt="School" className="h-9 w-9 rounded-lg object-contain bg-white/10 p-1 shrink-0" />
         ) : (
           <ShieldCheck size={20} color={theme.accent} className="shrink-0" />
         )}
-        <div className="min-w-0 flex-1">
-          <p style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 700 }} className="truncate">
+        <Div className="min-w-0 flex-1">
+          <P style={{ color: theme.bodyText, fontSize: 12.5, fontWeight: 700 }} className="truncate">
             {data.school_name ?? "School Name"}
-          </p>
-          <p style={{ color: theme.accent, fontSize: 9.5, fontWeight: 700, letterSpacing: 1.5 }}>
+          </P>
+          <P style={{ color: theme.accent, fontSize: 9.5, fontWeight: 700, letterSpacing: 1.5 }}>
             {mode === "student" ? "ACCESS · STUDENT" : "ACCESS · PICKUP"}
-          </p>
-        </div>
-      </div>
+          </P>
+        </Div>
+      </Div>
 
-      <div className="px-5 py-4 flex items-center gap-3">
-        <div
-          className="h-16 w-16 rounded-xl overflow-hidden flex items-center justify-center shrink-0"
+      <Div type="row" align="center" className="px-5 py-4 gap-3">
+        <Div
+          type="row"
+          align="center"
+          justify="center"
+          className="h-16 w-16 rounded-xl overflow-hidden shrink-0"
           style={{ background: "rgba(255,255,255,0.06)", border: `2px solid ${theme.accent}` }}
         >
           {data.profile_image ? (
@@ -1141,40 +1189,40 @@ function AccessCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
           ) : (
             <UserIconPlaceholder size={36} color={theme.accent} />
           )}
-        </div>
-        <div className="min-w-0">
-          <p style={{ color: theme.bodyText, fontSize: 14.5, fontWeight: 700 }} className="truncate">
+        </Div>
+        <Div className="min-w-0">
+          <P style={{ color: theme.bodyText, fontSize: 14.5, fontWeight: 700 }} className="truncate">
             {data.first_name} {data.last_name ?? ""}
-          </p>
-          <p style={{ color: theme.mutedText, fontSize: 11 }}>
+          </P>
+          <P style={{ color: theme.mutedText, fontSize: 11 }}>
             {data.class_name ?? "—"} · {data.section_name ?? "—"}
-          </p>
-        </div>
-      </div>
+          </P>
+        </Div>
+      </Div>
 
-      <div className="px-5 pb-2 flex items-center justify-center">
+      <Div type="row" align="center" justify="center" className="px-5 pb-2">
         <IdQrCode value={data.admission_number ?? String(data.system_number)} color={theme.accent} size={104} />
-      </div>
-      <p style={{ color: theme.mutedText, fontSize: 9, letterSpacing: 1.2, textAlign: "center" }}>
+      </Div>
+      <P style={{ color: theme.mutedText, fontSize: 9, letterSpacing: 1.2, textAlign: "center" }}>
         SCAN TO VERIFY IDENTITY
-      </p>
+      </P>
 
-      <div className="px-5 mt-3 pt-3 pb-3" style={{ borderTop: `1px solid ${theme.divider}` }}>
+      <Div className="px-5 mt-3 pt-3 pb-3" style={{ borderTop: `1px solid ${theme.divider}` }}>
         {mode === "student" && idCardData ? (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+          <Div type="grid" cols={2} className="gap-x-3 gap-y-2">
             <DetailCell theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
             <DetailCell theme={theme} label="Adm. No." value={idCardData.admission_number ?? "—"} />
-          </div>
+          </Div>
         ) : pickupCardData ? (
           <PickupParentList theme={theme} data={pickupCardData} />
         ) : null}
-      </div>
+      </Div>
 
-      <div className="px-5 pb-4 flex items-center justify-between">
+      <Div type="row" align="center" justify="between" className="px-5 pb-4">
         <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
-        <span style={{ color: theme.mutedText, fontSize: 10 }}>#{data.system_number}</span>
-      </div>
-    </div>
+        <Span style={{ color: theme.mutedText, fontSize: 10 }}>#{data.system_number}</Span>
+      </Div>
+    </Div>
   );
 }
 
@@ -1185,24 +1233,27 @@ function PastelCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
   if (!data) return null;
 
   return (
-    <div
+    <Div
       className="relative w-[300px] rounded-[28px] overflow-hidden select-none"
       style={{ background: theme.cardBg, boxShadow: "0 20px 40px -16px rgba(15,23,42,0.25)" }}
     >
-      <div className="px-5 pt-5 pb-4 text-center" style={{ background: theme.panelBg }}>
-        <div className="flex items-center justify-center gap-2 mb-3">
+      <Div className="px-5 pt-5 pb-4 text-center" style={{ background: theme.panelBg }}>
+        <Div type="row" align="center" justify="center" className="mb-3 gap-2">
           {data.school_logo ? (
             <img src={data.school_logo} alt="School" className="h-7 w-7 rounded-full object-contain bg-white/70 p-1" />
           ) : (
             <School size={14} color={theme.accent} />
           )}
-          <span style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 700 }} className="truncate max-w-[180px]">
+          <Span style={{ color: theme.bodyText, fontSize: 11.5, fontWeight: 700 }} className="truncate max-w-[180px]">
             {data.school_name ?? "School Name"}
-          </span>
-        </div>
-        <div className="flex justify-center">
-          <div
-            className="h-24 w-24 rounded-full overflow-hidden flex items-center justify-center"
+          </Span>
+        </Div>
+        <Div type="row" justify="center">
+          <Div
+            type="row"
+            align="center"
+            justify="center"
+            className="h-24 w-24 rounded-full overflow-hidden"
             style={{ background: "#ffffff", border: `4px dashed ${theme.accent}` }}
           >
             {data.profile_image ? (
@@ -1210,39 +1261,39 @@ function PastelCard({ theme, mode, idCardData, pickupCardData }: LayoutProps) {
             ) : (
               <UserIconPlaceholder size={54} color={theme.mutedText} />
             )}
-          </div>
-        </div>
-        <p style={{ color: theme.bodyText, fontSize: 16, fontWeight: 800, marginTop: 10 }}>
+          </Div>
+        </Div>
+        <P style={{ color: theme.bodyText, fontSize: 16, fontWeight: 800, marginTop: 10 }}>
           {data.first_name} {data.last_name ?? ""}
-        </p>
-        <span className="mt-1.5 inline-flex items-center rounded-full px-3 py-1" style={{ background: "#ffffff" }}>
-          <span style={{ color: theme.accent, fontSize: 11.5, fontWeight: 700 }}>
+        </P>
+        <Span className="mt-1.5 inline-flex items-center rounded-full px-3 py-1" style={{ background: "#ffffff" }}>
+          <Span style={{ color: theme.accent, fontSize: 11.5, fontWeight: 700 }}>
             {data.class_name ?? "—"} · {data.section_name ?? "—"}
-          </span>
-        </span>
-      </div>
+          </Span>
+        </Span>
+      </Div>
 
-      <div className="px-5 py-4">
+      <Div className="px-5 py-4">
         {mode === "student" && idCardData ? (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+          <Div type="grid" cols={2} className="gap-x-3 gap-y-3">
             <DetailCell theme={theme} label="Roll No." value={idCardData.roll_number ?? "—"} />
             <DetailCell theme={theme} label="Blood Group" value={formatBloodGroup(idCardData.blood_group)} />
-          </div>
+          </Div>
         ) : pickupCardData ? (
-          <div className="space-y-2.5">
-            <p style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
+          <Div className="space-y-2.5">
+            <P style={{ color: theme.mutedText, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8 }}>
               AUTHORISED FOR PICKUP
-            </p>
+            </P>
             <PickupParentList theme={theme} data={pickupCardData} />
-          </div>
+          </Div>
         ) : null}
-      </div>
+      </Div>
 
-      <div className="px-5 pb-4 flex items-center justify-between">
-        <span style={{ color: theme.mutedText, fontSize: 10 }}>Adm: {data.admission_number ?? "—"}</span>
+      <Div type="row" align="center" justify="between" className="px-5 pb-4">
+        <Span style={{ color: theme.mutedText, fontSize: 10 }}>Adm: {data.admission_number ?? "—"}</Span>
         <IdBarcode value={data.admission_number ?? String(data.system_number)} color={theme.accent} />
-      </div>
-    </div>
+      </Div>
+    </Div>
   );
 }
 
@@ -1290,19 +1341,22 @@ function TemplateThumb({ templateId, mode }: { templateId: CardTemplateId; mode:
   const scale = Math.min(150 / dims.w, 172 / dims.h);
 
   return (
-    <div
-      className="w-full flex items-center justify-center overflow-hidden rounded-lg"
+    <Div
+      type="row"
+      align="center"
+      justify="center"
+      className="w-full overflow-hidden rounded-lg"
       style={{ height: 176, background: "hsl(var(--muted) / 0.35)" }}
     >
-      <div style={{ transform: `scale(${scale})`, width: dims.w }}>
+      <Div style={{ transform: `scale(${scale})`, width: dims.w }}>
         <CardPreview
           template={templateId}
           mode={mode}
           idCardData={SAMPLE_STUDENT_CARD}
           pickupCardData={SAMPLE_PICKUP_CARD}
         />
-      </div>
-    </div>
+      </Div>
+    </Div>
   );
 }
 
@@ -1409,7 +1463,7 @@ function GeneratePageContent() {
           <H3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
             Class &amp; Student
           </H3>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <FormField label="Academic Year">
               <ResponsiveSelect
                 value={selectedAcademicYearId}
@@ -1454,7 +1508,7 @@ function GeneratePageContent() {
                 }))}
               />
             </FormField>
-          </div>
+          </Div>
         </Div>
 
         {/* ── Card type / template / actions ────────────────────────────── */}
@@ -1477,19 +1531,20 @@ function GeneratePageContent() {
             <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
               {STUDENT_PAGE.generate.chooseTemplate}
             </P>
-            <button
+            <Button
+            variant={'default'}
               type="button"
               onClick={() => setGalleryOpen(true)}
               className="flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-muted/50 transition-colors"
               style={{ borderColor: "hsl(var(--border))" }}
             >
-              <span
+              <Span
                 className="h-3.5 w-3.5 rounded-full shrink-0"
                 style={{ background: CARD_THEMES[selectedTemplate].accent }}
               />
-              <span className="text-sm font-medium text-foreground">{currentTemplate?.label}</span>
+              <Span className="text-sm font-medium text-foreground">{currentTemplate?.label}</Span>
               <ChevronDown size={14} className="text-muted-foreground" />
-            </button>
+            </Button>
           </Div>
 
           <Div type="row" align="center" gap="sm">
@@ -1528,14 +1583,16 @@ function GeneratePageContent() {
               <P color="muted">{STUDENT_PAGE.generate.noStudent}</P>
             </Div>
           ) : (
-            <div id="card-print-area" ref={printRef}>
+            // NOTE: kept as a raw <div> intentionally — it carries `ref={printRef}`
+            // for window.print(), and the shared <Div> primitive does not forward refs.
+            <Div id="card-print-area" ref={printRef}>
               <CardPreview
                 template={selectedTemplate}
                 mode={cardMode}
                 idCardData={idCardData}
                 pickupCardData={pickupCardData}
               />
-            </div>
+            </Div>
           )}
         </Div>
       </Div>
@@ -1546,15 +1603,15 @@ function GeneratePageContent() {
         onClose={() => setGalleryOpen(false)}
         title="Template Sandbox"
       >
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <P color="muted" className="text-xs mb-3">
             Pick a design for the {cardMode === "student" ? "Student ID Card" : "Pickup Card"}. Previews use sample data.
           </P>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <Div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {CARD_TEMPLATES.map((t) => (
-              <button
+              <Div
                 key={t.id}
-                type="button"
+                // type="button"
                 onClick={() => {
                   setSelectedTemplate(t.id);
                   setGalleryOpen(false);
@@ -1566,12 +1623,12 @@ function GeneratePageContent() {
                 }}
               >
                 <TemplateThumb templateId={t.id} mode={cardMode} />
-                <p className="text-xs font-semibold text-foreground mt-2">{t.label}</p>
-                <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</p>
-              </button>
+                <P className="text-xs font-semibold text-foreground mt-2">{t.label}</P>
+                <P className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</P>
+              </Div>
             ))}
-          </div>
-        </div>
+          </Div>
+        </Div>
       </ResponsiveModalContainer>
     </>
   );

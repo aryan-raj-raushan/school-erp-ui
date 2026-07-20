@@ -22,6 +22,12 @@ export interface LoginSchoolPayload {
   password: string;
 }
 
+export interface LoginParentPayload {
+  phone_number: string;
+  dial_code: string;
+  password: string;
+}
+
 export interface AuthUser {
   id: string;
   email?: string;
@@ -100,6 +106,12 @@ export const AuthService = {
   async loginSchool(payload: LoginSchoolPayload): Promise<LoginResult> {
     const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolLogin, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+    return res.data;
+  },
+
+  async loginParent(payload: LoginParentPayload): Promise<LoginResult> {
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.parentLogin, payload, { skipAuth: true, skipRefresh: true });
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.PARENT);
     return res.data;
   },
 

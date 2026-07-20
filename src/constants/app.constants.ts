@@ -23,6 +23,8 @@ export const ROUTES = {
   subscriptions: '/subscriptions',
   // School admin routes
   schoolDashboard: '/dashboard',
+  // Parent routes
+  parentPortal: '/parent-portal',
   academicYears: '/school/academic-years',
   academicYearNew: '/school/academic-years/new',
   academicYearEdit: (id: string) => `/school/academic-years/edit?id=${id}`,

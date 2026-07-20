@@ -50,26 +50,39 @@ export const studentHostelInfoSchema = z
     }
   });
 
-export const studentParentSchema = z.object({
-  relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER'], {
-    message: 'Relation is required',
-  }),
-  first_name: requiredNameSchema(100),
-  last_name: optionalNameSchema(100),
-  email: optionalEmailSchema,
-  dial_code: dialCodeSchema,
-  phone_number: indianPhoneSchema,
-  alternate_phone: optionalIndianPhoneSchema,
-  occupation: z.string().max(100).optional(),
-  qualification: z.enum([
-    'BELOW_10TH', 'CLASS_10TH', 'CLASS_12TH', 'UNDERGRADUATE',
-    'POSTGRADUATE', 'MASTERS', 'DOCTORATE', 'OTHER',
-  ]).optional().or(z.literal('')),
-  annual_income: z.string().max(50).optional(),
-  aadhaar_number: optionalAadhaarSchema,
-  is_primary: z.boolean().optional(),
-  can_pickup: z.boolean().optional(),
-});
+export const studentParentSchema = z
+  .object({
+    id: z.string().optional(),
+    relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER'], {
+      message: 'Relation is required',
+    }),
+    first_name: requiredNameSchema(100),
+    last_name: optionalNameSchema(100),
+    email: optionalEmailSchema,
+    dial_code: dialCodeSchema,
+    phone_number: indianPhoneSchema,
+    alternate_phone: optionalIndianPhoneSchema,
+    occupation: z.string().max(100).optional(),
+    qualification: z.enum([
+      'BELOW_10TH', 'CLASS_10TH', 'CLASS_12TH', 'UNDERGRADUATE',
+      'POSTGRADUATE', 'MASTERS', 'DOCTORATE', 'OTHER',
+    ]).optional().or(z.literal('')),
+    annual_income: z.string().max(50).optional(),
+    aadhaar_number: optionalAadhaarSchema,
+    is_primary: z.boolean().optional(),
+    can_pickup: z.boolean().optional(),
+    has_login: z.boolean().optional(),
+    enable_login: z.boolean().optional(),
+    password: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.enable_login && !data.has_login && !data.password?.trim()) {
+      ctx.addIssue({ code: 'custom', message: 'Password is required to enable login', path: ['password'] });
+    }
+    if (data.enable_login && data.password?.trim() && data.password.trim().length < 6) {
+      ctx.addIssue({ code: 'custom', message: 'Password must be at least 6 characters', path: ['password'] });
+    }
+  });
 
 export const studentDocumentSchema = z.object({
   document_name: z.enum([

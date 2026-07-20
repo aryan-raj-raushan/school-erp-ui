@@ -13,7 +13,7 @@ export const staffBaseSchema = z.object({
   dial_code: dialCodeSchema,
   phone_number: indianPhoneSchema,
   email: optionalEmailSchema,
-  role: z.string().min(1, 'Role is required'),
+  role: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Gender is required' }),
   date_of_birth: z.string().min(1, 'Date of birth is required'),
   blood_group: z.enum(['A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE', 'O_POSITIVE', 'O_NEGATIVE']).optional().or(z.literal('')),
@@ -22,6 +22,9 @@ export const staffBaseSchema = z.object({
   city: z.string().max(100).optional(),
   joining_date: z.string().optional(),
   employee_code: z.string().max(50).optional(),
+  // Picker value only — the id of the selected row in the /roles list (system or
+  // custom). Resolved into `role` (enum) / `custom_role_id` at submit time.
+  role_id: z.string().min(1, 'Role is required'),
   custom_role_id: z.string().optional(),
   father_name: z.string().max(100).optional(),
   husband_name: z.string().max(100).optional(),

@@ -14,6 +14,18 @@ import { createStaffSchema, updateStaffSchema, type StaffFormValues } from '@/li
 
 export type { StaffFormValues };
 
+/** Display label for a staff member's role — resolves custom roles by id, falls back to the enum-role's matching system role. */
+export function getStaffRoleLabel(staff: Staff | null | undefined, roles: Role[]): string | undefined {
+  if (!staff) return undefined;
+  if (staff.custom_role_id) {
+    return roles.find((r) => r.id === staff.custom_role_id)?.name;
+  }
+  if (staff.role) {
+    return roles.find((r) => r.is_system && r.slug.toUpperCase() === staff.role)?.name ?? staff.role;
+  }
+  return undefined;
+}
+
 export function useStaffDetail(id: string | undefined) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -87,6 +99,15 @@ export function useStaffDetail(id: string | undefined) {
     });
   }, [fetchDropdownData, fetchStaff, isNew]);
 
+  // Backfills the role picker for staff assigned a base system role (no
+  // custom_role_id) — resolves once the roles list has loaded, regardless of
+  // which of the two parallel fetches above lands first.
+  useEffect(() => {
+    if (!staff || staff.custom_role_id || allRoles.length === 0) return;
+    const matchingSystemRole = allRoles.find((r) => r.is_system && r.slug.toUpperCase() === staff.role);
+    if (matchingSystemRole) form.setValue('role_id', matchingSystemRole.id);
+  }, [staff, allRoles, form]);
+
   useEffect(() => {
     if (searchParams.get('edit') === 'true' && !isNew) setIsEditing(true);
   }, [searchParams, isNew]);
@@ -135,20 +156,26 @@ export function useStaffDetail(id: string | undefined) {
 
   async function onSubmit(values: StaffFormValues) {
     try {
+      const selectedRole = allRoles.find((r) => r.id === values.role_id);
+      const role = selectedRole?.is_system ? (selectedRole.slug.toUpperCase() as any) : undefined;
+      const custom_role_id = selectedRole && !selectedRole.is_system ? selectedRole.id : undefined;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- role_id is a picker-only field, excluded from the API payload
+      const { role_id: _roleId, ...rest } = values;
+
       const payload = {
-        ...values,
+        ...rest,
         email: values.email || undefined,
         last_name: values.last_name || undefined,
         gender: values.gender || undefined,
         date_of_birth: values.date_of_birth || undefined,
-        role: values.role as any,
+        role,
         blood_group: (values.blood_group || undefined) as any,
         address: values.address || undefined,
         permanent_address: values.permanent_address || undefined,
         city: values.city || undefined,
         joining_date: values.joining_date || undefined,
         employee_code: values.employee_code || undefined,
-        custom_role_id: values.custom_role_id || undefined,
+        custom_role_id,
         father_name: values.father_name || undefined,
         husband_name: values.husband_name || undefined,
         reporting_to_id: values.reporting_to_id || undefined,
@@ -190,6 +217,7 @@ export function useStaffDetail(id: string | undefined) {
       phone_number: data.phone_number ?? '',
       email: data.email ?? '',
       role: data.role ?? '',
+      role_id: data.custom_role_id ?? '',
       gender: (data.gender as StaffFormValues['gender']) ?? undefined,
       date_of_birth: toDate(data.date_of_birth),
       blood_group: (data.blood_group as StaffFormValues['blood_group']) ?? '',

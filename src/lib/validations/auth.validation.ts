@@ -12,6 +12,8 @@ export const schoolLoginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const parentLoginSchema = schoolLoginSchema;
+
 export const unifiedLoginSchema = z
   .object({
     identifier: z.string().min(1, 'Email or phone number is required'),
@@ -31,6 +33,7 @@ export const unifiedLoginSchema = z
 
 export type CompanyLoginFormValues = z.infer<typeof companyLoginSchema>;
 export type SchoolLoginFormValues = z.infer<typeof schoolLoginSchema>;
+export type ParentLoginFormValues = z.infer<typeof parentLoginSchema>;
 export type UnifiedLoginFormValues = z.infer<typeof unifiedLoginSchema>;
 
 export const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;

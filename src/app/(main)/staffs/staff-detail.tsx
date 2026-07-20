@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Pencil } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { useStaffDetail } from "@/hooks/useStaffDetail";
+import { useStaffDetail, getStaffRoleLabel } from "@/hooks/useStaffDetail";
 import { BLOOD_GROUP_LABEL, GENDER_LABEL, BLOOD_GROUPS } from "@/constants";
 import {
   Div,
@@ -123,12 +123,7 @@ export function StaffDetail({ id }: { id: string }) {
               <Div type="col" gap="xs">
                 <H2>{fullName}</H2>
                 <Badge variant="info">
-                  {staff?.role
-                    ? roles.find(
-                        (r) =>
-                          r.name.toUpperCase().replace(/ /g, "_") === staff.role
-                      )?.name ?? staff.role
-                    : ""}
+                  {getStaffRoleLabel(staff, roles) ?? ""}
                 </Badge>
                 <Badge variant={staff?.is_active ? "success" : "default"}>
                   {staff?.is_active ? "Active" : "Inactive"}
@@ -207,17 +202,7 @@ export function StaffDetail({ id }: { id: string }) {
               Employment
             </H2>
             <FormGrid>
-              <InfoRow
-                label="Role"
-                value={
-                  staff?.role
-                    ? roles.find(
-                        (r) =>
-                          r.name.toUpperCase().replace(/ /g, "_") === staff.role
-                      )?.name ?? staff.role
-                    : undefined
-                }
-              />
+              <InfoRow label="Role" value={getStaffRoleLabel(staff, roles)} />
               <InfoRow label="Employee Code" value={staff?.employee_code} />
               <InfoRow
                 label="Joining Date"
@@ -386,13 +371,13 @@ export function StaffDetail({ id }: { id: string }) {
                 <FormField
                   label="Role"
                   required
-                  error={form.formState.errors.role?.message}
+                  error={form.formState.errors.role_id?.message}
                 >
                   <ResponsiveSelect
-                    {...form.register("role")}
+                    {...form.register("role_id")}
                     customPlaceholder="Select role"
                     options={roles.map((r) => ({
-                      value: r.name.toUpperCase().replace(/ /g, "_"),
+                      value: r.id,
                       label: r.name,
                     }))}
                   />
