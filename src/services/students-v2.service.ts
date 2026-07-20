@@ -47,6 +47,7 @@ export interface StudentHostelInfoPayload {
 }
 
 export interface StudentParentPayload {
+  id?: string;
   relation: string;
   first_name: string;
   last_name?: string;
@@ -61,6 +62,8 @@ export interface StudentParentPayload {
   profile_image?: string;
   is_primary?: boolean;
   can_pickup?: boolean;
+  enable_login?: boolean;
+  password?: string;
 }
 
 export interface StudentDocumentPayload {

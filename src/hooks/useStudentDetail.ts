@@ -124,6 +124,7 @@ export function useStudentDetail(id?: string) {
             }
           : { hostel_required: false },
         parents: data.parents.map((p:any) => ({
+          id: p.id,
           relation: p.relation,
           first_name: p.first_name,
           last_name: p.last_name ?? "",
@@ -137,6 +138,9 @@ export function useStudentDetail(id?: string) {
           aadhaar_number: p.aadhaar_number ?? "",
           is_primary: p.is_primary,
           can_pickup: p.can_pickup,
+          has_login: p.has_login ?? false,
+          enable_login: p.has_login ?? false,
+          password: "",
         })),
         documents: data.documents.map((d:any) => ({
           document_name: d.document_name,
@@ -312,7 +316,9 @@ export function useStudentDetail(id?: string) {
           : undefined,
         address: values.address ? clean(values.address) : undefined,
         hostel_info: values.hostel_info ? clean(values.hostel_info) : undefined,
-        parents: values.parents?.filter((p) => p.first_name?.trim() && p.phone_number?.trim()).map(clean),
+        parents: values.parents
+          ?.filter((p) => p.first_name?.trim() && p.phone_number?.trim())
+          .map(({ has_login, ...rest }) => clean(rest)),
         documents: values.documents?.map(clean),
       };
 

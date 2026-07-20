@@ -3,6 +3,7 @@ export const ENDPOINTS = {
     companyRegister: "/auth/company/register",
     companyLogin: "/auth/company/login",
     schoolLogin: "/auth/school/login",
+    parentLogin: "/auth/parent/login",
     schoolSignup: "/auth/school/signup",
     login: "/auth/login",
     setupPassword: "/auth/school/setup-password",

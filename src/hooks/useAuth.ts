@@ -8,6 +8,7 @@ import {
   AuthService,
   type LoginCompanyPayload,
   type LoginSchoolPayload,
+  type LoginParentPayload,
   type LoginUnifiedPayload,
   type SchoolSignupPayload,
 } from '@/services/auth.service';
@@ -53,6 +54,25 @@ export function useAuth() {
       setAuth(profile, AuthContext.SCHOOL);
       hydratePermissions(profile);
       router.replace(ROUTES.schoolDashboard);
+      return result;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loginParent(payload: LoginParentPayload) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await AuthService.loginParent(payload);
+      const profile = await AuthService.getMe();
+      setAuth(profile, AuthContext.PARENT);
+      hydratePermissions(profile);
+      router.replace(ROUTES.parentPortal);
       return result;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
@@ -152,5 +172,5 @@ export function useAuth() {
     }
   }
 
-  return { loginCompany, loginSchool, loginUnified, switchSchool, logout, signup, isLoading, error };
+  return { loginCompany, loginSchool, loginParent, loginUnified, switchSchool, logout, signup, isLoading, error };
 }

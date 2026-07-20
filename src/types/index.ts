@@ -21,6 +21,7 @@ export type Role = (typeof Role)[keyof typeof Role];
 export const AuthContext = {
   COMPANY: 'COMPANY',
   SCHOOL: 'SCHOOL',
+  PARENT: 'PARENT',
 } as const;
 
 export type AuthContext = (typeof AuthContext)[keyof typeof AuthContext];
@@ -44,6 +45,8 @@ export interface UserProfile {
   phone_number?: string;
   role: Role;
   school_id?: string;
+  /** The linked student — populated for parent users only */
+  student_id?: string;
   profile_image?: string | null;
   custom_role_id?: string | null;
   /** Resolved permission slugs from /auth/me — populated for school users */
@@ -209,7 +212,7 @@ export interface Parent {
 // ─── Staff ────────────────────────────────────────────────────────────────────
 
 export type StaffStatus = 'ACTIVE' | 'INACTIVE' | 'OFFBOARDED';
-export type StaffRole = 'SCHOOL_ADMIN' | 'PRINCIPAL' | 'VICE_PRINCIPAL' | 'TEACHER' | 'CLASS_TEACHER' | 'ACCOUNTANT' | 'LIBRARIAN';
+export type StaffRole = 'SCHOOL_ADMIN' | 'PRINCIPAL' | 'VICE_PRINCIPAL' | 'TEACHER' | 'CLASS_TEACHER' | 'ACCOUNTANT' | 'LIBRARIAN' | 'OTHER';
 
 export interface Staff {
   id: string;

@@ -17,7 +17,7 @@ export interface CreateStaffPayload {
   dial_code: string;
   phone_number: string;
   email?: string;
-  role: StaffRole;
+  role?: StaffRole;
   gender?: Gender;
   date_of_birth?: string;
   blood_group?: BloodGroup;
