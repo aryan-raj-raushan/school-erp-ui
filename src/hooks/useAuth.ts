@@ -69,6 +69,12 @@ export function useAuth() {
     setError(null);
     try {
       const result = await AuthService.loginParent(payload);
+
+      if ('must_change_password' in result) {
+        router.replace(`${ROUTES.changePassword}?token=${result.change_token}&ctx=parent`);
+        return result;
+      }
+
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.PARENT);
       hydratePermissions(profile);

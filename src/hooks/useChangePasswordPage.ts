@@ -16,6 +16,7 @@ export function useChangePasswordPage() {
   const searchParams = useSearchParams();
   const { setAuth, setPermissions } = useAuthStore();
   const changeToken = searchParams.get('token') ?? '';
+  const isParent = searchParams.get('ctx') === 'parent';
 
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
@@ -34,11 +35,23 @@ export function useChangePasswordPage() {
 
   async function onSubmit(values: ChangePasswordFormValues) {
     try {
-      await AuthService.changePassword({
+      const payload = {
         change_token: values.change_token,
         password: values.password,
         confirm_password: values.confirm_password,
-      });
+      };
+
+      if (isParent) {
+        await AuthService.changePasswordParent(payload);
+        const profile = await AuthService.getMe();
+        setAuth(profile, AuthContext.PARENT);
+        setPermissions(profile.permissions ?? []);
+        toast.success('Password changed successfully');
+        router.replace(ROUTES.parentPortal);
+        return;
+      }
+
+      await AuthService.changePassword(payload);
       const profile = await AuthService.getMe();
       setAuth(profile, AuthContext.SCHOOL);
       setPermissions(profile.permissions ?? []);

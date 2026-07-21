@@ -84,6 +84,7 @@ export interface PasswordChangeRequired {
 }
 
 export type LoginOrSetupResult = LoginResult | PasswordSetupRequired | PasswordChangeRequired;
+export type LoginParentResult = LoginResult | PasswordChangeRequired;
 
 export function isLoginResult(result: LoginOrSetupResult): result is LoginResult {
   return 'accessToken' in result;
@@ -109,9 +110,11 @@ export const AuthService = {
     return res.data;
   },
 
-  async loginParent(payload: LoginParentPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.parentLogin, payload, { skipAuth: true, skipRefresh: true });
-    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.PARENT);
+  async loginParent(payload: LoginParentPayload): Promise<LoginParentResult> {
+    const res = await apiGateway.post<LoginParentResult>(ENDPOINTS.auth.parentLogin, payload, { skipAuth: true, skipRefresh: true });
+    if (isLoginResult(res.data)) {
+      TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.PARENT);
+    }
     return res.data;
   },
 
@@ -149,6 +152,12 @@ export const AuthService = {
   async changePassword(payload: ChangePasswordPayload): Promise<LoginResult> {
     const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.changePassword, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+    return res.data;
+  },
+
+  async changePasswordParent(payload: ChangePasswordPayload): Promise<LoginResult> {
+    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.parentChangePassword, payload, { skipAuth: true, skipRefresh: true });
+    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.PARENT);
     return res.data;
   },
 
