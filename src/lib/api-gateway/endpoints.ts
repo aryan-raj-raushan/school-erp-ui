@@ -8,6 +8,7 @@ export const ENDPOINTS = {
     login: "/auth/login",
     setupPassword: "/auth/school/setup-password",
     changePassword: "/auth/school/change-password",
+    parentChangePassword: "/auth/parent/change-password",
     refresh: "/auth/refresh",
     logout: "/auth/logout",
     me: "/auth/me",
