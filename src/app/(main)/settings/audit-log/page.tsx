@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useAuditLog } from '@/hooks/useAuditLog';
+import { useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useAuditLog, type AuditLogFilterState } from '@/hooks/useAuditLog';
+import { useStorageFilter } from '@/hooks/useStorageFilter';
+import { STORAGE_FILTER_KEYS } from '@/constants/storage-filter-keys.constants';
 import {
   PageCol,
   PageHeader,
-  FilterBar,
+  FilterToolbar,
+  type FilterField,
   Div,
-  Button,
-  Input,
   Badge,
   DataTable,
-  FilterLabel,
   Spinner,
   P,
+  DatePicker,
   type ColumnDef,
   type BadgeVariant,
-  ResponsiveSelect,
 } from '@/components/ui';
 import type { AuditLogRecord, AuditEntity, AuditAction } from '@/types';
 
@@ -29,14 +29,115 @@ const ACTION_BADGE: Record<AuditAction, BadgeVariant> = {
   DELETE: 'danger',
 };
 
-export default function AuditLogPage() {
+type PersistedAuditLogFilters = Pick<AuditLogFilterState, 'entity' | 'action' | 'from' | 'to'>;
+
+function AuditLogContent() {
   const {
-    items, total, isLoading, page, setPage,
-    entity, setEntity, action, setAction,
-    from, setFrom, to, setTo, fetch,
+    items,
+    total,
+    isLoading,
+    filters,
+    updateFilters,
+    fetch,
   } = useAuditLog();
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedAuditLogFilters>({
+    key: STORAGE_FILTER_KEYS.AUDIT_LOG,
+    defaultValue: {},
+  });
+
   useEffect(() => { fetch(); }, [fetch]);
+
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) {
+      updateFilters(storedFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const handleFilterChange = useCallback((next: Partial<AuditLogFilterState>) => {
+    updateFilters(next);
+
+    const persisted: Partial<PersistedAuditLogFilters> = {};
+    (['entity', 'action', 'from', 'to'] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field] as never;
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
+  }, [updateFilters, persistFilters]);
+
+  const handleClearFilters = useCallback(() => {
+    handleFilterChange({
+      entity: undefined,
+      action: undefined,
+      from: undefined,
+      to: undefined,
+    });
+    clearStoredFilters();
+  }, [handleFilterChange, clearStoredFilters]);
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: 'select',
+        key: 'entity',
+        label: 'Entity',
+        placeholder: 'All Entities',
+        options: ENTITY_OPTIONS.map((e) => ({ value: e, label: e })),
+      },
+      {
+        type: 'select',
+        key: 'action',
+        label: 'Action',
+        placeholder: 'All Actions',
+        options: ACTION_OPTIONS.map((a) => ({ value: a, label: a })),
+      },
+      {
+        type: 'custom',
+        key: 'from',
+        label: 'From',
+        chipLabel: filters.from,
+        render: () => (
+          <DatePicker
+            value={filters.from}
+            onChange={(val) => handleFilterChange({ from: val })}
+            size="compact"
+            placeholder="From date"
+            className="w-36"
+          />
+        ),
+      },
+      {
+        type: 'custom',
+        key: 'to',
+        label: 'To',
+        chipLabel: filters.to,
+        render: () => (
+          <DatePicker
+            value={filters.to}
+            onChange={(val) => handleFilterChange({ to: val })}
+            size="compact"
+            placeholder="To date"
+            className="w-36"
+          />
+        ),
+      },
+    ],
+    [filters.from, filters.to, handleFilterChange],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    entity: filters.entity,
+    action: filters.action,
+    from: filters.from,
+    to: filters.to,
+  };
 
   const columns: ColumnDef<AuditLogRecord>[] = [
     { header: 'Time', accessorKey: 'created_at' },
@@ -71,44 +172,33 @@ export default function AuditLogPage() {
     <PageCol>
       <PageHeader title="Audit Log" subtitle={`${total} total records`} />
 
-      <FilterBar>
-        <FilterLabel>Entity</FilterLabel>
-        <ResponsiveSelect
-          width="sm"
-          value={entity}
-          onChange={e => setEntity(e.target.value as AuditEntity | '')}
-          customPlaceholder="All Entities"
-          options={ENTITY_OPTIONS.map(e => ({ value: e, label: e }))}
-        />
-
-        <FilterLabel>Action</FilterLabel>
-        <ResponsiveSelect
-          width="sm"
-          value={action}
-          onChange={e => setAction(e.target.value as AuditAction | '')}
-          customPlaceholder="All Actions"
-          options={ACTION_OPTIONS.map(a => ({ value: a, label: a }))}
-        />
-
-        <FilterLabel>From</FilterLabel>
-        <Input type="date" value={from} onChange={e => setFrom(e.target.value)} />
-        <FilterLabel>To</FilterLabel>
-        <Input type="date" value={to} onChange={e => setTo(e.target.value)} />
-
-        <Button variant="outline" onClick={fetch}>Search</Button>
-      </FilterBar>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={(next) => handleFilterChange(next as Partial<AuditLogFilterState>)}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Audit Log"
+      />
 
       {isLoading ? (
         <Spinner />
       ) : (
         <DataTable columns={columns} data={items} />
       )}
-
-      <Div type="row" gap="md" align="center">
-        <Button variant="outline" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-        <P>Page {page}</P>
-        <Button variant="outline" onClick={() => setPage(p => p + 1)}>Next</Button>
-      </Div>
     </PageCol>
+  );
+}
+
+export default function AuditLogPage() {
+  return (
+    <Suspense
+      fallback={
+        <Div type="row" justify="center" className="py-20">
+          <Spinner size="lg" />
+        </Div>
+      }
+    >
+      <AuditLogContent />
+    </Suspense>
   );
 }

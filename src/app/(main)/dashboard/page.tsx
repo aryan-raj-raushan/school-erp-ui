@@ -82,11 +82,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function GreetingHeader({ name }: { name: string }) {
+function GreetingHeader({ name, greeting }: { name: string; greeting: string }) {
   return (
     <Div type="col" gap="xs">
       <P color="muted">Hi, {name || "there"}</P>
-      <H1 className="text-2xl font-bold">{getGreeting()}</H1>
+      <H1 className="text-2xl font-bold">{greeting}</H1>
     </Div>
   );
 }
@@ -478,12 +478,21 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const context = useAuthStore((s) => s.context);
   const { data, isLoading, error } = useDashboard();
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   if (context === AuthContext.COMPANY) {
     return <SuperAdminDashboard />;
   }
 
-  const firstName = user?.first_name ?? "";
+  const firstName = mounted ? (user?.first_name ?? "") : "";
+  const greeting = mounted ? getGreeting() : "";
+  const todayStr = mounted
+    ? new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })
+    : "";
   const academicYear = data?.currentAcademicYear?.name ?? "—";
 
   const kpiCards = [
@@ -577,7 +586,7 @@ export default function DashboardPage() {
     <Div type="col" gap="lg" className="min-h-screen bg-background px-4 py-4 sm:px-6 sm:py-8 max-w-screen-7xl mx-auto">
       {/* Header */}
       <Div type="row" justify="between" align="center" className="flex-wrap gap-2">
-        <GreetingHeader name={firstName} />
+        <GreetingHeader name={firstName} greeting={greeting} />
         <Div type="row" align="center" gap="sm">
           {error && (
             <Badge variant="danger" className="gap-1.5">
@@ -586,7 +595,7 @@ export default function DashboardPage() {
           )}
           <Badge variant="info" className="gap-1.5 px-3 py-1">
             <CalendarCheck size={12} />
-            {new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
+            {todayStr || "\u00A0"}
           </Badge>
         </Div>
       </Div>
