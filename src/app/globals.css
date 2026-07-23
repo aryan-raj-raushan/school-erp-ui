@@ -494,6 +494,19 @@
 }
 
 /* ═══════════════════════════════════════════════
+   CHAT PATTERN BACKGROUND — doodle drift
+═══════════════════════════════════════════════ */
+@keyframes bg-doodle-float {
+  0%, 100% {
+    transform: translate(-50%, -50%) rotate(var(--doodle-rot, 0deg));
+  }
+  50% {
+    transform: translate(calc(-50% + var(--doodle-dx, 8px)), calc(-50% + var(--doodle-dy, 8px)))
+      rotate(calc(var(--doodle-rot, 0deg) + 8deg));
+  }
+}
+
+/* ═══════════════════════════════════════════════
    AUTH FORCE-LIGHT WRAPPER
    Auth pages always render in light mode regardless
    of the stored dark-mode preference.
@@ -633,4 +646,12 @@
 .social-button:disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
