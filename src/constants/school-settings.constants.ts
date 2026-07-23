@@ -6,7 +6,7 @@ export const SCHOOL_CONFIG_PAGE = {
 };
 
 export const TIMINGS_PAGE = {
-  title: 'School Timing Schedules',
+  title: 'Timing Schedules',
   subtitle: 'Manage seasonal and special timing schedules',
   addButton: 'Add Timing',
 };

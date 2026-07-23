@@ -1,21 +1,31 @@
 "use client";
 
-import { Suspense, useState, useMemo } from "react";
+import { Suspense, useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Calendar, PartyPopper, Pencil, Trash2, Eye, CalendarDays, Search } from "lucide-react";
+import {
+  Plus,
+  Calendar,
+  PartyPopper,
+  Pencil,
+  Trash2,
+  Eye,
+  CalendarDays,
+} from "lucide-react";
 import { useSchoolEvents } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useFilterParams } from "@/hooks/useFilterParams";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { HolidayEventDetail } from "./holiday-event-detail";
 import type { SchoolEventFilters } from "@/types/setting/school-events.types";
 import {
   Div,
   P,
   Button,
-  Input,
   PageHeader,
+  type PageHeaderConfig,
   PageCol,
-  FilterBar,
+  FilterToolbar,
+  type FilterField,
   Table,
   TableHead,
   TableHeadRow,
@@ -28,9 +38,9 @@ import {
   Badge,
   Spinner,
   Tabs,
-  ResponsiveSelect,
 } from "@/components/ui";
 import { CalendarViewModal } from "@/components/holiday-events/CalendarViewModal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TYPE_TABS = [
   { value: "", label: "All" },
@@ -39,6 +49,7 @@ const TYPE_TABS = [
 ] as const;
 
 function SchoolEventsContent() {
+  const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const detailId = searchParams.get("id");
@@ -46,28 +57,26 @@ function SchoolEventsContent() {
 
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  // Get current academic year ID
   const currentYearId = useMemo(() => {
     const current = years.find((y) => y.is_current);
     return current?.id || (years[0]?.id ?? undefined);
   }, [years]);
 
-  // Persistent filters via URL query params
-  const [urlFilters, setUrlFilters] = useFilterParams<
-    Record<string, string | undefined>
-  >({
-    type: undefined,
-    academic_year_id: undefined,
-    search: undefined,
-    page: undefined,
-  });
 
-  const initialFilters: SchoolEventFilters = {
-    type: (urlFilters.type as SchoolEventFilters["type"]) || undefined,
-    academic_year_id: urlFilters.academic_year_id || currentYearId || undefined,
-    search: urlFilters.search || undefined,
-    page: urlFilters.page ? Number(urlFilters.page) : 1,
-  };
+  type PersistedSchoolEventFilters = Pick<
+    SchoolEventFilters,
+    "type" | "academic_year_id" | "search"
+  >;
+
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedSchoolEventFilters>({
+    key: STORAGE_FILTER_KEYS.SCHOOL_EVENTS,
+    defaultValue: {},
+  });
 
   const {
     events,
@@ -77,24 +86,73 @@ function SchoolEventsContent() {
     isLoading,
     updateFilters,
     deleteEvent,
-  } = useSchoolEvents(initialFilters);
+  } = useSchoolEvents({
+    academic_year_id: currentYearId,
+    page: 1,
+  });
 
-  // For the calendar, we want ALL events (no pagination). Re-use the same hook
-  // with a high limit and no type filter so the calendar is complete.
-  const { events: allEvents } = useSchoolEvents({ limit: 99, academic_year_id:filters.academic_year_id });
+  // For the calendar, we want ALL events (no pagination).
+  const { events: allEvents } = useSchoolEvents({
+    limit: 99,
+    academic_year_id: filters.academic_year_id,
+  });
 
   function handleFilterChange(next: Partial<SchoolEventFilters>) {
     updateFilters(next);
-    // Sync to URL
-    const urlNext: Record<string, string | undefined> = {};
-    if ("type" in next) urlNext.type = next.type || undefined;
-    if ("academic_year_id" in next)
-      urlNext.academic_year_id = next.academic_year_id || undefined;
-    if ("search" in next) urlNext.search = next.search || undefined;
-    if ("page" in next)
-      urlNext.page = next.page ? String(next.page) : undefined;
-    setUrlFilters(urlNext);
+
+    const persisted: Partial<PersistedSchoolEventFilters> = {};
+    (["type", "academic_year_id", "search"] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field] as never;
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
+
+  function handleClearFilters() {
+    handleFilterChange({
+      type: undefined,
+      academic_year_id: currentYearId,
+      search: undefined,
+      page: 1,
+    });
+    clearStoredFilters();
+  }
+
+  // One-time: once storage has hydrated, apply any filters saved from a
+  // previous visit.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) {
+      updateFilters(storedFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "search",
+        key: "search",
+        placeholder: "Search by name…",
+      },
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: "All Years",
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+      },
+    ],
+    [years],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    search: filters.search,
+    academic_year_id: filters.academic_year_id,
+  };
 
   const activeTab = filters.type ?? "";
 
@@ -102,27 +160,30 @@ function SchoolEventsContent() {
     return <HolidayEventDetail id={detailId} />;
   }
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: isMobile ? "Events" : "Events & Holidays",
+    subtitle: pagination
+      ? `${pagination.total} total events and holidays`
+      : "Manage school events and holidays",
+    actions: [
+      {
+        label: "Calendar",
+        icon: <CalendarDays size={14} />,
+        onClick: () => setCalendarOpen(true),
+        variant: "outline",
+      },
+      {
+        label: "Add New",
+        icon: <Plus size={14} />,
+        onClick: () => router.push("/settings/holidays-events/create-new"),
+      },
+    ],
+    backButton: isMobile,
+  };
+
   return (
     <PageCol>
-      <PageHeader
-        title="Events & Holidays"
-        subtitle={pagination ? `${pagination.total} total` : "Manage school events and holidays"}
-        actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => setCalendarOpen(true)}
-            >
-              <CalendarDays size={16} />
-              Calendar view
-            </Button>
-            <Button onClick={() => router.push("/settings/holidays-events/create-new")}>
-              <Plus size={16} />
-              Add New
-            </Button>
-          </>
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       {/* Type Tabs */}
       <Tabs
@@ -137,30 +198,15 @@ function SchoolEventsContent() {
       />
 
       {/* Filters */}
-      <FilterBar>
-        <Div className="relative flex-1 max-w-xl">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-          />
-          <Input
-            width="full"
-            className="pl-9"
-            placeholder="Search by name…"
-            value={searchInput}
-            onChange={(e) => handleFilterChange({ search: e.target.value })}
-          />
-        </Div>
-        <ResponsiveSelect
-          value={filters.academic_year_id ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              academic_year_id: e.target.value || undefined,
-            })
-          }
-          options={years.map((y) => ({ value: y.id, label: `${y.name} ${y.is_current ? "(Current)" : ""}` }))}
-        />
-      </FilterBar>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={(next) =>
+          handleFilterChange(next as Partial<SchoolEventFilters>)
+        }
+        onClear={handleClearFilters}
+        sheetTitle="Filter Events & Holidays"
+      />
 
       {/* Table */}
       <Table>
@@ -185,8 +231,8 @@ function SchoolEventsContent() {
               {activeTab === "HOLIDAY"
                 ? "holidays"
                 : activeTab === "EVENT"
-                  ? "events"
-                  : "records"}{" "}
+                ? "events"
+                : "records"}{" "}
               found
             </TableEmptyRow>
           ) : (
@@ -197,10 +243,7 @@ function SchoolEventsContent() {
                     {ev.type === "HOLIDAY" ? (
                       <Calendar size={15} className="text-amber-500 shrink-0" />
                     ) : (
-                      <PartyPopper
-                        size={15}
-                        className="text-blue-500 shrink-0"
-                      />
+                      <PartyPopper size={15} className="text-blue-500 shrink-0" />
                     )}
                     {ev.name}
                   </Div>
@@ -253,7 +296,9 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/settings/holidays-events?id=${ev.id}&edit=true`)
+                        router.push(
+                          `/settings/holidays-events?id=${ev.id}&edit=true`,
+                        )
                       }
                       title="Edit"
                     >
@@ -285,10 +330,7 @@ function SchoolEventsContent() {
 
       {/* Calendar modal */}
       {calendarOpen && (
-        <CalendarViewModal
-          events={allEvents}
-          onClose={() => setCalendarOpen(false)}
-        />
+        <CalendarViewModal events={allEvents} onClose={() => setCalendarOpen(false)} />
       )}
     </PageCol>
   );

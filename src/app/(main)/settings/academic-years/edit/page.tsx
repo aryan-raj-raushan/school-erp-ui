@@ -15,8 +15,10 @@ import {
   Spinner,
   PageHeader,
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function EditAcademicYearPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get("id") ?? "";
 
@@ -48,6 +50,7 @@ function EditAcademicYearPageInner() {
             {ACADEMIC_YEARS_PAGE.form.cancel}
           </Button>
         }
+        backButton={isMobile}
       />
 
       <form onSubmit={handleSubmit}>

@@ -8,8 +8,10 @@ import {
   CheckboxLabel,
   PageHeader,
 } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function NewSubjectPage() {
+  const isMobile = useIsMobile();
   const {
     form, isSubmitting,
     handleSubmit, handleBack, toggleIsElective, toggleIsActive,
@@ -20,6 +22,7 @@ export default function NewSubjectPage() {
       <PageHeader
         title={SUBJECTS_PAGE.form.createTitle}
         actions={<Button variant="outline" onClick={handleBack}>{SUBJECTS_PAGE.form.cancel}</Button>}
+        backButton={isMobile}
       />
 
       <form onSubmit={handleSubmit}>

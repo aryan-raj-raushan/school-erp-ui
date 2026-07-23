@@ -71,6 +71,11 @@ const DEFAULT_COPY = {
 export function SuperAdminDashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const isSuperAdmin = user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN;
   const copy = (user?.role && COPY[user.role]) || DEFAULT_COPY;
 
@@ -112,8 +117,8 @@ export function SuperAdminDashboard() {
   return (
     <Div type="col" gap="lg" className="min-h-screen bg-background px-4 py-4 sm:px-6 sm:py-8 max-w-screen-7xl mx-auto">
       <Div type="col" gap="xs">
-        <P color="muted">Hi, {user?.first_name || "there"}</P>
-        <H1 className="text-2xl font-bold">{getGreeting()}</H1>
+        <P color="muted">Hi, {mounted ? (user?.first_name || "there") : "there"}</P>
+        <H1 className="text-2xl font-bold">{mounted ? getGreeting() : ""}</H1>
       </Div>
 
       <Div

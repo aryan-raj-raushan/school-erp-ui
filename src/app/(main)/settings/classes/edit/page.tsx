@@ -19,8 +19,10 @@ import {
   PageHeader,
   ResponsiveSelect,
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function EditClassPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get("id") ?? "";
 
@@ -62,6 +64,7 @@ function EditClassPageInner() {
             {CLASSES_PAGE.form.cancel}
           </Button>
         }
+        backButton={isMobile}
       />
 
       <form onSubmit={handleSubmit}>

@@ -13,8 +13,10 @@ import {
   Spinner,
   Icon,
   type ColumnDef,
+  PageHeaderConfig,
 } from "@/components/ui";
 import { Pencil } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type AcademicYearRow = {
   id: string;
@@ -27,6 +29,7 @@ type AcademicYearRow = {
 };
 
 export default function AcademicYearsPage() {
+  const isMobile = useIsMobile();
   const { years, isLoading, setCurrent, navigateToNew, navigateToEdit } =
     useAcademicYears();
 
@@ -99,18 +102,22 @@ export default function AcademicYearsPage() {
     [navigateToEdit, setCurrent],
   );
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: ACADEMIC_YEARS_PAGE.title,
+    subtitle: ACADEMIC_YEARS_PAGE.description,
+    actions: [
+      {
+        label: ACADEMIC_YEARS_PAGE.addButton,
+
+        onClick: () => navigateToNew(),
+      },
+    ],
+    backButton: isMobile,
+  };
+
   return (
     <PageCol>
-      <PageHeader
-        title={ACADEMIC_YEARS_PAGE.title}
-        subtitle={ACADEMIC_YEARS_PAGE.description}
-        illustration="/illustrations/graduation.svg"
-        actions={
-          <Button onClick={navigateToNew}>
-            {ACADEMIC_YEARS_PAGE.addButton}
-          </Button>
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       <DataTable
         columns={columns}

@@ -12,18 +12,16 @@ import {
   Badge,
   Icon,
   type ColumnDef,
+  PageHeaderConfig,
 } from "@/components/ui";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Subject } from "@/services/subjects.service";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SubjectsPage() {
-  const {
-    subjects,
-    isLoading,
-    removeSubject,
-    navigateToNew,
-    navigateToEdit,
-  } = useSubjectsPage();
+  const isMobile = useIsMobile();
+  const { subjects, isLoading, removeSubject, navigateToNew, navigateToEdit } =
+    useSubjectsPage();
 
   const columns = useMemo<ColumnDef<Subject>[]>(
     () => [
@@ -81,17 +79,23 @@ export default function SubjectsPage() {
         ),
       },
     ],
-    [navigateToEdit, removeSubject]
+    [navigateToEdit, removeSubject],
   );
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: SUBJECTS_PAGE.title,
+    actions: [
+      {
+        label: SUBJECTS_PAGE.addButton,
+        onClick: () => navigateToNew(),
+      },
+    ],
+    backButton: isMobile,
+  };
 
   return (
     <PageCol>
-      <PageHeader
-        title={SUBJECTS_PAGE.title}
-        actions={
-          <Button onClick={navigateToNew}>{SUBJECTS_PAGE.addButton}</Button>
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       <DataTable
         columns={columns}
