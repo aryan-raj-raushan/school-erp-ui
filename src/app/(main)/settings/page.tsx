@@ -18,9 +18,9 @@ export default function SettingsIndexPage() {
       </Div>
 
       {/* Grid of setting cards */}
-      <Div type="grid" cols={2} gap="md">
+      <Div type="grid" cols={3} gap="md">
         {SETTINGS_ITEMS.map((item) => (
-          <Div boxCard>
+          <Div boxCard key={item.slug}>
             <Link key={item.slug} href={`/settings/${item.slug}`}>
               <Div type="row" justify="between" align="start" gap="md">
                 <Div type="col" gap="sm">

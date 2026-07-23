@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import './globals.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ReactBitsBackground } from '@/components/reactbits/background';
+import { ChatPatternBackground } from '@/components/background/chat-pattern-background';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full font-[family-name:var(--font-inter,var(--font-geist))]">
         <ThemeProvider>
           <TooltipProvider>
-            <ReactBitsBackground>{children}</ReactBitsBackground>
+            <ChatPatternBackground>{children}</ChatPatternBackground>
           </TooltipProvider>
         </ThemeProvider>
         <Toaster position="top-right" richColors />

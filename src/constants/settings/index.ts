@@ -1,15 +1,16 @@
 import {
   CalendarDays,
   BookOpen,
-  DoorOpen,
   Settings2,
   Building2,
-  SlidersHorizontal,
   Clock,
-  LayoutGrid,
   Bell,
   ScrollText,
   type LucideIcon,
+  Users,
+  CalendarRange,
+  ClipboardList,
+  History,
 } from "lucide-react";
 
 export interface SettingItem {
@@ -19,47 +20,83 @@ export interface SettingItem {
   icon: LucideIcon;
 }
 
+
 export const SETTINGS_ITEMS: SettingItem[] = [
   {
     slug: "school-profile",
     label: "School Profile",
-    description: "Name, UDISE code, affiliation, timezone, principal details, and logo.",
+    description:
+      "Manage school information, logo, contact details, principal, affiliation, and UDISE code.",
     icon: Building2,
   },
   {
     slug: "school-config",
     label: "School Config",
-    description: "Attendance method, lock hours, conflict resolution mode, and late rules.",
-    icon: SlidersHorizontal,
+    description:
+      "Configure attendance, grading, session rules, timezone, and other school-wide preferences.",
+    icon: Settings2,
+  },
+  {
+    slug: "academic-years",
+    label: "Academic Year",
+    description:
+      "Create and manage academic sessions with start and end dates.",
+    icon: CalendarDays,
+  },
+  {
+    slug: "academic-year-rollover",
+    label: "Academic Year Rollover",
+    description:
+      "Promote students, archive records, and roll over data to the next academic year.",
+    icon: History,
   },
   {
     slug: "timings",
     label: "Timing Schedules",
-    description: "Summer, winter, exam, and special timing schedules with late/half-day cutoffs.",
+    description:
+      "Define school schedules, shifts, working days, and timing templates.",
     icon: Clock,
+  },
+  {
+    slug: "classes",
+    label: "Class & Sections",
+    description:
+      "Manage classes, sections, capacities, and classroom organization.",
+    icon: Users,
   },
   {
     slug: "class-timings",
     label: "Class Timings",
-    description: "Override the default school timing for specific classes.",
-    icon: LayoutGrid,
+    description:
+      "Assign or customize schedules and timings for individual classes.",
+    icon: CalendarRange,
   },
   {
-    slug: "academic-year",
-    label: "Academic Year",
-    description: "Manage academic years, start & end dates, freeze attendance, and rollover.",
-    icon: CalendarDays,
+    slug: "subjects",
+    label: "Subjects",
+    description:
+      "Create, edit, and organize subjects offered across different classes.",
+    icon: BookOpen,
+  },
+  {
+    slug: "holidays-events",
+    label: "Holiday & Events",
+    description:
+      "Manage holidays, school events, vacations, and special working days.",
+    icon: ClipboardList,
   },
   {
     slug: "notification-rules",
     label: "Notification Rules",
-    description: "Configure which events trigger parent, student, and teacher notifications.",
+    description:
+      "Configure automated notifications for attendance, exams, fees, and announcements.",
     icon: Bell,
   },
   {
     slug: "audit-log",
     label: "Audit Log",
-    description: "Filterable history of all changes — who changed what, when, and from where.",
+    description:
+      "View a complete history of changes, user actions, and system activities.",
     icon: ScrollText,
   },
 ];
