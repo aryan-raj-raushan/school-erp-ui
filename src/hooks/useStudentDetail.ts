@@ -16,6 +16,8 @@ import {
 } from "@/lib/validations/students.validation";
 import type { StudentFull } from "@/types/students.types";
 import { STUDENT_ROUTES } from "@/constants/students.constants";
+import { FORM_STORAGE_KEYS } from "@/constants/storage-filter-keys.constants";
+import { useSavedForm } from "@/hooks/useSavedForm";
 
 export function useStudentDetail(id?: string) {
   const router = useRouter();
@@ -55,6 +57,33 @@ export function useStudentDetail(id?: string) {
     control: form.control,
     name: "documents",
   });
+
+  const storageKey = isNew
+    ? FORM_STORAGE_KEYS.STUDENT_CREATE
+    : FORM_STORAGE_KEYS.STUDENT_EDIT(id ?? "");
+
+  const {
+    hasSavedForm,
+    isHydrated: isSavedFormHydrated,
+    persist: persistForm,
+    restore: restoreForm,
+    discard: discardForm,
+    clear: clearSavedForm,
+  } = useSavedForm({
+    key: storageKey,
+    form,
+    enabled: isNew || isEditing,
+  });
+
+  useEffect(() => {
+    if (!isSavedFormHydrated) return;
+    if (!isNew && !isEditing) return;
+    const subscription = form.watch((values) => {
+      persistForm(values as StudentFormValues);
+    });
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSavedFormHydrated, isNew, isEditing]);
 
   const fetchStudent = useCallback(async () => {
     if (!id || isNew) return;
@@ -331,11 +360,13 @@ export function useStudentDetail(id?: string) {
         if (pendingFile) {
           await handleImageUpload(pendingFile, created.student.id);
         }
+        clearSavedForm();
         toast.success(`Student "${created.student.first_name}" created`);
         router.push(STUDENT_ROUTES.view(created.student.id));
       } else {
         const updated = await StudentsService.update(id!, payload as any);
         setStudent(updated);
+        clearSavedForm();
         toast.success("Student updated successfully");
         setIsEditing(false);
       }
@@ -393,6 +424,9 @@ export function useStudentDetail(id?: string) {
     imageInputRef,
     sourceEnquiry,
     isPrefilling,
+    hasSavedForm,
+    restoreForm,
+    discardForm,
     onImageChange,
     handleNativeImagePick,
     isNative,

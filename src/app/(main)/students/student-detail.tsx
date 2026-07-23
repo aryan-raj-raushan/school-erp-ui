@@ -18,6 +18,8 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  RotateCcw,
+  X,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -27,7 +29,6 @@ import {
   Button,
   FormField,
   Input,
-  Select,
   Textarea,
   Spinner,
   Badge,
@@ -127,6 +128,9 @@ export function StudentDetail({ id }: { id: string }) {
     handleDocumentUpload,
     sourceEnquiry,
     isPrefilling,
+    hasSavedForm,
+    restoreForm,
+    discardForm,
   } = useStudentDetail(id);
 
   const { years, currentYear } = useAcademicYears();
@@ -244,6 +248,43 @@ export function StudentDetail({ id }: { id: string }) {
             </Div>
           }
         />
+
+        {hasSavedForm && isNew && (
+          <Div
+            type="row"
+            justify="between"
+            align="center"
+            className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 px-4 py-3"
+          >
+            <Div type="row" align="center" gap="sm">
+              <RotateCcw size={16} className="text-amber-600 dark:text-amber-400" />
+              <P size="sm" className="font-medium">
+                You have unsaved changes. Continue where you left off?
+              </P>
+            </Div>
+            <Div type="row" align="center" gap="sm">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  discardForm();
+                }}
+              >
+                <X size={14} /> Start Fresh
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  restoreForm();
+                }}
+              >
+                <RotateCcw size={14} /> Resume
+              </Button>
+            </Div>
+          </Div>
+        )}
 
         {isNew && (sourceEnquiry || isPrefilling) && (
           <Div
