@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Div, PageActions } from "./layout";
 import { PageTitle, P } from "./typography";
 import { Button, type buttonVariants } from "./button";
+import { useIsMobile } from "./responsive-bottom-sheet";
 
 /** One button rendered in the header's action row — pass these instead of hand-written `<Button>` JSX. */
 export interface PageHeaderAction {
@@ -32,6 +33,8 @@ export interface PageHeaderProps {
   sticky?: boolean;
   /** Shows a back button (navigates to the previous page) when true. Omit/false to hide it. */
   backButton?: boolean;
+  /** Label for the back button. Defaults to "Back". */
+  backLabel?: string;
 }
 
 /** Declarative header config — build one in a constants file and spread it: `<PageHeader {...config} />`. */
@@ -55,6 +58,7 @@ export function PageHeader({
   illustration,
   sticky,
   backButton,
+  backLabel = "Back",
 }: PageHeaderProps) {
   const router = useRouter();
 
@@ -62,63 +66,66 @@ export function PageHeader({
     ? actions.filter((action) => !action.hidden)
     : actions;
 
+    const isMobile = useIsMobile();
+
   return (
     <Div
-      type="row"
-      align="center"
-      justify="between"
+      type="col"
       gap="sm"
       className={cn(
         "pt-4",
-        sticky && "sticky top-0 z-20  bg-background/95  backdrop-blur-sm",
+        sticky && "sticky top-0 z-20 bg-background/95 backdrop-blur-sm",
       )}
     >
-      <Div type="row" align="center" gap="sm" className="min-w-0">
-        {backButton && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => router.back()}
-            className="shrink-0"
-            aria-label="Go back"
-          >
-            <ArrowLeft size={16} />
-          </Button>
-        )}
-        {illustration && (
-          <Image
-            src={illustration}
-            alt=""
-            width={56}
-            height={56}
-            className="hidden shrink-0 select-none opacity-90 sm:block"
-            draggable={false}
-          />
-        )}
-        <Div type="col" gap="xs" className="min-w-0">
-          <PageTitle className="truncate">{title}</PageTitle>
-          {subtitle && <P color="muted" className="truncate">{subtitle}</P>}
+      <Div type="row" align="center" justify="between" gap="sm">
+        <Div type="row" align="center" gap="sm" className="min-w-0">
+          {illustration && (
+            <Image
+              src={illustration}
+              alt=""
+              width={56}
+              height={56}
+              className="hidden shrink-0 select-none opacity-90 sm:block"
+              draggable={false}
+            />
+          )}
+          <Div type="col" gap="xs" className="min-w-0">
+            <PageTitle className="truncate">{title}</PageTitle>
+            {subtitle && <P color="muted" className="truncate">{subtitle}</P>}
+          </Div>
         </Div>
+
+        {visibleActions && (
+          <PageActions className="shrink-0">
+            {isActionList(visibleActions)
+              ? visibleActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant={action.variant}
+                     size= {isMobile ? "xs" : "default"}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    loading={action.loading}
+                    className="h-9 gap-1 px-4 text-[0.8rem] sm:h-11 sm:gap-1.5 sm:px-5 sm:text-sm"
+                  >
+                    {action.icon}
+                    {action.label}
+                  </Button>
+                ))
+              : visibleActions}
+          </PageActions>
+        )}
       </Div>
 
-      {visibleActions && (
-        <PageActions className="shrink-0">
-          {isActionList(visibleActions)
-            ? visibleActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant={action.variant}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  loading={action.loading}
-                  className="h-9 gap-1 px-4 text-[0.8rem] sm:h-11 sm:gap-1.5 sm:px-5 sm:text-sm"
-                >
-                  {action.icon}
-                  {action.label}
-                </Button>
-              ))
-            : visibleActions}
-        </PageActions>
+      {backButton && (
+        <Button
+          variant="outline"
+          size= {isMobile ? "xs" : "sm"}
+          onClick={() => router.back()}
+          className="w-fit"
+        >
+          <ArrowLeft size={14} /> {backLabel}
+        </Button>
       )}
     </Div>
   );

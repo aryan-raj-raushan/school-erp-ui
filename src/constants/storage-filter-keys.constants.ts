@@ -12,6 +12,8 @@ export const STORAGE_FILTER_KEYS = {
   HOMEWORK: `${PREFIX}:homework`,
   LEAVE: `${PREFIX}:leave`,
   SYLLABUS: `${PREFIX}:syllabus`,
+  SCHOOL_EVENTS: "school_events_filters", 
+   AUDIT_LOG: "audit_log_filters",
 } as const;
 
 export type StorageFilterKey =

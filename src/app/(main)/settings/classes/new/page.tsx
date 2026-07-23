@@ -10,9 +10,11 @@ import {
   PageHeader, PageCol,
   ResponsiveSelect,
 } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 export default function NewClassPage() {
+  const isMobile = useIsMobile();
   const {
     form, years, isLoadingData, isSubmitting,
     allSectionNames, watchedSections,
@@ -34,6 +36,7 @@ export default function NewClassPage() {
         title={CLASSES_PAGE.form.createTitle}
         subtitle="Fill in the details below to create a new class"
         actions={<Button variant="outline" onClick={handleBack}>{CLASSES_PAGE.form.cancel}</Button>}
+        backButton={isMobile}
       />
 
       <form onSubmit={handleSubmit}>

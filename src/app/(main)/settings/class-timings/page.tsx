@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useClassTimings } from '@/hooks/useClassTimings';
+import { useClassTimings } from "@/hooks/useClassTimings";
 import {
   Div,
   P,
@@ -9,11 +9,21 @@ import {
   PageCol,
   EmptyState,
   ResponsiveSelect,
-} from '@/components/ui';
-import { CLASS_TIMINGS_PAGE } from '@/constants/school-settings.constants';
+  PageHeaderConfig,
+} from "@/components/ui";
+import { CLASS_TIMINGS_PAGE } from "@/constants/school-settings.constants";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ClassTimingsPage() {
-  const { classes, timings, isLoading, savingClassId, getOverrideForClass, setClassTiming } = useClassTimings();
+  const isMobile = useIsMobile();
+  const {
+    classes,
+    timings,
+    isLoading,
+    savingClassId,
+    getOverrideForClass,
+    setClassTiming,
+  } = useClassTimings();
 
   if (isLoading) {
     return (
@@ -25,12 +35,15 @@ export default function ClassTimingsPage() {
     );
   }
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: CLASS_TIMINGS_PAGE.title,
+    subtitle: CLASS_TIMINGS_PAGE.subtitle,
+    backButton: isMobile,
+  };
+
   return (
     <PageCol>
-      <PageHeader
-        title={CLASS_TIMINGS_PAGE.title}
-        subtitle={CLASS_TIMINGS_PAGE.subtitle}
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       {classes.length === 0 ? (
         <EmptyState
@@ -48,18 +61,26 @@ export default function ClassTimingsPage() {
               padding="p-4"
             >
               <Div type="col" gap="xs">
-                <P color="default" weight="medium">{cls.name}</P>
+                <P color="default" weight="medium">
+                  {cls.name}
+                </P>
                 <P size="xs">
                   {getOverrideForClass(cls.id)
-                    ? `Using: ${timings.find((t) => t.id === getOverrideForClass(cls.id))?.name ?? 'Custom'}`
-                    : 'Using school default timing'}
+                    ? `Using: ${
+                        timings.find(
+                          (t) => t.id === getOverrideForClass(cls.id),
+                        )?.name ?? "Custom"
+                      }`
+                    : "Using school default timing"}
                 </P>
               </Div>
               <Div type="row" align="center" gap="sm">
                 {savingClassId === cls.id && <Spinner size="sm" />}
                 <ResponsiveSelect
-                  value={getOverrideForClass(cls.id) ?? ''}
-                  onChange={(e) => setClassTiming(cls.id, e.target.value || null)}
+                  value={getOverrideForClass(cls.id) ?? ""}
+                  onChange={(e) =>
+                    setClassTiming(cls.id, e.target.value || null)
+                  }
                   disabled={savingClassId === cls.id}
                   customPlaceholder="School Default"
                   options={timings.map((t) => ({ value: t.id, label: t.name }))}

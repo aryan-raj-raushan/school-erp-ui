@@ -8,8 +8,10 @@ import {
   CheckboxLabel, Spinner,
   PageHeader, PageCol,
 } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function NewAcademicYearPage() {
+  const isMobile = useIsMobile();
   const {
     form, isSubmitting,
     handleSubmit, handleBack, toggleIsEnabled, toggleIsCurrent,
@@ -25,6 +27,7 @@ export default function NewAcademicYearPage() {
             {ACADEMIC_YEARS_PAGE.form.cancel}
           </Button>
         }
+        backButton={isMobile}
       />
 
       <form onSubmit={handleSubmit}>

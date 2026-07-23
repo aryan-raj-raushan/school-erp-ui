@@ -14,8 +14,10 @@ import {
   Spinner,
   PageHeader,
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function EditSubjectPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get("id") ?? "";
 
@@ -46,6 +48,7 @@ function EditSubjectPageInner() {
             {SUBJECTS_PAGE.form.cancel}
           </Button>
         }
+        backButton={isMobile}
       />
 
       <form onSubmit={handleSubmit}>

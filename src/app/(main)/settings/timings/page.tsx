@@ -12,6 +12,8 @@ import {
   EmptyState,
   ResponsiveModalContainer,
   ResponsiveSelect,
+  PageHeaderConfig,
+  Span,
 } from '@/components/ui';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import {
@@ -24,6 +26,7 @@ import {
 import { useState } from 'react';
 import { Clock, CalendarRange, Pencil, Trash2 } from 'lucide-react';
 import type { SchoolTiming, CreateSchoolTimingPayload } from '@/types/school-settings.types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function fmtTime(t: string | null | undefined) {
   if (!t) return null;
@@ -60,6 +63,7 @@ const EMPTY_FORM: CreateSchoolTimingPayload = {
 };
 
 export default function TimingsPage() {
+  const isMobile = useIsMobile();
   const {
     timings, isLoading, isSubmitting, isDialogOpen,
     editingTiming, openCreate, openEdit, closeDialog, submit, remove,
@@ -109,19 +113,19 @@ export default function TimingsPage() {
         const badge = TIMING_TYPE_BADGE[t.timing_type];
         const activeDays = t.working_days.split(',').filter(Boolean);
         return (
-          <div className="flex flex-col gap-1.5 py-0.5">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground text-sm">{t.name}</span>
+          <Div className="flex flex-col gap-1.5 py-0.5">
+            <Div className="flex items-center gap-2">
+              <Div className="font-semibold text-foreground text-sm">{t.name}</Div>
               <Badge variant={badge.variant as 'warning'}>{badge.label}</Badge>
               {!t.is_active && (
                 <Badge variant="default">Inactive</Badge>
               )}
-            </div>
-            <div className="flex items-center gap-1">
+            </Div>
+            <Div className="flex items-center gap-1">
               {ALL_DAYS.map((day) => {
                 const active = activeDays.includes(day);
                 return (
-                  <span
+                  <Span
                     key={day}
                     className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-semibold ${
                       active
@@ -130,11 +134,11 @@ export default function TimingsPage() {
                     }`}
                   >
                     {DAY_SHORT[day]}
-                  </span>
+                  </Span>
                 );
               })}
-            </div>
-          </div>
+            </Div>
+          </Div>
         );
       },
     },
@@ -144,30 +148,30 @@ export default function TimingsPage() {
       cell: ({ row }) => {
         const t = row.original;
         return (
-          <div className="flex flex-col gap-1 py-0.5">
-            <div className="flex items-center gap-1.5">
+          <Div className="flex flex-col gap-1 py-0.5">
+            <Div className="flex items-center gap-1.5">
               <Clock size={13} className="text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium tabular-nums">
+              <Span className="text-sm font-medium tabular-nums">
                 {fmtTime(t.school_start_time)} – {fmtTime(t.school_end_time)}
-              </span>
-            </div>
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
+              </Span>
+            </Div>
+            <Span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
                 Grace {t.grace_period_minutes}m
-              </span>
-              <span className="text-muted-foreground/50">·</span>
-              <span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
+              </Span>
+              <Span className="text-muted-foreground/50">·</Span>
+              <Span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
                 {t.period_duration_minutes}m/period
-              </span>
-              <span className="text-muted-foreground/50">·</span>
-              <span className="text-[11px]">P{t.priority}</span>
-            </span>
+              </Span>
+              <Span className="text-muted-foreground/50">·</Span>
+              <Span className="text-[11px]">P{t.priority}</Span>
+            </Span>
             {t.lunch_start_time && t.lunch_end_time && (
-              <span className="text-[11px] text-muted-foreground">
+              <Span className="text-[11px] text-muted-foreground">
                 Lunch {fmtTime(t.lunch_start_time)} – {fmtTime(t.lunch_end_time)}
-              </span>
+              </Span>
             )}
-          </div>
+          </Div>
         );
       },
     },
@@ -182,17 +186,17 @@ export default function TimingsPage() {
           { label: 'Absent', time: fmtTime(t.absent_cutoff_time), color: 'text-red-500 dark:text-red-400' },
         ].filter((i) => i.time);
 
-        if (!items.length) return <span className="text-muted-foreground/40 text-xs">—</span>;
+        if (!items.length) return <Span className="text-muted-foreground/40 text-xs">—</Span>;
 
         return (
-          <div className="flex flex-col gap-1 py-0.5">
+          <Div className="flex flex-col gap-1 py-0.5">
             {items.map(({ label, time, color }) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className="text-[10px] w-14 text-muted-foreground">{label}</span>
-                <span className={`text-xs font-medium tabular-nums ${color}`}>{time}</span>
-              </div>
+              <Div key={label} className="flex items-center gap-2">
+                <Span className="text-[10px] w-14 text-muted-foreground">{label}</Span>
+                <Span className={`text-xs font-medium tabular-nums ${color}`}>{time}</Span>
+              </Div>
             ))}
-          </div>
+          </Div>
         );
       },
     },
@@ -202,15 +206,15 @@ export default function TimingsPage() {
       cell: ({ row }) => {
         const t = row.original;
         return (
-          <div className="flex flex-col gap-1 py-0.5">
-            <div className="flex items-center gap-1.5">
+          <Div className="flex flex-col gap-1 py-0.5">
+            <Div className="flex items-center gap-1.5">
               <CalendarRange size={13} className="text-muted-foreground shrink-0" />
-              <span className="text-xs text-foreground">{fmtDate(t.effective_from)}</span>
-            </div>
-            <div className="flex items-center gap-1.5 pl-[18px]">
-              <span className="text-xs text-muted-foreground">{fmtDate(t.effective_to)}</span>
-            </div>
-          </div>
+              <Span className="text-xs text-foreground">{fmtDate(t.effective_from)}</Span>
+            </Div>
+            <Div className="flex items-center gap-1.5 pl-[18px]">
+              <Span className="text-xs text-muted-foreground">{fmtDate(t.effective_to)}</Span>
+            </Div>
+          </Div>
         );
       },
     },
@@ -220,33 +224,46 @@ export default function TimingsPage() {
       cell: ({ row }) => {
         const t = row.original;
         return (
-          <div className="flex items-center justify-end gap-1">
-            <button
+          <Div className="flex items-center justify-end gap-1">
+            <Button
               onClick={(e) => { e.stopPropagation(); handleOpenEdit(t); }}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
               title="Edit"
+              variant={'outline'}
+              size={'icon'}
             >
               <Pencil size={14} />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={(e) => { e.stopPropagation(); remove(t.id); }}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Delete"
+              variant={'ghost'}
+              size={'icon'}
             >
               <Trash2 size={14} />
-            </button>
-          </div>
+            </Button>
+          </Div>
         );
       },
     },
   ];
 
+  const pageHeaderConfig: PageHeaderConfig = {
+      title: TIMINGS_PAGE.title,
+      subtitle: TIMINGS_PAGE.subtitle,
+      actions: [
+        {
+          label: TIMINGS_PAGE.addButton,
+          onClick: () => handleOpenCreate(),
+        },
+      ],
+      backButton: isMobile,
+    };
+
   return (
     <PageCol>
-      <PageHeader
-        title={TIMINGS_PAGE.title}
-        subtitle={TIMINGS_PAGE.subtitle}
-        actions={<Button onClick={handleOpenCreate}>{TIMINGS_PAGE.addButton}</Button>}
+      <PageHeader {...pageHeaderConfig}
       />
 
       {!isLoading && timings.length === 0 ? (
@@ -269,7 +286,7 @@ export default function TimingsPage() {
         onClose={closeDialog}
         title={editingTiming ? 'Edit Timing Schedule' : 'New Timing Schedule'}
       >
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="md">
               <Div type="grid" cols={2} gap="md">
                 <FormField label="Name">
@@ -325,11 +342,11 @@ export default function TimingsPage() {
               </Div>
 
               <FormField label="Working Days">
-                <div className="flex items-center gap-2 flex-wrap">
+                <Div className="flex items-center gap-2 flex-wrap">
                   {WORKING_DAY_OPTIONS.map((day) => {
                     const selected = (form.working_days ?? '').split(',').includes(day.value);
                     return (
-                      <button
+                      <Button
                         key={day.value}
                         type="button"
                         onClick={() => toggleDay(day.value)}
@@ -338,21 +355,22 @@ export default function TimingsPage() {
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
                         }`}
+                        variant={'outline'}
                       >
                         {day.label}
-                      </button>
+                      </Button>
                     );
                   })}
-                </div>
+                </Div>
               </FormField>
             </Div>
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             <Button loading={isSubmitting} onClick={() => submit(form)}>
               {editingTiming ? 'Update Schedule' : 'Create Schedule'}
             </Button>
-          </div>
+          </Div>
       </ResponsiveModalContainer>
     </PageCol>
   );

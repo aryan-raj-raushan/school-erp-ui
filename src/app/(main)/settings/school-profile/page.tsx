@@ -12,6 +12,7 @@ import {
   PageHeader,
   PageCol,
   ResponsiveSelect,
+  PageHeaderConfig,
 } from '@/components/ui';
 import {
   SCHOOL_PROFILE_PAGE,
@@ -19,8 +20,10 @@ import {
   MARKING_SYSTEM_OPTIONS,
   TIMEZONE_OPTIONS,
 } from '@/constants/school-profile.constants';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function SchoolProfilePage() {
+  const isMobile = useIsMobile();
   const { form, isLoading, isSaving, updateField, save, uploadLogo } = useSchoolProfile();
 
   if (isLoading) {
@@ -33,16 +36,21 @@ export default function SchoolProfilePage() {
     );
   }
 
+  const pageHeaderConfig: PageHeaderConfig = {
+      title: SCHOOL_PROFILE_PAGE.title,
+      subtitle: SCHOOL_PROFILE_PAGE.subtitle,
+      actions: [
+        {
+          label: isSaving ? SCHOOL_PROFILE_PAGE.saving : SCHOOL_PROFILE_PAGE.save,
+          onClick: () => save(),
+        },
+      ],
+      backButton: isMobile,
+    };
+
   return (
     <PageCol>
-      <PageHeader
-        title={SCHOOL_PROFILE_PAGE.title}
-        subtitle={SCHOOL_PROFILE_PAGE.subtitle}
-        actions={
-          <Button onClick={save} loading={isSaving}>
-            {isSaving ? SCHOOL_PROFILE_PAGE.saving : SCHOOL_PROFILE_PAGE.save}
-          </Button>
-        }
+      <PageHeader {...pageHeaderConfig}
       />
 
       <Div type="col" gap="lg">

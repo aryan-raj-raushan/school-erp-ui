@@ -4,18 +4,22 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { SETTINGS_ITEMS } from "@/constants/settings";
 import { Div } from "@/components/ui/layout";
-import { H1, H3, P } from "@/components/ui/typography";
+import { H3, P } from "@/components/ui/typography";
+import { PageHeader, PageCol, type PageHeaderConfig } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SettingsIndexPage() {
+  const isMobile = useIsMobile();
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: "Settings",
+    subtitle: "Manage your institution's configuration and preferences.",
+    backButton: isMobile,
+  };
+
   return (
-    <Div type="col" gap="lg">
-      {/* Page header */}
-      <Div type="col" gap="xs">
-        <H1>Settings</H1>
-        <P color="muted">
-          Manage your institution's configuration and preferences.
-        </P>
-      </Div>
+    <PageCol>
+      <PageHeader {...pageHeaderConfig} />
 
       {/* Grid of setting cards */}
       <Div type="grid" cols={3} gap="md">
@@ -43,6 +47,6 @@ export default function SettingsIndexPage() {
           </Div>
         ))}
       </Div>
-    </Div>
+    </PageCol>
   );
 }

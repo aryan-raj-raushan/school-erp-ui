@@ -2,30 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  Pencil,
-  X,
-  Calendar,
-  PartyPopper,
-  Clock,
-} from "lucide-react";
+import { Pencil, X, Clock } from "lucide-react";
 import { useSchoolEventDetail } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Div,
-  H1,
   H2,
   H3,
   P,
   Button,
   Input,
   FormField,
-  Badge,
   Spinner,
   InfoRow,
   ResponsiveSelect,
   Span,
+  PageHeader,
+  type PageHeaderConfig,
 } from "@/components/ui";
 import { SchoolEventsService } from "@/services/school-events.service";
 import { RolesService, type Role } from "@/services/roles.service";
@@ -83,10 +77,9 @@ export function HolidayEventDetail({ id }: { id: string }) {
   const {
     register,
     formState: { errors },
-    watch,
     reset,
   } = form;
-  const watchedType = watch("type");
+  const isMobile = useIsMobile();
 
   function handleBack() {
     router.back();
@@ -121,71 +114,55 @@ export function HolidayEventDetail({ id }: { id: string }) {
     );
   }
 
-  const typeColor = watchedType === "HOLIDAY" ? "warning" : "info";
-  const TypeIcon = watchedType === "HOLIDAY" ? Calendar : PartyPopper;
-
-  return (
-    <Div type="col" gap="lg" className="max-w-3xl">
-      {/* Header */}
-      <Div type="row" align="center" gap="md">
-        <Button variant="outline" size="sm" onClick={handleBack}>
-          <ArrowLeft size={16} />
-          Back
-        </Button>
-        <Div type="col" gap="xs" className="flex-1">
-          <Div type="row" align="center" gap="sm">
-            <TypeIcon
-              size={20}
-              className={
-                watchedType === "HOLIDAY" ? "text-amber-500" : "text-blue-500"
-              }
-            />
-            <H1>{isNew ? "Add New" : (event?.name ?? "Details")}</H1>
-            {!isNew && event && <Badge variant={typeColor}>{event.type}</Badge>}
-          </Div>
-          {!isNew && event && (
-            <P color="muted">
-              {new Date(event.from_date).toLocaleDateString("en-IN", {
+  const dateRangeLabel =
+    !isNew && event
+      ? `${event.type === "HOLIDAY" ? "Holiday" : "Event"} • ${new Date(
+          event.from_date,
+        ).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })}${
+          event.from_date !== event.to_date
+            ? ` — ${new Date(event.to_date).toLocaleDateString("en-IN", {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
-              })}
-              {event.from_date !== event.to_date && (
-                <>
-                  {" "}
-                  —{" "}
-                  {new Date(event.to_date).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </>
-              )}
-            </P>
-          )}
-        </Div>
+              })}`
+            : ""
+        }`
+      : undefined;
 
-        {!isNew && (
-          <Div type="row" gap="sm">
-            {isEditing ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsEditing(false);
-                  reset();
-                }}
-              >
-                <X size={14} /> Cancel
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => setIsEditing(true)}>
-                <Pencil size={14} /> Edit
-              </Button>
-            )}
-          </Div>
-        )}
-      </Div>
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: isNew ? "Add New" : (event?.name ?? "Details"),
+    subtitle: dateRangeLabel,
+    backButton: isMobile,
+    actions: isNew
+      ? undefined
+      : isEditing
+        ? [
+            {
+              label: "Cancel",
+              icon: <X size={14} />,
+              variant: "outline",
+              onClick: () => {
+                setIsEditing(false);
+                reset();
+              },
+            },
+          ]
+        : [
+            {
+              label: "Edit",
+              icon: <Pencil size={14} />,
+              onClick: () => setIsEditing(true),
+            },
+          ],
+  };
+
+  return (
+    <Div type="col" gap="lg" className="max-w-3xl">
+      <PageHeader {...pageHeaderConfig} />
 
       {/* View Mode */}
       {!isEditing && !isNew && event && (
