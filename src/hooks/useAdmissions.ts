@@ -11,6 +11,8 @@ import {
 } from "@/services/admissions.service";
 import { ClassesService } from "@/services/classes.service";
 import { StaffService } from "@/services/staff.service";
+import { FORM_STORAGE_KEYS } from "@/constants/form-storage-keys.constants";
+import { useSavedForm } from "@/hooks/useSavedForm";
 import {
   admissionSourceSchema,
   admissionEnquirySchema,
@@ -286,6 +288,12 @@ export function useAdmissionEnquiryDetail(id?: string) {
     },
   });
 
+  const savedForm = useSavedForm<AdmissionEnquiryFormValues>({
+    key: FORM_STORAGE_KEYS.ADMISSION_ENQUIRY_CREATE,
+    form,
+    enabled: isNew,
+  });
+
   const historyForm = useForm<EnquiryHistoryFormValues>({
     resolver: zodResolver(enquiryHistorySchema),
     defaultValues: {
@@ -366,6 +374,7 @@ export function useAdmissionEnquiryDetail(id?: string) {
       };
       if (isNew) {
         const created = await AdmissionEnquiriesService.create(payload);
+        savedForm.clearSavedForm();
         toast.success(`Enquiry for "${created.student_name}" created`);
         return created;
       } else {
@@ -447,5 +456,8 @@ export function useAdmissionEnquiryDetail(id?: string) {
     historyForm,
     handleAddHistory: historyForm.handleSubmit(addHistory),
     isHistorySubmitting: historyForm.formState.isSubmitting,
+    hasSavedDraft: savedForm.hasDraft,
+    restoreSavedDraft: savedForm.restoreDraft,
+    discardSavedDraft: savedForm.discardDraft,
   };
 }

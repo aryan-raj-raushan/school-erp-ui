@@ -16,6 +16,8 @@ import {
 } from "@/lib/validations/students.validation";
 import type { StudentFull } from "@/types/students.types";
 import { STUDENT_ROUTES } from "@/constants/students.constants";
+import { FORM_STORAGE_KEYS } from "@/constants/form-storage-keys.constants";
+import { useSavedForm } from "@/hooks/useSavedForm";
 
 export function useStudentDetail(id?: string) {
   const router = useRouter();
@@ -54,6 +56,17 @@ export function useStudentDetail(id?: string) {
   const documentsArray = useFieldArray({
     control: form.control,
     name: "documents",
+  });
+
+  const savedForm = useSavedForm<StudentFormValues>({
+    key: FORM_STORAGE_KEYS.STUDENT_CREATE,
+    form,
+    enabled: isNew,
+    // Never persist passwords to localStorage.
+    sanitize: (values) => ({
+      ...values,
+      parents: values.parents?.map((p) => ({ ...p, password: "" })),
+    }),
   });
 
   const fetchStudent = useCallback(async () => {
@@ -331,6 +344,7 @@ export function useStudentDetail(id?: string) {
         if (pendingFile) {
           await handleImageUpload(pendingFile, created.student.id);
         }
+        savedForm.clearSavedForm();
         toast.success(`Student "${created.student.first_name}" created`);
         router.push(STUDENT_ROUTES.view(created.student.id));
       } else {
@@ -401,5 +415,8 @@ export function useStudentDetail(id?: string) {
     handleDocumentUpload,
     deleteDocument,
     refetch: fetchStudent,
+    hasSavedDraft: savedForm.hasDraft,
+    restoreSavedDraft: savedForm.restoreDraft,
+    discardSavedDraft: savedForm.discardDraft,
   };
 }

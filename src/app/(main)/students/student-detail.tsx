@@ -27,7 +27,6 @@ import {
   Button,
   FormField,
   Input,
-  Select,
   Textarea,
   Spinner,
   Badge,
@@ -36,6 +35,7 @@ import {
   PhoneField,
   ResponsiveSelect,
   PageCol,
+  SavedFormBanner,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -127,6 +127,9 @@ export function StudentDetail({ id }: { id: string }) {
     handleDocumentUpload,
     sourceEnquiry,
     isPrefilling,
+    hasSavedDraft,
+    restoreSavedDraft,
+    discardSavedDraft,
   } = useStudentDetail(id);
 
   const { years, currentYear } = useAcademicYears();
@@ -244,6 +247,13 @@ export function StudentDetail({ id }: { id: string }) {
             </Div>
           }
         />
+
+        {isNew && hasSavedDraft && (
+          <SavedFormBanner
+            onContinue={restoreSavedDraft}
+            onDiscard={discardSavedDraft}
+          />
+        )}
 
         {isNew && (sourceEnquiry || isPrefilling) && (
           <Div
