@@ -19,6 +19,7 @@ import {
   PhotoUpload,
   PhoneField,
   ResponsiveSelect,
+  SavedFormBanner,
 } from "@/components/ui";
 
 export function StaffDetail({ id }: { id: string }) {
@@ -43,6 +44,9 @@ export function StaffDetail({ id }: { id: string }) {
     handleSubmit,
     handleBack,
     handleCancelEdit,
+    hasSavedDraft,
+    restoreSavedDraft,
+    discardSavedDraft,
   } = useStaffDetail(resolvedId);
 
   if (isLoadingData) {
@@ -103,6 +107,13 @@ export function StaffDetail({ id }: { id: string }) {
           </Div>
         }
       />
+
+      {isNew && hasSavedDraft && (
+        <SavedFormBanner
+          onContinue={restoreSavedDraft}
+          onDiscard={discardSavedDraft}
+        />
+      )}
 
       {/* View mode */}
       {!isEditing && !isNew && staff && (

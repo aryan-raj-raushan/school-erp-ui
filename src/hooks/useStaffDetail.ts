@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { StaffService } from '@/services/staff.service';
 import { RolesService, type Role } from '@/services/roles.service';
 import { ROUTES, REGEX } from '@/constants';
+import { FORM_STORAGE_KEYS } from '@/constants/form-storage-keys.constants';
+import { useSavedForm } from '@/hooks/useSavedForm';
 import type { Staff } from '@/types';
 import { createStaffSchema, updateStaffSchema, type StaffFormValues } from '@/lib/validations/staff.validation';
 
@@ -45,6 +47,13 @@ export function useStaffDetail(id: string | undefined) {
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(isNew ? createStaffSchema : updateStaffSchema) as any,
     defaultValues: { dial_code: '+91', is_active: true },
+  });
+
+  const savedForm = useSavedForm<StaffFormValues>({
+    key: FORM_STORAGE_KEYS.STAFF_CREATE,
+    form,
+    enabled: isNew,
+    sanitize: (values) => ({ ...values, password: '' }),
   });
 
   const fetchDropdownData = useCallback(async () => {
@@ -194,6 +203,7 @@ export function useStaffDetail(id: string | undefined) {
         if (pendingFile) {
           await handleImageUpload(pendingFile, created.id);
         }
+        savedForm.clearSavedForm();
         toast.success(`${created.first_name} added successfully`);
         router.push(ROUTES.staffs);
       } else {
@@ -262,5 +272,8 @@ export function useStaffDetail(id: string | undefined) {
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(onSubmit),
     handleBack, handleCancelEdit,
+    hasSavedDraft: savedForm.hasDraft,
+    restoreSavedDraft: savedForm.restoreDraft,
+    discardSavedDraft: savedForm.discardDraft,
   };
 }

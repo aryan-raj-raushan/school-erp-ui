@@ -42,6 +42,7 @@ import {
   ResponsiveModalContainer,
   ResponsiveSelect,
   Span,
+  SavedFormBanner,
 } from "@/components/ui";
 import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
 import { GENDER_OPTIONS } from "@/constants";
@@ -83,6 +84,9 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
     historyForm,
     handleAddHistory,
     isHistorySubmitting,
+    hasSavedDraft,
+    restoreSavedDraft,
+    discardSavedDraft,
   } = useAdmissionEnquiryDetail(id);
 
   useEffect(() => {
@@ -195,6 +199,13 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
   return (
     <Div type="col" gap="md" className="max-w-7xl">
       <PageHeader sticky {...pageHeaderConfig} />
+
+      {isNew && hasSavedDraft && (
+        <SavedFormBanner
+          onContinue={restoreSavedDraft}
+          onDiscard={discardSavedDraft}
+        />
+      )}
 
       {isViewMode && (
         <Div type="row">
