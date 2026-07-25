@@ -100,7 +100,8 @@ export function useAuth() {
         return result;
       }
       if ('must_change_password' in result) {
-        router.replace(`${ROUTES.changePassword}?token=${result.change_token}`);
+        const ctxSuffix = result.context === AuthContext.PARENT ? '&ctx=parent' : '';
+        router.replace(`${ROUTES.changePassword}?token=${result.change_token}${ctxSuffix}`);
         return result;
       }
 

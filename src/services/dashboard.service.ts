@@ -95,9 +95,29 @@ export interface AdminDashboard {
   finance: { totalIncome: number; totalExpenses: number; pendingSalaryCount: number };
 }
 
+export interface ParentAttendanceSummary {
+  totalPresent: number;
+  totalAbsent: number;
+  totalDays: number;
+  attendancePercent: number;
+}
+
+export interface ParentDashboard {
+  attendance: ParentAttendanceSummary | null;
+  recentHomework: RecentHomework[];
+  upcomingExams: UpcomingExam[];
+  upcomingEvents: UpcomingEvent[];
+  pendingFees: { count: number; amount: number };
+}
+
 export const DashboardService = {
   async getAdminDashboard(): Promise<AdminDashboard> {
     const res = await apiGateway.get<AdminDashboard>(ENDPOINTS.dashboard.admin);
+    return res.data;
+  },
+
+  async getParentDashboard(): Promise<ParentDashboard> {
+    const res = await apiGateway.get<ParentDashboard>(ENDPOINTS.dashboard.parent);
     return res.data;
   },
 };

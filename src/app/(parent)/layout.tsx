@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ROUTES, STORAGE_KEYS } from "@/constants";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
+import { ROUTES, STORAGE_KEYS, APP } from "@/constants";
 import { AuthContext } from "@/types";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
 import { initAppStorage } from "@/lib/app-storage";
+import { useAuth } from "@/hooks/useAuth";
+import { useParentChildren } from "@/hooks/useParentChildren";
+import { PARENT_NAV_TABS } from "@/constants/layout/app-parent-nav.constants";
+import { Div, P, Button, ResponsiveSelect } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.accessToken,
@@ -14,6 +20,8 @@ const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.isAuthenticated,
   STORAGE_KEYS.user,
   "auth:permissions",
+  "parent:children",
+  "parent:active_student_id",
 ];
 
 export default function ParentLayout({
@@ -22,6 +30,9 @@ export default function ParentLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { logout, isLoading: isLoggingOut } = useAuth();
+  const { activeChild, activeStudentId, children: linkedChildren, hasMultipleChildren, switchTo, isSwitching } = useParentChildren();
 
   useEffect(() => {
     initAppStorage(ALL_STORAGE_KEYS).then(() => {
@@ -33,7 +44,68 @@ export default function ParentLayout({
 
   return (
     <div style={{ minHeight: "100dvh" }} className="flex flex-col">
-      {children}
+      <Div
+        type="row"
+        align="center"
+        justify="between"
+        className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur px-4 py-3 gap-3"
+      >
+        <Div type="col" gap="xs" className="min-w-0">
+          <P color="muted" className="text-xs leading-none">{APP.name} · Parent Portal</P>
+          <P className="font-semibold truncate">{activeChild?.student_name ?? "—"}</P>
+        </Div>
+
+        <Div type="row" align="center" gap="sm" className="shrink-0">
+          {hasMultipleChildren && (
+            <ResponsiveSelect
+              width="sm"
+              value={activeStudentId ?? ""}
+              disabled={isSwitching}
+              options={linkedChildren.map((c) => ({
+                value: c.student_id,
+                label: c.class_label ? `${c.student_name} (${c.class_label})` : c.student_name,
+              }))}
+              onChange={(e) => switchTo(e.target.value)}
+            />
+          )}
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => logout()}
+            loading={isLoggingOut}
+            aria-label="Log out"
+          >
+            <LogOut size={16} />
+          </Button>
+        </Div>
+      </Div>
+
+      <div className="flex-1 overflow-y-auto pb-20">{children}</div>
+
+      <Div
+        type="row"
+        align="center"
+        justify="between"
+        className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur px-2 py-2"
+      >
+        {PARENT_NAV_TABS.map((item) => {
+          const isActive = pathname === item.url;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.url}
+              onClick={() => router.push(item.url)}
+              className={cn(
+                "flex flex-col items-center gap-1 flex-1 rounded-lg py-1.5 text-xs transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              <Icon size={20} />
+              <span className="truncate max-w-[64px]">{item.title.split(" ")[0]}</span>
+            </button>
+          );
+        })}
+      </Div>
     </div>
   );
 }

@@ -81,6 +81,7 @@ export interface PasswordSetupRequired {
 export interface PasswordChangeRequired {
   must_change_password: true;
   change_token: string;
+  context: 'SCHOOL' | 'PARENT';
 }
 
 export type LoginOrSetupResult = LoginResult | PasswordSetupRequired | PasswordChangeRequired;
@@ -134,6 +135,14 @@ export const AuthService = {
   async switchSchool(schoolId: string): Promise<LoginResult> {
     const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.switchSchool(schoolId), {});
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+    return res.data;
+  },
+
+  async switchStudent(studentId: string): Promise<LoginParentResult> {
+    const res = await apiGateway.post<LoginParentResult>(ENDPOINTS.auth.switchStudent(studentId), {});
+    if (isLoginResult(res.data)) {
+      TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.PARENT);
+    }
     return res.data;
   },
 

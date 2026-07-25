@@ -13,6 +13,8 @@ export const ENDPOINTS = {
     logout: "/auth/logout",
     me: "/auth/me",
     switchSchool: (schoolId: string) => `/auth/switch-school/${schoolId}`,
+    parentChildren: "/auth/parent/children",
+    switchStudent: (studentId: string) => `/auth/parent/switch-student/${studentId}`,
   },
   schools: {
     list: "/schools",
@@ -239,8 +241,7 @@ export const ENDPOINTS = {
     studentById: (requestId: string) => `/leave/student/${requestId}`,
     parentApply: "/leave/parent/apply",
     parentMyRequests: "/leave/parent/my-requests",
-    parentStudentSummary: (studentId: string) =>
-      `/leave/parent/student/${studentId}/summary`,
+    parentStudentSummary: "/leave/parent/student/summary",
     workflows: "/leave/workflows",
     workflowSteps: (requestId: string) => `/leave/workflows/steps/${requestId}`,
     reviewStep: (stepId: string) => `/leave/workflows/steps/${stepId}/review`,
@@ -386,6 +387,28 @@ export const ENDPOINTS = {
     admin: "/dashboard/admin",
     teacher: "/dashboard/teacher",
     parent: "/dashboard/parent",
+  },
+  notifications: {
+    list: "/notifications",
+    sent: "/notifications/sent",
+    byId: (id: string) => `/notifications/${id}`,
+    markRead: (id: string) => `/notifications/${id}/read`,
+    markAllRead: "/notifications/read-all",
+  },
+  parentPortal: {
+    attendanceSummary: "/parent-portal/attendance/summary",
+    attendanceHistory: "/parent-portal/attendance/history",
+    feeBills: "/parent-portal/fees/bills",
+    feeRazorpayOrder: (billId: string) => `/parent-portal/fees/bills/${billId}/pay/razorpay-order`,
+    feeRazorpayVerify: (billId: string) => `/parent-portal/fees/bills/${billId}/pay/razorpay-verify`,
+    homework: "/parent-portal/homework",
+    timetableToday: "/parent-portal/timetable/today",
+    timetableWeek: "/parent-portal/timetable/week",
+    examSchedule: "/parent-portal/exams/schedule",
+    reportCards: "/parent-portal/results/report-cards",
+    gatePasses: "/parent-portal/gate-passes",
+    movements: "/parent-portal/movements",
+    profile: "/parent-portal/profile",
   },
 };
 

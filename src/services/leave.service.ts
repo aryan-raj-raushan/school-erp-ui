@@ -143,10 +143,17 @@ export const StudentLeaveService = {
 // ─── Parent / Student Leave (applied by admin/class teacher on behalf of parent) ─
 
 export interface ApplyStudentLeavePayload {
-  student_id: string;
+  /** Only used by staff applying on behalf of a student — omitted for parent-context requests. */
+  student_id?: string;
   from_date: string;
   to_date: string;
   reason: string;
+}
+
+export interface StudentLeaveBalanceSummary {
+  total_days_requested: number;
+  approved: number;
+  pending: number;
 }
 
 export const ParentLeaveService = {
@@ -160,8 +167,8 @@ export const ParentLeaveService = {
     return res.data;
   },
 
-  async studentSummary(studentId: string): Promise<LeaveBalance[]> {
-    const res = await apiGateway.get<LeaveBalance[]>(ENDPOINTS.leave.parentStudentSummary(studentId));
+  async studentSummary(): Promise<StudentLeaveBalanceSummary> {
+    const res = await apiGateway.get<StudentLeaveBalanceSummary>(ENDPOINTS.leave.parentStudentSummary);
     return res.data;
   },
 };
