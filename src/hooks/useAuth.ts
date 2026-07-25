@@ -15,6 +15,7 @@ import {
 import { TokenStorage } from '@/lib/api-gateway/token.storage';
 import { ImpersonationStorage } from '@/lib/impersonation.storage';
 import { useAuthStore } from '@/store/auth.store';
+import { useParentStore } from '@/store/parent.store';
 
 export function useAuth() {
   const router = useRouter();
@@ -156,6 +157,7 @@ export function useAuth() {
       await AuthService.logout();
     } finally {
       clearAuth();
+      useParentStore.getState().clear();
       setIsLoading(false);
       router.replace(ROUTES.login);
     }

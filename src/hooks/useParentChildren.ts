@@ -32,11 +32,17 @@ export function useParentChildren() {
     }
   }, [context, setChildren, setActiveStudentId]);
 
+  // Always refetch on mount (not gated by "list already has something") — the
+  // persisted list is a display cache, not a source of truth. A parent linked
+  // to a new child later, or one whose stale cache predates that link, must
+  // see the current server-side list every time the portal loads, not
+  // whatever was cached from a previous session.
   useEffect(() => {
-    if (context === AuthContext.PARENT && children.length === 0) {
+    if (context === AuthContext.PARENT) {
       void refresh();
     }
-  }, [context, children.length, refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [context]);
 
   async function switchTo(studentId: string) {
     if (studentId === activeStudentId) return;

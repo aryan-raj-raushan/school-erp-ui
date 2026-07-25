@@ -44,49 +44,65 @@ export default function ParentLayout({
 
   return (
     <div style={{ minHeight: "100dvh" }} className="flex flex-col">
-      <Div
-        type="row"
-        align="center"
-        justify="between"
-        className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur px-4 py-3 gap-3"
+      {/* Gradient bleeds up through the status-bar safe area so there's no
+          bare strip above the header on native (Capacitor) screens. */}
+      <div
+        className="sticky top-0 z-20"
+        style={{
+          background: "linear-gradient(180deg, var(--theme-gradient-from) 0%, var(--theme-gradient-to) 100%)",
+          paddingTop: "env(safe-area-inset-top)",
+          boxShadow: "0 4px 24px var(--theme-glow)",
+        }}
       >
-        <Div type="col" gap="xs" className="min-w-0">
-          <P color="muted" className="text-xs leading-none">{APP.name} · Parent Portal</P>
-          <P className="font-semibold truncate">{activeChild?.student_name ?? "—"}</P>
-        </Div>
+        <Div type="row" align="center" justify="between" className="px-4 py-3 gap-3">
+          <Div type="col" gap="xs" className="min-w-0">
+            <P className="text-xs leading-none" style={{ color: "var(--theme-active-text)", opacity: 0.75 }}>
+              {APP.name} · Parent Portal
+            </P>
+            <P className="font-semibold truncate" style={{ color: "var(--theme-active-text)" }}>
+              {activeChild?.student_name ?? "—"}
+            </P>
+          </Div>
 
-        <Div type="row" align="center" gap="sm" className="shrink-0">
-          {hasMultipleChildren && (
-            <ResponsiveSelect
-              width="sm"
-              value={activeStudentId ?? ""}
-              disabled={isSwitching}
-              options={linkedChildren.map((c) => ({
-                value: c.student_id,
-                label: c.class_label ? `${c.student_name} (${c.class_label})` : c.student_name,
-              }))}
-              onChange={(e) => switchTo(e.target.value)}
-            />
-          )}
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => logout()}
-            loading={isLoggingOut}
-            aria-label="Log out"
-          >
-            <LogOut size={16} />
-          </Button>
+          <Div type="row" align="center" gap="sm" className="shrink-0">
+            {hasMultipleChildren && (
+              <ResponsiveSelect
+                width="sm"
+                value={activeStudentId ?? ""}
+                disabled={isSwitching}
+                options={linkedChildren.map((c) => ({
+                  value: c.student_id,
+                  label: c.class_label ? `${c.student_name} (${c.class_label})` : c.student_name,
+                }))}
+                onChange={(e) => switchTo(e.target.value)}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => logout()}
+              loading={isLoggingOut}
+              aria-label="Log out"
+            >
+              <LogOut size={16} />
+            </Button>
+          </Div>
         </Div>
-      </Div>
+      </div>
 
-      <div className="flex-1 overflow-y-auto pb-20">{children}</div>
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+      >
+        {children}
+      </div>
 
       <Div
         type="row"
         align="center"
         justify="between"
-        className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur px-2 py-2"
+        className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur px-2 pt-2"
+        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}
       >
         {PARENT_NAV_TABS.map((item) => {
           const isActive = pathname === item.url;
