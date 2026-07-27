@@ -259,7 +259,7 @@ export interface BulkExtraPayload {
   amount: number;
   bill_month?: string;
   due_date?: string;
-  reason?: string;
+  notes?: string;
 }
 
 // ─── Demand Receipt ───────────────────────────────────────────────────────────

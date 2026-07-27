@@ -7,6 +7,7 @@ import { AuthContext } from "@/types";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
 import { initAppStorage } from "@/lib/app-storage";
 import { SidebarProvider } from "@/components/ui";
+import { RouteGuard } from "@/components/layout/RouteGuard";
 import dynamic from "next/dynamic";
 
 const AppSidebar = dynamic(
@@ -70,7 +71,7 @@ export default function DashboardLayout({
           <div
             className="p-4 sm:p-5 md:px-7 md:py-0"
             style={{ minHeight: "100%" }}
-          >            {children}
+          >            <RouteGuard>{children}</RouteGuard>
           </div>
         </main>
       </div>

@@ -27,4 +27,5 @@ export const EMPTY_ROUTE: CreateTransportRoutePayload & { id?: string } = { name
 
 export const EMPTY_LATE_RULE = {
   name: '', academic_year_id: '', late_fee_amount: '', days_after_due: '', late_fine_fee_type_id: '',
+  applicable_fee_type_ids: [] as string[],
 };

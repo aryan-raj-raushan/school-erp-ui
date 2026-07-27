@@ -776,7 +776,7 @@ export default function FeePaymentsPage() {
                 <Input value={extraForm.bill_month} onChange={e => setExtraForm(f => ({ ...f, bill_month: e.target.value }))} placeholder="e.g. 2026-04" />
               </FormField>
               <FormField label="Reason (optional)">
-                <Input value={extraForm.reason} onChange={e => setExtraForm(f => ({ ...f, reason: e.target.value }))} placeholder="Optional reason" />
+                <Input value={extraForm.notes} onChange={e => setExtraForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional reason" />
               </FormField>
             </Div>
             <Div type="row" justify="end" padding="mt-5">

@@ -12,15 +12,13 @@ import { NavSecondary } from "./NavSecondary";
 import {
   SCHOOL_NAV_MAIN,
   SCHOOL_NAV_SECONDARY,
-  SUPER_ADMIN_NAV_MAIN,
   SUPER_ADMIN_NAV_SECONDARY,
-  SALES_NAV_MAIN,
   SALES_NAV_SECONDARY,
-  OPERATOR_NAV_MAIN,
   OPERATOR_NAV_SECONDARY,
 } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
 import { AuthContext, Role } from "@/types";
+import { selectNavMain } from "@/lib/route-permissions";
 import { useAuthStore } from "@/store/auth.store";
 import { useSchoolBrandStore } from "@/store/school.store";
 import { SchoolProfileService } from "@/services/school-profile.service";
@@ -208,17 +206,14 @@ export function AppSidebar() {
   const isNative = Capacitor.isNativePlatform();
   const isCompanyUser = context === AuthContext.COMPANY;
 
-  let navMainSource: NavItem[] = SCHOOL_NAV_MAIN;
+  const navMainSource: NavItem[] = selectNavMain(user, context);
   let navSecondarySource: SecondaryItem[] = SCHOOL_NAV_SECONDARY;
   if (isCompanyUser) {
     if (user?.role === Role.SALES) {
-      navMainSource = SALES_NAV_MAIN;
       navSecondarySource = SALES_NAV_SECONDARY;
     } else if (user?.role === Role.OPERATOR) {
-      navMainSource = OPERATOR_NAV_MAIN;
       navSecondarySource = OPERATOR_NAV_SECONDARY;
     } else {
-      navMainSource = SUPER_ADMIN_NAV_MAIN;
       navSecondarySource = SUPER_ADMIN_NAV_SECONDARY;
     }
   }

@@ -17,6 +17,7 @@ export const ROUTES = {
   signup: '/signup',
   setupPassword: '/setup-password',
   changePassword: '/change-password',
+  unauthorized: '/unauthorized',
   // Super admin routes
   dashboard: '/dashboard',
   schools: '/schools',

@@ -384,7 +384,7 @@ export function useFeesSetup() {
     await createLateRule({
       name: lateRuleForm.name,
       academic_year_id: lateRuleForm.academic_year_id,
-      applicable_fee_type_ids: [],
+      applicable_fee_type_ids: lateRuleForm.applicable_fee_type_ids,
       late_fine_fee_type_id: lateRuleForm.late_fine_fee_type_id,
       late_fee_amount: parseFloat(lateRuleForm.late_fee_amount) || 0,
       days_after_due: parseInt(lateRuleForm.days_after_due) || 0,

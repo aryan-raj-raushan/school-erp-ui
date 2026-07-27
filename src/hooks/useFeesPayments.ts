@@ -58,7 +58,7 @@ export function useFeesPayments() {
 
   // ─── Bulk ops ────────────────────────────────────────────────────────────────
   const [discountForm, setDiscountForm] = useState({ academic_year_id: '', class_id: '', fee_type_id: '', discount_amount: '', reason: '' });
-  const [extraForm, setExtraForm] = useState({ academic_year_id: '', class_id: '', fee_type_id: '', amount: '', bill_month: '', reason: '' });
+  const [extraForm, setExtraForm] = useState({ academic_year_id: '', class_id: '', fee_type_id: '', amount: '', bill_month: '', notes: '' });
   const [confirmDiscount, setConfirmDiscount] = useState(false);
   const [confirmExtra, setConfirmExtra] = useState(false);
 
@@ -454,9 +454,9 @@ export function useFeesPayments() {
       fee_type_id: extraForm.fee_type_id,
       amount: parseFloat(extraForm.amount) || 0,
       bill_month: extraForm.bill_month || undefined,
-      reason: extraForm.reason || undefined,
+      notes: extraForm.notes || undefined,
     });
-    setExtraForm({ academic_year_id: '', class_id: '', fee_type_id: '', amount: '', bill_month: '', reason: '' });
+    setExtraForm({ academic_year_id: '', class_id: '', fee_type_id: '', amount: '', bill_month: '', notes: '' });
     setConfirmExtra(false);
   };
 

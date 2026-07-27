@@ -7,6 +7,7 @@ import {
   PageHeader, PageCol,
   ResponsiveSelect, ResponsiveModalContainer,
 } from '@/components/ui';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Tabs } from '@/components/ui/tabs';
 import { useFeesSetup } from '@/hooks/useFeesSetup';
 import type { FeeType } from '@/services/fees.service';
@@ -640,6 +641,14 @@ export default function FeeSetupPage() {
                   placeholder="e.g. 5" />
               </FormField>
             </Div>
+            <FormField label="Applicable Fee Types" required>
+              <MultiSelect
+                value={lateRuleForm.applicable_fee_type_ids}
+                onChange={ids => setLateRuleForm(f => ({ ...f, applicable_fee_type_ids: ids }))}
+                options={classFeeTypes.map(t => ({ value: t.id, label: t.name }))}
+                placeholder="Select fee types this rule applies to"
+              />
+            </FormField>
             <FormField label="Late Fine Fee Type">
               <ResponsiveSelect value={lateRuleForm.late_fine_fee_type_id}
                 onChange={e => setLateRuleForm(f => ({ ...f, late_fine_fee_type_id: e.target.value }))}
@@ -651,7 +660,7 @@ export default function FeeSetupPage() {
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setShowLateRuleModal(false)}>Cancel</Button>
-          <Button onClick={handleSaveLateRule} disabled={!lateRuleForm.name || !lateRuleForm.academic_year_id}>Create</Button>
+          <Button onClick={handleSaveLateRule} disabled={!lateRuleForm.name || !lateRuleForm.academic_year_id || lateRuleForm.applicable_fee_type_ids.length === 0}>Create</Button>
         </div>
       </ResponsiveModalContainer>
     </PageCol>
