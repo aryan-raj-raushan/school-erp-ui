@@ -19,7 +19,6 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   H3,
@@ -35,6 +34,8 @@ import {
   PhoneField,
   ResponsiveSelect,
   PageCol,
+  PageHeader,
+  type PageHeaderConfig,
   SavedFormBanner,
 } from "@/components/ui";
 import {
@@ -52,6 +53,7 @@ import {
   DOCUMENT_FILE_TYPE_OPTIONS,
 } from "@/constants/students.constants";
 import { useStudentDetail } from "@/hooks/useStudentDetail";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── Section Wrapper ───────────────────────────────────────────────────────────
 
@@ -108,6 +110,7 @@ export function StudentDetail({ id }: { id: string }) {
   const isEditMode = searchParams.get("edit") === "true";
 
   const router = useRouter();
+  const isMobile = useIsMobile()
   const {
     student,
     isLoading,
@@ -185,68 +188,49 @@ export function StudentDetail({ id }: { id: string }) {
 
   const isReadOnly = !isEditing;
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    sticky: true,
+    backButton: true,
+    title: isNew
+      ? "Add New Student"
+      : `${student?.student.first_name ?? ""} ${
+          student?.student.last_name ?? ""
+        }`,
+    subtitle:
+      !isNew && student ? `System No: #${student.student.system_number}` : "",
+    badge:
+      !isNew && !isEditing ? (
+        <Badge variant={STATUS_BADGE[student?.student.status ?? "ACTIVE"]}>
+          {student?.student.status}
+        </Badge>
+      ) : undefined,
+    actions: [
+      {
+        label: STUDENT_PAGE.buttons.edit,
+        showNoLabel: isMobile,
+        icon: <Pencil size={14} />,
+        onClick: () => setIsEditing(true),
+        hidden: isNew || isEditing,
+      },
+      {
+        label: STUDENT_PAGE.buttons.cancel,
+        variant: "outline",
+        onClick: () => setIsEditing(false),
+        hidden: isNew || !isEditing,
+      },
+      {
+        label: STUDENT_PAGE.buttons.save,
+        onClick: () => handleSubmit(),
+        loading: isSubmitting || isUploading,
+        hidden: !isEditing,
+      },
+    ],
+  };
+
   return (
     <PageCol>
       <Div type="col" gap="md" className="max-w-7xl">
-        <PageHeader
-          sticky
-          title={
-            isNew
-              ? "Add New Student"
-              : `${student?.student.first_name ?? ""} ${
-                  student?.student.last_name ?? ""
-                }`
-          }
-          subtitle={
-            !isNew && student
-              ? `System No: #${student.student.system_number}`
-              : ""
-          }
-          actions={
-            <Div type="row" gap="sm" align="center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push(STUDENT_ROUTES.list)}
-              >
-                <ArrowLeft size={14} /> {STUDENT_PAGE.buttons.back}
-              </Button>
-              {!isNew && !isEditing && (
-                <>
-                  <Badge
-                    variant={STATUS_BADGE[student?.student.status ?? "ACTIVE"]}
-                  >
-                    {student?.student.status}
-                  </Badge>
-                  <Button size="sm" onClick={() => setIsEditing(true)}>
-                    <Pencil size={14} /> {STUDENT_PAGE.buttons.edit}
-                  </Button>
-                </>
-              )}
-              {isEditing && (
-                <>
-                  {!isNew && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      {STUDENT_PAGE.buttons.cancel}
-                    </Button>
-                  )}
-                  <Button
-                    type="submit"
-                    form="student-form"
-                    size="sm"
-                    loading={isSubmitting || isUploading}
-                  >
-                    {STUDENT_PAGE.buttons.save}
-                  </Button>
-                </>
-              )}
-            </Div>
-          }
-        />
+        <PageHeader {...pageHeaderConfig} />
 
         {isNew && hasSavedDraft && (
           <SavedFormBanner

@@ -1,17 +1,32 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus, Pencil, Trash2, FileText, PlayCircle } from "lucide-react";
 import { useStudyMaterials } from "@/hooks/useStudyMaterials";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { MATERIALS_PAGE, ROUTES } from "@/constants";
-import {
-  Div, Button, Select,
-  PageHeader, PageCol,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Spinner, FilterLabel, Icon, Modal, ResponsiveSelect, ResponsiveModalContainer,
-} from "@/components/ui";
-import { Plus, Pencil, Trash2, Eye, FileText, PlayCircle } from "lucide-react";
 import type { StudyMaterial } from '@/types';
+import {
+  Div,
+  PageHeader,
+  type PageHeaderConfig,
+  PageCol,
+  DataTable,
+  type ColumnDef,
+  FilterToolbar,
+  type FilterField,
+  RowActions,
+  Icon,
+  ResponsiveModalContainer,
+} from "@/components/ui";
+
+type PersistedMaterialFilters = {
+  academic_year_id?: string;
+  class_id?: string;
+  subject_id?: string;
+};
 
 function getYoutubeEmbedUrl(url: string): string {
   const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -33,95 +48,176 @@ export default function StudyMaterialsPage() {
     handleDelete,
   } = useStudyMaterials();
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedMaterialFilters>({
+    key: STORAGE_FILTER_KEYS.STUDY_MATERIALS,
+    defaultValue: {},
+  });
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ("academic_year_id" in next) setSelectedAcademicYearId(next.academic_year_id ?? "");
+    if ("class_id" in next) handleClassChange(next.class_id ?? "");
+    if ("subject_id" in next) setSelectedSubjectId(next.subject_id ?? "");
+
+    const persisted: Partial<PersistedMaterialFilters> = {};
+    (["academic_year_id", "class_id", "subject_id"] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field];
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
+  }
+
+  function handleClearFilters() {
+    handleFilterChange({
+      academic_year_id: undefined,
+      class_id: undefined,
+      subject_id: undefined,
+    });
+    clearStoredFilters();
+  }
+
+  // One-time: once storage has hydrated, apply any filters saved from a
+  // previous visit.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) {
+      if (storedFilters.academic_year_id) setSelectedAcademicYearId(storedFilters.academic_year_id);
+      if (storedFilters.class_id) handleClassChange(storedFilters.class_id);
+      if (storedFilters.subject_id) setSelectedSubjectId(storedFilters.subject_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: "Select year",
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+      },
+      {
+        type: "select",
+        key: "class_id",
+        label: "Class",
+        placeholder: "Select class",
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+        disabled: !selectedAcademicYearId,
+        resetKeys: ["subject_id"],
+      },
+      {
+        type: "select",
+        key: "subject_id",
+        label: "Subject",
+        placeholder: "All subjects",
+        options: subjects.map((s) => ({ value: s.id, label: s.name })),
+        disabled: !selectedClassId,
+      },
+    ],
+    [years, classes, subjects, selectedAcademicYearId, selectedClassId],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: selectedAcademicYearId || undefined,
+    class_id: selectedClassId || undefined,
+    subject_id: selectedSubjectId || undefined,
+  };
+
+  const columns = useMemo<ColumnDef<StudyMaterial>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "title",
+        header: MATERIALS_PAGE.table.title,
+        meta: { primary: true },
+      },
+      {
+        id: "subject",
+        header: MATERIALS_PAGE.table.subject,
+        cell: ({ row }) =>
+          subjects.find((s) => s.id === row.original.subject_id)?.name ?? "—",
+      },
+      {
+        id: "fileType",
+        header: MATERIALS_PAGE.table.fileType,
+        cell: ({ row }) => {
+          const contentType = row.original.content_type ?? "file";
+          if (contentType === "text") return <Icon icon={FileText} type="sm" />;
+          if (contentType === "youtube") return <Icon icon={PlayCircle} type="sm" />;
+          return row.original.file_type?.includes("pdf") ? "PDF" : "Image";
+        },
+      },
+      {
+        id: "actions",
+        header: MATERIALS_PAGE.table.actions,
+        cell: ({ row }) => (
+          <RowActions
+            onView={() => setViewingMaterial(row.original)}
+            actions={[
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () => router.push(ROUTES.materialsEdit(row.original.id)),
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 size={14} />,
+                variant: "destructive",
+                confirm: {
+                  description: `Are you sure you want to delete "${row.original.title}"? This action cannot be undone.`,
+                },
+                onClick: () => handleDelete(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [subjects, router, handleDelete],
+  );
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: MATERIALS_PAGE.title,
+    actions: [
+      {
+        label: MATERIALS_PAGE.addButton,
+        icon: <Plus size={14} />,
+        onClick: () => router.push(ROUTES.materialsNew),
+      },
+    ],
+  };
+
   return (
     <PageCol>
-      <PageHeader
-        title={MATERIALS_PAGE.title}
-        actions={
-          <Button onClick={() => router.push(ROUTES.materialsNew)}>
-            <Icon icon={Plus} type="btn-icon" />
-            {MATERIALS_PAGE.addButton}
-          </Button>
-        }
+      <PageHeader {...pageHeaderConfig} />
+
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Materials"
       />
 
-      {/* Filters */}
-      <Div variant="card" padding="p-4">
-        <Div type="grid" cols={3} gap="md">
-          <Div type="col" gap="xs">
-            <FilterLabel>Academic Year</FilterLabel>
-            <Select value={selectedAcademicYearId} onChange={(e) => setSelectedAcademicYearId(e.target.value)}>
-              <option value="">Select year</option>
-              {years.map((y) => <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>)}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Class</FilterLabel>
-            <Select value={selectedClassId} onChange={(e) => handleClassChange(e.target.value)} disabled={!selectedAcademicYearId}>
-              <option value="">Select class</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Subject</FilterLabel>
-            <Select value={selectedSubjectId} onChange={(e) => setSelectedSubjectId(e.target.value)} disabled={!selectedClassId}>
-              <option value="">All subjects</option>
-              {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
-          </Div>
-        </Div>
-      </Div>
-
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>{MATERIALS_PAGE.table.title}</TableHeaderCell>
-            <TableHeaderCell>{MATERIALS_PAGE.table.subject}</TableHeaderCell>
-            <TableHeaderCell>{MATERIALS_PAGE.table.fileType}</TableHeaderCell>
-            <TableHeaderCell>{MATERIALS_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
-          ) : !selectedClassId ? (
-            <TableEmptyRow colSpan={5}>Select a class to view materials.</TableEmptyRow>
-          ) : materials.length === 0 ? (
-            <TableEmptyRow colSpan={5}>{MATERIALS_PAGE.empty}</TableEmptyRow>
-          ) : (
-            materials.map((mat, i) => {
-              const sub = subjects.find((s) => s.id === mat.subject_id);
-              const contentType = mat.content_type ?? 'file';
-              return (
-                <TableRow key={mat.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>{mat.title}</TableCell>
-                  <TableCell>{sub?.name ?? '—'}</TableCell>
-                  <TableCell>
-                    {contentType === 'text' && <Icon icon={FileText} type="sm" />}
-                    {contentType === 'youtube' && <Icon icon={PlayCircle} type="sm" />}
-                    {contentType === 'file' && (mat.file_type?.includes('pdf') ? 'PDF' : 'Image')}
-                  </TableCell>
-                  <TableCell>
-                    <Div type="row" gap="xs">
-                      <Button size="sm" variant="ghost" onClick={() => setViewingMaterial(mat)}>
-                        <Icon icon={Eye} type="sm" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => router.push(ROUTES.materialsEdit(mat.id))}>
-                        <Icon icon={Pencil} type="sm" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(mat.id)}>
-                        <Icon icon={Trash2} type="sm-danger" />
-                      </Button>
-                    </Div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={materials}
+        isLoading={isLoading}
+        emptyText={!selectedClassId ? "Select a class to view materials." : MATERIALS_PAGE.empty}
+        fillViewport
+      />
 
       {/* View Modal */}
       {viewingMaterial && (

@@ -96,7 +96,7 @@ type PageLayoutProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>;
 
 export function PageCol({ children, ...props }: PageLayoutProps) {
   return (
-    <Div type="col" gap="lg" {...props}>
+    <Div type="col" gap="sm" {...props}>
       {children}
     </Div>
   );

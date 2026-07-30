@@ -1,13 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useSessionTimetable } from '@/hooks/useSessionTimetable';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
 import {
-  Div, FilterLabel, Spinner, Badge, SectionLabel, P,
+  Div, Spinner, Badge, SectionLabel, P,
   PageHeader, PageCol,
   Table, TableHead, TableHeadRow, TableHeaderCell,
   TableBody, TableRow, TableCell, TableEmptyRow,
-  ResponsiveSelect,
+  FilterToolbar, type FilterField,
 } from '@/components/ui';
 import type { DayOfWeek } from '@/services/timetable.service';
 
@@ -31,45 +32,65 @@ export default function SessionTimetablePage() {
     getCell,
   } = useSessionTimetable();
 
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: 'select',
+        key: 'academic_year_id',
+        label: 'Session',
+        placeholder: 'All Sessions',
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? ' (Current)' : ''}`,
+        })),
+        disabled: isLoadingMeta,
+      },
+      {
+        type: 'select',
+        key: 'day',
+        label: 'Day Name',
+        placeholder: 'Select Day',
+        options: days.map((d) => ({ value: d, label: dayLabels[d] })),
+      },
+      {
+        type: 'select',
+        key: 'timetable_name',
+        label: 'Timetable Session',
+        placeholder: 'All',
+        options: timetableNames.map((n) => ({ value: n, label: n })),
+        disabled: isLoadingMeta,
+      },
+    ],
+    [years, days, dayLabels, timetableNames, isLoadingMeta],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: academicYearId || undefined,
+    day: day || undefined,
+    timetable_name: timetableName || undefined,
+  };
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ('academic_year_id' in next) setAcademicYearId(next.academic_year_id ?? '');
+    if ('day' in next) setDay((next.day as DayOfWeek) ?? 'MONDAY');
+    if ('timetable_name' in next) setTimetableName(next.timetable_name ?? '');
+  }
+
+  function handleClearFilters() {
+    handleFilterChange({ academic_year_id: undefined, day: undefined, timetable_name: undefined });
+  }
+
   return (
     <Div type="col" gap="lg">
       <PageHeader title={SCHOOL_TIMETABLE_PAGE.session.title} />
 
-      {/* Filters */}
-      <Div variant="glass-sm" padding="p-4">
-        <Div type="row" gap="md" align="end" wrap>
-          <Div type="col" gap="xs">
-            <FilterLabel>Session</FilterLabel>
-            <ResponsiveSelect
-              value={academicYearId}
-              onChange={(e) => setAcademicYearId(e.target.value)}
-              disabled={isLoadingMeta}
-              customPlaceholder="All Sessions"
-              options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? ' (Current)' : ''}` }))}
-            />
-          </Div>
-
-          <Div type="col" gap="xs">
-            <FilterLabel>Day Name</FilterLabel>
-            <ResponsiveSelect
-              value={day}
-              onChange={(e) => setDay(e.target.value as DayOfWeek)}
-              options={days.map((d) => ({ value: d, label: dayLabels[d] }))}
-            />
-          </Div>
-
-          <Div type="col" gap="xs">
-            <FilterLabel>Timetable Session</FilterLabel>
-            <ResponsiveSelect
-              value={timetableName}
-              onChange={(e) => setTimetableName(e.target.value)}
-              disabled={isLoadingMeta}
-              customPlaceholder="All"
-              options={timetableNames.map((n) => ({ value: n, label: n }))}
-            />
-          </Div>
-        </Div>
-      </Div>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Schedule"
+      />
 
       {/* Content */}
       {isLoading ? (

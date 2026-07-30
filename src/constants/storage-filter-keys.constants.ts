@@ -10,6 +10,7 @@ export const STORAGE_FILTER_KEYS = {
   FEE_PAYMENTS: `${PREFIX}:fee-payments`,
   EXAMS: `${PREFIX}:exams`,
   HOMEWORK: `${PREFIX}:homework`,
+  STUDY_MATERIALS: `${PREFIX}:study-materials`,
   LEAVE: `${PREFIX}:leave`,
   SYLLABUS: `${PREFIX}:syllabus`,
   SCHOOL_EVENTS: "school_events_filters", 

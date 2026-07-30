@@ -8,23 +8,26 @@ import {
   Div,
   H2,
   P,
-  Button,
   Input,
   Textarea,
   FormField,
   Badge,
   Spinner,
   PageHeader,
+  type PageHeaderConfig,
   FormGrid,
   PhotoUpload,
   PhoneField,
   ResponsiveSelect,
   SavedFormBanner,
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function StaffDetail({ id }: { id: string }) {
   const isNew = id === "create-new";
   const resolvedId = id === "create-new" ? undefined : id;
+
+  const isMobile = useIsMobile();
 
   const {
     staff,
@@ -57,56 +60,47 @@ export function StaffDetail({ id }: { id: string }) {
     );
   }
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    sticky: true,
+    title: isNew ? "Add Employee" : fullName,
+    subtitle:
+      !isNew && staff?.employee_code
+        ? `Employee Code: ${staff.employee_code}`
+        : "",
+    badge:
+      !isNew && !isEditing ? (
+        <Badge variant={staff?.is_active ? "success" : "default"}>
+          {staff?.is_active ? "Active" : "Inactive"}
+        </Badge>
+      ) : undefined,
+      backButton: true,
+    actions: [
+      {
+        label: "Edit",
+        showNoLabel: isMobile,
+        icon: <Pencil size={14} />,
+        onClick: () => setIsEditing(true),
+        hidden: isNew || isEditing,
+      },
+      {
+        label: "Cancel",
+        variant: "outline",
+        onClick: handleCancelEdit,
+        hidden: isNew || !isEditing,
+      },
+      {
+        label: isNew ? "Add Employee" : "Save Changes",
+        onClick: () => handleSubmit(),
+        loading: isSubmitting,
+        hidden: !isEditing && !isNew,
+      },
+    ],
+  };
+
   return (
     <Div type="col" gap="md" className="max-w-7xl">
       {/* Header */}
-      <PageHeader
-        sticky
-        title={isNew ? "Add Employee" : fullName}
-        subtitle={
-          !isNew && staff?.employee_code
-            ? `Employee Code: ${staff.employee_code}`
-            : ""
-        }
-        actions={
-          <Div type="row" gap="sm" align="center">
-            <Button variant="outline" size="sm" onClick={handleBack}>
-              <ArrowLeft size={14} /> Back
-            </Button>
-            {!isNew && !isEditing && (
-              <>
-                <Badge variant={staff?.is_active ? "success" : "default"}>
-                  {staff?.is_active ? "Active" : "Inactive"}
-                </Badge>
-                <Button size="sm" onClick={() => setIsEditing(true)}>
-                  <Pencil size={14} /> Edit
-                </Button>
-              </>
-            )}
-            {(isEditing || isNew) && (
-              <>
-                {!isNew && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelEdit}
-                  >
-                    Cancel
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  form="staff-form"
-                  size="sm"
-                  loading={isSubmitting}
-                >
-                  {isNew ? "Add Employee" : "Save Changes"}
-                </Button>
-              </>
-            )}
-          </Div>
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       {isNew && hasSavedDraft && (
         <SavedFormBanner
@@ -333,7 +327,10 @@ export function StaffDetail({ id }: { id: string }) {
                   <ResponsiveSelect
                     {...form.register("blood_group")}
                     customPlaceholder="Select blood group"
-                    options={BLOOD_GROUPS.map((bg) => ({ value: bg.value, label: bg.label }))}
+                    options={BLOOD_GROUPS.map((bg) => ({
+                      value: bg.value,
+                      label: bg.label,
+                    }))}
                   />
                 </FormField>
                 <FormField label="City">

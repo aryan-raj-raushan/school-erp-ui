@@ -201,7 +201,6 @@ export function useStudyMaterials() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this material?')) return;
     try {
       await StudyMaterialsService.remove(id);
       toast.success('Material deleted');
