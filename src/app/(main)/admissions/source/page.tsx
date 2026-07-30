@@ -371,14 +371,12 @@ function AdmissionSourcesContent() {
     <PageCol>
       <PageHeader sticky {...pageHeaderConfig} />
 
-      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
         <FilterToolbar
           fields={filterFields}
           values={filterValues}
           onChange={handleFilterChange}
           sheetTitle="Filter Sources"
         />
-      </Div>
 
       <DataTable
         columns={columns}

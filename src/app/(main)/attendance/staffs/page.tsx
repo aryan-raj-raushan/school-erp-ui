@@ -195,7 +195,6 @@ export default function StaffAttendancePage() {
       <PageHeader sticky {...pageHeaderConfig} />
 
       {/* Filters */}
-      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
         <FilterToolbar
           fields={filterFields}
           values={filterValues}
@@ -205,7 +204,6 @@ export default function StaffAttendancePage() {
           onClear={handleClearFilters}
           sheetTitle="Filter Attendance"
         />
-      </Div>
 
       {/* Stats + quick actions */}
       {hasStaff && (
