@@ -51,7 +51,6 @@ export function useTimetablePage() {
   useEffect(() => { fetchTimetables(); }, [fetchTimetables]);
 
   async function removeTimetable(id: string) {
-    if (!confirm('Delete this timetable?')) return;
     try {
       await TimetableService.remove(id);
       toast.success('Timetable deleted');

@@ -14,6 +14,7 @@ import { useIsMobile } from "./responsive-bottom-sheet";
 /** One button rendered in the header's action row — pass these instead of hand-written `<Button>` JSX. */
 export interface PageHeaderAction {
   label: string;
+  showNoLabel?: boolean
   icon?: React.ReactNode;
   onClick?: () => void;
   variant?: VariantProps<typeof buttonVariants>["variant"];
@@ -28,6 +29,8 @@ export interface PageHeaderProps {
   subtitle?: string;
   /** Raw JSX, or a declarative list of buttons for PageHeader to render. */
   actions?: React.ReactNode | PageHeaderAction[];
+  /** Small element (e.g. a status Badge) rendered next to the title. */
+  badge?: React.ReactNode;
   illustration?: string;
   /** Pins the header to the top of the scrolling container — use on long forms so actions stay reachable. */
   sticky?: boolean;
@@ -55,6 +58,7 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  badge,
   illustration,
   sticky,
   backButton,
@@ -73,12 +77,23 @@ export function PageHeader({
       type="col"
       gap="sm"
       className={cn(
-        "pt-4",
+        "pt-2",
         sticky && "sticky top-0 z-20 bg-background/95 backdrop-blur-sm",
       )}
     >
       <Div type="row" align="center" justify="between" gap="sm">
-        <Div type="row" align="center" gap="sm" className="min-w-0">
+        <Div type="row"  gap="sm" className="min-w-0">
+          {backButton && (
+            <Button
+              variant="outline"
+              size={isMobile ? "icon-sm" : "icon"}
+              onClick={() => router.back()}
+              className="shrink-0 rounded-lg"
+              aria-label={backLabel}
+            >
+              <ArrowLeft size={16} />
+            </Button>
+          )}
           {illustration && (
             <Image
               src={illustration}
@@ -90,7 +105,10 @@ export function PageHeader({
             />
           )}
           <Div type="col" gap="xs" className="min-w-0">
-            <PageTitle className="truncate">{title}</PageTitle>
+            <Div type="row" align="center" gap="sm" className="min-w-0">
+              <PageTitle className="truncate">{title}</PageTitle>
+              {badge}
+            </Div>
             {subtitle && <P color="muted" className="truncate">{subtitle}</P>}
           </Div>
         </Div>
@@ -109,24 +127,13 @@ export function PageHeader({
                     className="h-9 gap-1 px-4 text-[0.8rem] sm:h-11 sm:gap-1.5 sm:px-5 sm:text-sm"
                   >
                     {action.icon}
-                    {action.label}
+                    {!action.showNoLabel && action.label}
                   </Button>
                 ))
               : visibleActions}
           </PageActions>
         )}
       </Div>
-
-      {backButton && (
-        <Button
-          variant="outline"
-          size= {isMobile ? "xs" : "sm"}
-          onClick={() => router.back()}
-          className="w-fit"
-        >
-          <ArrowLeft size={14} /> {backLabel}
-        </Button>
-      )}
     </Div>
   );
 }

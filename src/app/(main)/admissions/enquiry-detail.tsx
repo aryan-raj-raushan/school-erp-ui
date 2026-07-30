@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Pencil,
@@ -31,18 +31,12 @@ import {
   PageHeader,
   type PageHeaderConfig,
   type PageHeaderAction,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
   ResponsiveModalContainer,
   ResponsiveSelect,
   Span,
   SavedFormBanner,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
 import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
 import { GENDER_OPTIONS } from "@/constants";
@@ -98,6 +92,84 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
     formState: { errors },
     reset,
   } = form;
+
+  const historyColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "action",
+        header: "Action",
+        cell: ({ row }) => (
+          <Div type="row" align="center" gap="xs">
+            {ACTION_ICON[row.original.action as EnquiryAction]}
+            <Span>{row.original.action.replace(/_/g, " ")}</Span>
+          </Div>
+        ),
+      },
+      {
+        accessorKey: "assigned_teacher_id",
+        header: "Teacher Assigned",
+        cell: ({ row }) => {
+          const t = teachers.find((t) => t.id === row.original.assigned_teacher_id);
+          return t
+            ? `${t.first_name ?? ""} ${t.last_name ?? ""}`.trim()
+            : "—";
+        },
+      },
+      {
+        accessorKey: "created_at",
+        header: "Created Date",
+        cell: ({ row }) => (
+          <>
+            {new Date(row.original.created_at).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+            <P color="muted" className="text-xs">
+              {new Date(row.original.created_at).toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </P>
+          </>
+        ),
+      },
+      {
+        accessorKey: "details",
+        header: "Details",
+        cell: ({ row }) => {
+          const entry = row.original;
+          return (
+            <Div type="col" gap="xs">
+              <Span className="font-semibold">{entry.action}</Span>
+              {entry.action === "NEXT_FOLLOW_UP_UPDATE" && entry.next_followup_date && (
+                <P className="text-sm">
+                  <Span className="font-medium">Next Followup:</Span>{" "}
+                  {new Date(entry.next_followup_date).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                  {entry.next_followup_time && ` ${entry.next_followup_time}`}
+                </P>
+              )}
+              {entry.details && (
+                <P className="text-sm whitespace-pre-wrap">
+                  Details: {entry.details}
+                </P>
+              )}
+              {entry.remarks && (
+                <P className="text-sm">
+                  <Span className="font-medium">Remarks:</Span> {entry.remarks}
+                </P>
+              )}
+            </Div>
+          );
+        },
+      },
+    ],
+    [teachers],
+  );
 
   async function onFormSubmit() {
     await handleSubmit();
@@ -673,93 +745,12 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
             )}
           </Div>
 
-          <Table>
-            <TableHead>
-              <TableHeadRow>
-                <TableHeaderCell>Action</TableHeaderCell>
-                <TableHeaderCell>Teacher Assigned</TableHeaderCell>
-                <TableHeaderCell>Created Date</TableHeaderCell>
-                <TableHeaderCell>Details</TableHeaderCell>
-              </TableHeadRow>
-            </TableHead>
-            <TableBody>
-              {history.length === 0 ? (
-                <TableEmptyRow colSpan={4}>No history yet</TableEmptyRow>
-              ) : (
-                history.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell primary>
-                      <Div type="row" align="center" gap="xs">
-                        {ACTION_ICON[entry.action]}
-                        <Span>{entry.action.replace(/_/g, " ")}</Span>
-                      </Div>
-                    </TableCell>
-                    <TableCell>
-                      {teachers.find((t) => t.id === entry.assigned_teacher_id)
-                        ? `${teachers.find((t) => t.id === entry.assigned_teacher_id)?.first_name ?? ""} ${
-                            teachers.find(
-                              (t) => t.id === entry.assigned_teacher_id,
-                            )?.last_name ?? ""
-                          }`.trim()
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(entry.created_at).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                      <P color="muted" className="text-xs">
-                        {new Date(entry.created_at).toLocaleTimeString(
-                          "en-IN",
-                          { hour: "2-digit", minute: "2-digit" },
-                        )}
-                      </P>
-                    </TableCell>
-                    <TableCell>
-                      <Div type="col" gap="xs">
-                        <Span className="font-semibold">{entry.action}</Span>
-
-                        {entry.action === "NEXT_FOLLOW_UP_UPDATE" && (
-                          <>
-                            {entry.next_followup_date && (
-                              <P className="text-sm">
-                                <Span className="font-medium">
-                                  Next Followup:
-                                </Span>{" "}
-                                {new Date(
-                                  entry.next_followup_date,
-                                ).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })}
-                                {entry.next_followup_time &&
-                                  ` ${entry.next_followup_time}`}
-                              </P>
-                            )}
-                          </>
-                        )}
-
-                        {entry.details && (
-                          <P className="text-sm whitespace-pre-wrap">
-                            Details: {entry.details}
-                          </P>
-                        )}
-
-                        {entry.remarks && (
-                          <P className="text-sm">
-                            <Span className="font-medium">Remarks:</Span>{" "}
-                            {entry.remarks}
-                          </P>
-                        )}
-                      </Div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={historyColumns}
+            data={history}
+            isLoading={isLoading}
+            emptyText="No history yet"
+          />
         </Div>
       )}
 

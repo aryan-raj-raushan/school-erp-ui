@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLeavePolicy } from "@/hooks/useLeave";
 import { LEAVE_POLICY_PAGE } from "@/constants";
 import {
@@ -10,22 +11,15 @@ import {
   Input,
   PageHeader,
   PageCol,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
   Badge,
   Spinner,
   FormField,
-  FilterLabel,
   Icon,
   CheckboxLabel,
   ResponsiveModalContainer,
   ResponsiveSelect,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
 import { Plus, ChevronRight, Trash2, Settings } from "lucide-react";
 
@@ -49,6 +43,31 @@ export default function LeavePolicyPage() {
   } = useLeavePolicy();
 
   const { register, handleSubmit, formState: { errors }, watch } = form;
+
+  const leaveTypeColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: LEAVE_POLICY_PAGE.table.leaveType,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "max_days",
+        header: LEAVE_POLICY_PAGE.table.maxDays,
+        cell: ({ row }) => `${row.original.max_days} days`,
+      },
+      {
+        accessorKey: "is_paid",
+        header: LEAVE_POLICY_PAGE.table.paid,
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_paid ? "success" : "default"}>
+            {row.original.is_paid ? "Paid" : "Unpaid"}
+          </Badge>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <PageCol>
@@ -116,32 +135,11 @@ export default function LeavePolicyPage() {
             </Div>
 
             {/* Leave types table */}
-            <Table>
-              <TableHead>
-                <TableHeadRow>
-                  <TableHeaderCell>{LEAVE_POLICY_PAGE.table.leaveType}</TableHeaderCell>
-                  <TableHeaderCell>{LEAVE_POLICY_PAGE.table.maxDays}</TableHeaderCell>
-                  <TableHeaderCell>{LEAVE_POLICY_PAGE.table.paid}</TableHeaderCell>
-                </TableHeadRow>
-              </TableHead>
-              <TableBody>
-                {!selectedPolicy.leave_types?.length ? (
-                  <TableEmptyRow colSpan={3}>No leave types defined.</TableEmptyRow>
-                ) : (
-                  selectedPolicy.leave_types.map((lt) => (
-                    <TableRow key={lt.id}>
-                      <TableCell primary>{lt.name}</TableCell>
-                      <TableCell>{lt.max_days} days</TableCell>
-                      <TableCell>
-                        <Badge variant={lt.is_paid ? "success" : "default"}>
-                          {lt.is_paid ? "Paid" : "Unpaid"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={leaveTypeColumns}
+              data={selectedPolicy.leave_types ?? []}
+              emptyText="No leave types defined."
+            />
           </Div>
         )}
       </Div>

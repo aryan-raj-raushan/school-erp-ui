@@ -1,53 +1,131 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { INVOICES_PAGE, INVOICE_STATUS_BADGE, PAYMENT_METHOD_FORM_OPTIONS } from '@/constants';
-import { useInvoices } from '@/hooks/useInvoices';
-import type { Invoice, PaymentMethod } from '@/types';
+import { useMemo, useState } from "react";
 import {
-  Div, P, Button, Input,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
-  Badge, Spinner,
-  PageHeader, PageCol,
-  FormField, ResponsiveSelect,
+  INVOICES_PAGE,
+  INVOICE_STATUS_BADGE,
+  PAYMENT_METHOD_FORM_OPTIONS,
+} from "@/constants";
+import { useInvoices } from "@/hooks/useInvoices";
+import type { Invoice, PaymentMethod } from "@/types";
+import {
+  Div,
+  P,
+  Button,
+  Input,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  Badge,
+  Spinner,
+  PageHeader,
+  PageCol,
+  FormField,
+  ResponsiveSelect,
   ResponsiveModalContainer,
-} from '@/components/ui';
+  DataTable,
+  type ColumnDef,
+} from "@/components/ui";
 
 function fmtDate(v?: string | null): string {
-  return v ? new Date(v).toLocaleDateString() : '—';
+  return v ? new Date(v).toLocaleDateString() : "—";
 }
 
-const PROOF_REQUIRED_METHODS: PaymentMethod[] = ['QR_CODE', 'BANK_TRANSFER'];
+const PROOF_REQUIRED_METHODS: PaymentMethod[] = ["QR_CODE", "BANK_TRANSFER"];
 
 export default function InvoicesPage() {
   const {
-    invoices, pagination, isLoading,
-    viewingInvoice, isDetailLoading, openInvoice, closeInvoice,
-    isDownloading, downloadPdf,
-    showPayModal, openPayModal, closePayModal, isPaying,
-    submitManualPayment, payWithRazorpay,
+    invoices,
+    pagination,
+    isLoading,
+    viewingInvoice,
+    isDetailLoading,
+    openInvoice,
+    closeInvoice,
+    isDownloading,
+    downloadPdf,
+    showPayModal,
+    openPayModal,
+    closePayModal,
+    isPaying,
+    submitManualPayment,
+    payWithRazorpay,
   } = useInvoices();
 
-  const [method, setMethod] = useState<PaymentMethod>('CASH');
-  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState<PaymentMethod>("CASH");
+  const [amount, setAmount] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   const balanceDue = useMemo(() => {
-    if (!viewingInvoice) return '0.00';
-    return (Number(viewingInvoice.total_amount) - Number(viewingInvoice.amount_paid)).toFixed(2);
+    if (!viewingInvoice) return "0.00";
+    return (
+      Number(viewingInvoice.total_amount) - Number(viewingInvoice.amount_paid)
+    ).toFixed(2);
   }, [viewingInvoice]);
 
+  const invoiceColumns = useMemo<ColumnDef<Invoice>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "invoice_number",
+        header: INVOICES_PAGE.table.number,
+        meta: { primary: true },
+      },
+      {
+        id: "period",
+        header: INVOICES_PAGE.table.period,
+        cell: ({ row }) =>
+          `${fmtDate(row.original.billing_period_start)} – ${fmtDate(
+            row.original.billing_period_end,
+          )}`,
+      },
+      {
+        accessorKey: "total_amount",
+        header: INVOICES_PAGE.table.total,
+        cell: ({ row }) => `₹${row.original.total_amount}`,
+      },
+      {
+        accessorKey: "amount_paid",
+        header: INVOICES_PAGE.table.paid,
+        cell: ({ row }) => `₹${row.original.amount_paid}`,
+      },
+      {
+        accessorKey: "status",
+        header: INVOICES_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={INVOICE_STATUS_BADGE[row.original.status]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "due_date",
+        header: INVOICES_PAGE.table.dueDate,
+        cell: ({ row }) => fmtDate(row.original.due_date),
+      },
+    ],
+    [],
+  );
+
   function handleOpenPayModal() {
-    setMethod('CASH');
+    setMethod("CASH");
     setAmount(balanceDue);
     setProofFile(null);
-    setNotes('');
+    setNotes("");
     openPayModal();
   }
 
   function handlePaySubmit() {
-    if (method === 'RAZORPAY') {
+    if (method === "RAZORPAY") {
       payWithRazorpay();
       return;
     }
@@ -58,60 +136,44 @@ export default function InvoicesPage() {
 
   return (
     <PageCol>
-      <PageHeader title={INVOICES_PAGE.title} subtitle={INVOICES_PAGE.description} />
+      <PageHeader
+        title={INVOICES_PAGE.title}
+        subtitle={INVOICES_PAGE.description}
+      />
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{INVOICES_PAGE.table.number}</TableHeaderCell>
-            <TableHeaderCell>{INVOICES_PAGE.table.period}</TableHeaderCell>
-            <TableHeaderCell>{INVOICES_PAGE.table.total}</TableHeaderCell>
-            <TableHeaderCell>{INVOICES_PAGE.table.paid}</TableHeaderCell>
-            <TableHeaderCell>{INVOICES_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{INVOICES_PAGE.table.dueDate}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
-          ) : invoices.length === 0 ? (
-            <TableEmptyRow colSpan={6}>{INVOICES_PAGE.empty}</TableEmptyRow>
-          ) : (
-            invoices.map((invoice: Invoice) => (
-              <TableRow key={invoice.id} onClick={() => openInvoice(invoice.id)} className="cursor-pointer">
-                <TableCell primary>{invoice.invoice_number}</TableCell>
-                <TableCell>
-                  {fmtDate(invoice.billing_period_start)} – {fmtDate(invoice.billing_period_end)}
-                </TableCell>
-                <TableCell>₹{invoice.total_amount}</TableCell>
-                <TableCell>₹{invoice.amount_paid}</TableCell>
-                <TableCell>
-                  <Badge variant={INVOICE_STATUS_BADGE[invoice.status]}>{invoice.status}</Badge>
-                </TableCell>
-                <TableCell>{fmtDate(invoice.due_date)}</TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination total={pagination.total} page={pagination.page} totalPages={pagination.totalPages} />
-      )}
+      <DataTable
+        columns={invoiceColumns}
+        data={invoices}
+        isLoading={isLoading}
+        emptyText={INVOICES_PAGE.empty}
+        pagination={pagination ?? undefined}
+        onRowClick={(row) => openInvoice(row.original.id)}
+        fillViewport
+      />
 
       {(viewingInvoice || isDetailLoading) && (
         <ResponsiveModalContainer
           isOpen={!!viewingInvoice || isDetailLoading}
           onClose={closeInvoice}
-          title={viewingInvoice ? `${INVOICES_PAGE.detail.title} — ${viewingInvoice.invoice_number}` : INVOICES_PAGE.detail.title}
+          title={
+            viewingInvoice
+              ? `${INVOICES_PAGE.detail.title} — ${viewingInvoice.invoice_number}`
+              : INVOICES_PAGE.detail.title
+          }
         >
           <div className="px-4 py-4">
             {isDetailLoading || !viewingInvoice ? (
               <Spinner />
             ) : (
               <Div type="col" gap="lg">
-                <Div type="row" gap="sm" className="items-center justify-between">
-                  <Badge variant={INVOICE_STATUS_BADGE[viewingInvoice.status]}>{viewingInvoice.status}</Badge>
+                <Div
+                  type="row"
+                  gap="sm"
+                  className="items-center justify-between"
+                >
+                  <Badge variant={INVOICE_STATUS_BADGE[viewingInvoice.status]}>
+                    {viewingInvoice.status}
+                  </Badge>
                   <P color="muted">Due {fmtDate(viewingInvoice.due_date)}</P>
                 </Div>
 
@@ -171,7 +233,9 @@ export default function InvoicesPage() {
             )}
           </div>
           <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
-            <Button type="button" variant="outline" onClick={closeInvoice}>{INVOICES_PAGE.detail.close}</Button>
+            <Button type="button" variant="outline" onClick={closeInvoice}>
+              {INVOICES_PAGE.detail.close}
+            </Button>
             {viewingInvoice && (
               <Button
                 type="button"
@@ -182,51 +246,83 @@ export default function InvoicesPage() {
                 {INVOICES_PAGE.detail.downloadPdf}
               </Button>
             )}
-            {viewingInvoice && Number(balanceDue) > 0 && viewingInvoice.status !== 'VOID' && (
-              <Button type="button" onClick={handleOpenPayModal}>{INVOICES_PAGE.detail.payNow}</Button>
-            )}
+            {viewingInvoice &&
+              Number(balanceDue) > 0 &&
+              viewingInvoice.status !== "VOID" && (
+                <Button type="button" onClick={handleOpenPayModal}>
+                  {INVOICES_PAGE.detail.payNow}
+                </Button>
+              )}
           </div>
         </ResponsiveModalContainer>
       )}
 
       {showPayModal && viewingInvoice && (
-        <ResponsiveModalContainer isOpen={showPayModal} onClose={closePayModal} title={INVOICES_PAGE.payForm.title}>
+        <ResponsiveModalContainer
+          isOpen={showPayModal}
+          onClose={closePayModal}
+          title={INVOICES_PAGE.payForm.title}
+        >
           <div className="px-4 py-4">
             <Div type="col" gap="md">
               <FormField label={INVOICES_PAGE.payForm.method}>
                 <ResponsiveSelect
                   value={method}
                   onChange={(e) => setMethod(e.target.value as PaymentMethod)}
-                  options={PAYMENT_METHOD_FORM_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  options={PAYMENT_METHOD_FORM_OPTIONS.map((o) => ({
+                    value: o.value,
+                    label: o.label,
+                  }))}
                 />
               </FormField>
 
-              {method !== 'RAZORPAY' && (
+              {method !== "RAZORPAY" && (
                 <>
                   <FormField label={INVOICES_PAGE.payForm.amount}>
-                    <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                    <Input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
                   </FormField>
                   <FormField
                     label={INVOICES_PAGE.payForm.proof}
-                    hint={PROOF_REQUIRED_METHODS.includes(method) ? INVOICES_PAGE.payForm.proofHint : undefined}
+                    hint={
+                      PROOF_REQUIRED_METHODS.includes(method)
+                        ? INVOICES_PAGE.payForm.proofHint
+                        : undefined
+                    }
                   >
-                    <Input type="file" accept="image/*,application/pdf" onChange={(e) => setProofFile(e.target.files?.[0] ?? null)} />
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(e) =>
+                        setProofFile(e.target.files?.[0] ?? null)
+                      }
+                    />
                   </FormField>
                   <FormField label={INVOICES_PAGE.payForm.notes}>
-                    <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+                    <Input
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
                   </FormField>
                 </>
               )}
 
-              {method === 'RAZORPAY' && (
+              {method === "RAZORPAY" && (
                 <P color="muted">{`₹${balanceDue} will be collected via Razorpay Checkout.`}</P>
               )}
             </Div>
           </div>
           <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
-            <Button type="button" variant="outline" onClick={closePayModal}>{INVOICES_PAGE.payForm.cancel}</Button>
+            <Button type="button" variant="outline" onClick={closePayModal}>
+              {INVOICES_PAGE.payForm.cancel}
+            </Button>
             <Button type="button" loading={isPaying} onClick={handlePaySubmit}>
-              {method === 'RAZORPAY' ? INVOICES_PAGE.payForm.payWithRazorpay : INVOICES_PAGE.payForm.submit}
+              {method === "RAZORPAY"
+                ? INVOICES_PAGE.payForm.payWithRazorpay
+                : INVOICES_PAGE.payForm.submit}
             </Button>
           </div>
         </ResponsiveModalContainer>

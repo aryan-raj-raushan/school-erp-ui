@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { Suspense, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useStaffsPage } from '@/hooks/useStaffsPage';
-import { useStorageFilter } from '@/hooks/useStorageFilter';
-import { STORAGE_FILTER_KEYS } from '@/constants/storage-filter-keys.constants';
-import type { Staff } from '@/types';
-import type { StaffFilters } from '@/services/staff.service';
+import { Suspense, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { useStaffsPage } from "@/hooks/useStaffsPage";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
+import type { Staff } from "@/types";
+import type { StaffFilters } from "@/services/staff.service";
 import {
   Div,
   P,
@@ -24,16 +24,25 @@ import {
   type FilterField,
   RowActions,
   ResponsiveModalContainer,
-} from '@/components/ui';
-import { Pencil, UserX, UserCheck, Mail, Trash2, Plus, Download, Upload } from 'lucide-react';
-import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from '@/constants';
-import { StaffDetail } from './staff-detail';
+} from "@/components/ui";
+import {
+  Pencil,
+  UserX,
+  UserCheck,
+  Mail,
+  Trash2,
+  Plus,
+  Download,
+  Upload,
+} from "lucide-react";
+import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from "@/constants";
+import { StaffDetail } from "./staff-detail";
 
-type PersistedStaffFilters = Pick<StaffFilters, 'status' | 'role'>;
+type PersistedStaffFilters = Pick<StaffFilters, "status" | "role">;
 
 function StaffsPageContent() {
   const searchParams = useSearchParams();
-  const detailId = searchParams.get('id');
+  const detailId = searchParams.get("id");
   const {
     staffList,
     pagination,
@@ -72,14 +81,18 @@ function StaffsPageContent() {
     updateFilters(next);
 
     const persisted: Partial<PersistedStaffFilters> = {};
-    (['status', 'role'] as const).forEach((field) => {
+    (["status", "role"] as const).forEach((field) => {
       if (field in next) persisted[field] = next[field] as never;
     });
     if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
 
   function handleClearFilters() {
-    handleFilterChange({ search: undefined, status: undefined, role: undefined });
+    handleFilterChange({
+      search: undefined,
+      status: undefined,
+      role: undefined,
+    });
     clearStoredFilters();
   }
 
@@ -95,24 +108,27 @@ function StaffsPageContent() {
   const filterFields = useMemo<FilterField[]>(
     () => [
       {
-        type: 'search',
-        key: 'search',
-        placeholder: 'Search by name or phone',
+        type: "search",
+        key: "search",
+        placeholder: "Search by name or phone",
       },
       {
-        type: 'select',
-        key: 'status',
-        label: 'Status',
-        placeholder: 'All Status',
-        options: STAFF_STATUS_OPTIONS.filter((o) => o.value).map((o) => ({ value: o.value, label: o.label })),
+        type: "select",
+        key: "status",
+        label: "Status",
+        placeholder: "All Status",
+        options: STAFF_STATUS_OPTIONS.filter((o) => o.value).map((o) => ({
+          value: o.value,
+          label: o.label,
+        })),
       },
       {
-        type: 'select',
-        key: 'role',
-        label: 'Role',
-        placeholder: 'All Roles',
+        type: "select",
+        key: "role",
+        label: "Role",
+        placeholder: "All Roles",
         options: roles.map((r) => ({
-          value: r.name.toUpperCase().replace(/ /g, '_'),
+          value: r.name.toUpperCase().replace(/ /g, "_"),
           label: r.name,
         })),
       },
@@ -128,7 +144,7 @@ function StaffsPageContent() {
 
   const pageHeaderConfig: PageHeaderConfig = {
     title: STAFF_PAGE.title,
-    subtitle: pagination ? `${pagination.total} staff members` : 'Loading...',
+    subtitle: pagination ? `${pagination.total} staff members` : "Loading...",
     actions: [
       // {
       //   label: STAFF_PAGE.downloadTemplate,
@@ -154,7 +170,7 @@ function StaffsPageContent() {
   const columns = useMemo<ColumnDef<Staff>[]>(
     () => [
       {
-        accessorKey: 'first_name',
+        accessorKey: "first_name",
         header: STAFF_PAGE.table.name,
         meta: { primary: true },
         cell: ({ row }) => (
@@ -166,76 +182,78 @@ function StaffsPageContent() {
                 className="w-8 h-8 rounded-full object-cover"
               />
             )}
-            {row.original.first_name} {row.original.last_name ?? ''}
+            {row.original.first_name} {row.original.last_name ?? ""}
           </Div>
         ),
       },
       {
-        accessorKey: 'role',
+        accessorKey: "role",
         header: STAFF_PAGE.table.role,
-        cell: ({ row }) => row.original.role ?? '—',
+        cell: ({ row }) => row.original.role ?? "—",
       },
       {
-        accessorKey: 'email',
+        accessorKey: "email",
         header: STAFF_PAGE.table.email,
-        cell: ({ row }) => row.original.email ?? '—',
+        cell: ({ row }) => row.original.email ?? "—",
       },
       {
-        accessorKey: 'phone_number',
+        accessorKey: "phone_number",
         header: STAFF_PAGE.table.phone,
-        cell: ({ row }) => row.original.phone_number ?? '—',
+        cell: ({ row }) => row.original.phone_number ?? "—",
       },
       {
-        accessorKey: 'is_active',
+        accessorKey: "is_active",
         header: STAFF_PAGE.table.status,
         cell: ({ row }) => (
-          <Badge variant={row.original.is_active ? 'success' : 'default'}>
-            {row.original.is_active ? 'Active' : 'Inactive'}
+          <Badge variant={row.original.is_active ? "success" : "default"}>
+            {row.original.is_active ? "Active" : "Inactive"}
           </Badge>
         ),
       },
       {
-        id: 'actions',
+        id: "actions",
         header: STAFF_PAGE.table.actions,
         cell: ({ row }) => {
-          const name = `${row.original.first_name} ${row.original.last_name ?? ''}`.trim();
+          const name = `${row.original.first_name} ${
+            row.original.last_name ?? ""
+          }`.trim();
           return (
             <RowActions
               onView={() => navigateToView(row.original.id)}
               actions={[
                 {
-                  label: 'Edit',
+                  label: "Edit",
                   icon: <Pencil size={14} />,
                   onClick: () => navigateToEdit(row.original.id),
                   hidden: !isAdmin,
                 },
                 {
-                  label: 'Resend Invite',
+                  label: "Resend Invite",
                   icon: <Mail size={14} />,
                   onClick: () => resendInvite(row.original.id),
                   hidden: !isAdmin,
                 },
                 {
-                  label: 'Offboard',
+                  label: "Offboard",
                   icon: <UserX size={14} />,
                   hidden: !isAdmin || !row.original.is_active,
                   confirm: {
-                    title: 'Offboard Staff',
+                    title: "Offboard Staff",
                     description: `Offboard ${name}? They will lose access to the system.`,
-                    confirmLabel: 'Offboard',
+                    confirmLabel: "Offboard",
                   },
                   onClick: () => offboardStaff(row.original.id),
                 },
                 {
-                  label: 'Re-onboard',
+                  label: "Re-onboard",
                   icon: <UserCheck size={14} />,
                   hidden: !isAdmin || row.original.is_active,
                   onClick: () => reonboardStaff(row.original.id),
                 },
                 {
-                  label: 'Delete',
+                  label: "Delete",
                   icon: <Trash2 size={14} />,
-                  variant: 'destructive',
+                  variant: "destructive",
                   hidden: !isAdmin,
                   confirm: {
                     description: `Are you sure you want to delete ${name}? This action cannot be undone.`,
@@ -248,7 +266,15 @@ function StaffsPageContent() {
         },
       },
     ],
-    [isAdmin, navigateToView, navigateToEdit, resendInvite, offboardStaff, reonboardStaff, removeStaff],
+    [
+      isAdmin,
+      navigateToView,
+      navigateToEdit,
+      resendInvite,
+      offboardStaff,
+      reonboardStaff,
+      removeStaff,
+    ],
   );
 
   if (detailId) {
@@ -259,15 +285,13 @@ function StaffsPageContent() {
     <PageCol>
       <PageHeader sticky {...pageHeaderConfig} />
 
-      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
-        <FilterToolbar
-          fields={filterFields}
-          values={filterValues}
-          onChange={(next) => handleFilterChange(next as Partial<StaffFilters>)}
-          onClear={handleClearFilters}
-          sheetTitle="Filter Staff"
-        />
-      </Div>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={(next) => handleFilterChange(next as Partial<StaffFilters>)}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Staff"
+      />
 
       <DataTable
         columns={columns}
@@ -285,11 +309,7 @@ function StaffsPageContent() {
       >
         <Div type="col" gap="md" className="px-4 py-4">
           <FormField label="Excel File *">
-            <FileInput
-              ref={bulkFileRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-            />
+            <FileInput ref={bulkFileRef} type="file" accept=".xlsx,.xls,.csv" />
           </FormField>
           <P color="muted" size="xs">
             Download the template above to see the required format.

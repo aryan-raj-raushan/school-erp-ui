@@ -1,11 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Plus, Trash2, Pencil, Save, ChevronDown, ChevronRight, Search, GripVertical, X } from 'lucide-react';
 import {
   Div, Button, Badge, Spinner, Icon, P, FormField, Input, FormCard, SectionCard,
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   PageHeader, PageCol,
   ResponsiveSelect, ResponsiveModalContainer,
+  DataTable, type ColumnDef, RowActions,
 } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Tabs } from '@/components/ui/tabs';
@@ -44,6 +46,121 @@ export default function FeeSetupPage() {
     FEE_FREQUENCIES, MONTHS, FEE_SETUP_TABS,
   } = useFeesSetup();
 
+  const feeTypeColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'frequency',
+        header: 'Frequency',
+      },
+      {
+        accessorKey: 'applicable_months',
+        header: 'Applicable Months',
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.applicable_months?.join(', ') || '—'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'income_head_name',
+        header: 'Income Head',
+        cell: ({ row }) => row.original.income_head_name || '—',
+      },
+      {
+        accessorKey: 'is_active',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_active ? 'success' : 'default'}>
+            {row.original.is_active ? 'Active' : 'Inactive'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Edit',
+                icon: <Pencil size={14} />,
+                onClick: () => openEditFeeType(row.original),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: { description: `Are you sure you want to delete fee type "${row.original.name}"?` },
+                onClick: () => deleteFeeType(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [openEditFeeType, deleteFeeType],
+  );
+
+  const lateRuleColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'late_fee_amount',
+        header: 'Late Fee (₹)',
+        cell: ({ row }) =>
+          `₹${parseFloat(row.original.late_fee_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      },
+      {
+        accessorKey: 'days_after_due',
+        header: 'Days After Due',
+        cell: ({ row }) => `${row.original.days_after_due} days`,
+      },
+      {
+        accessorKey: 'academic_year_id',
+        header: 'Academic Year',
+        cell: ({ row }) =>
+          (academicYears as any[]).find(y => y.id === row.original.academic_year_id)?.name ??
+          row.original.academic_year_id.slice(0, 8),
+      },
+      {
+        accessorKey: 'is_enabled',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? 'success' : 'default'}>
+            {row.original.is_enabled ? 'Active' : 'Disabled'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: { description: `Are you sure you want to delete rule "${row.original.name}"?` },
+                onClick: () => deleteLateRule(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [academicYears, deleteLateRule],
+  );
+
   const renderFeeTypesTab = (category: 'Class' | 'Transport') => {
     const types = category === 'Class' ? classFeeTypes : transportFeeTypes;
     return (
@@ -58,43 +175,11 @@ export default function FeeSetupPage() {
             {category === 'Class' ? 'Class' : 'Transport'} Fee Types ({types.length})
           </P>
           {loadingFeeTypes ? <Div className="py-8 flex justify-center"><Spinner /></Div> : (
-            <Table>
-              <TableHead>
-                <TableHeadRow>
-                  <TableHeaderCell>Name</TableHeaderCell>
-                  <TableHeaderCell>Frequency</TableHeaderCell>
-                  <TableHeaderCell>Applicable Months</TableHeaderCell>
-                  <TableHeaderCell>Income Head</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
-                </TableHeadRow>
-              </TableHead>
-              <TableBody>
-                {types.length === 0
-                  ? <TableEmptyRow colSpan={6}>No fee types found. Click "Add Fee Type" to create one.</TableEmptyRow>
-                  : types.map(t => (
-                    <TableRow key={t.id}>
-                      <TableCell primary>{t.name}</TableCell>
-                      <TableCell>{t.frequency}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{t.applicable_months?.join(', ') || '—'}</TableCell>
-                      <TableCell>{t.income_head_name || '—'}</TableCell>
-                      <TableCell>
-                        <Badge variant={t.is_active ? 'success' : 'default'}>{t.is_active ? 'Active' : 'Inactive'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Div type="row" gap="xs">
-                          <Button size="sm" variant="ghost" onClick={() => openEditFeeType(t)}>
-                            <Icon icon={Pencil} type="sm" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => deleteFeeType(t.id)}>
-                            <Icon icon={Trash2} type="sm-danger" />
-                          </Button>
-                        </Div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={feeTypeColumns}
+              data={types}
+              emptyText={`No fee types found. Click "Add Fee Type" to create one.`}
+            />
           )}
         </Div>
       </Div>
@@ -516,34 +601,12 @@ export default function FeeSetupPage() {
           ) : (
             <Div type="col" gap="sm">
               <P color="default" weight="semibold">Late Payment Rules ({lateRules.length})</P>
-              <Table>
-                <TableHead><TableHeadRow>
-                  <TableHeaderCell>Name</TableHeaderCell>
-                  <TableHeaderCell>Late Fee (₹)</TableHeaderCell>
-                  <TableHeaderCell>Days After Due</TableHeaderCell>
-                  <TableHeaderCell>Academic Year</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
-                </TableHeadRow></TableHead>
-                <TableBody>
-                  {lateRules.length === 0
-                    ? <TableEmptyRow colSpan={6}>No late rules configured yet.</TableEmptyRow>
-                    : lateRules.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell primary>{r.name}</TableCell>
-                        <TableCell>₹{parseFloat(r.late_fee_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</TableCell>
-                        <TableCell>{r.days_after_due} days</TableCell>
-                        <TableCell>{(academicYears as any[]).find(y => y.id === r.academic_year_id)?.name ?? r.academic_year_id.slice(0, 8)}</TableCell>
-                        <TableCell><Badge variant={r.is_enabled ? 'success' : 'default'}>{r.is_enabled ? 'Active' : 'Disabled'}</Badge></TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="ghost" onClick={() => deleteLateRule(r.id)}>
-                            <Icon icon={Trash2} type="sm-danger" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={lateRuleColumns}
+                data={lateRules}
+                isLoading={loadingLateRules}
+                emptyText="No late rules configured yet."
+              />
             </Div>
           )}
         </Div>

@@ -74,7 +74,6 @@ export function useHomework() {
   useEffect(() => { fetchHomework(); }, [fetchHomework]);
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this homework?')) return;
     try {
       await HomeworkService.remove(id);
       toast.success('Homework deleted');

@@ -38,7 +38,10 @@ import {
   GENDER_OPTIONS,
 } from "@/constants/students.constants";
 
-function useClassesAndSections(academicYearId: string | undefined, classId: string | undefined) {
+function useClassesAndSections(
+  academicYearId: string | undefined,
+  classId: string | undefined,
+) {
   const [classes, setClasses] = useState<Class[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
 
@@ -116,7 +119,13 @@ function StudentsContent() {
 
     const persisted: Partial<PersistedStudentFilters> = {};
     (
-      ["academic_year_id", "class_id", "section_id", "status", "gender"] as const
+      [
+        "academic_year_id",
+        "class_id",
+        "section_id",
+        "status",
+        "gender",
+      ] as const
     ).forEach((field) => {
       if (field in next) persisted[field] = next[field] as never;
     });
@@ -187,14 +196,20 @@ function StudentsContent() {
         key: "status",
         label: "Status",
         placeholder: STUDENT_PAGE.filters.allStatus,
-        options: STUDENT_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+        options: STUDENT_STATUS_OPTIONS.map((o) => ({
+          value: o.value,
+          label: o.label,
+        })),
       },
       {
         type: "select",
         key: "gender",
         label: "Gender",
         placeholder: STUDENT_PAGE.filters.allGender,
-        options: GENDER_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+        options: GENDER_OPTIONS.map((o) => ({
+          value: o.value,
+          label: o.label,
+        })),
       },
     ],
     [years, classes, sections, filters.academic_year_id, filters.class_id],
@@ -304,7 +319,8 @@ function StudentsContent() {
               {
                 label: "Edit",
                 icon: <Pencil size={14} />,
-                onClick: () => router.push(STUDENT_ROUTES.edit(row.original.id)),
+                onClick: () =>
+                  router.push(STUDENT_ROUTES.edit(row.original.id)),
               },
               {
                 label: row.original.is_enabled ? "Disable" : "Enable",
@@ -329,7 +345,11 @@ function StudentsContent() {
                 icon: <Trash2 size={14} />,
                 variant: "destructive",
                 confirm: {
-                  description: `Are you sure you want to delete ${row.original.first_name} ${row.original.last_name ?? ""}? This action cannot be undone.`,
+                  description: `Are you sure you want to delete ${
+                    row.original.first_name
+                  } ${
+                    row.original.last_name ?? ""
+                  }? This action cannot be undone.`,
                 },
                 onClick: () => deleteStudent(row.original.id),
               },

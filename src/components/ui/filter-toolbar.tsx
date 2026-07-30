@@ -85,7 +85,11 @@ function CompactSelect({
     function updatePosition() {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setPopoverRect({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 168) });
+      setPopoverRect({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 168),
+      });
     }
     updatePosition();
     window.addEventListener("scroll", updatePosition, true);
@@ -101,8 +105,10 @@ function CompactSelect({
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
       if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        popoverRef.current && !popoverRef.current.contains(target)
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -111,7 +117,8 @@ function CompactSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  const selectedLabel = field.options.find((o) => o.value === value)?.label ?? field.placeholder;
+  const selectedLabel =
+    field.options.find((o) => o.value === value)?.label ?? field.placeholder;
 
   return (
     <>
@@ -130,48 +137,57 @@ function CompactSelect({
         <Span className="max-w-24 truncate text-[0.8rem]">{selectedLabel}</Span>
         <ChevronDown
           size={12}
-          className={cn("shrink-0 transition-transform", isOpen && "rotate-180")}
+          className={cn(
+            "shrink-0 transition-transform",
+            isOpen && "rotate-180",
+          )}
         />
       </button>
 
-      {isOpen && popoverRect && createPortal(
-        <div
-          ref={popoverRef}
-          className="fixed z-[1000] max-h-60 min-w-40 overflow-auto rounded-[8px] border border-border bg-popover shadow-md"
-          style={{ top: popoverRect.top, left: popoverRect.left, width: popoverRect.width }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              onSelect(undefined);
-              setIsOpen(false);
+      {isOpen &&
+        popoverRect &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            className="fixed z-[1000] max-h-60 min-w-40 overflow-auto rounded-[8px] border border-border bg-popover shadow-md"
+            style={{
+              top: popoverRect.top,
+              left: popoverRect.left,
+              width: popoverRect.width,
             }}
-            className={cn(
-              "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
-              !value && "bg-accent font-medium",
-            )}
           >
-            {field.placeholder}
-          </button>
-          {field.options.map((option) => (
             <button
-              key={option.value}
               type="button"
               onClick={() => {
-                onSelect(option.value);
+                onSelect(undefined);
                 setIsOpen(false);
               }}
               className={cn(
                 "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
-                value === option.value && "bg-accent font-medium",
+                !value && "bg-accent font-medium",
               )}
             >
-              {option.label}
+              {field.placeholder}
             </button>
-          ))}
-        </div>,
-        document.body,
-      )}
+            {field.options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onSelect(option.value);
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent",
+                  value === option.value && "bg-accent font-medium",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
@@ -215,44 +231,58 @@ export function FilterToolbar({
         return { key: field.key, label: `"${values[field.key]}"` };
       }
       if (field.type === "custom") {
-        return { key: field.key, label: `${field.label}: ${field.chipLabel ?? values[field.key]}` };
+        return {
+          key: field.key,
+          label: `${field.label}: ${field.chipLabel ?? values[field.key]}`,
+        };
       }
-      const optionLabel = field.options.find((o) => o.value === values[field.key])?.label;
-      return { key: field.key, label: `${field.label}: ${optionLabel ?? values[field.key]}` };
+      const optionLabel = field.options.find(
+        (o) => o.value === values[field.key],
+      )?.label;
+      return {
+        key: field.key,
+        label: `${field.label}: ${optionLabel ?? values[field.key]}`,
+      };
     });
 
   if (isMobile) {
     return (
-      <Div gap="sm" className={className}>
-        <Div type="row" align="center" gap="sm">
-          <Button
-            variant="outline"
-            size="default"
-            onClick={() => setIsSheetOpen(true)}
-            className="w-fit gap-2"
-          >
-            <SlidersHorizontal size={14} />
-            Filter
-            {activeCount > 0 && (
-              <Badge variant="primary" className="ml-0.5 h-4 min-w-4 px-1 text-[10px]">
-                {activeCount}
-              </Badge>
-            )}
-          </Button>
-
-          {activeCount > 0 && (
+      <Div className="rounded-xl border border-border/60 bg-white p-2 dark:bg-neutral-900">
+        <Div gap="sm" className={className}>
+          <Div type="row" align="center" gap="sm">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClear}
-              title="Clear all filters"
+              variant="outline"
+              size="default"
+              onClick={() => setIsSheetOpen(true)}
+              className="h-9 gap-1 px-4 text-[0.8rem] sm:h-11 sm:gap-1.5 sm:px-5 sm:text-sm"
             >
-              <X size={16} />
+              <SlidersHorizontal size={10} />
+              Filter
+              {activeCount > 0 && (
+                <Badge
+                  variant="primary"
+                  className="ml-0.5 h-4 min-w-4 px-1 text-xs"
+                >
+                  {activeCount}
+                </Badge>
+              )}
             </Button>
-          )}
-        </Div>
 
-        {activeChips.length > 0 && (
+            {activeCount > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClear}
+                title="Clear all filters"
+                className="text-red-400"
+              >
+                <X size={18} className="text-red-400" />
+                Clear
+              </Button>
+            )}
+          </Div>
+
+          {/* {activeChips.length > 0 && (
           <Div type="row" align="center" gap="sm" className="-mx-1 overflow-x-auto px-1 pb-1">
             {activeChips.map((chip) => (
               <Div
@@ -272,162 +302,173 @@ export function FilterToolbar({
                     if (field) handleFieldChange(field, undefined);
                   }}
                 >
-                  <X size={10} />
+                  <X size={8}/>
                 </Button>
               </Div>
             ))}
           </Div>
-        )}
+        )} */}
 
-        <ResponsiveBottomSheet
-          isOpen={isSheetOpen}
-          onClose={() => setIsSheetOpen(false)}
-          title={sheetTitle}
-        >
-          <Div gap="lg">
-            {fields.map((field) => {
-              if (field.type === "search") {
-                return (
-                  <Div key={field.key} className="relative">
-                    <Search
-                      size={14}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    />
-                    <input
-                      value={values[field.key] ?? ""}
-                      onChange={(e) => handleFieldChange(field, e.target.value || undefined)}
-                      placeholder={field.placeholder}
-                      className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
-                    />
-                  </Div>
-                );
-              }
+          <ResponsiveBottomSheet
+            isOpen={isSheetOpen}
+            onClose={() => setIsSheetOpen(false)}
+            title={sheetTitle}
+          >
+            <Div gap="lg">
+              {fields.map((field) => {
+                if (field.type === "search") {
+                  return (
+                    <Div key={field.key} className="relative">
+                      <Search
+                        size={14}
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      />
+                      <input
+                        value={values[field.key] ?? ""}
+                        onChange={(e) =>
+                          handleFieldChange(field, e.target.value || undefined)
+                        }
+                        placeholder={field.placeholder}
+                        className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
+                      />
+                    </Div>
+                  );
+                }
 
-              if (field.type === "custom") {
+                if (field.type === "custom") {
+                  return (
+                    <Div key={field.key}>
+                      <FilterLabel className="mb-2">{field.label}</FilterLabel>
+                      {field.render()}
+                    </Div>
+                  );
+                }
+
                 return (
                   <Div key={field.key}>
                     <FilterLabel className="mb-2">{field.label}</FilterLabel>
-                    {field.render()}
-                  </Div>
-                );
-              }
-
-              return (
-                <Div key={field.key}>
-                  <FilterLabel className="mb-2">{field.label}</FilterLabel>
-                  <Div type="row" wrap gap="sm">
-                    <button
-                      type="button"
-                      onClick={() => handleFieldChange(field, undefined)}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                        !values[field.key]
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-muted/50",
-                      )}
-                    >
-                      {field.placeholder}
-                    </button>
-                    {field.options.map((option) => (
+                    <Div type="row" wrap gap="sm">
                       <button
-                        key={option.value}
                         type="button"
-                        disabled={field.disabled}
-                        onClick={() => handleFieldChange(field, option.value)}
+                        onClick={() => handleFieldChange(field, undefined)}
                         className={cn(
                           "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                          values[field.key] === option.value
+                          !values[field.key]
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border text-muted-foreground hover:bg-muted/50",
-                          field.disabled && "cursor-not-allowed opacity-50",
                         )}
                       >
-                        {option.label}
+                        {field.placeholder}
                       </button>
-                    ))}
+                      {field.options.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          disabled={field.disabled}
+                          onClick={() => handleFieldChange(field, option.value)}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                            values[field.key] === option.value
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:bg-muted/50",
+                            field.disabled && "cursor-not-allowed opacity-50",
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </Div>
                   </Div>
-                </Div>
-              );
-            })}
-          </Div>
+                );
+              })}
+            </Div>
 
-          <Div type="row" gap="sm" className="mt-6 border-t border-border/50 pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="grow shrink basis-0 min-w-0"
-              onClick={handleClear}
+            <Div
+              type="row"
+              gap="sm"
+              className="mt-6 border-t border-border/50 pt-4"
             >
-              Clear All
-            </Button>
-            <Button
-              size="sm"
-              className="grow shrink basis-0 min-w-0"
-              onClick={() => setIsSheetOpen(false)}
-            >
-              Done
-            </Button>
-          </Div>
-        </ResponsiveBottomSheet>
+              <Button
+                variant="outline"
+                size="sm"
+                className="grow shrink basis-0 min-w-0"
+                onClick={handleClear}
+              >
+                Clear All
+              </Button>
+              <Button
+                size="sm"
+                className="grow shrink basis-0 min-w-0"
+                onClick={() => setIsSheetOpen(false)}
+              >
+                Done
+              </Button>
+            </Div>
+          </ResponsiveBottomSheet>
+        </Div>
       </Div>
     );
   }
 
   return (
-    <Div
-      type="row"
-      align="center"
-      gap="sm"
-      className={cn("flex-nowrap overflow-x-auto pb-1", className)}
-    >
-      {fields.map((field) => {
-        if (field.type === "search") {
+    <Div className="rounded-xl border border-border/60 bg-white p-2 dark:bg-neutral-900">
+      <Div
+        type="row"
+        align="center"
+        gap="sm"
+        className={cn("flex-nowrap overflow-x-auto pb-1", className)}
+      >
+        {fields.map((field) => {
+          if (field.type === "search") {
+            return (
+              <Div key={field.key} className="relative shrink-0">
+                <Search
+                  size={13}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <input
+                  value={values[field.key] ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(field, e.target.value || undefined)
+                  }
+                  placeholder={field.placeholder}
+                  className="h-9 w-40 rounded-lg border border-input bg-transparent pl-8 pr-3 text-[0.8rem] outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring/50 sm:w-48 lg:w-72 xl:w-80"
+                />
+              </Div>
+            );
+          }
+
+          if (field.type === "custom") {
+            return (
+              <div key={field.key} className="shrink-0">
+                {field.render()}
+              </div>
+            );
+          }
+
           return (
-            <Div key={field.key} className="relative shrink-0">
-              <Search
-                size={13}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <input
-                value={values[field.key] ?? ""}
-                onChange={(e) => handleFieldChange(field, e.target.value || undefined)}
-                placeholder={field.placeholder}
-                className="h-9 w-40 rounded-lg border border-input bg-transparent pl-8 pr-3 text-[0.8rem] outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 sm:w-48 lg:w-72 xl:w-80"
-              />
-            </Div>
+            <CompactSelect
+              key={field.key}
+              field={field}
+              value={values[field.key]}
+              onSelect={(val) => handleFieldChange(field, val)}
+            />
           );
-        }
+        })}
 
-        if (field.type === "custom") {
-          return (
-            <div key={field.key} className="shrink-0">
-              {field.render()}
-            </div>
-          );
-        }
-
-        return (
-          <CompactSelect
-            key={field.key}
-            field={field}
-            value={values[field.key]}
-            onSelect={(val) => handleFieldChange(field, val)}
-          />
-        );
-      })}
-
-      {activeCount > 0 && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleClear}
-          className="shrink-0 gap-1"
-        >
-          <X size={13} />
-          Clear
-        </Button>
-      )}
+        {activeCount > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="shrink-0 gap-1 border-red-100 hover:bg-red-100/50 text-red-400"
+          >
+            <X size={12} className="text-red-400" />
+            Clear
+          </Button>
+        )}
+      </Div>
     </Div>
   );
 }

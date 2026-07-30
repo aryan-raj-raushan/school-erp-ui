@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Trash2, Search, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import {
   Div, Button, Span, P,
@@ -7,6 +8,7 @@ import {
   Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
   Badge, Spinner, Icon, FormField, Input, FormCard,
   ResponsiveSelect,
+  DataTable, type ColumnDef, RowActions,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFinanceLedger, LEDGER_TABS } from '@/hooks/useFinanceLedger';
@@ -24,6 +26,174 @@ export default function FinanceLedgerPage() {
     submitting,
     fmt, fmtDate,
   } = useFinanceLedger();
+
+  const expenseColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'expense_head_name',
+        header: 'For (Head)',
+        meta: { primary: true },
+        cell: ({ row }) => row.original.expense_head_name ?? '—',
+      },
+      {
+        accessorKey: 'from_account_name',
+        header: 'Account',
+        cell: ({ row }) => row.original.from_account_name ?? '—',
+      },
+      {
+        accessorKey: 'total_amount',
+        header: 'Total Amount',
+        cell: ({ row }) => (
+          <Span color="danger" className="font-medium">{fmt(row.original.total_amount)}</Span>
+        ),
+      },
+      {
+        accessorKey: 'date_of_expense',
+        header: 'Date of Expense',
+        cell: ({ row }) => fmtDate(row.original.date_of_expense),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Entry Date',
+        cell: ({ row }) => fmtDate(row.original.created_at),
+      },
+      {
+        accessorKey: 'remarks',
+        header: 'Remarks',
+        cell: ({ row }) => row.original.remarks ?? '—',
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: { description: 'Are you sure you want to delete this expense record?' },
+                onClick: () => deleteExpense(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [fmt, fmtDate, deleteExpense],
+  );
+
+  const incomeColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'income_head_name',
+        header: 'Head',
+        meta: { primary: true },
+        cell: ({ row }) => row.original.income_head_name ?? '—',
+      },
+      {
+        accessorKey: 'to_account_name',
+        header: 'Account',
+        cell: ({ row }) => row.original.to_account_name ?? '—',
+      },
+      {
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => (
+          <Span className="text-green-600 font-medium">{fmt(row.original.amount)}</Span>
+        ),
+      },
+      {
+        accessorKey: 'date_of_income',
+        header: 'Date of Income',
+        cell: ({ row }) => fmtDate(row.original.date_of_income),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Entry Date',
+        cell: ({ row }) => fmtDate(row.original.created_at),
+      },
+      {
+        accessorKey: 'remarks',
+        header: 'Remarks',
+        cell: ({ row }) => row.original.remarks ?? '—',
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: { description: 'Are you sure you want to delete this income record?' },
+                onClick: () => deleteIncome(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [fmt, fmtDate, deleteIncome],
+  );
+
+  const transferColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'from_account_name',
+        header: 'From Account',
+        meta: { primary: true },
+        cell: ({ row }) => row.original.from_account_name ?? '—',
+      },
+      {
+        accessorKey: 'to_account_name',
+        header: 'To Account',
+        cell: ({ row }) => row.original.to_account_name ?? '—',
+      },
+      {
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => (
+          <Span color="default" className="font-medium">{fmt(row.original.amount)}</Span>
+        ),
+      },
+      {
+        accessorKey: 'date_of_transaction',
+        header: 'Value Date',
+        cell: ({ row }) => fmtDate(row.original.date_of_transaction),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created Date',
+        cell: ({ row }) => fmtDate(row.original.created_at),
+      },
+      {
+        accessorKey: 'remarks',
+        header: 'Remarks',
+        cell: ({ row }) => row.original.remarks ?? '—',
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: { description: 'Are you sure you want to delete this transfer record?' },
+                onClick: () => deleteTransfer(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [fmt, fmtDate, deleteTransfer],
+  );
 
   return (
     <PageCol>
@@ -76,40 +246,12 @@ export default function FinanceLedgerPage() {
 
           <Div type="col" gap="sm">
             <P color="default" weight="semibold">Latest 25 Expense Finance Records</P>
-            <Table>
-              <TableHead>
-                <TableHeadRow>
-                  <TableHeaderCell>For (Head)</TableHeaderCell>
-                  <TableHeaderCell>Account</TableHeaderCell>
-                  <TableHeaderCell>Total Amount</TableHeaderCell>
-                  <TableHeaderCell>Date of Expense</TableHeaderCell>
-                  <TableHeaderCell>Entry Date</TableHeaderCell>
-                  <TableHeaderCell>Remarks</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
-                </TableHeadRow>
-              </TableHead>
-              <TableBody>
-                {loadingExpenses ? (
-                  <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-                ) : expenses.length === 0 ? (
-                  <TableEmptyRow colSpan={7}>No expense records yet.</TableEmptyRow>
-                ) : expenses.map(e => (
-                  <TableRow key={e.id}>
-                    <TableCell primary>{e.expense_head_name ?? '—'}</TableCell>
-                    <TableCell>{e.from_account_name ?? '—'}</TableCell>
-                    <TableCell><Span color="danger" className="font-medium">{fmt(e.total_amount)}</Span></TableCell>
-                    <TableCell>{fmtDate(e.date_of_expense)}</TableCell>
-                    <TableCell>{fmtDate(e.created_at)}</TableCell>
-                    <TableCell>{e.remarks ?? '—'}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => deleteExpense(e.id)}>
-                        <Icon icon={Trash2} type="sm-danger" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={expenseColumns}
+              data={expenses}
+              isLoading={loadingExpenses}
+              emptyText="No expense records yet."
+            />
           </Div>
         </Div>
       )}
@@ -156,40 +298,12 @@ export default function FinanceLedgerPage() {
 
           <Div type="col" gap="sm">
             <P color="default" weight="semibold">Latest 25 Income Finance Records</P>
-            <Table>
-              <TableHead>
-                <TableHeadRow>
-                  <TableHeaderCell>Head</TableHeaderCell>
-                  <TableHeaderCell>Account</TableHeaderCell>
-                  <TableHeaderCell>Amount</TableHeaderCell>
-                  <TableHeaderCell>Date of Income</TableHeaderCell>
-                  <TableHeaderCell>Entry Date</TableHeaderCell>
-                  <TableHeaderCell>Remarks</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
-                </TableHeadRow>
-              </TableHead>
-              <TableBody>
-                {loadingIncome ? (
-                  <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-                ) : incomeList.length === 0 ? (
-                  <TableEmptyRow colSpan={7}>No income records yet.</TableEmptyRow>
-                ) : incomeList.map(i => (
-                  <TableRow key={i.id}>
-                    <TableCell primary>{i.income_head_name ?? '—'}</TableCell>
-                    <TableCell>{i.to_account_name ?? '—'}</TableCell>
-                    <TableCell><Span className="text-green-600 font-medium">{fmt(i.amount)}</Span></TableCell>
-                    <TableCell>{fmtDate(i.date_of_income)}</TableCell>
-                    <TableCell>{fmtDate(i.created_at)}</TableCell>
-                    <TableCell>{i.remarks ?? '—'}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => deleteIncome(i.id)}>
-                        <Icon icon={Trash2} type="sm-danger" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={incomeColumns}
+              data={incomeList}
+              isLoading={loadingIncome}
+              emptyText="No income records yet."
+            />
           </Div>
         </Div>
       )}
@@ -232,40 +346,12 @@ export default function FinanceLedgerPage() {
 
           <Div type="col" gap="sm">
             <P color="default" weight="semibold">Account Balance Transfer Transactions</P>
-            <Table>
-              <TableHead>
-                <TableHeadRow>
-                  <TableHeaderCell>From Account</TableHeaderCell>
-                  <TableHeaderCell>To Account</TableHeaderCell>
-                  <TableHeaderCell>Amount</TableHeaderCell>
-                  <TableHeaderCell>Value Date</TableHeaderCell>
-                  <TableHeaderCell>Created Date</TableHeaderCell>
-                  <TableHeaderCell>Remarks</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
-                </TableHeadRow>
-              </TableHead>
-              <TableBody>
-                {loadingTransfers ? (
-                  <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-                ) : transfers.length === 0 ? (
-                  <TableEmptyRow colSpan={7}>No transfer records yet.</TableEmptyRow>
-                ) : transfers.map(t => (
-                  <TableRow key={t.id}>
-                    <TableCell primary>{t.from_account_name ?? '—'}</TableCell>
-                    <TableCell>{t.to_account_name ?? '—'}</TableCell>
-                    <TableCell><Span color="default" className="font-medium">{fmt(t.amount)}</Span></TableCell>
-                    <TableCell>{fmtDate(t.date_of_transaction)}</TableCell>
-                    <TableCell>{fmtDate(t.created_at)}</TableCell>
-                    <TableCell>{t.remarks ?? '—'}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => deleteTransfer(t.id)}>
-                        <Icon icon={Trash2} type="sm-danger" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={transferColumns}
+              data={transfers}
+              isLoading={loadingTransfers}
+              emptyText="No transfer records yet."
+            />
           </Div>
         </Div>
       )}

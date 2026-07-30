@@ -230,7 +230,6 @@ function AdmissionsContent() {
     <PageCol>
       <PageHeader sticky {...pageHeaderConfig} />
 
-      <Div className="rounded-xl border border-border/60 bg-white p-3 dark:bg-neutral-900">
         <FilterToolbar
           fields={filterFields}
           values={filterValues}
@@ -238,7 +237,6 @@ function AdmissionsContent() {
           onClear={handleClearFilters}
           sheetTitle="Filter Enquiries"
         />
-      </Div>
 
       <DataTable
         columns={columns}

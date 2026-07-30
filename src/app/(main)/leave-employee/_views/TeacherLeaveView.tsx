@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMyLeave } from "@/hooks/useLeave";
 import { LEAVE_PAGE, LEAVE_STATUS_BADGE } from "@/constants";
 import {
@@ -18,13 +18,14 @@ import {
   TableCell,
   TableEmptyRow,
   Badge,
-  Spinner,
   FormField,
   FilterLabel,
   MiniStat,
   Icon,
   ResponsiveModalContainer,
   ResponsiveSelect,
+  DataTable,
+  type ColumnDef,
 } from "@/components/ui";
 import { Plus } from "lucide-react";
 
@@ -51,6 +52,48 @@ export default function TeacherLeaveView() {
 
   const pending = myRequests.filter((r) => r.status === "PENDING").length;
   const approved = myRequests.filter((r) => r.status === "APPROVED").length;
+
+  const requestColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        id: "type",
+        header: LEAVE_PAGE.table.type,
+        meta: { primary: true },
+        cell: ({ row }) => row.original.leave_type?.name ?? "—",
+      },
+      {
+        accessorKey: "from_date",
+        header: LEAVE_PAGE.table.from,
+      },
+      {
+        accessorKey: "to_date",
+        header: LEAVE_PAGE.table.to,
+      },
+      {
+        accessorKey: "total_days",
+        header: LEAVE_PAGE.table.days,
+      },
+      {
+        accessorKey: "reason",
+        header: LEAVE_PAGE.table.reason,
+      },
+      {
+        accessorKey: "status",
+        header: LEAVE_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={LEAVE_STATUS_BADGE[row.original.status as keyof typeof LEAVE_STATUS_BADGE]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <Div type="col" gap="lg">
@@ -99,40 +142,13 @@ export default function TeacherLeaveView() {
 
       {/* My Requests */}
       {activeTab === "requests" && (
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>#</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.type}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.from}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.to}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.days}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.reason}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.status}</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-            ) : myRequests.length === 0 ? (
-              <TableEmptyRow colSpan={7}>{LEAVE_PAGE.empty}</TableEmptyRow>
-            ) : (
-              myRequests.map((req, i) => (
-                <TableRow key={req.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>{req.leave_type?.name ?? "—"}</TableCell>
-                  <TableCell>{req.from_date}</TableCell>
-                  <TableCell>{req.to_date}</TableCell>
-                  <TableCell>{req.total_days}</TableCell>
-                  <TableCell>{req.reason}</TableCell>
-                  <TableCell>
-                    <Badge variant={LEAVE_STATUS_BADGE[req.status]}>{req.status}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={requestColumns}
+          data={myRequests}
+          isLoading={isLoading}
+          emptyText={LEAVE_PAGE.empty}
+          fillViewport
+        />
       )}
 
       {/* My Balance */}

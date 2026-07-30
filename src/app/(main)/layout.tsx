@@ -69,7 +69,7 @@ export default function DashboardLayout({
         <RestrictionBanner />
         <main style={{ flex: 1, overflow: "auto" }}>
           <div
-            className="p-4 sm:p-5 md:px-7 md:py-0"
+            className="px-4 pb-4 sm:px-5 sm:pb-5 md:px-7 pt-0"
             style={{ minHeight: "100%" }}
           >            <RouteGuard>{children}</RouteGuard>
           </div>

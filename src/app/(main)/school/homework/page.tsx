@@ -1,139 +1,257 @@
-'use client';
+"use client";
 
-import { useHomework } from '@/hooks/useHomework';
+import { useEffect, useMemo } from "react";
+import { Plus, Pencil, Trash2, ListChecks } from "lucide-react";
+import { useHomework } from "@/hooks/useHomework";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import {
   HOMEWORK_PAGE,
   HOMEWORK_STATUS_BADGE,
-  HOMEWORK_STATUS_OPTIONS,
-  SUBMISSION_STATUS_OPTIONS,
-} from '@/constants';
+} from "@/constants";
+import type { Homework } from "@/types";
 import {
-  Div, Button, Select, Input,
-  PageHeader, PageCol,
-  Table, TableHead, TableHeadRow, TableHeaderCell,
-  TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge, Spinner, Modal, FormField, FilterLabel, Icon, ResponsiveSelect, ResponsiveModalContainer,
-} from '@/components/ui';
-import { Plus, Pencil, Trash2, ListChecks } from 'lucide-react';
+  Div,
+  Button,
+  Input,
+  PageHeader,
+  type PageHeaderConfig,
+  PageCol,
+  DataTable,
+  type ColumnDef,
+  FilterToolbar,
+  type FilterField,
+  RowActions,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyRow,
+  Badge,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
+} from "@/components/ui";
+
+type PersistedHomeworkFilters = {
+  academic_year_id?: string;
+  class_id?: string;
+  subject_id?: string;
+};
 
 export default function HomeworkPage() {
   const {
-    years, classes, subjects,
-    selectedAcademicYearId, setSelectedAcademicYearId,
+    years,
+    classes,
+    subjects,
+    selectedAcademicYearId,
+    setSelectedAcademicYearId,
     selectedClassId,
-    selectedSubjectId, setSelectedSubjectId,
+    selectedSubjectId,
+    setSelectedSubjectId,
     handleClassChange,
     homeworkList,
     isLoading,
     handleDelete,
     goToNew,
     goToEdit,
-    students, submissionMap,
-    showSubmissionsModal, setShowSubmissionsModal,
+    students,
+    submissionMap,
+    showSubmissionsModal,
+    setShowSubmissionsModal,
     isSaving,
     openSubmissions,
     setSubmission,
     saveSubmissions,
   } = useHomework();
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedHomeworkFilters>({
+    key: STORAGE_FILTER_KEYS.HOMEWORK,
+    defaultValue: {},
+  });
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ("academic_year_id" in next) setSelectedAcademicYearId(next.academic_year_id ?? "");
+    if ("class_id" in next) handleClassChange(next.class_id ?? "");
+    if ("subject_id" in next) setSelectedSubjectId(next.subject_id ?? "");
+
+    const persisted: Partial<PersistedHomeworkFilters> = {};
+    (["academic_year_id", "class_id", "subject_id"] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field];
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
+  }
+
+  function handleClearFilters() {
+    handleFilterChange({
+      academic_year_id: undefined,
+      class_id: undefined,
+      subject_id: undefined,
+    });
+    clearStoredFilters();
+  }
+
+  // One-time: once storage has hydrated, apply any filters saved from a
+  // previous visit.
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters) {
+      if (storedFilters.academic_year_id) setSelectedAcademicYearId(storedFilters.academic_year_id);
+      if (storedFilters.class_id) handleClassChange(storedFilters.class_id);
+      if (storedFilters.subject_id) setSelectedSubjectId(storedFilters.subject_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: "Select year",
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+      },
+      {
+        type: "select",
+        key: "class_id",
+        label: "Class",
+        placeholder: "Select Class",
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+        resetKeys: ["subject_id"],
+      },
+      {
+        type: "select",
+        key: "subject_id",
+        label: "Subject",
+        placeholder: "All subjects",
+        options: subjects.map((s) => ({ value: s.id, label: s.name })),
+        disabled: !selectedClassId,
+      },
+    ],
+    [years, classes, subjects, selectedClassId],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: selectedAcademicYearId || undefined,
+    class_id: selectedClassId || undefined,
+    subject_id: selectedSubjectId || undefined,
+  };
+
+  const columns = useMemo<ColumnDef<Homework>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "title",
+        header: HOMEWORK_PAGE.table.title,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "subject_name",
+        header: HOMEWORK_PAGE.table.subject,
+        cell: ({ row }) => row.original.subject_name ?? "—",
+      },
+      {
+        accessorKey: "homework_date",
+        header: HOMEWORK_PAGE.table.homeworkDate,
+        cell: ({ row }) => row.original.homework_date ?? "—",
+      },
+      {
+        accessorKey: "due_date",
+        header: HOMEWORK_PAGE.table.dueDate,
+      },
+      {
+        accessorKey: "status",
+        header: HOMEWORK_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={HOMEWORK_STATUS_BADGE[row.original.status]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "created_by_name",
+        header: HOMEWORK_PAGE.table.createdBy,
+        cell: ({ row }) => row.original.created_by_name ?? "—",
+      },
+      {
+        id: "actions",
+        header: HOMEWORK_PAGE.table.actions,
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: "View Submissions",
+                icon: <ListChecks size={14} />,
+                onClick: () => openSubmissions(row.original),
+              },
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () => goToEdit(row.original),
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 size={14} />,
+                variant: "destructive",
+                confirm: {
+                  description: `Are you sure you want to delete "${row.original.title}"? This action cannot be undone.`,
+                },
+                onClick: () => handleDelete(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [openSubmissions, goToEdit, handleDelete],
+  );
+
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: HOMEWORK_PAGE.title,
+    actions: [
+      {
+        label: HOMEWORK_PAGE.addButton,
+        icon: <Plus size={14} />,
+        onClick: goToNew,
+      },
+    ],
+  };
+
   return (
     <PageCol>
-      <PageHeader
-        title={HOMEWORK_PAGE.title}
-        actions={
-          <Button onClick={goToNew} disabled={!selectedClassId}>
-            <Icon icon={Plus} type="btn-icon" />
-            {HOMEWORK_PAGE.addButton}
-          </Button>
-        }
+      <PageHeader {...pageHeaderConfig} />
+
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Homework"
       />
 
-      <Div variant="card" padding="p-4">
-        <Div type="grid" cols={3} gap="md">
-          <Div type="col" gap="xs">
-            <FilterLabel>Academic Year</FilterLabel>
-            <Select value={selectedAcademicYearId} onChange={(e) => setSelectedAcademicYearId(e.target.value)}>
-              <option value="">Select year</option>
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' (Current)' : ''}</option>
-              ))}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Class</FilterLabel>
-            <Select value={selectedClassId} onChange={(e) => handleClassChange(e.target.value)}>
-              <option value="">Select Class</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </Div>
-          <Div type="col" gap="xs">
-            <FilterLabel>Subject</FilterLabel>
-            <Select
-              value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
-              disabled={!selectedClassId}
-            >
-              <option value="">All subjects</option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
-          </Div>
-        </Div>
-      </Div>
-
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.title}</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.subject}</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.homeworkDate}</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.dueDate}</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.createdBy}</TableHeaderCell>
-            <TableHeaderCell>{HOMEWORK_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={8}><Spinner /></TableEmptyRow>
-          ) : !selectedClassId ? (
-            <TableEmptyRow colSpan={8}>{HOMEWORK_PAGE.empty}</TableEmptyRow>
-          ) : homeworkList.length === 0 ? (
-            <TableEmptyRow colSpan={8}>No homework assigned yet.</TableEmptyRow>
-          ) : (
-            homeworkList.map((hw, i) => (
-              <TableRow key={hw.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{hw.title}</TableCell>
-                <TableCell>{hw.subject_name ?? '—'}</TableCell>
-                <TableCell>{hw.homework_date ?? '—'}</TableCell>
-                <TableCell>{hw.due_date}</TableCell>
-                <TableCell>
-                  <Badge variant={HOMEWORK_STATUS_BADGE[hw.status]}>{hw.status}</Badge>
-                </TableCell>
-                <TableCell>{hw.created_by_name ?? '—'}</TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => openSubmissions(hw)}>
-                      <Icon icon={ListChecks} type="sm" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => goToEdit(hw)}>
-                      <Icon icon={Pencil} type="sm" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(hw.id)}>
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={homeworkList}
+        isLoading={isLoading}
+        emptyText={!selectedClassId ? HOMEWORK_PAGE.empty : "No homework assigned yet."}
+        fillViewport
+      />
 
       {showSubmissionsModal && (
         <ResponsiveModalContainer
@@ -141,35 +259,54 @@ export default function HomeworkPage() {
           title={HOMEWORK_PAGE.submissions.title}
           onClose={() => setShowSubmissionsModal(false)}
         >
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="md">
               <Table>
                 <TableHead>
                   <TableHeadRow>
-                    <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.student}</TableHeaderCell>
-                    <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.status}</TableHeaderCell>
-                    <TableHeaderCell>{HOMEWORK_PAGE.submissions.table.remarks}</TableHeaderCell>
+                    <TableHeaderCell>
+                      {HOMEWORK_PAGE.submissions.table.student}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {HOMEWORK_PAGE.submissions.table.status}
+                    </TableHeaderCell>
+                    <TableHeaderCell>
+                      {HOMEWORK_PAGE.submissions.table.remarks}
+                    </TableHeaderCell>
                   </TableHeadRow>
                 </TableHead>
                 <TableBody>
                   {students.length === 0 ? (
-                    <TableEmptyRow colSpan={3}>{HOMEWORK_PAGE.submissions.empty}</TableEmptyRow>
+                    <TableEmptyRow colSpan={3}>
+                      {HOMEWORK_PAGE.submissions.empty}
+                    </TableEmptyRow>
                   ) : (
                     students.map((s) => (
                       <TableRow key={s.id}>
-                        <TableCell primary>{s.first_name} {s.last_name ?? ''}</TableCell>
+                        <TableCell primary>
+                          {s.first_name} {s.last_name ?? ""}
+                        </TableCell>
                         <TableCell>
                           <ResponsiveSelect
-                            value={submissionMap[s.id]?.status ?? 'PENDING'}
-                            onChange={(e) => setSubmission(s.id, 'status', e.target.value)}
-                            options={SUBMISSION_STATUS_OPTIONS}
+                            value={submissionMap[s.id]?.status ?? "PENDING"}
+                            onChange={(e) =>
+                              setSubmission(s.id, "status", e.target.value)
+                            }
+                            options={[
+                              { value: "PENDING", label: "Pending" },
+                              { value: "SUBMITTED", label: "Submitted" },
+                              { value: "GRADED", label: "Graded" },
+                              { value: "LATE", label: "Late" },
+                            ]}
                           />
                         </TableCell>
                         <TableCell>
                           <Input
                             placeholder="Remarks"
-                            value={submissionMap[s.id]?.remarks ?? ''}
-                            onChange={(e) => setSubmission(s.id, 'remarks', e.target.value)}
+                            value={submissionMap[s.id]?.remarks ?? ""}
+                            onChange={(e) =>
+                              setSubmission(s.id, "remarks", e.target.value)
+                            }
                           />
                         </TableCell>
                       </TableRow>
@@ -178,13 +315,18 @@ export default function HomeworkPage() {
                 </TableBody>
               </Table>
               <Div type="row" justify="end" gap="sm">
-                <Button variant="outline" onClick={() => setShowSubmissionsModal(false)}>Cancel</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmissionsModal(false)}
+                >
+                  Cancel
+                </Button>
                 <Button loading={isSaving} onClick={saveSubmissions}>
                   {HOMEWORK_PAGE.submissions.save}
                 </Button>
               </Div>
             </Div>
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
     </PageCol>

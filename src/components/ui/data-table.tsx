@@ -58,8 +58,9 @@ export interface DataTableProps<TData> {
   /** Optional: setter for server-side sorting (must pair with sorting) */
   onSortingChange?: React.Dispatch<React.SetStateAction<SortingState>>;
   /**
-   * Column IDs to pin to the left (sticky). Each column should declare a
-   * `size` in its definition so offsets are computed correctly.
+   * Column IDs to pin to the left (sticky) while the rest of the table
+   * scrolls horizontally. Defaults to the first two columns — pass an
+   * explicit list to override, or `[]` to disable pinning entirely.
    */
   pinnedColumns?: string[];
   /**
@@ -76,9 +77,16 @@ export interface DataTableProps<TData> {
   fillViewport?: boolean;
 }
 
-function getPinnedStyle(column: Column<any>): React.CSSProperties | undefined {
+function getColumnId(col: ColumnDef<any, any>): string | undefined {
+  return col.id ?? (col as { accessorKey?: string }).accessorKey;
+}
+
+function getPinnedStyle(
+  column: Column<any>,
+  offsets: Record<string, number>,
+): React.CSSProperties | undefined {
   if (!column.getIsPinned()) return undefined;
-  return { left: column.getStart('left') };
+  return { left: offsets[column.id] ?? 0 };
 }
 
 function getPinnedClass(column: Column<any>, isHeader: boolean): string {
@@ -105,9 +113,44 @@ export function DataTable<TData>({
   const manualSort = sorting !== undefined && onSortingChange !== undefined;
   const showsPaginationFooter = !!pagination && pagination.totalPages > 1;
 
+  // Default: pin the first two columns so they stay put while the rest of
+  // the table scrolls horizontally on narrow screens. Pass `pinnedColumns`
+  // explicitly (or `[]` to opt out) to override.
+  const effectivePinnedColumns = React.useMemo(
+    () => pinnedColumns ?? columns.slice(0, 2).map(getColumnId).filter((id): id is string => !!id),
+    [pinnedColumns, columns],
+  );
+
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const stickyBarRef = React.useRef<HTMLDivElement>(null);
   const stickyInnerRef = React.useRef<HTMLDivElement>(null);
+  const [pinnedOffsets, setPinnedOffsets] = React.useState<Record<string, number>>({});
+
+  // Measure actual rendered widths of pinned header cells so sticky offsets
+  // stay correct regardless of whether columns declare an explicit `size`.
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || effectivePinnedColumns.length === 0) return;
+    const pinnedSet = new Set(effectivePinnedColumns);
+    const measure = () => {
+      const headerRow = el.querySelector('thead tr');
+      if (!headerRow) return;
+      let acc = 0;
+      const offsets: Record<string, number> = {};
+      Array.from(headerRow.children).forEach((cell) => {
+        const colId = (cell as HTMLElement).dataset.columnId;
+        if (colId && pinnedSet.has(colId)) {
+          offsets[colId] = acc;
+          acc += (cell as HTMLElement).getBoundingClientRect().width;
+        }
+      });
+      setPinnedOffsets(offsets);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [data, columns, effectivePinnedColumns]);
 
   // Keep sticky bar width in sync with actual table scroll width
   React.useEffect(() => {
@@ -142,7 +185,7 @@ export function DataTable<TData>({
     enableColumnPinning: true,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      columnPinning: { left: pinnedColumns ?? [] },
+      columnPinning: { left: effectivePinnedColumns },
       ...(manualSort && { sorting }),
     },
     ...(manualSort && {
@@ -165,7 +208,8 @@ export function DataTable<TData>({
             {table.getHeaderGroups()[0]?.headers.map((header) => (
               <TableHeaderCell
                 key={header.id}
-                style={getPinnedStyle(header.column)}
+                data-column-id={header.column.id}
+                style={getPinnedStyle(header.column, pinnedOffsets)}
                 className={getPinnedClass(header.column, true)}
               >
                 {header.isPlaceholder
@@ -175,7 +219,7 @@ export function DataTable<TData>({
             ))}
           </TableHeadRow>
         </TableHead>
-        <TableBody>
+        <TableBody className=''>
           {isLoading ? (
             <TableEmptyRow colSpan={columns.length}>
               <Spinner />
@@ -194,7 +238,7 @@ export function DataTable<TData>({
                   <TableCell
                     key={cell.id}
                     primary={cell.column.columnDef.meta?.primary}
-                    style={getPinnedStyle(cell.column)}
+                    style={getPinnedStyle(cell.column, pinnedOffsets)}
                     className={getPinnedClass(cell.column, false)}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
