@@ -1,12 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import {
   Div, Button, Span, P, FormField, Input,
   PageHeader, PageCol,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge, Spinner, Icon,
+  Badge, Spinner,
   ResponsiveSelect, ResponsiveModalContainer,
+  DataTable, type ColumnDef, RowActions,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFinanceSetup, FINANCE_SETUP_TABS } from '@/hooks/useFinanceSetup';
@@ -26,6 +27,135 @@ export default function FinanceSetupPage() {
     submitting, ACCOUNT_TYPES, HEAD_TYPES,
   } = useFinanceSetup();
 
+  const accountColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Account Name',
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'account_type',
+        header: 'Type',
+        cell: ({ row }) => <Badge variant="info">{row.original.account_type}</Badge>,
+      },
+      {
+        accessorKey: 'current_balance',
+        header: 'Balance',
+        cell: ({ row }) => (
+          <Span color="default" className="font-semibold">
+            ₹{parseFloat(row.original.current_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          </Span>
+        ),
+      },
+      {
+        accessorKey: 'opening_balance',
+        header: 'Opening Balance',
+        cell: ({ row }) =>
+          `₹${parseFloat(row.original.opening_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      },
+      {
+        accessorKey: 'account_start_date',
+        header: 'Start Date',
+        cell: ({ row }) =>
+          new Date(row.original.account_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      },
+      {
+        accessorKey: 'is_enabled',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? 'success' : 'default'}>
+            {row.original.is_enabled ? 'Enabled' : 'Disabled'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Edit',
+                icon: <Pencil size={14} />,
+                onClick: () => openEditAccount(row.original),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: {
+                  description: `Are you sure you want to delete account "${row.original.name}"?`,
+                },
+                onClick: () => deleteAccount(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [openEditAccount, deleteAccount],
+  );
+
+  const headColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Head Name',
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'head_type',
+        header: 'Type',
+        cell: ({ row }) => (
+          <Badge variant={row.original.head_type === 'Income' ? 'success' : 'warning'}>
+            {row.original.head_type}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created Date',
+        cell: ({ row }) =>
+          new Date(row.original.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      },
+      {
+        accessorKey: 'is_enabled',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_enabled ? 'success' : 'default'}>
+            {row.original.is_enabled ? 'Enabled' : 'Disabled'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: 'Edit',
+                icon: <Pencil size={14} />,
+                onClick: () => openEditHead(row.original),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: {
+                  description: `Are you sure you want to delete head "${row.original.name}"?`,
+                },
+                onClick: () => deleteHead(row.original.id),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [openEditHead, deleteHead],
+  );
+
   return (
     <PageCol>
       <PageHeader
@@ -41,93 +171,23 @@ export default function FinanceSetupPage() {
       <Tabs options={FINANCE_SETUP_TABS} value={tab} onChange={setTab} />
 
       {tab === 'accounts' && (
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>Account Name</TableHeaderCell>
-              <TableHeaderCell>Type</TableHeaderCell>
-              <TableHeaderCell>Balance</TableHeaderCell>
-              <TableHeaderCell>Opening Balance</TableHeaderCell>
-              <TableHeaderCell>Start Date</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {loadingAccounts ? (
-              <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-            ) : accounts.length === 0 ? (
-              <TableEmptyRow colSpan={7}>No finance accounts found. Add one to get started.</TableEmptyRow>
-            ) : accounts.map(a => (
-              <TableRow key={a.id}>
-                <TableCell primary>{a.name}</TableCell>
-                <TableCell>
-                  <Badge variant="info">{a.account_type}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Span color="default" className="font-semibold">₹{parseFloat(a.current_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Span>
-                </TableCell>
-                <TableCell>₹{parseFloat(a.opening_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</TableCell>
-                <TableCell>{new Date(a.account_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
-                <TableCell>
-                  <Badge variant={a.is_enabled ? 'success' : 'default'}>{a.is_enabled ? 'Enabled' : 'Disabled'}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => openEditAccount(a)}>
-                      <Icon icon={Pencil} type="sm" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.id)}>
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={accountColumns}
+          data={accounts}
+          isLoading={loadingAccounts}
+          emptyText="No finance accounts found. Add one to get started."
+          fillViewport
+        />
       )}
 
       {tab === 'heads' && (
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>Head Name</TableHeaderCell>
-              <TableHeaderCell>Type</TableHeaderCell>
-              <TableHeaderCell>Created Date</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {loadingHeads ? (
-              <TableEmptyRow colSpan={5}><Spinner /></TableEmptyRow>
-            ) : heads.length === 0 ? (
-              <TableEmptyRow colSpan={5}>No income/expense heads found. Add one to get started.</TableEmptyRow>
-            ) : heads.map(h => (
-              <TableRow key={h.id}>
-                <TableCell primary>{h.name}</TableCell>
-                <TableCell>
-                  <Badge variant={h.head_type === 'Income' ? 'success' : 'warning'}>{h.head_type}</Badge>
-                </TableCell>
-                <TableCell>{new Date(h.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
-                <TableCell>
-                  <Badge variant={h.is_enabled ? 'success' : 'default'}>{h.is_enabled ? 'Enabled' : 'Disabled'}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="xs">
-                    <Button size="sm" variant="ghost" onClick={() => openEditHead(h)}>
-                      <Icon icon={Pencil} type="sm" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => deleteHead(h.id)}>
-                      <Icon icon={Trash2} type="sm-danger" />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={headColumns}
+          data={heads}
+          isLoading={loadingHeads}
+          emptyText="No income/expense heads found. Add one to get started."
+          fillViewport
+        />
       )}
 
       <ResponsiveModalContainer isOpen={showAccountModal} title={editingAccount ? 'Edit Finance Account' : 'Add Finance Account'} onClose={closeAccountModal}>

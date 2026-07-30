@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLeaveManagement } from "@/hooks/useLeave";
 import { LEAVE_PAGE, LEAVE_STATUS_BADGE } from "@/constants";
 import {
@@ -9,23 +9,17 @@ import {
   P,
   Button,
   Input,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
   Badge,
-  Spinner,
   FormField,
   FilterLabel,
   MiniStat,
   ResponsiveModalContainer,
   ResponsiveSelect,
+  DataTable,
+  type ColumnDef,
+  RowActions,
 } from "@/components/ui";
-import { CheckCircle, XCircle } from "lucide-react";
+import {  Eye } from "lucide-react";
 
 type Tab = "teacher" | "student";
 
@@ -50,6 +44,123 @@ export default function AdminLeaveView() {
 
   const pendingTeacher = teacherRequests.filter((r) => r.status === "PENDING").length;
   const pendingStudent = studentRequests.filter((r) => r.status === "PENDING").length;
+
+  const teacherColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        id: "type",
+        header: LEAVE_PAGE.table.type,
+        meta: { primary: true },
+        cell: ({ row }) => row.original.leave_type?.name ?? "—",
+      },
+      {
+        accessorKey: "from_date",
+        header: LEAVE_PAGE.table.from,
+      },
+      {
+        accessorKey: "to_date",
+        header: LEAVE_PAGE.table.to,
+      },
+      {
+        accessorKey: "total_days",
+        header: LEAVE_PAGE.table.days,
+      },
+      {
+        accessorKey: "reason",
+        header: LEAVE_PAGE.table.reason,
+      },
+      {
+        accessorKey: "status",
+        header: LEAVE_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={LEAVE_STATUS_BADGE[row.original.status as keyof typeof LEAVE_STATUS_BADGE]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: LEAVE_PAGE.table.actions,
+        cell: ({ row }) => {
+          const req = row.original;
+          return (
+            <RowActions
+              actions={[
+                {
+                  label: "Review",
+                  icon: <Eye size={14} />,
+                  onClick: () => openReview(req.id, "teacher"),
+                  hidden: req.status !== "PENDING",
+                },
+              ]}
+            />
+          );
+        },
+      },
+    ],
+    [openReview],
+  );
+
+  const studentColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        id: "index",
+        header: "#",
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: "from_date",
+        header: LEAVE_PAGE.table.from,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: "to_date",
+        header: LEAVE_PAGE.table.to,
+      },
+      {
+        accessorKey: "total_days",
+        header: LEAVE_PAGE.table.days,
+      },
+      {
+        accessorKey: "reason",
+        header: LEAVE_PAGE.table.reason,
+      },
+      {
+        accessorKey: "status",
+        header: LEAVE_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={LEAVE_STATUS_BADGE[row.original.status as keyof typeof LEAVE_STATUS_BADGE]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: LEAVE_PAGE.table.actions,
+        cell: ({ row }) => {
+          const req = row.original;
+          return (
+            <RowActions
+              actions={[
+                {
+                  label: "Review",
+                  icon: <Eye size={14} />,
+                  onClick: () => openReview(req.id, "student"),
+                  hidden: req.status !== "PENDING",
+                },
+              ]}
+            />
+          );
+        },
+      },
+    ],
+    [openReview],
+  );
 
   return (
     <Div type="col" gap="lg">
@@ -91,103 +202,24 @@ export default function AdminLeaveView() {
 
       {/* Teacher requests */}
       {activeTab === "teacher" && (
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>#</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.type}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.from}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.to}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.days}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.reason}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.status}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.actions}</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableEmptyRow colSpan={8}><Spinner /></TableEmptyRow>
-            ) : teacherRequests.length === 0 ? (
-              <TableEmptyRow colSpan={8}>{LEAVE_PAGE.empty}</TableEmptyRow>
-            ) : (
-              teacherRequests.map((req, i) => (
-                <TableRow key={req.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>{req.leave_type?.name ?? "—"}</TableCell>
-                  <TableCell>{req.from_date}</TableCell>
-                  <TableCell>{req.to_date}</TableCell>
-                  <TableCell>{req.total_days}</TableCell>
-                  <TableCell>{req.reason}</TableCell>
-                  <TableCell>
-                    <Badge variant={LEAVE_STATUS_BADGE[req.status]}>{req.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {req.status === "PENDING" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openReview(req.id, "teacher")}
-                      >
-                        Review
-                      </Button>
-                    )}
-                    {req.reviewer_remarks && req.status !== "PENDING" && (
-                      <P size="xs">{req.reviewer_remarks}</P>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={teacherColumns}
+          data={teacherRequests}
+          isLoading={isLoading}
+          emptyText={LEAVE_PAGE.empty}
+          fillViewport
+        />
       )}
 
       {/* Student requests */}
       {activeTab === "student" && (
-        <Table>
-          <TableHead>
-            <TableHeadRow>
-              <TableHeaderCell>#</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.from}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.to}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.days}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.reason}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.status}</TableHeaderCell>
-              <TableHeaderCell>{LEAVE_PAGE.table.actions}</TableHeaderCell>
-            </TableHeadRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableEmptyRow colSpan={7}><Spinner /></TableEmptyRow>
-            ) : studentRequests.length === 0 ? (
-              <TableEmptyRow colSpan={7}>{LEAVE_PAGE.empty}</TableEmptyRow>
-            ) : (
-              studentRequests.map((req, i) => (
-                <TableRow key={req.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell primary>{req.from_date}</TableCell>
-                  <TableCell>{req.to_date}</TableCell>
-                  <TableCell>{req.total_days}</TableCell>
-                  <TableCell>{req.reason}</TableCell>
-                  <TableCell>
-                    <Badge variant={LEAVE_STATUS_BADGE[req.status]}>{req.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {req.status === "PENDING" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openReview(req.id, "student")}
-                      >
-                        Review
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={studentColumns}
+          data={studentRequests}
+          isLoading={isLoading}
+          emptyText={LEAVE_PAGE.empty}
+          fillViewport
+        />
       )}
 
       {/* Review Modal */}

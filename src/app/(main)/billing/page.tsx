@@ -7,11 +7,13 @@ import { useSchools } from '@/hooks/useSchools';
 import type { Invoice, InvoicePayment } from '@/types';
 import {
   Div, P, Button, Input,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, TablePagination,
+  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell,
   FormField, Badge, Spinner,
   PageHeader, PageCol,
   ResponsiveSelect, ResponsiveModalContainer,
+  DataTable, type ColumnDef, RowActions,
 } from '@/components/ui';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 function fmtDate(v?: string | null): string {
   return v ? new Date(v).toLocaleDateString() : '—';
@@ -58,6 +60,138 @@ export default function BillingPage() {
     setNewItemQty('1');
   }
 
+  const invoiceColumns = useMemo<ColumnDef<Invoice>[]>(
+    () => [
+      {
+        id: 'index',
+        header: '#',
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: 'invoice_number',
+        header: BILLING_PAGE.table.number,
+        meta: { primary: true },
+      },
+      {
+        id: 'school',
+        header: BILLING_PAGE.table.school,
+        cell: ({ row }) =>
+          schoolNameById.get(row.original.school_id) ?? row.original.school_id.slice(0, 8),
+      },
+      {
+        accessorKey: 'total_amount',
+        header: BILLING_PAGE.table.total,
+        cell: ({ row }) => `₹${row.original.total_amount}`,
+      },
+      {
+        accessorKey: 'amount_paid',
+        header: BILLING_PAGE.table.paid,
+        cell: ({ row }) => `₹${row.original.amount_paid}`,
+      },
+      {
+        accessorKey: 'status',
+        header: BILLING_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={INVOICE_STATUS_BADGE[row.original.status]}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'due_date',
+        header: BILLING_PAGE.table.dueDate,
+        cell: ({ row }) => fmtDate(row.original.due_date),
+      },
+    ],
+    [schoolNameById],
+  );
+
+  const pendingPaymentColumns = useMemo<ColumnDef<InvoicePayment>[]>(
+    () => [
+      {
+        id: 'index',
+        header: '#',
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        id: 'school',
+        header: PENDING_PAYMENTS_SECTION.table.school,
+        meta: { primary: true },
+        cell: ({ row }) =>
+          schoolNameById.get(row.original.school_id) ?? row.original.school_id.slice(0, 8),
+      },
+      {
+        accessorKey: 'payment_method',
+        header: PENDING_PAYMENTS_SECTION.table.method,
+      },
+      {
+        accessorKey: 'amount',
+        header: PENDING_PAYMENTS_SECTION.table.amount,
+        cell: ({ row }) => `₹${row.original.amount}`,
+      },
+      {
+        id: 'proof',
+        header: PENDING_PAYMENTS_SECTION.table.proof,
+        cell: ({ row }) =>
+          row.original.proof_url ? (
+            <a href={row.original.proof_url} target="_blank" rel="noopener noreferrer" className="underline">
+              {PENDING_PAYMENTS_SECTION.viewProof}
+            </a>
+          ) : '—',
+      },
+      {
+        accessorKey: 'created_at',
+        header: PENDING_PAYMENTS_SECTION.table.submitted,
+        cell: ({ row }) => fmtDate(row.original.created_at),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => {
+          const payment = row.original;
+          if (rejectingPaymentId === payment.id) {
+            return (
+              <Div type="col" gap="xs">
+                <Input
+                  width="sm"
+                  placeholder={PENDING_PAYMENTS_SECTION.rejectPrompt}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+                <Div type="row" gap="xs">
+                  <Button size="sm" variant="ghost" onClick={() => handleReject(payment)}>
+                    {PENDING_PAYMENTS_SECTION.rejectSubmit}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setRejectingPaymentId(null); setRejectReason(''); }}>
+                    {PENDING_PAYMENTS_SECTION.rejectCancel}
+                  </Button>
+                </Div>
+              </Div>
+            );
+          }
+          return (
+            <RowActions
+              actions={[
+                {
+                  label: PENDING_PAYMENTS_SECTION.approve,
+                  icon: <CheckCircle size={14} className="text-emerald-500" />,
+                  onClick: () => approvePayment(payment),
+                },
+                {
+                  label: PENDING_PAYMENTS_SECTION.reject,
+                  icon: <XCircle size={14} className="text-red-500" />,
+                  variant: 'destructive',
+                  onClick: () => setRejectingPaymentId(payment.id),
+                },
+              ]}
+            />
+          );
+        },
+      },
+    ],
+    [schoolNameById, rejectingPaymentId, rejectReason, approvePayment, handleReject],
+  );
+
   return (
     <PageCol>
       <PageHeader
@@ -71,107 +205,24 @@ export default function BillingPage() {
         }
       />
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{BILLING_PAGE.table.number}</TableHeaderCell>
-            <TableHeaderCell>{BILLING_PAGE.table.school}</TableHeaderCell>
-            <TableHeaderCell>{BILLING_PAGE.table.total}</TableHeaderCell>
-            <TableHeaderCell>{BILLING_PAGE.table.paid}</TableHeaderCell>
-            <TableHeaderCell>{BILLING_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{BILLING_PAGE.table.dueDate}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
-          ) : invoices.length === 0 ? (
-            <TableEmptyRow colSpan={6}>{BILLING_PAGE.empty}</TableEmptyRow>
-          ) : (
-            invoices.map((invoice: Invoice) => (
-              <TableRow key={invoice.id} onClick={() => openInvoice(invoice.id)} className="cursor-pointer">
-                <TableCell primary>{invoice.invoice_number}</TableCell>
-                <TableCell>{schoolNameById.get(invoice.school_id) ?? invoice.school_id.slice(0, 8)}</TableCell>
-                <TableCell>₹{invoice.total_amount}</TableCell>
-                <TableCell>₹{invoice.amount_paid}</TableCell>
-                <TableCell>
-                  <Badge variant={INVOICE_STATUS_BADGE[invoice.status]}>{invoice.status}</Badge>
-                </TableCell>
-                <TableCell>{fmtDate(invoice.due_date)}</TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination total={pagination.total} page={pagination.page} totalPages={pagination.totalPages} />
-      )}
+      <DataTable
+        columns={invoiceColumns}
+        data={invoices}
+        isLoading={isLoading}
+        emptyText={BILLING_PAGE.empty}
+        pagination={pagination ?? undefined}
+        onRowClick={(row) => openInvoice(row.original.id)}
+        fillViewport
+      />
 
       <PageHeader title={PENDING_PAYMENTS_SECTION.title} />
 
-      <Table>
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{PENDING_PAYMENTS_SECTION.table.school}</TableHeaderCell>
-            <TableHeaderCell>{PENDING_PAYMENTS_SECTION.table.method}</TableHeaderCell>
-            <TableHeaderCell>{PENDING_PAYMENTS_SECTION.table.amount}</TableHeaderCell>
-            <TableHeaderCell>{PENDING_PAYMENTS_SECTION.table.proof}</TableHeaderCell>
-            <TableHeaderCell>{PENDING_PAYMENTS_SECTION.table.submitted}</TableHeaderCell>
-            <TableHeaderCell>Actions</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isPendingLoading ? (
-            <TableEmptyRow colSpan={6}><Spinner /></TableEmptyRow>
-          ) : pendingPayments.length === 0 ? (
-            <TableEmptyRow colSpan={6}>{PENDING_PAYMENTS_SECTION.empty}</TableEmptyRow>
-          ) : (
-            pendingPayments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell primary>{schoolNameById.get(payment.school_id) ?? payment.school_id.slice(0, 8)}</TableCell>
-                <TableCell>{payment.payment_method}</TableCell>
-                <TableCell>₹{payment.amount}</TableCell>
-                <TableCell>
-                  {payment.proof_url ? (
-                    <a href={payment.proof_url} target="_blank" rel="noopener noreferrer" className="underline">
-                      {PENDING_PAYMENTS_SECTION.viewProof}
-                    </a>
-                  ) : '—'}
-                </TableCell>
-                <TableCell>{fmtDate(payment.created_at)}</TableCell>
-                <TableCell>
-                  {rejectingPaymentId === payment.id ? (
-                    <Div type="col" gap="xs">
-                      <Input
-                        width="sm"
-                        placeholder={PENDING_PAYMENTS_SECTION.rejectPrompt}
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                      />
-                      <Div type="row" gap="xs">
-                        <Button size="sm" variant="ghost" onClick={() => handleReject(payment)}>
-                          {PENDING_PAYMENTS_SECTION.rejectSubmit}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => { setRejectingPaymentId(null); setRejectReason(''); }}>
-                          {PENDING_PAYMENTS_SECTION.rejectCancel}
-                        </Button>
-                      </Div>
-                    </Div>
-                  ) : (
-                    <Div type="row" gap="sm">
-                      <Button size="sm" onClick={() => approvePayment(payment)}>{PENDING_PAYMENTS_SECTION.approve}</Button>
-                      <Button size="sm" variant="outline" onClick={() => setRejectingPaymentId(payment.id)}>
-                        {PENDING_PAYMENTS_SECTION.reject}
-                      </Button>
-                    </Div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={pendingPaymentColumns}
+        data={pendingPayments}
+        isLoading={isPendingLoading}
+        emptyText={PENDING_PAYMENTS_SECTION.empty}
+      />
 
       {showGenerateModal && (
         <ResponsiveModalContainer isOpen={showGenerateModal} onClose={closeGenerateModal} title={BILLING_PAGE.generateForm.title}>
