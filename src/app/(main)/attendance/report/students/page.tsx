@@ -576,16 +576,18 @@ export default function StudentAttendanceReportPage() {
       {activeTab === "daily" && (
         <Div type="col" gap="md">
           <Div type="row" gap="md" align="center" wrap>
-            <Input
-              type="date"
-              width="sm"
+            <DatePicker
               value={dailyDate}
-              onChange={(e) => setDailyDate(e.target.value)}
+              onChange={(val) => setDailyDate(val)}
+              maxDate={new Date(today)}
+              size="compact"
+              className="w-36 sm:w-40"
             />
             <Button
               onClick={fetchDailyReport}
               loading={isLoadingDaily}
               disabled={!selectedSectionId}
+              // className="shrink-0"
             >
               {ATTENDANCE_REPORT_PAGE.daily.fetch}
             </Button>
@@ -708,9 +710,9 @@ export default function StudentAttendanceReportPage() {
       {/* ── Monthly Summary ── */}
       {activeTab === "monthly" && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-28 shrink-0 sm:w-32 max-w-full"
               value={String(monthlyMonth)}
               onChange={(e) => setMonthlyMonth(Number(e.target.value))}
               options={MONTHS.map((m) => ({
@@ -719,7 +721,7 @@ export default function StudentAttendanceReportPage() {
               }))}
             />
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-24 shrink-0 sm:w-32 max-w-full"
               value={String(monthlyYear)}
               onChange={(e) => setMonthlyYear(Number(e.target.value))}
               options={YEARS.map((y) => ({
@@ -731,6 +733,7 @@ export default function StudentAttendanceReportPage() {
               onClick={fetchMonthlyReport}
               loading={isLoadingMonthly}
               disabled={!selectedSectionId}
+              className="shrink-0 ml-auto"
             >
               {ATTENDANCE_REPORT_PAGE.monthly.fetch}
             </Button>
@@ -762,9 +765,9 @@ export default function StudentAttendanceReportPage() {
       {/* ── Defaulters ── */}
       {activeTab === "defaulters" && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-28 shrink-0 sm:w-32 max-w-full"
               value={String(defaulterMonth)}
               onChange={(e) => setDefaulterMonth(Number(e.target.value))}
               options={MONTHS.map((m) => ({
@@ -773,7 +776,7 @@ export default function StudentAttendanceReportPage() {
               }))}
             />
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-24 shrink-0 sm:w-32 max-w-full"
               value={String(defaulterYear)}
               onChange={(e) => setDefaulterYear(Number(e.target.value))}
               options={YEARS.map((y) => ({
@@ -781,8 +784,7 @@ export default function StudentAttendanceReportPage() {
                 label: String(y),
               }))}
             />
-            <Div type="row" align="center" gap="sm">
-              <P noWrap>{ATTENDANCE_REPORT_PAGE.defaulters.threshold}</P>
+            <Div type="row" align="center" gap="xs" className="shrink-0">
               <Input
                 type="number"
                 width="xs"
@@ -790,13 +792,15 @@ export default function StudentAttendanceReportPage() {
                 onChange={(e) => setDefaulterThreshold(Number(e.target.value))}
                 min={0}
                 max={100}
+                className="w-14 sm:w-16"
               />
-              <P color="default">%</P>
+              <P noWrap className="text-xs sm:text-sm">%</P>
             </Div>
             <Button
               onClick={fetchDefaulters}
               loading={isLoadingDefaulters}
               disabled={!selectedSectionId}
+              className="shrink-0 ml-auto"
             >
               {ATTENDANCE_REPORT_PAGE.defaulters.fetch}
             </Button>
@@ -832,15 +836,15 @@ export default function StudentAttendanceReportPage() {
       {/* ── Student History ── */}
       {activeTab === "studentHistory" && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
             <ResponsiveSelect
-              className="w-48 max-w-full"
+              className="w-40 shrink-0 sm:w-48 max-w-full"
               value={historyStudentId}
               onChange={(e) => setHistoryStudentId(e.target.value)}
               disabled={!selectedSectionId || isLoadingHistoryStudents}
               customPlaceholder={
                 isLoadingHistoryStudents
-                  ? "Loading students…"
+                  ? "Loading…"
                   : "Select Student"
               }
               options={historyStudents.map((s) => ({
@@ -854,6 +858,7 @@ export default function StudentAttendanceReportPage() {
               onClick={() => fetchStudentHistory(1)}
               loading={isLoadingHistory}
               disabled={!historyStudentId}
+              className="shrink-0 ml-auto"
             >
               {ATTENDANCE_REPORT_PAGE.studentHistory.fetch}
             </Button>
@@ -918,14 +923,15 @@ export default function StudentAttendanceReportPage() {
       {/* ── Missing Punch ── */}
       {activeTab === "missingPunch" && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
-            <Input
-              type="date"
-              width="sm"
+          <Div type="row" gap="sm" align="center" justify="between">
+            <DatePicker
               value={mpDate}
-              onChange={(e) => setMpDate(e.target.value)}
+              onChange={(val) => setMpDate(val)}
+              maxDate={new Date(today)}
+              size="compact"
+              className="w-36 sm:w-40"
             />
-            <Button onClick={fetchMp} loading={isLoadingMp}>
+            <Button onClick={fetchMp} loading={isLoadingMp} className="shrink-0">
               Fetch
             </Button>
           </Div>
@@ -999,15 +1005,15 @@ export default function StudentAttendanceReportPage() {
       {/* ── Heatmap ── */}
       {activeTab === "heatmap" && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
             <ResponsiveSelect
-              className="w-48 max-w-full"
+              className="w-40 shrink-0 sm:w-48 max-w-full"
               value={heatmapStudentId}
               onChange={(e) => setHeatmapStudentId(e.target.value)}
               disabled={!selectedSectionId || isLoadingHeatmapStudents}
               customPlaceholder={
                 isLoadingHeatmapStudents
-                  ? "Loading students…"
+                  ? "Loading…"
                   : "Select Student"
               }
               options={heatmapStudents.map((s) => ({
@@ -1018,7 +1024,7 @@ export default function StudentAttendanceReportPage() {
               }))}
             />
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-24 shrink-0 sm:w-32 max-w-full"
               value={String(heatmapYear)}
               onChange={(e) => setHeatmapYear(Number(e.target.value))}
               options={YEARS.map((y) => ({
@@ -1030,8 +1036,9 @@ export default function StudentAttendanceReportPage() {
               onClick={fetchHeatmap}
               loading={isLoadingHeatmap}
               disabled={!heatmapStudentId}
+              className="shrink-0 ml-auto"
             >
-              Load Heatmap
+              Load
             </Button>
           </Div>
           {isLoadingHeatmap ? (
@@ -1118,9 +1125,9 @@ export default function StudentAttendanceReportPage() {
       {/* ── Late Trend ── */}
       {activeTab === "lateTrend" && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-28 shrink-0 sm:w-32 max-w-full"
               value={String(lateTrendMonth)}
               onChange={(e) => setLateTrendMonth(Number(e.target.value))}
               options={MONTHS.map((m) => ({
@@ -1129,7 +1136,7 @@ export default function StudentAttendanceReportPage() {
               }))}
             />
             <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="w-24 shrink-0 sm:w-32 max-w-full"
               value={String(lateTrendYear)}
               onChange={(e) => setLateTrendYear(Number(e.target.value))}
               options={YEARS.map((y) => ({
@@ -1141,8 +1148,9 @@ export default function StudentAttendanceReportPage() {
               onClick={fetchLateTrend}
               loading={isLoadingLateTrend}
               disabled={!selectedSectionId}
+              className="shrink-0 ml-auto"
             >
-              Load Trend
+              Load
             </Button>
           </Div>
           {isLoadingLateTrend ? (

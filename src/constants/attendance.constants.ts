@@ -105,7 +105,7 @@ export const ATTENDANCE_REPORT_PAGE = {
   defaulters: {
     selectSection: 'Class Section (optional)',
     threshold: 'Min. Attendance % (threshold)',
-    fetch: 'Fetch Defaulters',
+    fetch: 'Fetch',
     table: {
       student: 'Student',
       admissionNo: 'Admission No.',
