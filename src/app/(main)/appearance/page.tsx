@@ -11,9 +11,10 @@ import {
   type TemplateId,
 } from "@/store/theme.store";
 import { Div } from "@/components/ui/layout";
-import { PageTitle, H2, H3, P, SectionLabel } from "@/components/ui/typography";
+import {  H2, H3, P, SectionLabel } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui";
 
 export default function AppearancePage() {
   const {
@@ -26,22 +27,20 @@ export default function AppearancePage() {
   } = useThemeStore();
 
   const isCustom = templateId === "custom";
-  const pickerColor = isCustom && customColor ? customColor : THEME_FALLBACK_COLOR;
+  const pickerColor =
+    isCustom && customColor ? customColor : THEME_FALLBACK_COLOR;
 
   return (
     <Div type="col" gap="lg">
 
-      {/* Page header */}
-      <Div type="col" gap="xs">
-        <PageTitle color="theme">Appearance</PageTitle>
-        <P>Customize themes, colors, and display preferences.</P>
-      </Div>
+      <PageHeader
+        title="Appearance"
+        subtitle="Customize themes, colors, and display preferences."
+      />
 
       <Div type="grid" cols={2} gap="lg">
-
         {/* ── Left column ── */}
         <Div type="col" gap="lg">
-
           {/* Mode toggle */}
           <Div variant="glass" padding="p-5" type="col" gap="md">
             <Div type="col" gap="xs">
@@ -74,7 +73,7 @@ export default function AppearancePage() {
               <H2>Preset Themes</H2>
               <P>Pick a curated color palette.</P>
             </Div>
-            <Div type="grid" cols={2} gap="sm">
+            <Div type="grid" cols={2} gap="sm" className="grid-cols-2">
               {THEME_OPTIONS.map((t) => {
                 const active = templateId === t.id;
                 return (
@@ -107,7 +106,7 @@ export default function AppearancePage() {
               <H2>Quick Colors</H2>
               <P>One-click custom accent.</P>
             </Div>
-            <Div type="grid" cols={4} gap="xs">
+            <Div type="grid" cols={4} gap="xs" className="grid-cols-4">
               {THEME_PALETTE.map((color) => {
                 const active = isCustom && customColor === color;
                 return (
@@ -190,8 +189,12 @@ export default function AppearancePage() {
               {/* Buttons */}
               <Div type="row" gap="sm" align="center">
                 <Button size="sm">Primary</Button>
-                <Button variant="outline" size="sm">Outline</Button>
-                <Button variant="ghost" size="sm">Ghost</Button>
+                <Button variant="outline" size="sm">
+                  Outline
+                </Button>
+                <Button variant="ghost" size="sm">
+                  Ghost
+                </Button>
               </Div>
 
               {/* Badges */}

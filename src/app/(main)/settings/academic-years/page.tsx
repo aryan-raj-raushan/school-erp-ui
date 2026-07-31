@@ -107,7 +107,7 @@ export default function AcademicYearsPage() {
     subtitle: ACADEMIC_YEARS_PAGE.description,
     actions: [
       {
-        label: ACADEMIC_YEARS_PAGE.addButton,
+        label: isMobile ? "Add year" :  ACADEMIC_YEARS_PAGE.addButton,
 
         onClick: () => navigateToNew(),
       },

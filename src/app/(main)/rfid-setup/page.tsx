@@ -14,6 +14,7 @@ import { Modal, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useRfidEvents } from "@/hooks/useRfidEvents";
 import { useAssignRfidModal } from "@/hooks/useAssignRfidModal";
 import type { RfidScanEvent } from "@/services/rfid.service";
+import { PageHeader } from "@/components/ui";
 
 function AssignModal({
   event,
@@ -178,7 +179,7 @@ export default function RfidSetupPage() {
 
   return (
     <Div type="col" gap="lg">
-      <H1>RFID Setup</H1>
+     <PageHeader title="RFID Setup"/>
 
       <FormCard title="Card Taps">
         <Div type="col" gap="sm">
