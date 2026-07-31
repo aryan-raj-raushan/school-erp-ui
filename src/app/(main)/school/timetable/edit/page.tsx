@@ -75,6 +75,7 @@ function EditTimetablePageInner() {
       <PageHeader
         title={SCHOOL_TIMETABLE_PAGE.form.editTitle}
         subtitle={name || undefined}
+        backButton
         actions={
           <Div type="row" gap="sm">
             <Button variant="outline" onClick={handleBack}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>

@@ -24,7 +24,7 @@ export const SCHOOL_TIMETABLE_PAGE = {
     maxPeriods: 'Max Periods *',
     classTeacher: 'Class Teacher',
     cancel: 'Cancel',
-    submit: 'Save Timetable',
+    submit: 'Save',
     periodTimes: 'Period Times',
     periods: 'Periods',
     startTime: 'Start',
