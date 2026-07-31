@@ -4,7 +4,6 @@ import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
-import { useAcademicYears } from "@/hooks/useAcademicYears";
 import type {
   AdmissionEnquiryFilters,
   EnquiryStatus,
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui";
 import { getTodayDate } from "@/lib/time.utils";
 import { STATUS_BADGE } from "@/constants/admission.constants";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type AdmissionFollowupRow = {
   id: string;
@@ -39,19 +39,20 @@ type AdmissionFollowupRow = {
 
 function AdmissionsContent() {
   const router = useRouter();
-  const { years } = useAcademicYears();
-  const { classes, teachers } = useAdmissionLookups();
+  const { teachers } = useAdmissionLookups();
 
   const initialFilters: AdmissionEnquiryFilters = {
     next_followup_date: getTodayDate(),
     page: 1,
   };
+    const isMobile = useIsMobile();
+  
 
   const { enquiries, pagination, isLoading } =
     useAdmissionEnquiries(initialFilters);
 
   const pageHeaderConfig: PageHeaderConfig = {
-    title: "Today's Followup Admission Enquiry",
+    title: isMobile ? "Today's Follow up" : "Today's Followup Admission Enquiry",
     subtitle: pagination ? `${pagination.total} followup schedule today` : "",
   };
 

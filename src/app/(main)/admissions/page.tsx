@@ -30,6 +30,7 @@ import {
   STATUS_BADGE,
   STATUS_OPTIONS,
 } from "@/constants/admission.constants";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type PersistedAdmissionFilters = Pick<
   AdmissionEnquiryFilters,
@@ -131,15 +132,12 @@ function AdmissionsContent() {
     status: filters.status,
   };
 
+  const isMobile = useIsMobile();
+
   const pageHeaderConfig: PageHeaderConfig = {
-    title: ADMISSION_PAGE.pageHeading.title,
+    title: isMobile ? "Enquiries" : ADMISSION_PAGE.pageHeading.title,
     subtitle: pagination ? `${pagination.total} enquiries` : "",
     actions: [
-      {
-        label: ADMISSION_PAGE.buttons.manage,
-        variant: "outline",
-        onClick: () => router.push("/admissions/source"),
-      },
       {
         label: ADMISSION_PAGE.buttons.addEnquiry,
         icon: <Plus size={16} />,

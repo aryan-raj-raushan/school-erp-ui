@@ -41,6 +41,7 @@ import {
 import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
 import { GENDER_OPTIONS } from "@/constants";
 import { CATEGORY_OPTIONS, RELIGION_OPTIONS } from "@/constants/shared/index.constant";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ACTION_ICON: Record<EnquiryAction, React.ReactNode> = {
   NEW_ENQUIRY: <FileText size={16} className="text-slate-500" />,
@@ -211,6 +212,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
   const isViewMode = !isNew && !isEditing && !!enquiry;
   const isFormMode = isEditing || isNew;
+  const isMobile = useIsMobile();
 
   const pageHeaderActions: PageHeaderAction[] = [
     {
@@ -258,13 +260,13 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
   const pageHeaderConfig: PageHeaderConfig = {
     title: isNew
-      ? "New Admission Enquiry"
+      ? "Add Enquiry"
       : (enquiry?.student_name ?? "Enquiry Details"),
     subtitle:
       !isNew && enquiry
         ? `Enquiry from ${new Date(enquiry.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}`
         : undefined,
-    backButton: !isNew,
+    backButton: !isNew || isMobile,
     actions: pageHeaderActions,
   };
 
