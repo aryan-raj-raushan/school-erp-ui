@@ -39,7 +39,7 @@ export default function SchoolConfigPage() {
     subtitle: SCHOOL_CONFIG_PAGE.subtitle,
     actions: [
       {
-        label: isSaving ? "Saving..." : "Save Changes",
+        label: isSaving ? "Saving..." : "Save",
 
         onClick: () => save(),
       },

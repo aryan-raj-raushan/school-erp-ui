@@ -19,6 +19,7 @@ import {
   RowActions,
   Badge,
   Spinner,
+  Span,
 } from "@/components/ui";
 import {
   Plus,
@@ -27,9 +28,14 @@ import {
   Send,
   Undo2,
   Printer,
+  Download,
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function ViewTimetableContent({ id }: { id: string }) {
+
+  const isMobile = useIsMobile();
+
   const {
     timetable,
     isLoading,
@@ -58,27 +64,25 @@ function ViewTimetableContent({ id }: { id: string }) {
       <PageHeader
         title={timetable.name}
         subtitle={timetable.class_name ?? undefined}
+        backButton
         actions={
           <Div type="row" gap="sm">
-            <Button variant="outline" onClick={handleBack}>
-              Back
-            </Button>
             <Button variant="outline" onClick={handlePrint}>
-              <Printer className="w-4 h-4 mr-1" />
-              Print
+              <Download className="w-4 h-4 mr-1" />
+              {!isMobile && <Span>Downlaod</Span>}
             </Button>
             <Button onClick={goToEdit}>
               <Pencil className="w-4 h-4 mr-1" />
-              Edit
+               {!isMobile && <Span>Edit</Span>}
             </Button>
-            <Button
+            {!isMobile && <Button
               variant={timetable.is_complete ? "outline" : "success"}
               onClick={togglePublish}
             >
               {timetable.is_complete ? (
                 <>
                   <Undo2 className="w-4 h-4 mr-1" />
-                  Move to Draft
+                  Draft
                 </>
               ) : (
                 <>
@@ -86,23 +90,37 @@ function ViewTimetableContent({ id }: { id: string }) {
                   Publish
                 </>
               )}
-            </Button>
+            </Button>}
           </Div>
         }
       />
 
-      <Div type="row" gap="md" align="center">
+      <Div type="row" gap="md" align="center" justify="between">
+        <Div type="row" gap="md" align="center">
         <Badge variant={timetable.is_complete ? "success" : "default"}>
           {timetable.is_complete ? "Published" : "Draft"}
         </Badge>
         <span className="text-sm text-muted-foreground">
           {timetable.max_periods} periods
         </span>
-        {timetable.class_teacher_name && (
-          <span className="text-sm text-muted-foreground">
-            Class Teacher: {timetable.class_teacher_name}
-          </span>
-        )}
+        </Div>
+
+        {isMobile && <Button
+              variant={timetable.is_complete ? "outline" : "success"}
+              onClick={togglePublish}
+            >
+              {timetable.is_complete ? (
+                <>
+                  <Undo2 className="w-4 h-4 mr-1" />
+                  Draft
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-1" />
+                  Publish
+                </>
+              )}
+            </Button>}
       </Div>
 
       <div className="overflow-x-auto print:overflow-visible">

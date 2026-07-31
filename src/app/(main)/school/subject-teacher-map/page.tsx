@@ -103,7 +103,7 @@ export default function SubjectTeacherMapPage() {
               type="grid"
               cols={2}
               gap="sm"
-              className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-1"
+              className="grid-cols-2 font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-1"
             >
               <span>{CLASS_SUBJECT_TEACHER_PAGE.table.subject}</span>
               <span>{CLASS_SUBJECT_TEACHER_PAGE.table.teacher}</span>
@@ -114,7 +114,7 @@ export default function SubjectTeacherMapPage() {
                 cols={2}
                 gap="sm"
                 key={subject.id}
-                className="items-center py-1"
+                className="grid-cols-2 items-center py-1"
               >
                 <span className="text-sm font-medium">{subject.name}</span>
                 <ResponsiveSelect

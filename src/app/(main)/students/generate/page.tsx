@@ -21,15 +21,14 @@ import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H3,
   P,
   Span,
   Button,
   Spinner,
-  FormField,
   Tabs,
   ResponsiveModalContainer,
-  ResponsiveSelect,
+  FilterToolbar,
+  type FilterField,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -1428,6 +1427,67 @@ function GeneratePageContent() {
     { value: "pickup" as CardMode, label: STUDENT_PAGE.buttons.generatePickupCard },
   ];
 
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ("academic_year_id" in next) setSelectedAcademicYearId(next.academic_year_id ?? "");
+    if ("class_id" in next) handleClassChange(next.class_id ?? "");
+    if ("section_id" in next) handleSectionChange(next.section_id ?? "");
+    if ("student_id" in next && next.student_id) loadCardData(next.student_id);
+  }
+
+  function handleClearFilters() {
+    setSelectedAcademicYearId("");
+    handleClassChange("");
+  }
+
+  const filterFields: FilterField[] = [
+    {
+      type: "select",
+      key: "academic_year_id",
+      label: "Academic Year",
+      placeholder: "Select year",
+      options: years.map((y) => ({
+        value: y.id,
+        label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+      })),
+      resetKeys: ["class_id", "section_id", "student_id"],
+    },
+    {
+      type: "select",
+      key: "class_id",
+      label: "Class",
+      placeholder: "Select class",
+      options: classes.map((c) => ({ value: c.id, label: c.name })),
+      disabled: !selectedAcademicYearId || isLoadingClasses,
+      resetKeys: ["section_id", "student_id"],
+    },
+    {
+      type: "select",
+      key: "section_id",
+      label: "Section",
+      placeholder: "All sections",
+      options: sections.map((s) => ({ value: s.id, label: s.name })),
+      disabled: !selectedClassId,
+    },
+    {
+      type: "select",
+      key: "student_id",
+      label: "Student",
+      placeholder: !selectedClassId ? "Select a class first" : "Select student",
+      options: students.map((s) => {
+        const rollSuffix = s.roll_number ? ` — Roll ${s.roll_number}` : "";
+        return { value: s.id, label: `${s.first_name} ${s.last_name ?? ""}${rollSuffix}` };
+      }),
+      disabled: !selectedClassId || isStudentsLoading,
+    },
+  ];
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: selectedAcademicYearId,
+    class_id: selectedClassId,
+    section_id: selectedSectionId,
+    student_id: selectedStudentId ?? undefined,
+  };
+
   return (
     <>
       {/* Print-only styles */}
@@ -1459,100 +1519,55 @@ function GeneratePageContent() {
         />
 
         {/* ── Class & student selection ─────────────────────────────────── */}
-        <Div className="rounded-xl border border-border bg-card px-4 py-3" type="col" gap="xs">
-          <H3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Class &amp; Student
-          </H3>
-          <Div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <FormField label="Academic Year">
-              <ResponsiveSelect
-                value={selectedAcademicYearId}
-                onChange={(e) => setSelectedAcademicYearId(e.target.value)}
-                customPlaceholder="Select year"
-                options={years.map((y) => ({
-                  value: y.id,
-                  label: `${y.name}${y.is_current ? " (Current)" : ""}`,
-                }))}
-              />
-            </FormField>
-
-            <FormField label="Class">
-              <ResponsiveSelect
-                value={selectedClassId}
-                onChange={(e) => handleClassChange(e.target.value)}
-                disabled={!selectedAcademicYearId || isLoadingClasses}
-                customPlaceholder="Select class"
-                options={classes.map((c) => ({ value: c.id, label: c.name }))}
-              />
-            </FormField>
-
-            <FormField label="Section">
-              <ResponsiveSelect
-                value={selectedSectionId}
-                onChange={(e) => handleSectionChange(e.target.value)}
-                disabled={!selectedClassId}
-                customPlaceholder="All sections"
-                options={sections.map((s) => ({ value: s.id, label: s.name }))}
-              />
-            </FormField>
-
-            <FormField label="Student">
-              <ResponsiveSelect
-                value={selectedStudentId ?? ""}
-                onChange={(e) => e.target.value && loadCardData(e.target.value)}
-                disabled={!selectedClassId || isStudentsLoading}
-                customPlaceholder={!selectedClassId ? "Select a class first" : "Select student"}
-                options={students.map((s) => ({
-                  value: s.id,
-                  label: `${s.first_name} ${s.last_name ?? ""}${s.roll_number ? ` — Roll ${s.roll_number}` : ""}`,
-                }))}
-              />
-            </FormField>
-          </Div>
-        </Div>
+        <FilterToolbar
+          fields={filterFields}
+          values={filterValues}
+          onChange={handleFilterChange}
+          onClear={handleClearFilters}
+          sheetTitle="Filter Students"
+        />
 
         {/* ── Card type / template / actions ────────────────────────────── */}
         <Div
           className="rounded-xl border border-border bg-card px-4 py-3"
-          type="row"
-          align="center"
-          justify="between"
-          wrap
-          gap="md"
+          type="col"
+          gap="sm"
         >
-          <Div type="row" align="center" gap="sm">
-            <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
-              Card Type
-            </P>
-            <Tabs options={cardTabs} value={cardMode} onChange={setCardMode} className="w-64" />
+          <Div type="col" gap="xs" className="sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <Div type="row" align="center" gap="sm" className="flex-wrap">
+              <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
+                Card Type
+              </P>
+              <Tabs options={cardTabs} value={cardMode} onChange={setCardMode} className="w-full sm:w-64" />
+            </Div>
+
+            <Div type="row" align="center" gap="sm" className="flex-wrap">
+              <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
+                {STUDENT_PAGE.generate.chooseTemplate}
+              </P>
+              <Button
+                variant={'default'}
+                type="button"
+                onClick={() => setGalleryOpen(true)}
+                className="flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-muted/50 transition-colors"
+                style={{ borderColor: "hsl(var(--border))" }}
+              >
+                <Span
+                  className="h-3.5 w-3.5 rounded-full shrink-0"
+                  style={{ background: CARD_THEMES[selectedTemplate].accent }}
+                />
+                <Span className="text-sm font-medium text-foreground">{currentTemplate?.label}</Span>
+                <ChevronDown size={14} className="text-muted-foreground" />
+              </Button>
+            </Div>
           </Div>
 
-          <Div type="row" align="center" gap="sm">
-            <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
-              {STUDENT_PAGE.generate.chooseTemplate}
-            </P>
-            <Button
-            variant={'default'}
-              type="button"
-              onClick={() => setGalleryOpen(true)}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-muted/50 transition-colors"
-              style={{ borderColor: "hsl(var(--border))" }}
-            >
-              <Span
-                className="h-3.5 w-3.5 rounded-full shrink-0"
-                style={{ background: CARD_THEMES[selectedTemplate].accent }}
-              />
-              <Span className="text-sm font-medium text-foreground">{currentTemplate?.label}</Span>
-              <ChevronDown size={14} className="text-muted-foreground" />
-            </Button>
-          </Div>
-
-          <Div type="row" align="center" gap="sm">
-            <Button variant="outline" size="sm" onClick={handlePrint} disabled={!hasData}>
+          <Div type="row" align="center" gap="sm" className="flex-wrap sm:justify-end">
+            <Button variant="outline" size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
               <Printer size={14} />
               {STUDENT_PAGE.buttons.printCard}
             </Button>
-            <Button size="sm" onClick={handlePrint} disabled={!hasData}>
+            <Button size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
               <Download size={14} />
               {STUDENT_PAGE.buttons.downloadCard}
             </Button>
@@ -1564,7 +1579,7 @@ function GeneratePageContent() {
           type="col"
           align="center"
           justify="center"
-          className="flex-1 rounded-2xl py-10"
+          className="flex-1 w-full rounded-2xl py-8 sm:py-10 px-3 overflow-x-auto"
           style={{ background: "hsl(var(--muted) / 0.25)", border: "1px dashed hsl(var(--border))" }}
         >
           {isCardLoading ? (
@@ -1585,7 +1600,7 @@ function GeneratePageContent() {
           ) : (
             // NOTE: kept as a raw <div> intentionally — it carries `ref={printRef}`
             // for window.print(), and the shared <Div> primitive does not forward refs.
-            <Div id="card-print-area" ref={printRef}>
+            <Div id="card-print-area" ref={printRef} className="mx-auto">
               <CardPreview
                 template={selectedTemplate}
                 mode={cardMode}

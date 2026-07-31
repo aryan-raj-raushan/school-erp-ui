@@ -134,7 +134,7 @@ export function HolidayEventDetail({ id }: { id: string }) {
       : undefined;
 
   const pageHeaderConfig: PageHeaderConfig = {
-    title: isNew ? "Add New" : (event?.name ?? "Details"),
+    title: isNew ? "Add New Event" : (event?.name ?? "Details"),
     subtitle: dateRangeLabel,
     backButton: isMobile,
     actions: isNew

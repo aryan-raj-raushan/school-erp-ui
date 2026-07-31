@@ -2,6 +2,7 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -70,13 +71,15 @@ function Button({
         }
       : style
 
+      const isMobile = useIsMobile();
+
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
       disabled={disabled || loading}
-      className={cn(buttonVariants({ variant, size, className }), fullWidth && 'w-full')}
+      className={cn(buttonVariants({ variant, size, className }), fullWidth && 'w-full', isMobile && "h-9 gap-1 px-4 text-[0.8rem] sm:h-11 sm:gap-1.5 sm:px-5 sm:text-sm")}
       style={gradientStyle}
       {...props}
     >

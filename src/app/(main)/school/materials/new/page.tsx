@@ -34,7 +34,8 @@ export default function NewStudyMaterialPage() {
   return (
     <Div type="col" gap="lg" className="max-w-3xl">
       <PageHeader
-        title="Create Study Document"
+        title="Add Material"
+        backButton
         actions={<Button variant="outline" onClick={handleBack}>Cancel</Button>}
       />
 

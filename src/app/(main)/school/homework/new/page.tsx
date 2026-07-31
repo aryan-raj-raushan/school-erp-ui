@@ -37,6 +37,7 @@ export default function NewHomeworkPage() {
     <Div type="col" gap="lg" className="max-w-3xl">
       <PageHeader
         title={HOMEWORK_PAGE.form.createTitle}
+        backButton
         actions={<Button variant="outline" onClick={handleBack}>{HOMEWORK_PAGE.form.cancel}</Button>}
       />
 

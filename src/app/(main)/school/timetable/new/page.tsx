@@ -29,6 +29,7 @@ export default function NewTimetablePage() {
     <Div type="col" gap="lg">
       <PageHeader
         title={SCHOOL_TIMETABLE_PAGE.form.createTitle}
+        backButton
         actions={<Button variant="outline" onClick={() => router.push(ROUTES.timetable)}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>}
       />
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { FileDown } from 'lucide-react';
+import { useMemo } from 'react';
 import { useStaffAttendanceReports } from '@/hooks/useStaffAttendanceReports';
 import {
   Div,
@@ -8,16 +9,17 @@ import {
   PageHeader,
   PageCol,
   Spinner,
-  Input,
   Badge,
   Button,
   MiniStat,
   DataTable,
-  FilterLabel,
-  ResponsiveSelect,
+  DatePicker,
+  FilterToolbar,
+  type FilterField,
   type ColumnDef,
 } from '@/components/ui';
 import { ATTENDANCE_STATUS_BADGE } from '@/constants/attendance.constants';
+import { formatDate } from '@/lib/utils';
 import type { AttendanceStatus } from '@/types';
 
 const MONTHS = [
@@ -36,6 +38,14 @@ const MONTHS = [
 ];
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+
+const today = new Date().toISOString().split('T')[0];
+
+function firstOfMonthISO() {
+  const d = new Date();
+  d.setDate(1);
+  return d.toISOString().split('T')[0];
+}
 
 export default function StaffAttendanceReportPage() {
   const {
@@ -121,6 +131,76 @@ export default function StaffAttendanceReportPage() {
 
   const filteredStaff = getFilteredStaff();
 
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ('role' in next) setRoleFilter(next.role ?? '');
+    if ('from' in next) {
+      const val = next.from ?? '';
+      setExportStartDate(val);
+      if (val && val > exportEndDate) setExportEndDate(val);
+    }
+    if ('to' in next) {
+      const val = next.to ?? '';
+      setExportEndDate(val);
+      if (val && val < exportStartDate) setExportStartDate(val);
+    }
+  }
+
+  function handleClearFilters() {
+    setRoleFilter('');
+    setExportStartDate(firstOfMonthISO());
+    setExportEndDate(today);
+  }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: 'select',
+        key: 'role',
+        label: 'Role',
+        placeholder: 'All Roles',
+        options: roles.map((r) => ({ value: r, label: r })),
+      },
+      {
+        type: 'custom',
+        key: 'from',
+        label: 'From',
+        chipLabel: exportStartDate ? formatDate(exportStartDate) : undefined,
+        render: () => (
+          <DatePicker
+            value={exportStartDate}
+            onChange={(val) => handleFilterChange({ from: val })}
+            maxDate={new Date(today)}
+            size="compact"
+            className="w-36"
+          />
+        ),
+      },
+      {
+        type: 'custom',
+        key: 'to',
+        label: 'To',
+        chipLabel: exportEndDate ? formatDate(exportEndDate) : undefined,
+        render: () => (
+          <DatePicker
+            value={exportEndDate}
+            onChange={(val) => handleFilterChange({ to: val })}
+            minDate={exportStartDate ? new Date(exportStartDate) : undefined}
+            maxDate={new Date(today)}
+            size="compact"
+            className="w-36"
+          />
+        ),
+      },
+    ],
+    [roles, exportStartDate, exportEndDate],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    role: roleFilter,
+    from: exportStartDate,
+    to: exportEndDate,
+  };
+
   return (
     <PageCol>
       <PageHeader
@@ -128,52 +208,40 @@ export default function StaffAttendanceReportPage() {
         subtitle="View attendance records for all staff members"
       />
 
-      {/* Export Card - Always visible */}
-      <Div variant="card" padding="p-4" gap="md">
-        <P size="sm" color="muted" className="font-semibold">Export Attendance</P>
-        <Div type="row" gap="md" align="center" wrap>
-          <Div type="col" gap="xs">
-            <P size="xs" color="muted">From</P>
-            <Input
-              type="date"
-              width="sm"
-              value={exportStartDate}
-              onChange={(e) => setExportStartDate(e.target.value)}
-            />
-          </Div>
-          <Div type="col" gap="xs">
-            <P size="xs" color="muted">To</P>
-            <Input
-              type="date"
-              width="sm"
-              value={exportEndDate}
-              onChange={(e) => setExportEndDate(e.target.value)}
-            />
-          </Div>
-          <Div type="col" gap="xs">
-            <P size="xs" color="muted">Role</P>
-            <ResponsiveSelect
-              className="w-32 max-w-full"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              customPlaceholder="All Roles"
-              options={roles.map((r) => ({ value: r, label: r }))}
-            />
-          </Div>
-          <Button variant="outline" loading={isExporting} onClick={exportAttendance} className="mt-5">
-            <FileDown size={16} className="mr-2" />
-            Export Excel
-          </Button>
+      {/* Filter Toolbar with Export Button */}
+      <Div type="row" gap="sm" align="center" wrap>
+        <Div className="min-w-0 flex-1">
+          <FilterToolbar
+            fields={filterFields}
+            values={filterValues}
+            onChange={handleFilterChange}
+            onClear={handleClearFilters}
+            sheetTitle="Filter Report"
+          />
         </Div>
+        <Button
+          variant="outline"
+          loading={isExporting}
+          onClick={exportAttendance}
+          className="shrink-0"
+        >
+          <FileDown size={16} className="mr-2" />
+          Export
+        </Button>
       </Div>
 
-      {/* Tabs */}
-      <Div type="row" gap="sm" wrap>
+      {/* Tabs — single row, horizontally scrollable on mobile */}
+      <Div
+        type="row"
+        gap="sm"
+        className="flex-nowrap overflow-x-auto pb-1 -mx-1 px-1"
+      >
         {tabButtons.map((t) => (
           <Button
             key={t.key}
             variant={tab === t.key ? 'default' : 'outline'}
             size="sm"
+            className="shrink-0"
             onClick={() => setTab(t.key)}
           >
             {t.label}
@@ -184,28 +252,73 @@ export default function StaffAttendanceReportPage() {
       {/* Daily Tab */}
       {tab === 'daily' && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
-            <Div type="col" gap="xs">
-              <FilterLabel>Date</FilterLabel>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </Div>
-            <Div type="col" gap="xs">
-              <FilterLabel>Role</FilterLabel>
-              <ResponsiveSelect
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                customPlaceholder="All Roles"
-                options={roles.map((r) => ({ value: r, label: r }))}
-              />
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
+            <DatePicker
+              value={date}
+              onChange={(val) => setDate(val)}
+              maxDate={new Date(today)}
+              size="compact"
+              className="w-36 sm:w-40"
+            />
+            <Div type="row" align="center" gap="sm" className="shrink-0">
+              <P size="sm" color="muted" noWrap>Role:</P>
+              <Div className="w-32">
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
+                >
+                  <option value="">All Roles</option>
+                  {roles.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </Div>
             </Div>
           </Div>
 
-          <Div type="row" gap="sm">
-            <MiniStat label="Total Staff" value={filteredStaff.length} />
-            <MiniStat label="Present" value={presentCount} color="green" />
-            <MiniStat label="Absent" value={absentCount} color="red" />
-            <MiniStat label="Late" value={lateCount} color="yellow" />
-          </Div>
+          {(() => {
+            const totalPct = filteredStaff.length > 0
+              ? Math.round((presentCount / filteredStaff.length) * 100)
+              : 0;
+            const pctColor = filteredStaff.length > 0 && totalPct >= 75 ? 'green' : 'red';
+            return (
+              <>
+                {/* Mobile: compact single-line stats */}
+                <Div
+                  type="row"
+                  align="center"
+                  gap="xs"
+                  className="min-w-0 overflow-x-auto sm:hidden"
+                >
+                  <P size="xs" weight="semibold" noWrap className="shrink-0">
+                    T:{filteredStaff.length}
+                  </P>
+                  <P size="xs" weight="semibold" color="green" noWrap className="shrink-0">
+                    P:{presentCount}
+                  </P>
+                  <P size="xs" weight="semibold" color="red" noWrap className="shrink-0">
+                    A:{absentCount}
+                  </P>
+                  <P size="xs" weight="semibold" color="yellow" noWrap className="shrink-0">
+                    L:{lateCount}
+                  </P>
+                  <P size="xs" weight="semibold" color={pctColor} noWrap className="shrink-0">
+                    Attendance:{totalPct}%
+                  </P>
+                </Div>
+
+                {/* sm+: labeled stat tiles */}
+                <Div type="row" gap="sm" className="hidden sm:flex">
+                  <MiniStat label="Total Staff" value={filteredStaff.length} />
+                  <MiniStat label="Present" value={presentCount} color="green" />
+                  <MiniStat label="Absent" value={absentCount} color="red" />
+                  <MiniStat label="Late" value={lateCount} color="yellow" />
+                  <MiniStat label="Attendance" value={`${totalPct}%`} color={pctColor} />
+                </Div>
+              </>
+            );
+          })()}
 
           {isLoading ? (
             <Div type="row" justify="center" padding="p-12">
@@ -220,30 +333,40 @@ export default function StaffAttendanceReportPage() {
       {/* Monthly Tab */}
       {tab === 'monthly' && (
         <Div type="col" gap="md">
-          <Div type="row" gap="md" align="center" wrap>
-            <ResponsiveSelect
-              className="w-32 max-w-full"
+          <Div type="row" gap="sm" align="center" className="flex-nowrap overflow-x-auto sm:flex-wrap">
+            <select
               value={String(month)}
               onChange={(e) => setMonth(Number(e.target.value))}
-              options={MONTHS.map((m) => ({ value: String(m.value), label: m.label }))}
-            />
-            <ResponsiveSelect
-              className="w-32 max-w-full"
+              className="h-9 w-28 shrink-0 rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 sm:w-32"
+            >
+              {MONTHS.map((m) => (
+                <option key={m.value} value={String(m.value)}>{m.label}</option>
+              ))}
+            </select>
+            <select
               value={String(year)}
               onChange={(e) => setYear(Number(e.target.value))}
-              options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
-            />
-            <Div type="col" gap="xs">
-              <FilterLabel>Role</FilterLabel>
-              <ResponsiveSelect
+              className="h-9 w-24 shrink-0 rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 sm:w-32"
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={String(y)}>{String(y)}</option>
+              ))}
+            </select>
+            <Div type="row" align="center" gap="sm" className="shrink-0">
+              <P size="sm" color="muted" noWrap>Role:</P>
+              <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                customPlaceholder="All Roles"
-                options={roles.map((r) => ({ value: r, label: r }))}
-              />
+                className="h-9 w-28 rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                <option value="">All Roles</option>
+                {roles.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
             </Div>
-            <Button onClick={loadMonthlyReport} loading={isLoading}>
-              Load Summary
+            <Button onClick={loadMonthlyReport} loading={isLoading} className="shrink-0 ml-auto">
+              Load
             </Button>
           </Div>
 
@@ -267,8 +390,7 @@ export default function StaffAttendanceReportPage() {
       {tab === 'history' && (
         <Div type="col" gap="md">
           <Div variant="card" padding="p-4">
-            <P size="sm" color="muted">Use the Export section above to export staff attendance data in Excel format.</P>
-            <P size="xs" color="muted" className="mt-2">You can filter by date range and role to customize your export.</P>
+            <P size="sm" color="muted">Use the filter bar above to set date range and role, then click &quot;Export Excel&quot; to download staff attendance data.</P>
           </Div>
         </Div>
       )}
