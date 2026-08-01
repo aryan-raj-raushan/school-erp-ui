@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FileText,
@@ -9,44 +9,43 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
-  RefreshCw,
 } from 'lucide-react';
 import { useReportCards } from '@/hooks/result/useReportCards';
 import { useAcademicClassSection } from '@/hooks/useAcademicClassSection';
 import { useExams } from '@/hooks/exam/useExams';
 import { useStudents } from '@/hooks/useStudents';
+import { useStorageFilter } from '@/hooks/useStorageFilter';
+import { STORAGE_FILTER_KEYS } from '@/constants/storage-filter-keys.constants';
 import { PageHeader } from '@/components/ui/page-header';
 import {
   Div,
-  H1,
-  H2,
-  H3,
   P,
   Button,
-  Input,
   FormField,
-  Table,
-  TableHead,
-  TableHeadRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyRow,
-  TablePagination,
   Badge,
   Spinner,
   ResponsiveSelect,
   ResponsiveModalContainer,
+  FilterToolbar,
+  type FilterField,
+  PageCol,
+  DataTable,
+  type ColumnDef,
 } from '@/components/ui';
 import {
   REPORT_CARD_PAGE,
   EXAM_TERM_LABELS,
   RESULT_ROUTES,
 } from '@/constants/result.constants';
-import type { ReportCardItem } from '@/types/result.types';
+import type { ReportCardItem, ReportCardFilters } from '@/types/result.types';
 
-// ── Generate Modal ────────────────────────────────────────────────────────────
+type PersistedReportCardFilters = {
+  academic_year_id?: string;
+  class_id?: string;
+  section_id?: string;
+  exam_id?: string;
+  search?: string;
+};
 
 function GenerateModal({
   isOpen,
@@ -62,7 +61,6 @@ function GenerateModal({
   scope,
   selectedAcademicYearId,
   setSelectedAcademicYearId,
-  selectedClassId,
   handleClassChange,
   handleSectionChange,
 }: {
@@ -79,7 +77,6 @@ function GenerateModal({
   scope: string;
   selectedAcademicYearId: string;
   setSelectedAcademicYearId: (id: string) => void;
-  selectedClassId: string;
   handleClassChange: (id: string) => void;
   handleSectionChange: (id: string) => void;
 }) {
@@ -102,7 +99,6 @@ function GenerateModal({
       <form onSubmit={handleGenerate}>
         <div className="px-4 py-4">
           <Div type="col" gap="md">
-            {/* Scope toggle */}
             <Div type="row" gap="sm">
               <Button
                 type="button"
@@ -128,7 +124,6 @@ function GenerateModal({
               </Button>
             </Div>
 
-            {/* Academic Year */}
             <FormField label="Academic Year *" error={errors.academic_year_id?.message}>
               <ResponsiveSelect
                 value={selectedAcademicYearId}
@@ -143,7 +138,6 @@ function GenerateModal({
               />
             </FormField>
 
-            {/* Class */}
             <FormField label="Class *" error={errors.class_id?.message}>
               <ResponsiveSelect
                 {...register('class_id')}
@@ -158,7 +152,6 @@ function GenerateModal({
               />
             </FormField>
 
-            {/* Section */}
             <FormField label="Section">
               <ResponsiveSelect
                 {...register('section_id')}
@@ -172,7 +165,6 @@ function GenerateModal({
               />
             </FormField>
 
-            {/* Exam */}
             <FormField label="Exam *" error={errors.exam_id?.message}>
               <ResponsiveSelect
                 {...register('exam_id')}
@@ -181,7 +173,6 @@ function GenerateModal({
               />
             </FormField>
 
-            {/* Student (single scope) */}
             {scope === 'student' && (
               <FormField label="Student *" error={errors.student_id?.message}>
                 <ResponsiveSelect
@@ -192,7 +183,6 @@ function GenerateModal({
               </FormField>
             )}
 
-            {/* Remarks */}
             <FormField label={REPORT_CARD_PAGE.generateModal.remarksLabel}>
               <textarea
                 rows={2}
@@ -215,8 +205,6 @@ function GenerateModal({
     </ResponsiveModalContainer>
   );
 }
-
-// ── Main Content ──────────────────────────────────────────────────────────────
 
 function ReportCardsContent() {
   const router = useRouter();
@@ -262,17 +250,308 @@ function ReportCardsContent() {
     removeReportCard,
   } = useReportCards();
 
-  function handleFilterExam(examId: string) {
-    updateFilters({ exam_id: examId || undefined });
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedReportCardFilters>({
+    key: STORAGE_FILTER_KEYS.REPORT_CARDS,
+    defaultValue: {},
+  });
+
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStored = Object.values(storedFilters).some(Boolean);
+    if (!hasStored) return;
+    const toApply: Partial<ReportCardFilters> = {};
+    if (storedFilters.academic_year_id) {
+      setSelectedAcademicYearId(storedFilters.academic_year_id);
+      toApply.academic_year_id = storedFilters.academic_year_id;
+    }
+    if (storedFilters.class_id) {
+      handleClassChange(storedFilters.class_id);
+      toApply.class_id = storedFilters.class_id;
+    }
+    if (storedFilters.section_id) {
+      handleSectionChange(storedFilters.section_id);
+      toApply.section_id = storedFilters.section_id;
+    }
+    if (storedFilters.exam_id) toApply.exam_id = storedFilters.exam_id;
+    if (storedFilters.search) toApply.search = storedFilters.search;
+    if (Object.keys(toApply).length > 0) updateFilters(toApply);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    const toApply: Partial<ReportCardFilters> = {};
+    if (next.academic_year_id !== undefined) {
+      setSelectedAcademicYearId(next.academic_year_id);
+      toApply.academic_year_id = next.academic_year_id || undefined;
+      toApply.class_id = undefined;
+      toApply.section_id = undefined;
+      toApply.exam_id = undefined;
+      handleClassChange('');
+    }
+    if (next.class_id !== undefined) {
+      handleClassChange(next.class_id);
+      toApply.class_id = next.class_id || undefined;
+      toApply.section_id = undefined;
+      toApply.exam_id = undefined;
+    }
+    if (next.section_id !== undefined) {
+      handleSectionChange(next.section_id);
+      toApply.section_id = next.section_id || undefined;
+    }
+    if (next.exam_id !== undefined) {
+      toApply.exam_id = next.exam_id || undefined;
+    }
+    if (next.search !== undefined) {
+      toApply.search = next.search || undefined;
+    }
+    updateFilters(toApply);
+
+    const persisted: Partial<PersistedReportCardFilters> = {};
+    (['academic_year_id', 'class_id', 'section_id', 'exam_id', 'search'] as const).forEach((k) => {
+      if (k in next) persisted[k] = next[k];
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
 
-  function handleFilterClass(classId: string) {
-    handleClassChange(classId);
-    updateFilters({ class_id: classId || undefined, section_id: undefined });
+  function handleClearFilters() {
+    updateFilters({
+      search: undefined,
+      academic_year_id: undefined,
+      class_id: undefined,
+      section_id: undefined,
+      exam_id: undefined,
+    });
+    setSelectedAcademicYearId('');
+    handleClassChange('');
+    handleSectionChange('');
+    clearStoredFilters();
   }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: 'search',
+        key: 'search',
+        placeholder: REPORT_CARD_PAGE.filters.searchPlaceholder,
+      },
+      {
+        type: 'select',
+        key: 'academic_year_id',
+        label: 'Academic Year',
+        placeholder: 'All Years',
+        options: years.map((y) => ({ value: y.id, label: y.name })),
+        resetKeys: ['class_id', 'section_id', 'exam_id'],
+      },
+      {
+        type: 'select',
+        key: 'class_id',
+        label: 'Class',
+        placeholder: 'All Classes',
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+        disabled: !selectedAcademicYearId,
+        resetKeys: ['section_id', 'exam_id'],
+      },
+      {
+        type: 'select',
+        key: 'section_id',
+        label: 'Section',
+        placeholder: 'All Sections',
+        options: sections.map((s) => ({ value: s.id, label: s.name })),
+        disabled: !selectedClassId,
+      },
+      {
+        type: 'select',
+        key: 'exam_id',
+        label: 'Exam',
+        placeholder: 'All Exams',
+        options: exams.map((e) => ({
+          value: e.id,
+          label: `${e.exam_name} — ${EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}`,
+        })),
+        disabled: !selectedClassId,
+      },
+    ],
+    [years, classes, sections, exams, selectedAcademicYearId, selectedClassId],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    search: filters.search,
+    academic_year_id: filters.academic_year_id,
+    class_id: filters.class_id,
+    section_id: filters.section_id,
+    exam_id: filters.exam_id,
+  };
+
+  const columns = useMemo<ColumnDef<ReportCardItem>[]>(
+    () => [
+      {
+        id: 'index',
+        header: REPORT_CARD_PAGE.table.sno,
+        cell: ({ row }) => row.index + 1,
+      },
+      {
+        accessorKey: 'student_name',
+        header: REPORT_CARD_PAGE.table.studentName,
+        meta: { primary: true },
+        cell: ({ row }) => row.original.student_name,
+      },
+      {
+        id: 'class',
+        header: REPORT_CARD_PAGE.table.class,
+        cell: ({ row }) => {
+          const rc = row.original;
+          return (
+            <>
+              {rc.class_name ?? '—'}
+              {rc.section_name ? ` · ${rc.section_name}` : ''}
+            </>
+          );
+        },
+      },
+      {
+        id: 'exam',
+        header: REPORT_CARD_PAGE.table.exam,
+        cell: ({ row }) => {
+          const rc = row.original;
+          return (
+            <Div type="col" gap="xs">
+              <Div>{rc.exam_name ?? '—'}</Div>
+              {rc.exam_term && (
+                <P color="muted" className="text-xs">
+                  {EXAM_TERM_LABELS[rc.exam_term] ?? rc.exam_term}
+                </P>
+              )}
+            </Div>
+          );
+        },
+      },
+      {
+        id: 'total_marks',
+        header: REPORT_CARD_PAGE.table.totalMarks,
+        cell: ({ row }) => {
+          const rc = row.original;
+          return rc.marks_obtained != null && rc.total_marks != null
+            ? `${rc.marks_obtained} / ${rc.total_marks}`
+            : '—';
+        },
+      },
+      {
+        accessorKey: 'percentage',
+        header: REPORT_CARD_PAGE.table.percentage,
+        cell: ({ row }) => (row.original.percentage ? `${row.original.percentage}%` : '—'),
+      },
+      {
+        accessorKey: 'grade',
+        header: REPORT_CARD_PAGE.table.grade,
+        cell: ({ row }) =>
+          row.original.grade ? (
+            <Badge variant="info">{row.original.grade}</Badge>
+          ) : (
+            '—'
+          ),
+      },
+      {
+        accessorKey: 'rank',
+        header: REPORT_CARD_PAGE.table.rank,
+        cell: ({ row }) => row.original.rank ?? '—',
+      },
+      {
+        accessorKey: 'status',
+        header: REPORT_CARD_PAGE.table.status,
+        cell: ({ row }) => (
+          <Badge variant={REPORT_CARD_PAGE.statusBadge[row.original.status] ?? 'default'}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: 'published',
+        header: REPORT_CARD_PAGE.table.published,
+        cell: ({ row }) =>
+          row.original.is_published ? (
+            <Badge variant="success">Published</Badge>
+          ) : (
+            <Badge variant="default">Draft</Badge>
+          ),
+      },
+      {
+        id: 'actions',
+        header: REPORT_CARD_PAGE.table.actions,
+        cell: ({ row }) => {
+          const rc = row.original;
+          return (
+            <Div type="row" gap="sm">
+              {rc.pdf_url && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  title="View PDF"
+                  onClick={() => window.open(rc.pdf_url!, '_blank')}
+                >
+                  <ExternalLink size={14} />
+                </Button>
+              )}
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                title="View Detail"
+                onClick={() => router.push(RESULT_ROUTES.reportCards.detail(rc.id))}
+              >
+                <Eye size={14} />
+              </Button>
+              {rc.is_published ? (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  title="Unpublish"
+                  loading={isPublishing}
+                  onClick={() =>
+                    publishReportCards(rc.exam_id ?? filters.exam_id!, false, {
+                      studentId: rc.student_id,
+                    })
+                  }
+                >
+                  <XCircle size={14} />
+                </Button>
+              ) : (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  title="Publish"
+                  loading={isPublishing}
+                  disabled={rc.status !== 'GENERATED'}
+                  onClick={() =>
+                    publishReportCards(rc.exam_id ?? filters.exam_id!, true, {
+                      studentId: rc.student_id,
+                    })
+                  }
+                >
+                  <CheckCircle2 size={14} />
+                </Button>
+              )}
+              <Button
+                size="icon-sm"
+                variant="destructive"
+                title="Delete"
+                onClick={() => removeReportCard(rc.id)}
+              >
+                <Trash2 size={14} />
+              </Button>
+            </Div>
+          );
+        },
+      },
+    ],
+    [router, isPublishing, filters.exam_id, publishReportCards, removeReportCard],
+  );
 
   return (
-    <Div type="col" gap="lg">
+    <PageCol>
       <PageHeader
         title={REPORT_CARD_PAGE.pageHeading.title}
         subtitle={
@@ -288,206 +567,23 @@ function ReportCardsContent() {
         }
       />
 
-      {/* Filters */}
-      <Div type="row" gap="md" align="center" wrap>
-        <Input
-          width="md"
-          placeholder={REPORT_CARD_PAGE.filters.searchPlaceholder}
-          value={filters.search ?? ''}
-          onChange={(e) => updateFilters({ search: e.target.value || undefined })}
-        />
-        <Div className="w-32 max-w-full">
-          <ResponsiveSelect
-            value={filters.academic_year_id ?? ''}
-            onChange={(e) => {
-              setSelectedAcademicYearId(e.target.value);
-              updateFilters({
-                academic_year_id: e.target.value || undefined,
-                class_id: undefined,
-                section_id: undefined,
-                exam_id: undefined,
-              });
-            }}
-            customPlaceholder="All Years"
-            options={years.map((y) => ({ value: y.id, label: y.name }))}
-          />
-        </Div>
-        <Div className="w-32 max-w-full">
-          <ResponsiveSelect
-            value={filters.class_id ?? ''}
-            onChange={(e) => handleFilterClass(e.target.value)}
-            customPlaceholder="All Classes"
-            options={classes.map((c) => ({ value: c.id, label: c.name }))}
-          />
-        </Div>
-        <Div className="w-32 max-w-full">
-          <ResponsiveSelect
-            value={filters.section_id ?? ''}
-            onChange={(e) => {
-              handleSectionChange(e.target.value);
-              updateFilters({ section_id: e.target.value || undefined });
-            }}
-            disabled={!selectedClassId}
-            customPlaceholder="All Sections"
-            options={sections.map((s) => ({ value: s.id, label: s.name }))}
-          />
-        </Div>
-        <Div className="w-48 max-w-full">
-          <ResponsiveSelect
-            value={filters.exam_id ?? ''}
-            onChange={(e) => handleFilterExam(e.target.value)}
-            customPlaceholder="All Exams"
-            options={exams.map((e) => ({ value: e.id, label: `${e.exam_name} — ${EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}` }))}
-          />
-        </Div>
-      </Div>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Report Cards"
+      />
 
-      {/* Table */}
-      <Table maxHeight="calc(100vh - 280px)">
-        <TableHead>
-          <TableHeadRow>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.sno}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.studentName}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.class}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.exam}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.totalMarks}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.percentage}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.grade}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.rank}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.status}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.published}</TableHeaderCell>
-            <TableHeaderCell>{REPORT_CARD_PAGE.table.actions}</TableHeaderCell>
-          </TableHeadRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
-            <TableEmptyRow colSpan={11}>
-              <Spinner />
-            </TableEmptyRow>
-          ) : reportCards.length === 0 ? (
-            <TableEmptyRow colSpan={11}>
-              {REPORT_CARD_PAGE.table.noEntry}
-            </TableEmptyRow>
-          ) : (
-            reportCards.map((rc, i) => (
-              <TableRow key={rc.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell primary>{rc.student_name}</TableCell>
-                <TableCell>
-                  {rc.class_name ?? '—'}
-                  {rc.section_name ? ` · ${rc.section_name}` : ''}
-                </TableCell>
-                <TableCell>
-                  <Div type="col" gap="xs">
-                    <Div>{rc.exam_name ?? '—'}</Div>
-                    {rc.exam_term && (
-                      <P color="muted" className="text-xs">
-                        {EXAM_TERM_LABELS[rc.exam_term] ?? rc.exam_term}
-                      </P>
-                    )}
-                  </Div>
-                </TableCell>
-                <TableCell>
-                  {rc.marks_obtained != null && rc.total_marks != null
-                    ? `${rc.marks_obtained} / ${rc.total_marks}`
-                    : '—'}
-                </TableCell>
-                <TableCell>{rc.percentage ? `${rc.percentage}%` : '—'}</TableCell>
-                <TableCell>
-                  {rc.grade ? (
-                    <Badge variant="info">{rc.grade}</Badge>
-                  ) : '—'}
-                </TableCell>
-                <TableCell>{rc.rank ?? '—'}</TableCell>
-                <TableCell>
-                  <Badge variant={REPORT_CARD_PAGE.statusBadge[rc.status] ?? 'default'}>
-                    {rc.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {rc.is_published ? (
-                    <Badge variant="success">Published</Badge>
-                  ) : (
-                    <Badge variant="default">Draft</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Div type="row" gap="sm">
-                    {rc.pdf_url && (
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        title="View PDF"
-                        onClick={() => window.open(rc.pdf_url!, '_blank')}
-                      >
-                        <ExternalLink size={14} />
-                      </Button>
-                    )}
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      title="View Detail"
-                      onClick={() =>
-                        router.push(RESULT_ROUTES.reportCards.detail(rc.id))
-                      }
-                    >
-                      <Eye size={14} />
-                    </Button>
-                    {rc.is_published ? (
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        title="Unpublish"
-                        loading={isPublishing}
-                        onClick={() =>
-                          publishReportCards(rc.exam_id ?? filters.exam_id!, false, {
-                            studentId: rc.student_id,
-                          })
-                        }
-                      >
-                        <XCircle size={14} />
-                      </Button>
-                    ) : (
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        title="Publish"
-                        loading={isPublishing}
-                        disabled={rc.status !== 'GENERATED'}
-                        onClick={() =>
-                          publishReportCards(rc.exam_id ?? filters.exam_id!, true, {
-                            studentId: rc.student_id,
-                          })
-                        }
-                      >
-                        <CheckCircle2 size={14} />
-                      </Button>
-                    )}
-                    <Button
-                      size="icon-sm"
-                      variant="destructive"
-                      title="Delete"
-                      onClick={() => removeReportCard(rc.id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </Div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <DataTable
+        columns={columns}
+        data={reportCards}
+        isLoading={isLoading}
+        emptyText={REPORT_CARD_PAGE.table.noEntry}
+        pagination={pagination ?? undefined}
+        fillViewport
+      />
 
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
-
-      {/* Generate Modal */}
       <GenerateModal
         isOpen={showGenerateModal}
         onClose={closeGenerateModal}
@@ -502,11 +598,10 @@ function ReportCardsContent() {
         scope={scope}
         selectedAcademicYearId={selectedAcademicYearId}
         setSelectedAcademicYearId={setSelectedAcademicYearId}
-        selectedClassId={selectedClassId}
         handleClassChange={handleClassChange}
         handleSectionChange={handleSectionChange}
       />
-    </Div>
+    </PageCol>
   );
 }
 

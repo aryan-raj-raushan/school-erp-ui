@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo, useEffect } from "react";
 import {
   BookOpen,
   Save,
@@ -13,27 +13,31 @@ import {
   PencilLine,
 } from "lucide-react";
 import { useExamResults } from "@/hooks/result/useExamResults";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
-  H3,
   P,
   Button,
-  Select,
-  FormField,
   Spinner,
-  Modal,
-  ModalBody,
-  ModalFooter,
   DataTable,
   PageCol,
-  ResponsiveSelect,
+  FilterToolbar,
+  type FilterField,
   ResponsiveModalContainer,
 } from "@/components/ui";
 import {
   RESULT_MARKS_PAGE,
   EXAM_TERM_LABELS,
 } from "@/constants/result.constants";
+
+type PersistedMarkFilters = {
+  academic_year_id?: string;
+  class_id?: string;
+  section_id?: string;
+  exam_id?: string;
+};
 
 function ConfirmModal({
   title,
@@ -102,18 +106,116 @@ function MarksContent() {
     onExamChange,
   } = useExamResults();
 
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedMarkFilters>({
+    key: STORAGE_FILTER_KEYS.EXAM_MARKS,
+    defaultValue: {},
+  });
+
   const hasData = examId && classId;
   const canEdit = hasData && studentEntries.length > 0 && !isTableBusy;
 
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStored = Object.values(storedFilters).some(Boolean);
+    if (!hasStored) return;
+    if (storedFilters.academic_year_id && storedFilters.academic_year_id !== selectedAcademicYearId) {
+      onYearChange(storedFilters.academic_year_id);
+    }
+    if (storedFilters.class_id && storedFilters.class_id !== selectedClassId) {
+      onClassChange(storedFilters.class_id);
+    }
+    if (storedFilters.section_id && storedFilters.section_id !== selectedSectionId) {
+      onSectionChange(storedFilters.section_id);
+    }
+    if (storedFilters.exam_id && storedFilters.exam_id !== examId) {
+      onExamChange(storedFilters.exam_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if (next.academic_year_id !== undefined) onYearChange(next.academic_year_id);
+    if (next.class_id !== undefined) onClassChange(next.class_id);
+    if (next.section_id !== undefined) onSectionChange(next.section_id);
+    if (next.exam_id !== undefined) onExamChange(next.exam_id);
+
+    const persisted: Partial<PersistedMarkFilters> = {};
+    (["academic_year_id", "class_id", "section_id", "exam_id"] as const).forEach((k) => {
+      if (k in next) persisted[k] = next[k];
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
+  }
+
+  function handleClearFilters() {
+    onYearChange("");
+    clearStoredFilters();
+  }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: RESULT_MARKS_PAGE.filters.selectYear,
+        options: years.map((y) => ({
+          value: y.id,
+          label: y.is_current ? `${y.name} (Current)` : y.name,
+        })),
+        resetKeys: ["class_id", "section_id", "exam_id"],
+      },
+      {
+        type: "select",
+        key: "class_id",
+        label: "Class",
+        placeholder: RESULT_MARKS_PAGE.filters.selectClass,
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+        disabled: !selectedAcademicYearId || isLoadingClasses,
+        resetKeys: ["section_id", "exam_id"],
+      },
+      {
+        type: "select",
+        key: "section_id",
+        label: "Section",
+        placeholder: RESULT_MARKS_PAGE.filters.selectSection,
+        options: sections.map((s) => ({ value: s.id, label: s.name })),
+        disabled: !selectedClassId,
+      },
+      {
+        type: "select",
+        key: "exam_id",
+        label: "Exam",
+        placeholder: RESULT_MARKS_PAGE.filters.selectExam,
+        options: exams.map((e) => ({
+          value: e.id,
+          label: `${e.exam_name} — ${EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}`,
+        })),
+        disabled: !selectedClassId,
+      },
+    ],
+    [years, classes, sections, exams, selectedAcademicYearId, selectedClassId, isLoadingClasses],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: selectedAcademicYearId || undefined,
+    class_id: selectedClassId || undefined,
+    section_id: selectedSectionId || undefined,
+    exam_id: examId || undefined,
+  };
+
   return (
     <PageCol>
-      {/* ── Page header ── */}
       <PageHeader
         title={RESULT_MARKS_PAGE.pageHeading.title}
         subtitle={RESULT_MARKS_PAGE.pageHeading.subtitle}
         actions={
           hasData && !isEditMode ? (
-            <Div type="row" gap="sm">
+            <Div type="row" gap="sm" className="flex-wrap">
               <Button
                 size="sm"
                 variant="outline"
@@ -150,76 +252,20 @@ function MarksContent() {
         }
       />
 
-      {/* ── Filters ── */}
-      <Div className="rounded-xl border border-border bg-card px-4 py-3" type="col" gap="xs">
-        <H3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-          Select Exam &amp; Class
-        </H3>
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <FormField label="Academic Year">
-            <Select
-              value={selectedAcademicYearId}
-              onChange={(e) => onYearChange(e.target.value)}
-            >
-              <option value="">{RESULT_MARKS_PAGE.filters.selectYear}</option>
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.is_current ? `${y.name} (Current)` : y.name}
-                </option>
-              ))}
-            </Select>
-          </FormField>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Exam & Class"
+      />
 
-          <FormField label="Class">
-            <Select
-              value={selectedClassId}
-              onChange={(e) => onClassChange(e.target.value)}
-              disabled={!selectedAcademicYearId || isLoadingClasses}
-            >
-              <option value="">{RESULT_MARKS_PAGE.filters.selectClass}</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </FormField>
-
-          <FormField label="Section">
-            <Select
-              value={selectedSectionId}
-              onChange={(e) => onSectionChange(e.target.value)}
-              disabled={!selectedClassId}
-            >
-              <option value="">{RESULT_MARKS_PAGE.filters.selectSection}</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </Select>
-          </FormField>
-
-          <FormField label="Exam">
-            <Select
-              value={examId}
-              onChange={(e) => onExamChange(e.target.value)}
-              disabled={!selectedClassId}
-            >
-              <option value="">{RESULT_MARKS_PAGE.filters.selectExam}</option>
-              {exams.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.exam_name} — {EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        </div>
-      </Div>
-
-      {/* ── Published banner (view mode only) ── */}
       {hasData && isPublished && !isEditMode && (
         <Div
           type="row"
           align="center"
           gap="sm"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800/40 px-4 py-3"
+          className="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800/40 px-4 py-3 flex-wrap"
         >
           <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
           <P color="success" className="text-sm font-medium">
@@ -228,11 +274,10 @@ function MarksContent() {
         </Div>
       )}
 
-      {/* ── Edit mode toolbar ── */}
       {hasData && isEditMode && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-950/20 dark:border-indigo-800/40 px-4 py-3 flex items-center justify-between gap-4">
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-950/20 dark:border-indigo-800/40 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="flex items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/40 p-1.5">
+            <span className="flex items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/40 p-1.5 shrink-0">
               <PencilLine size={14} className="text-indigo-600 dark:text-indigo-400" />
             </span>
             <div className="min-w-0">
@@ -251,13 +296,13 @@ function MarksContent() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <Button
               size="sm"
               variant="ghost"
               onClick={cancelEdit}
               disabled={isSaving}
-              className="text-indigo-700 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900/40"
+              className="flex-1  "
             >
               <X size={14} />
               Cancel
@@ -267,7 +312,6 @@ function MarksContent() {
               onClick={saveMarks}
               loading={isSaving}
               disabled={!isDirty}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-sm"
             >
               <Save size={14} />
               {RESULT_MARKS_PAGE.buttons.saveMarks}
@@ -276,7 +320,6 @@ function MarksContent() {
         </div>
       )}
 
-      {/* ── Table area ── */}
       {noSelection ? (
         <Div
           type="col"
@@ -311,7 +354,6 @@ function MarksContent() {
         </div>
       )}
 
-      {/* ── Confirm modals ── */}
       {confirmAction === "publish" && (
         <ConfirmModal
           title={RESULT_MARKS_PAGE.confirmPublish.title}
