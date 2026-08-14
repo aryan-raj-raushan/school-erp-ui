@@ -113,30 +113,32 @@ export default function TimingsPage() {
         const badge = TIMING_TYPE_BADGE[t.timing_type];
         const activeDays = t.working_days.split(',').filter(Boolean);
         return (
-          <Div className="flex flex-col gap-1.5 py-0.5">
-            <Div className="flex items-center gap-2">
-              <Div className="font-semibold text-foreground text-sm">{t.name}</Div>
-              <Badge variant={badge.variant as 'warning'}>{badge.label}</Badge>
-              {!t.is_active && (
-                <Badge variant="default">Inactive</Badge>
-              )}
-            </Div>
-            <Div className="flex items-center gap-1">
-              {ALL_DAYS.map((day) => {
-                const active = activeDays.includes(day);
-                return (
-                  <Span
-                    key={day}
-                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-semibold ${
-                      active
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted/40 text-muted-foreground/40'
-                    }`}
-                  >
-                    {DAY_SHORT[day]}
-                  </Span>
-                );
-              })}
+          <Div className="flex items-center gap-3 py-0.5">
+            <Div className="flex flex-col gap-1">
+              <Div className="flex items-center gap-2">
+                <Div className="font-semibold text-foreground text-sm">{t.name}</Div>
+                <Badge variant={badge.variant as 'warning'}>{badge.label}</Badge>
+                {!t.is_active && (
+                  <Badge variant="default">Inactive</Badge>
+                )}
+              </Div>
+              <Div className="flex items-center gap-1">
+                {ALL_DAYS.map((day) => {
+                  const active = activeDays.includes(day);
+                  return (
+                    <Span
+                      key={day}
+                      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-semibold ${
+                        active
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted/40 text-muted-foreground/40'
+                      }`}
+                    >
+                      {DAY_SHORT[day]}
+                    </Span>
+                  );
+                })}
+              </Div>
             </Div>
           </Div>
         );
@@ -148,29 +150,27 @@ export default function TimingsPage() {
       cell: ({ row }) => {
         const t = row.original;
         return (
-          <Div className="flex flex-col gap-1 py-0.5">
-            <Div className="flex items-center gap-1.5">
-              <Clock size={13} className="text-muted-foreground shrink-0" />
-              <Span className="text-sm font-medium tabular-nums">
+          <Div className="flex items-start gap-3 py-0.5">
+            <Div className="flex items-center gap-1.5 shrink-0">
+              <Clock size={13} className="text-muted-foreground" />
+              <Span className="text-sm font-medium tabular-nums whitespace-nowrap">
                 {fmtTime(t.school_start_time)} – {fmtTime(t.school_end_time)}
               </Span>
             </Div>
-            <Span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
+            <Div className="flex items-center gap-1.5 flex-wrap">
+              <Span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium whitespace-nowrap">
                 Grace {t.grace_period_minutes}m
               </Span>
-              <Span className="text-muted-foreground/50">·</Span>
-              <Span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
+              <Span className="inline-flex px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium whitespace-nowrap">
                 {t.period_duration_minutes}m/period
               </Span>
-              <Span className="text-muted-foreground/50">·</Span>
-              <Span className="text-[11px]">P{t.priority}</Span>
-            </Span>
-            {t.lunch_start_time && t.lunch_end_time && (
-              <Span className="text-[11px] text-muted-foreground">
-                Lunch {fmtTime(t.lunch_start_time)} – {fmtTime(t.lunch_end_time)}
-              </Span>
-            )}
+              <Span className="text-[11px] text-muted-foreground">P{t.priority}</Span>
+              {t.lunch_start_time && t.lunch_end_time && (
+                <Span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                  Lunch {fmtTime(t.lunch_start_time)}–{fmtTime(t.lunch_end_time)}
+                </Span>
+              )}
+            </Div>
           </Div>
         );
       },
@@ -189,12 +189,13 @@ export default function TimingsPage() {
         if (!items.length) return <Span className="text-muted-foreground/40 text-xs">—</Span>;
 
         return (
-          <Div className="flex flex-col gap-1 py-0.5">
+          <Div type="col" gap="xs" className="py-0.5">
             {items.map(({ label, time, color }) => (
-              <Div key={label} className="flex items-center gap-2">
-                <Span className="text-[10px] w-14 text-muted-foreground">{label}</Span>
-                <Span className={`text-xs font-medium tabular-nums ${color}`}>{time}</Span>
-              </Div>
+              <Span key={label} className="inline-flex items-center gap-1.5">
+                <Span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</Span>
+                <Span className="text-muted-foreground/40">–</Span>
+                <Span className={`text-xs font-semibold tabular-nums ${color}`}>{time}</Span>
+              </Span>
             ))}
           </Div>
         );
@@ -206,13 +207,12 @@ export default function TimingsPage() {
       cell: ({ row }) => {
         const t = row.original;
         return (
-          <Div className="flex flex-col gap-1 py-0.5">
+          <Div className="flex items-center gap-2 py-0.5">
+            <CalendarRange size={13} className="text-muted-foreground shrink-0" />
             <Div className="flex items-center gap-1.5">
-              <CalendarRange size={13} className="text-muted-foreground shrink-0" />
-              <Span className="text-xs text-foreground">{fmtDate(t.effective_from)}</Span>
-            </Div>
-            <Div className="flex items-center gap-1.5 pl-[18px]">
-              <Span className="text-xs text-muted-foreground">{fmtDate(t.effective_to)}</Span>
+              <Span className="text-xs text-foreground whitespace-nowrap">{fmtDate(t.effective_from)}</Span>
+              <Span className="text-xs text-muted-foreground">→</Span>
+              <Span className="text-xs text-muted-foreground whitespace-nowrap">{fmtDate(t.effective_to)}</Span>
             </Div>
           </Div>
         );
@@ -278,6 +278,7 @@ export default function TimingsPage() {
           data={timings}
           isLoading={isLoading}
           emptyText="No timing schedules found"
+          pinnedColumns={['schedule']}
         />
       )}
 
@@ -342,7 +343,7 @@ export default function TimingsPage() {
               </Div>
 
               <FormField label="Working Days">
-                <Div className="flex items-center gap-2 flex-wrap">
+                <Div type="row" wrap gap="sm" className="items-center">
                   {WORKING_DAY_OPTIONS.map((day) => {
                     const selected = (form.working_days ?? '').split(',').includes(day.value);
                     return (
@@ -350,7 +351,7 @@ export default function TimingsPage() {
                         key={day.value}
                         type="button"
                         onClick={() => toggleDay(day.value)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        className={`min-w-[44px] justify-center px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                           selected
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
