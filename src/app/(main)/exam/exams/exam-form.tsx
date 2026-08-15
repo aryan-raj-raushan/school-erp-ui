@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, Copy } from "lucide-react";
+import { Pencil, Copy } from "lucide-react";
 import { useExamDetail } from "@/hooks/exam/useExams";
 import { useExamLifecycle } from "@/hooks/exam/useExamLifecycle";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { PageHeader } from "@/components/ui/page-header";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Div,
   P,
@@ -21,6 +21,8 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
+  PageHeader,
+  type PageHeaderConfig,
   type BadgeVariant,
 } from "@/components/ui";
 import {
@@ -93,6 +95,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
+  const isMobile = useIsMobile();
   const [showCopyModal, setShowCopyModal] = useState(false);
 
   const {
@@ -135,7 +138,6 @@ export function ExamFormContent({ slug }: { slug: string }) {
     setSelectedAcademicYearId,
   } = useAcademicClassSection({ autoSelectCurrentYear: true });
 
-  // Sync academic year selection into form
   useEffect(() => {
     if (isNew && currentYear && !watchedAcademicYearId) {
       setValue("academic_year_id", currentYear.id);
@@ -164,61 +166,69 @@ export function ExamFormContent({ slug }: { slug: string }) {
   const classOptions = classes.map((c) => ({ value: c.id, label: c.name }));
   const classError = (errors.class_ids as { message?: string } | undefined)?.message;
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    backButton: true,
+    sticky: true,
+    title: isNew ? "Add New Exam" : (exam?.exam_name ?? "Exam"),
+    subtitle: !isNew && exam ? `Term: ${exam.exam_term}` : "",
+    badge:
+      !isNew && !isEditing && exam ? (
+        <Badge variant={STATUS_BADGE[exam.status] ?? "default"}>
+          {exam.status.replace(/_/g, " ")}
+        </Badge>
+      ) : undefined,
+    actions: [
+      {
+        label: "Copy",
+        icon: <Copy size={14} />,
+        variant: "outline",
+        showNoLabel: isMobile,
+        hidden: isNew || isEditing,
+        onClick: () => setShowCopyModal(true),
+      },
+      {
+        label: EXAMS_PAGE.buttons.edit,
+        icon: <Pencil size={14} />,
+        showNoLabel: isMobile,
+        hidden: isNew || isEditing,
+        onClick: () => setIsEditing(true),
+      },
+      {
+        label: EXAMS_PAGE.buttons.cancel,
+        variant: "outline",
+        hidden: isNew || !isEditing,
+        onClick: () => setIsEditing(false),
+      },
+    ],
+  };
+
   return (
-    <Div type="col" gap="lg" className="max-w-3xl">
-      <PageHeader
-        title={isNew ? "Add New Exam" : (exam?.exam_name ?? "Exam")}
-        subtitle={!isNew && exam ? `Term: ${exam.exam_term}` : ""}
-        actions={
-          <Div type="row" gap="sm" align="center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(EXAM_ROUTES.exams.list)}
-            >
-              <ArrowLeft size={14} /> {EXAMS_PAGE.buttons.back}
-            </Button>
-            {!isNew && !isEditing && exam && (
-              <>
-                <Badge variant={STATUS_BADGE[exam.status] ?? "default"}>
-                  {exam.status.replace(/_/g, " ")}
-                </Badge>
-                {allowedNextStatuses.length > 0 && (
-                  <Select
-                    width="xs"
-                    value=""
-                    disabled={isChangingStatus}
-                    onChange={(e) => e.target.value && changeStatus(e.target.value as ExamStatus)}
-                  >
-                    <option value="">Move to...</option>
-                    {allowedNextStatuses.map((s) => (
-                      <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-                    ))}
-                  </Select>
-                )}
-                <Button size="sm" variant="outline" onClick={() => setShowCopyModal(true)}>
-                  <Copy size={14} /> Copy
+    <Div type="col" gap="md" className="max-w-4xl">
+      <PageHeader {...pageHeaderConfig} />
+
+      {!isNew && !isEditing && exam && allowedNextStatuses.length > 0 && (
+        <Div variant="card" className="p-4">
+          <Div type="row" align="center" gap="sm" wrap>
+            <P size="sm" weight="semibold">Move to:</P>
+            <Div type="row" gap="xs" wrap>
+              {allowedNextStatuses.map((s) => (
+                <Button
+                  key={s}
+                  size="xs"
+                  variant="outline"
+                  loading={isChangingStatus}
+                  onClick={() => changeStatus(s)}
+                >
+                  {s.replace(/_/g, " ")}
                 </Button>
-                <Button size="sm" onClick={() => setIsEditing(true)}>
-                  <Pencil size={14} /> {EXAMS_PAGE.buttons.edit}
-                </Button>
-              </>
-            )}
-            {isEditing && !isNew && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-              >
-                {EXAMS_PAGE.buttons.cancel}
-              </Button>
-            )}
+              ))}
+            </Div>
           </Div>
-        }
-      />
+        </Div>
+      )}
 
       <form onSubmit={onSubmit}>
-        <Div variant="card" className="p-6">
+        <Div variant="card" className="p-5 sm:p-6">
           <Div type="col" gap="md">
             <Div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
@@ -315,7 +325,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
               </FormField>
             </Div>
 
-            <Div type="row" gap="lg">
+            <Div type="row" gap="lg" wrap>
               <Div type="row" align="center" gap="sm">
                 <input
                   type="checkbox"
@@ -346,7 +356,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
             </Div>
 
             {isEditing && overlapWarning && (
-              <Div className="rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/30 p-3">
+              <Div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-3">
                 <P size="sm" className="text-red-700 dark:text-red-400">
                   {overlapWarning}
                 </P>
@@ -354,7 +364,7 @@ export function ExamFormContent({ slug }: { slug: string }) {
             )}
 
             {isEditing && (
-              <Div type="row" gap="md" className="pt-2">
+              <Div type="row" gap="md" className="pt-2 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"

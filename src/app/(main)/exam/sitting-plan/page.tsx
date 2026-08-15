@@ -1,15 +1,16 @@
 "use client";
 
-import { Suspense, useState, useCallback, useMemo } from "react";
+import { Suspense, useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Shuffle, ChevronDown, ChevronUp, CheckSquare, Square, AlertTriangle, Printer } from "lucide-react";
+import { Shuffle, CheckSquare, Square, AlertTriangle, Printer } from "lucide-react";
 import { useSittingPlanGrid } from "@/hooks/exam/useExamSittingAndAdmit";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useAutoAssignPanel } from "@/hooks/exam/useAutoAssignPanel";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { SittingPlanService } from "@/services/exam.service";
 import type { Class } from "@/types";
-import { PageHeader } from "@/components/ui/page-header";
 import {
   Div,
   P,
@@ -21,6 +22,11 @@ import {
   Button,
   FormField,
   type ColumnDef,
+  PageHeader,
+  type PageHeaderConfig,
+  PageCol,
+  FilterToolbar,
+  type FilterField,
 } from "@/components/ui";
 import { SITTING_PLAN_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 import type { ExamHallDetail } from "@/types/exam.types";
@@ -250,13 +256,48 @@ function AutoAssignPanel({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+type PersistedSittingFilters = {
+  academic_year_id?: string;
+  exam_id?: string;
+};
+
 function SittingPlanContent() {
   const router = useRouter();
-  const [examId, setExamId] = useState("");
   const [showAutoAssign, setShowAutoAssign] = useState(false);
 
   const { years, classes, selectedAcademicYearId, setSelectedAcademicYearId } =
     useAcademicClassSection({ autoSelectCurrentYear: true });
+
+  const {
+    filters: storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: isStorageHydrated,
+  } = useStorageFilter<PersistedSittingFilters>({
+    key: STORAGE_FILTER_KEYS.EXAMS + ":sitting-plan",
+    defaultValue: {},
+  });
+
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
+    if (hasStoredFilters && storedFilters.academic_year_id) {
+      setSelectedAcademicYearId(storedFilters.academic_year_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
+
+  const [examId, setExamId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const raw = window.localStorage.getItem(STORAGE_FILTER_KEYS.EXAMS + ":sitting-plan");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return parsed.exam_id ?? "";
+      }
+    } catch {}
+    return "";
+  });
 
   const academicYearId = selectedAcademicYearId;
   const { exams } = useExams(academicYearId ? { academic_year_id: academicYearId } : {});
@@ -270,16 +311,76 @@ function SittingPlanContent() {
     refetch?.();
   }, [refetch]);
 
-  function handleYearChange(val: string) {
-    setSelectedAcademicYearId(val);
-    setExamId("");
+  function handleFilterChange(next: Record<string, string | undefined>) {
+    if ("academic_year_id" in next) {
+      const val = next.academic_year_id;
+      setSelectedAcademicYearId(val ?? "");
+      setExamId("");
+    }
+
+    if ("exam_id" in next) {
+      setExamId(next.exam_id ?? "");
+    }
+
+    const persisted: Partial<PersistedSittingFilters> = {};
+    (["academic_year_id", "exam_id"] as const).forEach((field) => {
+      if (field in next) persisted[field] = next[field] as never;
+    });
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
+
+  function handleClearFilters() {
+    setSelectedAcademicYearId("");
+    setExamId("");
+    clearStoredFilters();
+  }
+
+  useEffect(() => {
+    if (!isStorageHydrated) return;
+    if (storedFilters.academic_year_id) {
+      setSelectedAcademicYearId(storedFilters.academic_year_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStorageHydrated]);
 
   function openRoom(room: ExamHallDetail) {
     router.push(
       EXAM_ROUTES.sittingPlan.roomView(room.id, examId, academicYearId)
     );
   }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: SITTING_PLAN_PAGE.filters.allYears,
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+        resetKeys: ["exam_id"],
+      },
+      {
+        type: "select",
+        key: "exam_id",
+        label: "Exam",
+        placeholder: SITTING_PLAN_PAGE.filters.allExams,
+        options: exams.map((e) => ({
+          value: e.id,
+          label: `${e.exam_name} (${e.exam_term})`,
+        })),
+        disabled: !academicYearId,
+      },
+    ],
+    [years, exams, academicYearId],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: academicYearId || undefined,
+    exam_id: examId || undefined,
+  };
 
   const columns = useMemo<ColumnDef<ExamHallDetail>[]>(
     () => [
@@ -325,30 +426,39 @@ function SittingPlanContent() {
     [occupancy]
   );
 
-  return (
-    <Div type="col" gap="lg">
-      <PageHeader
-        title={SITTING_PLAN_PAGE.pageHeading.title}
-        subtitle={SITTING_PLAN_PAGE.pageHeading.subtitle}
-        actions={
-          <Div type="row" gap="sm">
-            <Button size="sm" variant="outline" onClick={() => router.push("/exam/hall-details")}>
-              Manage Rooms
-            </Button>
-            <Button
-              size="sm"
-              variant={showAutoAssign ? "default" : "outline"}
-              onClick={() => setShowAutoAssign((p) => !p)}
-            >
-              <Shuffle size={13} />
-              {SITTING_PLAN_PAGE.buttons.autoAssign}
-              {showAutoAssign ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </Button>
-          </Div>
-        }
-      />
+  const pageHeaderConfig: PageHeaderConfig = {
+    backButton: true,
+    title: SITTING_PLAN_PAGE.pageHeading.title,
+    subtitle: SITTING_PLAN_PAGE.pageHeading.subtitle,
+    actions: [
+      {
+        label: "Manage Rooms",
+        variant: "outline",
+        onClick: () => router.push("/exam/hall-details"),
+      },
+      {
+        label: SITTING_PLAN_PAGE.buttons.autoAssign,
+        icon: <Shuffle size={14} />,
+        variant: showAutoAssign ? "default" : "outline",
+        onClick: () => setShowAutoAssign((p) => !p),
+      },
+      {
+        label: "Print Master Sheet",
+        icon: <Printer size={14} />,
+        hidden: !examId,
+        onClick: () =>
+          SittingPlanService.downloadMasterPdf({
+            exam_id: examId,
+            exam_name: exams.find((e) => e.id === examId)?.exam_name,
+          }),
+      },
+    ],
+  };
 
-      {/* Auto-assign collapsible panel */}
+  return (
+    <PageCol>
+      <PageHeader {...pageHeaderConfig} />
+
       {showAutoAssign && (
         <AutoAssignPanel
           academicYearId={academicYearId}
@@ -357,59 +467,23 @@ function SittingPlanContent() {
         />
       )}
 
-      {/* Filters */}
-      <Div type="row" gap="md" wrap>
-        <Select
-          width="sm"
-          value={academicYearId}
-          onChange={(e) => handleYearChange(e.target.value)}
-        >
-          <option value="">Select year</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-              {y.is_current ? " (Current)" : ""}
-            </option>
-          ))}
-        </Select>
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Sitting Plan"
+      />
 
-        <Select
-          width="sm"
-          value={examId}
-          disabled={!academicYearId}
-          onChange={(e) => setExamId(e.target.value)}
-        >
-          <option value="">Select exam</option>
-          {exams.map((e) => (
-            <option key={e.id} value={e.id}>{e.exam_name} ({e.exam_term})</option>
-          ))}
-        </Select>
-
-        {examId && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              SittingPlanService.downloadMasterPdf({
-                exam_id: examId,
-                exam_name: exams.find((e) => e.id === examId)?.exam_name,
-              })
-            }
-          >
-            <Printer size={13} /> Print Master Sheet
-          </Button>
-        )}
-      </Div>
-
-      {/* Table */}
       <DataTable
         columns={columns}
         data={rooms}
         isLoading={isLoading}
         emptyText={!examId ? "Select an exam to view rooms" : "No rooms found"}
         onRowClick={(row) => openRoom(row.original)}
+        fillViewport
       />
-    </Div>
+    </PageCol>
   );
 }
 
