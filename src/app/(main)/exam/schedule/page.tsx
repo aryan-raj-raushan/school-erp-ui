@@ -9,6 +9,8 @@ import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { useFilterParams } from "@/hooks/useFilterParams";
+import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { StaffService } from "@/services/staff.service";
 import {
   Div,
@@ -22,6 +24,11 @@ import {
   Input,
   type ColumnDef,
   PageHeader,
+  type PageHeaderConfig,
+  PageCol,
+  FilterToolbar,
+  type FilterField,
+  RowActions,
 } from "@/components/ui";
 import {
   SCHEDULE_PAGE,
@@ -30,6 +37,14 @@ import {
 } from "@/constants/exam.constants";
 import type { ExamSchedule } from "@/types/exam.types";
 import type { Staff } from "@/types";
+
+type PersistedScheduleFilters = {
+  academic_year_id?: string;
+  class_id?: string;
+  section_id?: string;
+  exam_id?: string;
+  subject_type?: string;
+};
 
 function ScheduleContent() {
   const router = useRouter();
@@ -45,6 +60,16 @@ function ScheduleContent() {
     page: undefined,
   });
 
+  const {
+    filters: _storedFilters,
+    updateFilters: persistFilters,
+    clearFilters: clearStoredFilters,
+    isHydrated: _isStorageHydrated,
+  } = useStorageFilter<PersistedScheduleFilters>({
+    key: STORAGE_FILTER_KEYS.EXAMS + ":schedule",
+    defaultValue: {},
+  });
+
   const { schedules, pagination, filters, isLoading, updateFilters, remove, refetch } =
     useExamSchedules({
       academic_year_id: urlFilters.academic_year_id
@@ -54,7 +79,7 @@ function ScheduleContent() {
       section_id: urlFilters.section_id ? urlFilters.section_id : undefined,
       exam_id: urlFilters.exam_id ? urlFilters.exam_id : undefined,
       subject_type: urlFilters.subject_type
-        ? (urlFilters.subject_type as any)
+        ? (urlFilters.subject_type as ExamSchedule["subject_type"])
         : undefined,
       page: urlFilters.page ? Number(urlFilters.page) : 1,
     });
@@ -84,7 +109,6 @@ function ScheduleContent() {
     handleSectionChange,
   } = useAcademicClassSection({ autoSelectCurrentYear: true });
 
-  // sync auto-selected current year into schedule filters on first load
   useEffect(() => {
     if (currentYear && !filters.academic_year_id) {
       updateFilters({ academic_year_id: currentYear.id });
@@ -103,7 +127,6 @@ function ScheduleContent() {
       : {}
   );
 
-  // Deduplicate exams by exam_name to avoid duplicates when created with multiple classes
   const deduplicatedExams = useMemo(() => {
     const seen = new Set<string>();
     return exams.filter((e) => {
@@ -114,43 +137,99 @@ function ScheduleContent() {
   }, [exams]);
 
   function handleFilterChange(next: Partial<Record<string, string | undefined>>) {
-    updateFilters(next as any);
+    updateFilters(next as Partial<typeof filters>);
     setUrlFilters(next);
+
+    const persisted: Partial<PersistedScheduleFilters> = {};
+    (["academic_year_id", "class_id", "section_id", "exam_id", "subject_type"] as const).forEach(
+      (field) => {
+        if (field in next) persisted[field] = next[field] as never;
+      },
+    );
+    if (Object.keys(persisted).length > 0) persistFilters(persisted);
   }
 
-  function handleYearChange(val: string) {
-    setSelectedAcademicYearId(val);
+  function handleClearFilters() {
+    setSelectedAcademicYearId("");
     handleClassChange("");
+    handleSectionChange("");
     handleFilterChange({
-      academic_year_id: val || undefined,
+      academic_year_id: undefined,
       class_id: undefined,
       section_id: undefined,
       exam_id: undefined,
+      subject_type: undefined,
       page: undefined,
     });
-  }
-
-  function handleClassFilter(val: string) {
-    handleClassChange(val);
-    handleFilterChange({
-      class_id: val || undefined,
-      section_id: undefined,
-      exam_id: undefined,
-      page: undefined,
-    });
-  }
-
-  function handleSectionFilter(val: string) {
-    handleSectionChange(val);
-    handleFilterChange({
-      section_id: val || undefined,
-      page: undefined,
-    });
+    clearStoredFilters();
   }
 
   async function handleDelete(id: string) {
     await remove(id);
   }
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        type: "select",
+        key: "academic_year_id",
+        label: "Academic Year",
+        placeholder: SCHEDULE_PAGE.filters.allYears,
+        options: years.map((y) => ({
+          value: y.id,
+          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+        })),
+        resetKeys: ["class_id", "section_id", "exam_id"],
+      },
+      {
+        type: "select",
+        key: "class_id",
+        label: "Class",
+        placeholder: SCHEDULE_PAGE.filters.allClasses,
+        options: classes.map((c) => ({ value: c.id, label: c.name })),
+        disabled: !selectedAcademicYearId,
+        resetKeys: ["section_id", "exam_id"],
+      },
+      {
+        type: "select",
+        key: "section_id",
+        label: "Section",
+        placeholder: SCHEDULE_PAGE.filters.allSections,
+        options: sections.map((s) => ({ value: s.id, label: s.name })),
+        disabled: !filters.class_id,
+      },
+      {
+        type: "select",
+        key: "exam_id",
+        label: "Exam",
+        placeholder: SCHEDULE_PAGE.filters.allExams,
+        options: deduplicatedExams.map((e) => ({
+          value: e.id,
+          label: e.exam_name,
+        })),
+        disabled: !filters.class_id,
+      },
+      {
+        type: "select",
+        key: "subject_type",
+        label: "Type",
+        placeholder: SCHEDULE_PAGE.filters.allTypes,
+        options: SUBJECT_TYPE_OPTIONS.map((o) => ({
+          value: o.value,
+          label: o.label,
+        })),
+      },
+    ],
+    [years, classes, sections, deduplicatedExams, selectedAcademicYearId, filters.class_id],
+  );
+
+  const filterValues: Record<string, string | undefined> = {
+    academic_year_id: selectedAcademicYearId || undefined,
+    class_id: filters.class_id,
+    section_id: filters.section_id,
+    exam_id: filters.exam_id,
+    subject_type: filters.subject_type,
+  };
 
   const columns = useMemo<ColumnDef<ExamSchedule>[]>(
     () => [
@@ -243,117 +322,56 @@ function ScheduleContent() {
         id: "actions",
         header: SCHEDULE_PAGE.table.actions,
         cell: ({ row }) => (
-          <Div type="row" gap="xs">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title="Edit"
-              onClick={() => router.push(EXAM_ROUTES.schedule.edit(row.original.id))}
-            >
-              <Pencil size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              title="Delete"
-              onClick={() => handleDelete(row.original.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Div>
+          <RowActions
+            actions={[
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () => router.push(EXAM_ROUTES.schedule.edit(row.original.id)),
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 size={14} />,
+                variant: "destructive",
+                confirm: {
+                  title: "Delete Schedule",
+                  description: "Are you sure you want to delete this schedule entry? This action cannot be undone.",
+                  confirmLabel: "Delete",
+                },
+                onClick: () => handleDelete(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],
     [allSections, router, bulk.selectedIds, bulk.toggle, bulk.toggleAll, schedules]
   );
 
-  return (
-    <Div type="col" gap="lg">
-      <PageHeader
-        title={SCHEDULE_PAGE.pageHeading.title}
-        subtitle={
-          pagination ? `${pagination.total} entries` : ""
-        }
-        actions={
-          <Button onClick={() => router.push(EXAM_ROUTES.schedule.create)}>
-            <Plus size={16} /> {SCHEDULE_PAGE.buttons.add}
-          </Button>
-        }
-      />
+  const pageHeaderConfig: PageHeaderConfig = {
+    backButton: true,
+    title: SCHEDULE_PAGE.pageHeading.title,
+    subtitle: pagination ? `${pagination.total} entries` : "",
+    actions: [
+      {
+        label: SCHEDULE_PAGE.buttons.add,
+        icon: <Plus size={14} />,
+        onClick: () => router.push(EXAM_ROUTES.schedule.create),
+      },
+    ],
+  };
 
-      {/* Filters */}
-      <Div type="row" gap="md" wrap>
-        <Select
-          width="sm"
-          value={selectedAcademicYearId}
-          onChange={(e) => handleYearChange(e.target.value)}
-        >
-          <option value="">{SCHEDULE_PAGE.filters.allYears}</option>
-          {years.map((y) => (
-            <option key={y.id} value={y.id}>
-              {y.name}
-              {y.is_current ? " (Current)" : ""}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.class_id ?? ""}
-          disabled={!selectedAcademicYearId}
-          onChange={(e) => handleClassFilter(e.target.value)}
-        >
-          <option value="">{SCHEDULE_PAGE.filters.allClasses}</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.section_id ?? ""}
-          disabled={!filters.class_id}
-          onChange={(e) => handleSectionFilter(e.target.value)}
-        >
-          <option value="">{SCHEDULE_PAGE.filters.allSections}</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.exam_id ?? ""}
-          disabled={!filters.class_id}
-          onChange={(e) =>
-            handleFilterChange({ exam_id: e.target.value || undefined })
-          }
-        >
-          <option value="">{SCHEDULE_PAGE.filters.allExams}</option>
-          {deduplicatedExams.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.exam_name}
-            </option>
-          ))}
-        </Select>
-        <Select
-          width="sm"
-          value={filters.subject_type ?? ""}
-          onChange={(e) =>
-            handleFilterChange({
-              subject_type: (e.target.value as any) || undefined,
-            })
-          }
-        >
-          <option value="">{SCHEDULE_PAGE.filters.allTypes}</option>
-          {SUBJECT_TYPE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      </Div>
+  return (
+    <PageCol>
+      <PageHeader {...pageHeaderConfig} />
+
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        sheetTitle="Filter Schedules"
+      />
 
       {/* Bulk action bar */}
       {bulk.selectedIds.size > 0 && (
@@ -408,7 +426,7 @@ function ScheduleContent() {
               </Button>
             </Div>
             {bulk.conflicts.length > 0 && (
-              <Div type="col" gap="xs" className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3">
+              <Div type="col" gap="xs" className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-3">
                 <P size="sm" weight="semibold" className="text-amber-700 dark:text-amber-400">
                   {bulk.conflicts.length} row(s) skipped
                 </P>
@@ -425,7 +443,6 @@ function ScheduleContent() {
         </Div>
       )}
 
-      {/* Table */}
       <DataTable
         columns={columns}
         data={schedules}
@@ -435,8 +452,9 @@ function ScheduleContent() {
         getRowVariant={(row) =>
           row.original.parent_schedule_id ? "muted" : "default"
         }
+        fillViewport
       />
-    </Div>
+    </PageCol>
   );
 }
 

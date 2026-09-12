@@ -7,13 +7,14 @@ import { useExamGrading } from "@/hooks/exam/useExamGrading";
 import type { ExamGrading } from "@/types/exam.types";
 import {
   Div,
-  Button,
   Badge,
   Spinner,
   DataTable,
+  PageHeader,
+  RowActions,
   type ColumnDef,
+  type PageHeaderConfig,
 } from "@/components/ui";
-import { PageHeader } from "@/components/ui/page-header";
 import { GRADING_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 
 function GradingContent() {
@@ -64,43 +65,46 @@ function GradingContent() {
         id: "actions",
         header: GRADING_PAGE.table.actions,
         cell: ({ row }) => (
-          <Div type="row" gap="xs">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              title="Edit"
-              onClick={() =>
-                router.push(EXAM_ROUTES.grading.edit(row.original.id))
-              }
-            >
-              <Pencil size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              title="Delete"
-              onClick={() => remove(row.original.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Div>
+          <RowActions
+            actions={[
+              {
+                label: "Edit",
+                icon: <Pencil size={14} />,
+                onClick: () =>
+                  router.push(EXAM_ROUTES.grading.edit(row.original.id)),
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 size={14} />,
+                variant: "destructive",
+                confirm: {
+                  description: `Are you sure you want to delete grade "${row.original.grade_name}"? This action cannot be undone.`,
+                },
+                onClick: () => remove(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],
     [router, remove],
   );
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: GRADING_PAGE.pageHeading.title,
+    subtitle: GRADING_PAGE.pageHeading.subtitle,
+    actions: [
+      {
+        label: GRADING_PAGE.buttons.add,
+        icon: <Plus size={16} />,
+        onClick: () => router.push(EXAM_ROUTES.grading.create),
+      },
+    ],
+  };
+
   return (
     <Div type="col" gap="lg">
-      <PageHeader
-        title={GRADING_PAGE.pageHeading.title}
-        subtitle={GRADING_PAGE.pageHeading.subtitle}
-        actions={
-          <Button onClick={() => router.push(EXAM_ROUTES.grading.create)}>
-            <Plus size={16} /> {GRADING_PAGE.buttons.add}
-          </Button>
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       <DataTable
         columns={columns}

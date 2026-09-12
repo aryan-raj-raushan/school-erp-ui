@@ -1,10 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, Wand2 } from "lucide-react";
+import { Plus, Trash2, Wand2 } from "lucide-react";
 import { useExamGradingBulkForm } from "@/hooks/exam/useExamGrading";
-import { PageHeader } from "@/components/ui/page-header";
-import { Div, Button, FormField, Input, Textarea } from "@/components/ui";
+import {
+  Div,
+  Button,
+  FormField,
+  Input,
+  Textarea,
+  PageHeader,
+  type PageHeaderConfig,
+} from "@/components/ui";
 import { GRADING_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
 
 export function GradingBulkFormContent() {
@@ -15,29 +22,30 @@ export function GradingBulkFormContent() {
 
   const { register, formState: { errors } } = form;
 
+  const pageHeaderConfig: PageHeaderConfig = {
+    title: "Add Grades",
+    subtitle: "Create all grade bands for this school in one go",
+    backButton: true,
+    actions: [
+      {
+        label: "Auto Generate",
+        icon: <Wand2 size={14} />,
+        variant: "outline",
+        onClick: autoGenerate,
+      },
+    ],
+  };
+
   return (
     <Div type="col" gap="lg" className="max-w-4xl">
-      <PageHeader
-        title="Add Grades"
-        subtitle="Create all grade bands for this school in one go"
-        actions={
-          <Div type="row" gap="sm" align="center">
-            <Button variant="outline" size="sm" onClick={() => router.push(EXAM_ROUTES.grading.list)}>
-              <ArrowLeft size={14} /> {GRADING_PAGE.buttons.back}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={autoGenerate}>
-              <Wand2 size={14} /> Auto Generate
-            </Button>
-          </Div>
-        }
-      />
+      <PageHeader {...pageHeaderConfig} />
 
       <form onSubmit={onSubmit}>
         <Div type="col" gap="sm">
           {gradesField.fields.map((field, i) => {
             const rowErrors = errors.grades?.[i];
             return (
-              <Div key={field.id} variant="card" className="p-4">
+              <Div key={field.id} variant="card" className="p-3 sm:p-4">
                 <Div type="row" justify="between" align="center" className="mb-3">
                   <span className="text-xs font-semibold text-muted-foreground">Grade {i + 1}</span>
                   {gradesField.fields.length > 1 && (
@@ -46,7 +54,7 @@ export function GradingBulkFormContent() {
                     </Button>
                   )}
                 </Div>
-                <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <FormField label={GRADING_PAGE.labels.gradeName + " *"} error={rowErrors?.grade_name?.message}>
                     <Input {...register(`grades.${i}.grade_name`)} placeholder="e.g. A+" />
                   </FormField>
@@ -72,7 +80,7 @@ export function GradingBulkFormContent() {
           <Plus size={14} /> Add Grade
         </Button>
 
-        <Div type="row" gap="md" className="pt-4">
+        <Div type="row" justify="end" gap="sm" className="pt-4">
           <Button type="button" variant="outline" onClick={() => router.push(EXAM_ROUTES.grading.list)}>
             {GRADING_PAGE.buttons.cancel}
           </Button>
