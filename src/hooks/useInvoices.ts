@@ -136,7 +136,7 @@ export function useInvoices(initialFilters: InvoiceFilters = {}) {
         amount: Math.round(order.amount * 100),
         currency: order.currency,
         order_id: order.order_id,
-        name: 'School ERP',
+        name: 'MyESathi',
         description: viewingInvoice.invoice_number,
         prefill: {
           name: user ? `${user.first_name} ${user.last_name ?? ''}`.trim() : undefined,

@@ -1,5 +1,5 @@
 export const APP = {
-  name: 'School ERP',
+  name: 'MyESathi',
   tagline: 'Sign in to your account',
 } as const;
 

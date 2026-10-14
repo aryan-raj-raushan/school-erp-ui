@@ -10,7 +10,7 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'School ERP',
+  title: 'MyESathi',
   description: 'School management system',
 };
 

@@ -15,6 +15,7 @@
     "cap:android": "npx cap open android",
     "cap:build": "next build && npx cap sync",
     "cap:assets": "npx @capacitor/assets generate --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#ffffff'",
+    "android:release": "next build && npx cap sync android && cd android && ./gradlew bundleRelease",
     "cap:run:android": "npm run cap:assets && next build && npx cap sync android && npx cap run android"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "@capacitor/core": "^8.4.1",
     "@capacitor/ios": "^8.4.1",
     "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
     "@capawesome/capacitor-file-picker": "^8.0.3",
     "@hookform/resolvers": "^5.4.0",
     "@msgpack/msgpack": "^3.1.3",
