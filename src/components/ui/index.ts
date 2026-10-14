@@ -34,3 +34,4 @@ export * from './calendar';
 export * from './date-picker';
 export * from './switch';
 export * from './saved-form-banner';
+export * from './legal-page';

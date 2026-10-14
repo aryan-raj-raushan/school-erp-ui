@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useLoginPage } from '@/hooks/useLoginPage';
-import { ROUTES } from '@/constants';
+import { ROUTES, LEGAL_LINKS } from '@/constants';
 import { Div, Button, Input, FormField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
 
 export default function LoginPage() {
@@ -77,6 +77,12 @@ function UnifiedLoginForm({
           <Div type="row" justify="center">
             <Link href={ROUTES.signup} className="text-sm text-muted-foreground hover:underline">
               Don&apos;t have an account? Sign up
+            </Link>
+          </Div>
+
+          <Div type="row" justify="center">
+            <Link href={ROUTES.privacyPolicy} className="text-xs text-muted-foreground hover:underline">
+              {LEGAL_LINKS.privacyPolicy}
             </Link>
           </Div>
         </Div>
