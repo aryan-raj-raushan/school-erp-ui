@@ -25,6 +25,9 @@ android {
     signingConfigs {
         release {
             if (keystorePropertiesFile.exists()) {
+                if (!keystoreProperties['storeFile']) {
+                    throw new GradleException("android/keystore.properties is missing storeFile/storePassword/keyAlias/keyPassword")
+                }
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
