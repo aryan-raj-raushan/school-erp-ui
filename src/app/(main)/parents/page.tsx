@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useParents, type GuardianFilters } from "@/hooks/useParents";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
@@ -17,9 +17,11 @@ import {
   type ColumnDef,
   RowActions,
   Badge,
+  Spinner,
 } from "@/components/ui";
 import { PARENT_RELATION_OPTIONS } from "@/constants/students.constants";
-import AddParentModal from "@/components/parent/add-parent-modal";
+import { ParentsMobileList } from "@/components/parent/ParentsMobileList";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 
 const RELATION_LABEL: Record<string, string> = {
   FATHER: "Father",
@@ -31,31 +33,9 @@ const RELATION_LABEL: Record<string, string> = {
 };
 
 export default function ParentsPage() {
-  const {
-    parents,
-    pagination,
-    filters,
-    isLoading,
-    showModal,
-    openModal,
-    closeModal,
-    form,
-    handleSubmit,
-    isSubmitting,
-    deleteParent,
-    years,
-    classes,
-    sections,
-    selectedYearId,
-    selectedClassId,
-    selectedSectionId,
-    handleYearChange,
-    handleClassChange,
-    handleSectionChange,
-    students,
-    studentsLoading,
-    updateFilters,
-  } = useParents();
+  const isMobile = useIsMobileReady();
+  const { parents, total, filters, isLoading, deleteParent, updateFilters, refetch } =
+    useParents();
 
   type PersistedGuardianFilters = Pick<
     GuardianFilters,
@@ -153,14 +133,7 @@ export default function ParentsPage() {
 
   const pageHeaderConfig: PageHeaderConfig = {
     title: "Parents & Guardians",
-    subtitle: `${pagination.total} guardian records`,
-    // actions: [
-    //   {
-    //     label: "Add Guardian",
-    //     icon: <Plus size={14} />,
-    //     onClick: openModal,
-    //   },
-    // ],
+    subtitle: `${total} guardian records`,
   };
 
   const columns = useMemo<ColumnDef<GuardianRow>[]>(
@@ -238,6 +211,29 @@ export default function ParentsPage() {
     [deleteParent],
   );
 
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <ParentsMobileList
+        parents={parents}
+        isLoading={isLoading}
+        filterFields={filterFields}
+        filterValues={filterValues}
+        onFilterChange={(next) => handleFilterChange(next as Partial<GuardianFilters>)}
+        onFilterClear={handleClearFilters}
+        onRefresh={refetch}
+        onDelete={deleteParent}
+      />
+    );
+  }
+
   return (
     <PageCol>
       <PageHeader sticky {...pageHeaderConfig} />
@@ -258,26 +254,6 @@ export default function ParentsPage() {
         isLoading={isLoading}
         emptyText="No guardians found"
         fillViewport
-      />
-
-      {/* Add Guardian Modal */}
-      <AddParentModal
-        showModal={showModal}
-        closeModal={closeModal}
-        form={form}
-        handleSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        years={years}
-        classes={classes}
-        sections={sections}
-        selectedYearId={selectedYearId}
-        selectedClassId={selectedClassId}
-        selectedSectionId={selectedSectionId}
-        handleYearChange={handleYearChange}
-        handleClassChange={handleClassChange}
-        handleSectionChange={handleSectionChange}
-        students={students}
-        studentsLoading={studentsLoading}
       />
     </PageCol>
   );

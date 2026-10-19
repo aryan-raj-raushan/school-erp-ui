@@ -272,6 +272,7 @@ export function useStaffDetail(id: string | undefined) {
     isSubmitting: form.formState.isSubmitting,
     handleSubmit: form.handleSubmit(onSubmit),
     handleBack, handleCancelEdit,
+    refetch: fetchStaff,
     hasSavedDraft: savedForm.hasDraft,
     restoreSavedDraft: savedForm.restoreDraft,
     discardSavedDraft: savedForm.discardDraft,

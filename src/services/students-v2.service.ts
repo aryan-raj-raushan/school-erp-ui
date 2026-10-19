@@ -122,18 +122,6 @@ export interface GuardianRow {
   can_pickup: boolean;
 }
 
-export interface AddGuardianPayload {
-  relation: string;
-  first_name: string;
-  last_name?: string;
-  phone_number: string;
-  dial_code?: string;
-  email?: string;
-  occupation?: string;
-  is_primary?: boolean;
-  can_pickup?: boolean;
-}
-
 // ─── Service ───────────────────────────────────────────────────────────────────
 
 export const StudentsService = {
@@ -205,11 +193,6 @@ export const StudentsService = {
 
   async listAllGuardians(params: { search?: string } = {}): Promise<GuardianRow[]> {
     const res = await apiGateway.get<GuardianRow[]>(ENDPOINTS.student.guardiansAll, { params });
-    return res.data;
-  },
-
-  async addGuardian(studentId: string, payload: AddGuardianPayload): Promise<unknown> {
-    const res = await apiGateway.post(ENDPOINTS.student.guardians(studentId), payload);
     return res.data;
   },
 

@@ -21,13 +21,16 @@ import {
   ResponsiveSelect,
   SavedFormBanner,
 } from "@/components/ui";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { StaffMobileProfile } from "@/components/staff/StaffMobileProfile";
+import { StaffMobileForm } from "@/components/staff/StaffMobileForm";
 
 export function StaffDetail({ id }: { id: string }) {
   const isNew = id === "create-new";
   const resolvedId = id === "create-new" ? undefined : id;
 
-  const isMobile = useIsMobile();
+  const viewportIsMobile = useIsMobileReady();
+  const isMobile = !!viewportIsMobile;
 
   const {
     staff,
@@ -49,16 +52,58 @@ export function StaffDetail({ id }: { id: string }) {
     handleSubmit,
     handleBack,
     handleCancelEdit,
+    refetch,
     hasSavedDraft,
     restoreSavedDraft,
     discardSavedDraft,
   } = useStaffDetail(resolvedId);
 
-  if (isLoadingData) {
+  if (isLoadingData || viewportIsMobile === undefined) {
     return (
       <Div type="row" justify="center" align="center" className="py-32">
         <Spinner size="lg" />
       </Div>
+    );
+  }
+
+  if (isMobile && !isNew && !isEditing && staff) {
+    return (
+      <StaffMobileProfile
+        staff={staff}
+        fullName={fullName}
+        roleLabel={getStaffRoleLabel(staff, roles)}
+        reportingToName={reportingToName}
+        onEdit={() => setIsEditing(true)}
+        onRefresh={refetch}
+      />
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <StaffMobileForm
+        form={form}
+        isNew={isNew}
+        fullName={fullName}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={isNew ? undefined : handleCancelEdit}
+        photo={{
+          url: profileImageUrl,
+          isUploading: isUploadingImage,
+          onFileChange: onImageChange,
+          inputRef: imageInputRef,
+          onPick: isNative ? handleNativeImagePick : undefined,
+        }}
+        roles={roles}
+        managers={staffMembers}
+        currentStaffId={resolvedId}
+        banner={
+          isNew && hasSavedDraft ? (
+            <SavedFormBanner onContinue={restoreSavedDraft} onDiscard={discardSavedDraft} />
+          ) : undefined
+        }
+      />
     );
   }
 

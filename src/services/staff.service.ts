@@ -78,7 +78,16 @@ export const StaffService = {
     if (status === 'ACTIVE') params.is_active = true;
     else if (status === 'OFFBOARDED' || status === 'INACTIVE') params.is_active = false;
     const res = await apiGateway.get<Staff[]>(ENDPOINTS.staff.list, { params });
-    return { items: res.data, pagination: res.pagination! };
+    const items = res.data ?? [];
+    return {
+      items,
+      pagination: res.pagination ?? {
+        page: filters.page ?? 1,
+        limit: filters.limit ?? items.length,
+        total: items.length,
+        totalPages: 1,
+      },
+    };
   },
 
   async getById(id: string): Promise<Staff> {

@@ -37,12 +37,12 @@ import {
 } from "lucide-react";
 import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from "@/constants";
 import { StaffDetail } from "./staff-detail";
+import { StaffMobileList } from "@/components/staff/StaffMobileList";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 
 type PersistedStaffFilters = Pick<StaffFilters, "status" | "role">;
 
-function StaffsPageContent() {
-  const searchParams = useSearchParams();
-  const detailId = searchParams.get("id");
+function StaffsDesktop() {
   const {
     staffList,
     pagination,
@@ -277,10 +277,6 @@ function StaffsPageContent() {
     ],
   );
 
-  if (detailId) {
-    return <StaffDetail id={detailId} />;
-  }
-
   return (
     <PageCol>
       <PageHeader sticky {...pageHeaderConfig} />
@@ -331,6 +327,24 @@ function StaffsPageContent() {
       </ResponsiveModalContainer>
     </PageCol>
   );
+}
+
+function StaffsPageContent() {
+  const searchParams = useSearchParams();
+  const detailId = searchParams.get("id");
+  const isMobile = useIsMobileReady();
+
+  if (detailId) return <StaffDetail id={detailId} />;
+
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return isMobile ? <StaffMobileList /> : <StaffsDesktop />;
 }
 
 export default function StaffsPage() {

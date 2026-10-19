@@ -36,10 +36,9 @@ import {
   PageHeader,
   type PageHeaderConfig,
   SavedFormBanner,
-  DetailSection,
-  StickyActionBar,
 } from "@/components/ui";
 import { StudentMobileProfile } from "@/components/student/StudentMobileProfile";
+import { StudentMobileForm } from "@/components/student/StudentMobileForm";
 import { useScrollToFirstError } from "@/hooks/useScrollToFirstError";
 import {
   STUDENT_PAGE,
@@ -56,7 +55,7 @@ import {
   DOCUMENT_FILE_TYPE_OPTIONS,
 } from "@/constants/students.constants";
 import { useStudentDetail } from "@/hooks/useStudentDetail";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 
 // ─── Section Wrapper ───────────────────────────────────────────────────────────
 
@@ -75,25 +74,11 @@ function SectionCard({
   defaultOpen = true,
   hasError = false,
 }: SectionCardProps) {
-  const isMobile = useIsMobile();
   const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
     if (hasError) setOpen(true);
   }, [hasError]);
-
-  if (isMobile) {
-    return (
-      <DetailSection
-        title={title}
-        icon={icon}
-        defaultOpen={defaultOpen}
-        forceOpen={hasError}
-      >
-        {children}
-      </DetailSection>
-    );
-  }
 
   return (
     <Div variant="card" className="overflow-hidden">
@@ -127,7 +112,8 @@ export function StudentDetail({ id }: { id: string }) {
   const isEditMode = searchParams.get("edit") === "true";
 
   const router = useRouter();
-  const isMobile = useIsMobile()
+  const viewportIsMobile = useIsMobileReady();
+  const isMobile = !!viewportIsMobile;
   const {
     student,
     isLoading,
@@ -145,6 +131,7 @@ export function StudentDetail({ id }: { id: string }) {
     handleNativeImagePick,
     isNative,
     handleSubmit,
+    refetch,
     isSubmitting,
     handleDocumentUpload,
     sourceEnquiry,
@@ -202,7 +189,7 @@ export function StudentDetail({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew]);
 
-  if (isLoading) {
+  if (isLoading || viewportIsMobile === undefined) {
     return (
       <Div type="row" justify="center" className="py-20">
         <Spinner size="lg" />
@@ -263,6 +250,44 @@ export function StudentDetail({ id }: { id: string }) {
     ],
   };
 
+  const hasBanners =
+    isNew && (hasSavedDraft || !!sourceEnquiry || isPrefilling);
+  const banners = (
+    <>
+      {isNew && hasSavedDraft && (
+        <SavedFormBanner
+          onContinue={restoreSavedDraft}
+          onDiscard={discardSavedDraft}
+        />
+      )}
+
+      {isNew && (sourceEnquiry || isPrefilling) && (
+        <Div
+          type="col"
+          gap="xs"
+          className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-4"
+        >
+          {isPrefilling ? (
+            <P size="sm">Loading enquiry details…</P>
+          ) : (
+            <>
+              <P size="sm" className="font-medium">
+                Prefilled from admission enquiry —{" "}
+                {sourceEnquiry?.student_name}
+              </P>
+              {sourceEnquiry?.registration_fee_required && (
+                <P size="sm" color="muted">
+                  ⚠️ Registration fee is marked as required for this
+                  admission. Please collect it separately via the Fees module.
+                </P>
+              )}
+            </>
+          )}
+        </Div>
+      )}
+    </>
+  );
+
   if (showMobileProfile && student) {
     return (
       <StudentMobileProfile
@@ -271,6 +296,7 @@ export function StudentDetail({ id }: { id: string }) {
         className={classes.find((c) => c.id === student.academicInfo?.class_id)?.name}
         sectionName={sections.find((sec) => sec.id === student.academicInfo?.section_id)?.name}
         onEdit={() => setIsEditing(true)}
+        onRefresh={refetch}
         onGenerateIdCard={() =>
           router.push(`${STUDENT_ROUTES.generate}?studentId=${student.student.id}`)
         }
@@ -278,46 +304,36 @@ export function StudentDetail({ id }: { id: string }) {
     );
   }
 
+  if (isMobile) {
+    return (
+      <StudentMobileForm
+        form={form}
+        parentsArray={parentsArray}
+        documentsArray={documentsArray}
+        photo={{
+          url: profileImageUrl,
+          isUploading: isUploadingImage,
+          onFileChange: onImageChange,
+          inputRef: imageInputRef,
+          onPick: isNative ? handleNativeImagePick : undefined,
+        }}
+        isNew={isNew}
+        isSubmitting={isSubmitting}
+        isUploading={isUploading}
+        onSubmit={handleSubmit}
+        onDocumentUpload={handleDocumentUpload}
+        onCancel={isNew ? undefined : () => setIsEditing(false)}
+        banner={hasBanners ? banners : undefined}
+      />
+    );
+  }
+
   return (
     <PageCol>
       <Div type="col" gap="md" className="max-w-7xl">
-        {isMobile ? (
-          <P className="pt-3 text-lg font-bold">{pageHeaderConfig.title}</P>
-        ) : (
-          <PageHeader {...pageHeaderConfig} />
-        )}
+        <PageHeader {...pageHeaderConfig} />
 
-        {isNew && hasSavedDraft && (
-          <SavedFormBanner
-            onContinue={restoreSavedDraft}
-            onDiscard={discardSavedDraft}
-          />
-        )}
-
-        {isNew && (sourceEnquiry || isPrefilling) && (
-          <Div
-            type="col"
-            gap="xs"
-            className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-4"
-          >
-            {isPrefilling ? (
-              <P size="sm">Loading enquiry details…</P>
-            ) : (
-              <>
-                <P size="sm" className="font-medium">
-                  Prefilled from admission enquiry —{" "}
-                  {sourceEnquiry?.student_name}
-                </P>
-                {sourceEnquiry?.registration_fee_required && (
-                  <P size="sm" color="muted">
-                    ⚠️ Registration fee is marked as required for this
-                    admission. Please collect it separately via the Fees module.
-                  </P>
-                )}
-              </>
-            )}
-          </Div>
-        )}
+        {banners}
 
         <form id="student-form" onSubmit={handleSubmit}>
           <Div type="col" gap="md">
@@ -1078,30 +1094,6 @@ export function StudentDetail({ id }: { id: string }) {
           </Div>
         </form>
 
-        {isMobile && isEditing && (
-          <StickyActionBar>
-            {!isNew && (
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="flex-1"
-                onClick={() => setIsEditing(false)}
-              >
-                {STUDENT_PAGE.buttons.cancel}
-              </Button>
-            )}
-            <Button
-              type="button"
-              size="lg"
-              className="flex-[2]"
-              loading={isSubmitting || isUploading}
-              onClick={() => handleSubmit()}
-            >
-              {isNew ? "Add student" : STUDENT_PAGE.buttons.save}
-            </Button>
-          </StickyActionBar>
-        )}
       </Div>
     </PageCol>
   );

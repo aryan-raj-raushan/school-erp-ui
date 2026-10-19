@@ -15,17 +15,11 @@ import {
 import {
   ActionSheet,
   Badge,
-  EmptyState,
-  FloatingActionButton,
-  InfiniteScrollSentinel,
   ListAvatar,
-  MobileFilterBar,
   MobileListCard,
-  MobileListSkeleton,
-  PullIndicator,
+  MobileListScreen,
 } from "@/components/ui";
 import { useStudentsInfinite } from "@/hooks/useStudentsInfinite";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useStudentFilterConfig } from "@/hooks/useStudentFilterConfig";
 import {
   STATUS_BADGE,
@@ -64,47 +58,33 @@ export function StudentMobileList() {
     list.filters,
     list.updateFilters,
   );
-  const pullState = usePullToRefresh(list.refresh);
-
-  const hasFilters = Object.values(filterConfig.filterValues).some(Boolean);
 
   return (
-    <div className="flex flex-col gap-3 pt-3">
-      <MobileFilterBar
-        fields={filterConfig.filterFields}
-        values={filterConfig.filterValues}
-        onChange={(next) =>
+    <>
+      <MobileListScreen
+        filterFields={filterConfig.filterFields}
+        filterValues={filterConfig.filterValues}
+        onFilterChange={(next) =>
           filterConfig.onChange(next as Partial<StudentFilters>)
         }
-        onClear={filterConfig.onClear}
-        sheetTitle="Filter students"
-      />
-
-      <PullIndicator
-        pull={pullState.pull}
-        threshold={pullState.threshold}
-        isRefreshing={pullState.isRefreshing}
-      />
-
-      {!list.isLoading && (
-        <p className="px-1 text-xs font-medium text-muted-foreground">
-          {list.total} {list.total === 1 ? "student" : "students"}
-        </p>
-      )}
-
-      {list.isLoading && list.items.length === 0 ? (
-        <MobileListSkeleton />
-      ) : list.items.length === 0 ? (
-        <EmptyState
-          icon={<Users size={28} />}
-          title={hasFilters ? "No matching students" : "No students yet"}
-          description={
-            hasFilters
-              ? "Try changing or clearing your filters."
-              : "Add your first student to get started."
-          }
-        />
-      ) : (
+        onFilterClear={filterConfig.onClear}
+        filterSheetTitle="Filter students"
+        onRefresh={list.refresh}
+        countLabel={`${list.total} ${list.total === 1 ? "student" : "students"}`}
+        isLoading={list.isLoading}
+        isEmpty={list.items.length === 0}
+        emptyIcon={<Users size={28} />}
+        emptyTitle="No students yet"
+        emptyDescription="Add your first student to get started."
+        emptyFilteredTitle="No matching students"
+        hasMore={list.hasMore}
+        isLoadingMore={list.isLoadingMore}
+        onLoadMore={list.loadMore}
+        fab={{
+          label: STUDENT_PAGE.buttons.addStudent,
+          onClick: () => router.push(STUDENT_ROUTES.createNew),
+        }}
+      >
         <ul className="flex flex-col gap-2.5">
           {list.items.map((student) => (
             <li key={student.id}>
@@ -132,18 +112,7 @@ export function StudentMobileList() {
             </li>
           ))}
         </ul>
-      )}
-
-      <InfiniteScrollSentinel
-        onReach={list.loadMore}
-        isLoading={list.isLoadingMore}
-        hasMore={list.hasMore}
-      />
-
-      <FloatingActionButton
-        label={STUDENT_PAGE.buttons.addStudent}
-        onClick={() => router.push(STUDENT_ROUTES.createNew)}
-      />
+      </MobileListScreen>
 
       <ActionSheet
         isOpen={actionTarget !== null}
@@ -206,6 +175,6 @@ export function StudentMobileList() {
             : []
         }
       />
-    </div>
+    </>
   );
 }
