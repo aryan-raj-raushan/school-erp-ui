@@ -20,13 +20,17 @@ import {
   type ColumnDef,
   ResponsiveSelect,
   ResponsiveModalContainer,
+  BottomSheet,
 } from '@/components/ui';
+import { StudentLeaveMobileList } from '@/components/student/StudentLeaveMobileList';
+import { useIsMobileReady } from '@/hooks/useIsMobileReady';
 import { LEAVE_STATUS_BADGE } from '@/constants/leave.constants';
 import type { StudentLeaveRequest } from '@/types';
 
 const today = new Date().toISOString().split('T')[0];
 
 export default function StudentLeavePage() {
+  const isMobile = useIsMobileReady();
   const {
     requests,
     isLoading,
@@ -108,7 +112,7 @@ export default function StudentLeavePage() {
     },
   ];
 
-  if (isLoading) {
+  if (isLoading || isMobile === undefined) {
     return (
       <PageCol>
         <Div type="row" justify="center" padding="p-12">
@@ -120,13 +124,21 @@ export default function StudentLeavePage() {
 
   return (
     <PageCol>
-      <PageHeader
-        title="Student Leave Requests"
-        subtitle="Review and approve leave requests for students"
-        actions={<Button onClick={openApply}>Apply on Behalf</Button>}
-      />
+      {!isMobile && (
+        <PageHeader
+          title="Student Leave Requests"
+          subtitle="Review and approve leave requests for students"
+          actions={<Button onClick={openApply}>Apply on Behalf</Button>}
+        />
+      )}
 
-      {requests.length === 0 ? (
+      {isMobile ? (
+        <StudentLeaveMobileList
+          requests={requests}
+          onReview={openReview}
+          onApply={openApply}
+        />
+      ) : requests.length === 0 ? (
         <EmptyState
           title="No leave requests"
           description="No student leave requests found"
@@ -139,7 +151,7 @@ export default function StudentLeavePage() {
       {/* ── Apply on Behalf Modal ── */}
       {isApplyOpen && (
         <ResponsiveModalContainer isOpen={isApplyOpen} onClose={closeApply} title="Apply Leave on Behalf of Student">
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="md">
               <FormField label="Section">
                 <ResponsiveSelect
@@ -201,16 +213,70 @@ export default function StudentLeavePage() {
                 />
               </FormField>
             </Div>
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div type="row" justify="end" gap="sm" className="px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeApply}>Cancel</Button>
             <Button loading={isApplying} onClick={applyLeave}>Submit Request</Button>
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
 
-      {/* ── Review Modal ── */}
-      {selectedRequest && (
+      {/* ── Review ── */}
+      {selectedRequest && isMobile && (
+        <BottomSheet
+          isOpen
+          onClose={closeReview}
+          title="Review leave request"
+          footer={
+            <Div type="row" gap="md">
+              <Button
+                variant="destructive"
+                size="lg"
+                className="flex-1"
+                loading={isReviewing}
+                onClick={() => review('REJECTED')}
+              >
+                Reject
+              </Button>
+              <Button
+                variant="success"
+                size="lg"
+                className="flex-1"
+                loading={isReviewing}
+                onClick={() => review('APPROVED')}
+              >
+                Approve
+              </Button>
+            </Div>
+          }
+        >
+          <Div type="col" gap="md" className="pt-1">
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">Student</P>
+              <P color="default">{selectedRequest.student_name ?? selectedRequest.student_id}</P>
+            </Div>
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">Period</P>
+              <P color="default">
+                {selectedRequest.from_date} → {selectedRequest.to_date} ({selectedRequest.total_days} days)
+              </P>
+            </Div>
+            <Div type="col" gap="xs">
+              <P size="xs" color="muted">Reason</P>
+              <P color="default">{selectedRequest.reason}</P>
+            </Div>
+            <FormField label="Remarks (optional)">
+              <Input
+                value={reviewRemarks}
+                onChange={(e) => setReviewRemarks(e.target.value)}
+                placeholder="Add your review comments"
+              />
+            </FormField>
+          </Div>
+        </BottomSheet>
+      )}
+
+      {selectedRequest && !isMobile && (
         <Modal onClose={closeReview} title="Review Student Leave Request">
           <ModalBody>
             <Div type="col" gap="sm">

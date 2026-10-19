@@ -7,6 +7,8 @@ import {
   ATTENDANCE_SESSION_OPTIONS,
   type AttendanceSession,
 } from "@/constants";
+import { StudentAttendanceMobile } from "@/components/student/StudentAttendanceMobile";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import { StudentAttendanceStats } from "@/components/student/student-attendance-stats";
 import {
   Div,
@@ -21,6 +23,7 @@ import {
   type FilterField,
   DatePicker,
   Switch,
+  Spinner,
   type ColumnDef,
 } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
@@ -41,6 +44,7 @@ function todayISO() {
 }
 
 export default function StudentAttendancePage() {
+  const isMobile = useIsMobileReady();
   const {
     years,
     classes,
@@ -240,6 +244,38 @@ export default function StudentAttendancePage() {
     ],
     [attendanceMap, isHoliday, setStudentStatus, setStudentLate, setStudentRemarks]
   );
+
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <StudentAttendanceMobile
+        students={students}
+        attendanceMap={attendanceMap}
+        isLoading={isLoadingStudents}
+        isSaving={isSaving}
+        isHoliday={isHoliday}
+        holidayName={holidayEvent?.name}
+        hasClassSelected={!!selectedClassSectionId}
+        summary={pageHeaderConfig.subtitle ?? ""}
+        filterFields={filterFields}
+        filterValues={filterValues}
+        onFilterChange={handleFilterChange}
+        onFilterClear={handleClearFilters}
+        onStatusChange={setStudentStatus}
+        onLateChange={setStudentLate}
+        onRemarksChange={setStudentRemarks}
+        onMarkAll={markAll}
+        onSave={saveAttendance}
+      />
+    );
+  }
 
   return (
     <PageCol>

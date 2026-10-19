@@ -11,6 +11,8 @@ interface PhotoUploadProps {
   disabled?: boolean;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  /** When set (native app), tapping the photo calls this (camera/gallery prompt) instead of opening the web file input. */
+  onPick?: () => void;
   size?: 'sm' | 'md' | 'lg';
   label?: string;
   hint?: string;
@@ -34,12 +36,14 @@ export function PhotoUpload({
   disabled = false,
   onFileChange,
   inputRef,
+  onPick,
   size = 'sm',
   label = 'Upload Photo',
   hint,
 }: PhotoUploadProps) {
   const fallbackRef = React.useRef<HTMLInputElement>(null);
   const ref = inputRef ?? fallbackRef;
+  const openPicker = () => (onPick ? onPick() : ref.current?.click());
 
   return (
     <Div type="row" align="center" gap="md">
@@ -47,7 +51,7 @@ export function PhotoUpload({
         <button
           type="button"
           disabled={disabled || isUploading}
-          onClick={() => ref.current?.click()}
+          onClick={openPicker}
           className={cn(
             sizeMap[size],
             'group relative flex items-center justify-center overflow-hidden rounded-xl border bg-muted transition-colors',
@@ -69,7 +73,7 @@ export function PhotoUpload({
         {!disabled && !isUploading && (
           <button
             type="button"
-            onClick={() => ref.current?.click()}
+            onClick={openPicker}
             className="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-card shadow-sm hover:bg-muted"
           >
             <Camera size={12} className="text-foreground" />

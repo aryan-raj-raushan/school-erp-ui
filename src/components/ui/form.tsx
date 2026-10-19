@@ -114,7 +114,7 @@ interface FormFieldProps {
 
 export function FormField({ label, error, hint, htmlFor, required, className, children }: FormFieldProps) {
   return (
-    <div className={cn('space-y-1.5', className)}>
+    <div className={cn('space-y-1.5', className)} data-invalid={error ? 'true' : undefined}>
       {label && (
         <Label htmlFor={htmlFor} className={error ? 'text-destructive font-medium' : ''}>
           {label}{required && <span className="text-destructive ml-0.5">*</span>}

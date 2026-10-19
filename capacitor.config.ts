@@ -14,6 +14,12 @@ const config: CapacitorConfig = {
     ...(devUrl ? { url: devUrl } : {}),
   },
   plugins: {
+    // 'native' shrinks the whole WebView above the keyboard (iOS + Android), so
+    // fixed/bottom-anchored UI always sits directly on top of the keyboard.
+    Keyboard: {
+      resize: 'native',
+      resizeOnFullScreen: true,
+    },
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,

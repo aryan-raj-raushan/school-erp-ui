@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBackLayer } from '@/hooks/useBackLayer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './button';
 
@@ -35,6 +36,8 @@ export function ModalFooter({ className, ...props }: React.HTMLAttributes<HTMLDi
 }
 
 export function Modal({ onClose, title, size = 'lg', children, className }: ModalProps) {
+  useBackLayer(true, onClose);
+
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);

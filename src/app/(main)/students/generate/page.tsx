@@ -29,6 +29,7 @@ import {
   ResponsiveModalContainer,
   FilterToolbar,
   type FilterField,
+  ScaleToFit,
 } from "@/components/ui";
 import {
   STUDENT_PAGE,
@@ -1600,14 +1601,16 @@ function GeneratePageContent() {
           ) : (
             // NOTE: kept as a raw <div> intentionally — it carries `ref={printRef}`
             // for window.print(), and the shared <Div> primitive does not forward refs.
-            <Div id="card-print-area" ref={printRef} className="mx-auto">
-              <CardPreview
-                template={selectedTemplate}
-                mode={cardMode}
-                idCardData={idCardData}
-                pickupCardData={pickupCardData}
-              />
-            </Div>
+            <ScaleToFit width={LAYOUT_DIMS[CARD_THEMES[selectedTemplate].layout].w}>
+              <Div id="card-print-area" ref={printRef} className="mx-auto">
+                <CardPreview
+                  template={selectedTemplate}
+                  mode={cardMode}
+                  idCardData={idCardData}
+                  pickupCardData={pickupCardData}
+                />
+              </Div>
+            </ScaleToFit>
           )}
         </Div>
       </Div>

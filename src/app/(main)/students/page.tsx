@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState, useEffect } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -11,10 +11,8 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudentV2";
-import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useStorageFilter } from "@/hooks/useStorageFilter";
-import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
-import type { Class, Section } from "@/types";
+import { useStudentFilterConfig } from "@/hooks/useStudentFilterConfig";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import type { StudentFilters, StudentListItem } from "@/types/students.types";
 import {
   Div,
@@ -27,77 +25,17 @@ import {
   PageHeader,
   type PageHeaderConfig,
   FilterToolbar,
-  type FilterField,
   RowActions,
 } from "@/components/ui";
+import { StudentMobileList } from "@/components/student/StudentMobileList";
 import {
   STUDENT_PAGE,
   STUDENT_ROUTES,
   STATUS_BADGE,
-  STUDENT_STATUS_OPTIONS,
-  GENDER_OPTIONS,
 } from "@/constants/students.constants";
 
-function useClassesAndSections(
-  academicYearId: string | undefined,
-  classId: string | undefined,
-) {
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
-
-  useEffect(() => {
-    if (!academicYearId) {
-      setClasses([]);
-      setSections([]);
-      return;
-    }
-    (async () => {
-      const { ClassesService } = await import("@/services/classes.service");
-      try {
-        const r = await ClassesService.list({
-          academic_year_id: academicYearId,
-          limit: 100,
-        });
-        setClasses(r.items);
-      } catch {}
-    })();
-  }, [academicYearId]);
-
-  useEffect(() => {
-    if (!classId) {
-      setSections([]);
-      return;
-    }
-    (async () => {
-      const { SectionsService } = await import("@/services/classes.service");
-      try {
-        const r = await SectionsService.list({ class_id: classId, limit: 100 });
-        setSections(r.items);
-      } catch {}
-    })();
-  }, [classId]);
-
-  return { classes, sections };
-}
-
-function StudentsContent() {
+function StudentsDesktop() {
   const router = useRouter();
-  const { years } = useAcademicYears();
-
-  type PersistedStudentFilters = Pick<
-    StudentFilters,
-    "academic_year_id" | "class_id" | "section_id" | "status" | "gender"
-  >;
-
-  const {
-    filters: storedFilters,
-    updateFilters: persistFilters,
-    clearFilters: clearStoredFilters,
-    isHydrated: isStorageHydrated,
-  } = useStorageFilter<PersistedStudentFilters>({
-    key: STORAGE_FILTER_KEYS.STUDENTS,
-    defaultValue: {},
-  });
 
   const {
     students,
@@ -109,120 +47,8 @@ function StudentsContent() {
     toggleEnabled,
   } = useStudents({ page: 1 });
 
-  const { classes, sections } = useClassesAndSections(
-    filters.academic_year_id,
-    filters.class_id,
-  );
-
-  function handleFilterChange(next: Partial<StudentFilters>) {
-    updateFilters(next);
-
-    const persisted: Partial<PersistedStudentFilters> = {};
-    (
-      [
-        "academic_year_id",
-        "class_id",
-        "section_id",
-        "status",
-        "gender",
-      ] as const
-    ).forEach((field) => {
-      if (field in next) persisted[field] = next[field] as never;
-    });
-    if (Object.keys(persisted).length > 0) persistFilters(persisted);
-  }
-
-  function handleClearFilters() {
-    handleFilterChange({
-      academic_year_id: undefined,
-      class_id: undefined,
-      section_id: undefined,
-      status: undefined,
-      gender: undefined,
-      search: undefined,
-      page: 1,
-    });
-    clearStoredFilters();
-  }
-
-  // One-time: once storage has hydrated, apply any filters saved from a
-  // previous visit.
-  useEffect(() => {
-    if (!isStorageHydrated) return;
-    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
-    if (hasStoredFilters) {
-      updateFilters(storedFilters);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStorageHydrated]);
-
-  const filterFields = useMemo<FilterField[]>(
-    () => [
-      {
-        type: "search",
-        key: "search",
-        placeholder: STUDENT_PAGE.filters.search,
-      },
-      {
-        type: "select",
-        key: "academic_year_id",
-        label: "Academic Year",
-        placeholder: STUDENT_PAGE.filters.allYears,
-        options: years.map((y) => ({
-          value: y.id,
-          label: `${y.name}${y.is_current ? " (Current)" : ""}`,
-        })),
-        resetKeys: ["class_id", "section_id"],
-      },
-      {
-        type: "select",
-        key: "class_id",
-        label: "Class",
-        placeholder: STUDENT_PAGE.filters.allClasses,
-        options: classes.map((c) => ({ value: c.id, label: c.name })),
-        disabled: !filters.academic_year_id,
-        resetKeys: ["section_id"],
-      },
-      {
-        type: "select",
-        key: "section_id",
-        label: "Section",
-        placeholder: STUDENT_PAGE.filters.allSections,
-        options: sections.map((s) => ({ value: s.id, label: s.name })),
-        disabled: !filters.class_id,
-      },
-      {
-        type: "select",
-        key: "status",
-        label: "Status",
-        placeholder: STUDENT_PAGE.filters.allStatus,
-        options: STUDENT_STATUS_OPTIONS.map((o) => ({
-          value: o.value,
-          label: o.label,
-        })),
-      },
-      {
-        type: "select",
-        key: "gender",
-        label: "Gender",
-        placeholder: STUDENT_PAGE.filters.allGender,
-        options: GENDER_OPTIONS.map((o) => ({
-          value: o.value,
-          label: o.label,
-        })),
-      },
-    ],
-    [years, classes, sections, filters.academic_year_id, filters.class_id],
-  );
-
-  const filterValues: Record<string, string | undefined> = {
-    search: filters.search,
-    academic_year_id: filters.academic_year_id,
-    class_id: filters.class_id,
-    section_id: filters.section_id,
-    status: filters.status,
-    gender: filters.gender,
-  };
+  const { filterFields, filterValues, onChange, onClear } =
+    useStudentFilterConfig(filters, updateFilters);
 
   const columns = useMemo<ColumnDef<StudentListItem>[]>(
     () => [
@@ -380,8 +206,8 @@ function StudentsContent() {
       <FilterToolbar
         fields={filterFields}
         values={filterValues}
-        onChange={(next) => handleFilterChange(next as Partial<StudentFilters>)}
-        onClear={handleClearFilters}
+        onChange={(next) => onChange(next as Partial<StudentFilters>)}
+        onClear={onClear}
         sheetTitle="Filter Students"
       />
 
@@ -395,6 +221,20 @@ function StudentsContent() {
       />
     </PageCol>
   );
+}
+
+function StudentsContent() {
+  const isMobile = useIsMobileReady();
+
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return isMobile ? <StudentMobileList /> : <StudentsDesktop />;
 }
 
 export default function StudentsPage() {

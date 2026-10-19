@@ -103,6 +103,11 @@ export default function DashboardLayout({
         <div className="md:hidden">
           <MobileTabBar />
         </div>
+        <div
+          aria-hidden
+          className="shrink-0 bg-background md:hidden"
+          style={{ height: "var(--sab)" }}
+        />
       </div>
     </SidebarProvider>
   );

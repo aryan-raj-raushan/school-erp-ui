@@ -14,7 +14,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "./dropdown-menu";
-import { useIsMobile } from "./responsive-bottom-sheet";
+import { useBackLayer } from "@/hooks/useBackLayer";
 
 export interface RowAction {
   label: string;
@@ -78,7 +78,7 @@ function ConfirmDialog({
   cancelLabel,
   destructive,
 }: ConfirmDialogProps) {
-  const isMobile = useIsMobile();
+  useBackLayer(true, onClose);
 
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -201,7 +201,7 @@ export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsPr
                   variant={action.variant === "destructive" ? "destructive" : "default"}
                   disabled={action.disabled}
                   onSelect={() => handleSelect(action)}
-                  className="bg-white"
+                  className="bg-popover"
                 >
                   {action.icon}
                   {action.label}

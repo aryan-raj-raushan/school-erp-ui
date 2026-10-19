@@ -8,7 +8,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  ArrowLeft,
   User,
   BookOpen,
   History,
@@ -37,7 +36,11 @@ import {
   PageHeader,
   type PageHeaderConfig,
   SavedFormBanner,
+  DetailSection,
+  StickyActionBar,
 } from "@/components/ui";
+import { StudentMobileProfile } from "@/components/student/StudentMobileProfile";
+import { useScrollToFirstError } from "@/hooks/useScrollToFirstError";
 import {
   STUDENT_PAGE,
   STUDENT_ROUTES,
@@ -72,11 +75,25 @@ function SectionCard({
   defaultOpen = true,
   hasError = false,
 }: SectionCardProps) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
     if (hasError) setOpen(true);
   }, [hasError]);
+
+  if (isMobile) {
+    return (
+      <DetailSection
+        title={title}
+        icon={icon}
+        defaultOpen={defaultOpen}
+        forceOpen={hasError}
+      >
+        {children}
+      </DetailSection>
+    );
+  }
 
   return (
     <Div variant="card" className="overflow-hidden">
@@ -125,6 +142,8 @@ export function StudentDetail({ id }: { id: string }) {
     isUploadingImage,
     imageInputRef,
     onImageChange,
+    handleNativeImagePick,
+    isNative,
     handleSubmit,
     isSubmitting,
     handleDocumentUpload,
@@ -149,6 +168,11 @@ export function StudentDetail({ id }: { id: string }) {
   const { classes, sections } = useClassSections(
     watchedAcademicYearId ?? "",
     watchedClassId ?? "",
+  );
+
+  useScrollToFirstError(
+    form.formState.submitCount,
+    Object.keys(errors).length > 0,
   );
 
   // Set edit mode from URL param
@@ -187,6 +211,18 @@ export function StudentDetail({ id }: { id: string }) {
   }
 
   const isReadOnly = !isEditing;
+  const sectionErrorKeys = [
+    "academic_info",
+    "previous_academics",
+    "address",
+    "hostel_info",
+    "parents",
+    "documents",
+  ];
+  const hasBasicInfoError = Object.keys(errors).some(
+    (key) => !sectionErrorKeys.includes(key),
+  );
+  const showMobileProfile = isMobile && !isNew && !isEditing && !!student;
 
   const pageHeaderConfig: PageHeaderConfig = {
     sticky: true,
@@ -227,10 +263,29 @@ export function StudentDetail({ id }: { id: string }) {
     ],
   };
 
+  if (showMobileProfile && student) {
+    return (
+      <StudentMobileProfile
+        data={student}
+        yearName={years.find((y) => y.id === student.academicInfo?.academic_year_id)?.name}
+        className={classes.find((c) => c.id === student.academicInfo?.class_id)?.name}
+        sectionName={sections.find((sec) => sec.id === student.academicInfo?.section_id)?.name}
+        onEdit={() => setIsEditing(true)}
+        onGenerateIdCard={() =>
+          router.push(`${STUDENT_ROUTES.generate}?studentId=${student.student.id}`)
+        }
+      />
+    );
+  }
+
   return (
     <PageCol>
       <Div type="col" gap="md" className="max-w-7xl">
-        <PageHeader {...pageHeaderConfig} />
+        {isMobile ? (
+          <P className="pt-3 text-lg font-bold">{pageHeaderConfig.title}</P>
+        ) : (
+          <PageHeader {...pageHeaderConfig} />
+        )}
 
         {isNew && hasSavedDraft && (
           <SavedFormBanner
@@ -270,6 +325,7 @@ export function StudentDetail({ id }: { id: string }) {
             <SectionCard
               icon={<User size={16} />}
               title={STUDENT_PAGE.sections.basicInfo}
+              hasError={hasBasicInfoError}
             >
               <Div type="col" gap="md">
                 <PhotoUpload
@@ -277,6 +333,7 @@ export function StudentDetail({ id }: { id: string }) {
                   isUploading={isUploadingImage}
                   disabled={isReadOnly}
                   onFileChange={onImageChange}
+                  onPick={isNative ? handleNativeImagePick : undefined}
                   inputRef={imageInputRef}
                   hint="JPG, PNG or WebP · max 10MB"
                 />
@@ -1020,6 +1077,31 @@ export function StudentDetail({ id }: { id: string }) {
             </SectionCard>
           </Div>
         </form>
+
+        {isMobile && isEditing && (
+          <StickyActionBar>
+            {!isNew && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="flex-1"
+                onClick={() => setIsEditing(false)}
+              >
+                {STUDENT_PAGE.buttons.cancel}
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="lg"
+              className="flex-[2]"
+              loading={isSubmitting || isUploading}
+              onClick={() => handleSubmit()}
+            >
+              {isNew ? "Add student" : STUDENT_PAGE.buttons.save}
+            </Button>
+          </StickyActionBar>
+        )}
       </Div>
     </PageCol>
   );

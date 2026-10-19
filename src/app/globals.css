@@ -35,6 +35,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -99,6 +100,16 @@
   --glass-border: rgba(255, 255, 255, 0.45);
   --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.07);
   --shadow-card-hover: 0 24px 48px rgba(0, 0, 0, 0.13);
+}
+
+/* Readable accent colour for TEXT/ICONS on tinted backgrounds. The raw
+   --primary is a light brand colour (bad contrast on white), so in light
+   mode it is darkened; in dark mode the brand colour itself reads fine. */
+:root {
+  --primary-text: color-mix(in oklab, var(--primary) 55%, black);
+}
+.dark {
+  --primary-text: var(--primary);
 }
 
 /* Amber dark */
@@ -530,6 +541,7 @@
   --secondary:           oklch(0.967 0.001 286.375);
   --secondary-foreground:oklch(0.21 0.006 285.885);
   --destructive:         oklch(0.577 0.245 27.325);
+  --primary-text:        color-mix(in oklab, var(--primary) 55%, black);
   background-color:      var(--background);
   color:                 var(--foreground);
 }
@@ -721,5 +733,15 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .page-enter {
     animation: none;
+  }
+}
+
+/* Touch devices: 16px minimum stops iOS Safari/WKWebView from zooming the
+   page on input focus, and keeps text comfortably legible. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { Capacitor } from "@capacitor/core";
 import { ChevronRight, Search, SearchX, X } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useGlobalSearch, SECTIONS, TYPE_BADGE } from "@/hooks/useGlobalSearch";
@@ -37,7 +38,7 @@ function useVisibleViewport(active: boolean) {
 
 function useLockPage(active: boolean) {
   useEffect(() => {
-    if (!active) return;
+    if (!active || Capacitor.isNativePlatform()) return;
     const { style } = document.body;
     const prev = { position: style.position, top: style.top, width: style.width, overflow: style.overflow };
     style.position = "fixed";

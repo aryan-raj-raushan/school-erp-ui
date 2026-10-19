@@ -104,7 +104,7 @@ export function ParentTabButton({
       type="button"
       className={cn(
         "flex flex-col items-center gap-1 flex-1 rounded-lg py-1.5 text-xs transition-colors",
-        active ? "text-primary" : "text-muted-foreground",
+        active ? "text-primary-text" : "text-muted-foreground",
         className,
       )}
       {...props}

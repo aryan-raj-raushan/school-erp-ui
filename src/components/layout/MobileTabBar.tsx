@@ -20,7 +20,7 @@ export function MobileTabBar() {
     <nav
       data-native-chrome
       className="flex shrink-0 items-stretch border-t border-border bg-background px-1 pt-1"
-      style={{ paddingBottom: "calc(4px + var(--sab, 0px))" }}
+      style={{ paddingBottom: 4 }}
       aria-label="Primary"
     >
       {tabs.map((tab) => {

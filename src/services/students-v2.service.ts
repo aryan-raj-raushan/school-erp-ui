@@ -143,7 +143,16 @@ export const StudentsService = {
       if (v !== undefined && v !== '') params[k] = String(v);
     });
     const res = await apiGateway.get<StudentListItem[]>(ENDPOINTS.student.list, { params });
-    return { items: res.data, pagination: res.pagination! };
+    const items = res.data ?? [];
+    return {
+      items,
+      pagination: res.pagination ?? {
+        page: filters.page ?? 1,
+        limit: filters.limit ?? items.length,
+        total: items.length,
+        totalPages: 1,
+      },
+    };
   },
 
   async getById(id: string): Promise<StudentFull> {

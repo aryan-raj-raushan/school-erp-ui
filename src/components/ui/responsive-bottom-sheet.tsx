@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './button';
+import { useBackLayer } from '@/hooks/useBackLayer';
 
 interface ResponsiveBottomSheetProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export function ResponsiveBottomSheet({
   maxHeight = '90vh',
 }: ResponsiveBottomSheetProps) {
   const isMobile = useIsMobile();
+  useBackLayer(isOpen, onClose);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -76,7 +78,7 @@ export function ResponsiveBottomSheet({
 
           <motion.div
             className={cn(
-              'relative mt-auto w-full rounded-t-2xl border-t border-border/50 bg-white shadow-lg',
+              'relative mt-auto w-full rounded-t-2xl border-t border-border/50 bg-white text-foreground shadow-lg dark:bg-neutral-900',
               className,
             )}
             style={{ maxHeight, paddingBottom: "var(--sab, 0px)" }}

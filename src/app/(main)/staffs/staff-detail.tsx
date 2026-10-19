@@ -39,6 +39,8 @@ export function StaffDetail({ id }: { id: string }) {
     isUploadingImage,
     imageInputRef,
     onImageChange,
+    handleNativeImagePick,
+    isNative,
     roles,
     staffMembers,
     fullName,
@@ -263,6 +265,7 @@ export function StaffDetail({ id }: { id: string }) {
                 url={profileImageUrl}
                 isUploading={isUploadingImage}
                 onFileChange={onImageChange}
+                onPick={isNative ? handleNativeImagePick : undefined}
                 inputRef={imageInputRef}
                 hint="JPG, PNG or WebP · max 10MB"
               />
