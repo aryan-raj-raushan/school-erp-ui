@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
 };
 
@@ -36,7 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ChatPatternBackground>{children}</ChatPatternBackground>
           </TooltipProvider>
         </ThemeProvider>
-        <Toaster position="top-right" richColors />
+        <Toaster
+          position="top-right"
+          richColors
+          offset={{ top: "calc(var(--sat, 0px) + 16px)", right: 16 }}
+          mobileOffset={{ top: "calc(var(--sat, 0px) + 12px)", right: 12, left: 12 }}
+        />
       </body>
     </html>
   );

@@ -10,8 +10,7 @@ import { initAppStorage } from "@/lib/app-storage";
 import { useAuth } from "@/hooks/useAuth";
 import { useParentChildren } from "@/hooks/useParentChildren";
 import { PARENT_NAV_TABS } from "@/constants/layout/app-parent-nav.constants";
-import { Div, P, Button, ResponsiveSelect } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { Div, P, Button, ResponsiveSelect, ParentTabButton } from "@/components/ui";
 
 const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.accessToken,
@@ -50,7 +49,7 @@ export default function ParentLayout({
         className="sticky top-0 z-20"
         style={{
           background: "linear-gradient(180deg, var(--theme-gradient-from) 0%, var(--theme-gradient-to) 100%)",
-          paddingTop: "env(safe-area-inset-top)",
+          paddingTop: "var(--sat)",
           boxShadow: "0 4px 24px var(--theme-glow)",
         }}
       >
@@ -92,7 +91,7 @@ export default function ParentLayout({
 
       <div
         className="flex-1 overflow-y-auto"
-        style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "calc(5rem + var(--sab))" }}
       >
         {children}
       </div>
@@ -102,23 +101,16 @@ export default function ParentLayout({
         align="center"
         justify="between"
         className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur px-2 pt-2"
-        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "calc(0.5rem + var(--sab))" }}
       >
         {PARENT_NAV_TABS.map((item) => {
           const isActive = pathname === item.url;
           const Icon = item.icon;
           return (
-            <button
-              key={item.url}
-              onClick={() => router.push(item.url)}
-              className={cn(
-                "flex flex-col items-center gap-1 flex-1 rounded-lg py-1.5 text-xs transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground",
-              )}
-            >
+            <ParentTabButton key={item.url} active={isActive} onClick={() => router.push(item.url)}>
               <Icon size={20} />
               <span className="truncate max-w-[64px]">{item.title.split(" ")[0]}</span>
-            </button>
+            </ParentTabButton>
           );
         })}
       </Div>

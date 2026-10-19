@@ -35,3 +35,4 @@ export * from './date-picker';
 export * from './switch';
 export * from './saved-form-banner';
 export * from './legal-page';
+export * from './mobile-nav';

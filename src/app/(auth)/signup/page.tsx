@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { useSignupPage } from '@/hooks/useSignupPage';
-import { ROUTES } from '@/constants';
+import { ROUTES, LEGAL_LINKS } from '@/constants';
 import { Div, Button, Input, FormField, PhoneField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
 
 export default function SignupPage() {
   const { form, onSubmit, isLoading } = useSignupPage();
+  useSwipeBack(ROUTES.login);
 
   return (
     <AuthCard title="Create your account" subtitle="Set up your school on the ERP platform">
@@ -29,7 +31,7 @@ export default function SignupPage() {
             />
           </FormField>
 
-          <Div type="grid" cols={2} gap="md">
+          <Div type="grid" cols={2} gap="sm">
             <FormField
               label="First Name"
               htmlFor="first_name"
@@ -44,7 +46,7 @@ export default function SignupPage() {
             </FormField>
 
             <FormField
-              label="Last Name (optional)"
+              label="Last Name"
               htmlFor="last_name"
               error={form.formState.errors.last_name?.message}
             >
@@ -97,6 +99,12 @@ export default function SignupPage() {
           <Div type="row" justify="center">
             <Link href={ROUTES.login} className="text-sm text-muted-foreground hover:underline">
               Already have an account? Sign in
+            </Link>
+          </Div>
+
+          <Div type="row" justify="center">
+            <Link href={ROUTES.privacyPolicy} className="text-xs text-muted-foreground hover:underline">
+              {LEGAL_LINKS.privacyPolicy}
             </Link>
           </Div>
         </Div>

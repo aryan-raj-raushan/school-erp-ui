@@ -1,7 +1,11 @@
+'use client';
+
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, GraduationCap } from 'lucide-react';
 import { APP, ROUTES, LEGAL_LINKS, type LegalDocument } from '@/constants';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { Div } from './layout';
 import { H2, P } from './typography';
 
@@ -11,8 +15,24 @@ import { H2, P } from './typography';
    to match the auth screens.
 ───────────────────────────────────────────── */
 export function LegalPage({ document }: { document: LegalDocument }) {
+  const router = useRouter();
+  useSwipeBack(ROUTES.login);
+
+  const handleBack = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (window.history.length > 1) {
+      e.preventDefault();
+      router.back();
+    }
+  };
+
   return (
-    <Div variant="auth-force-light" type="col" align="center" padding="min-h-screen px-4 py-8 sm:px-8">
+    <Div
+      variant="auth-force-light"
+      type="col"
+      align="center"
+      padding="min-h-screen px-4 pb-8 sm:px-8"
+      style={{ paddingTop: 'calc(var(--sat, 0px) + 1.5rem)' }}
+    >
       <Div type="col" gap="lg" padding="w-full max-w-3xl">
         <Div type="row" align="center" justify="between" gap="sm">
           <Div type="row" align="center" gap="sm">
@@ -23,7 +43,8 @@ export function LegalPage({ document }: { document: LegalDocument }) {
           </Div>
           <Link
             href={ROUTES.login}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+            onClick={handleBack}
+            className="inline-flex min-h-11 items-center gap-1 px-2 text-sm text-muted-foreground hover:underline"
           >
             <ArrowLeft size={14} />
             {LEGAL_LINKS.backToLogin}

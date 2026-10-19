@@ -1,5 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const devUrl = process.env.CAP_DEV_URL;
+
 const config: CapacitorConfig = {
   appId: 'com.myesathi.app',
   appName: 'MyESathi',
@@ -9,6 +11,7 @@ const config: CapacitorConfig = {
     // For local dev with Android emulator use http://10.0.2.2:3001
     // url: 'https://your-deployed-app.com',
     cleartext: true,
+    ...(devUrl ? { url: devUrl } : {}),
   },
   plugins: {
     SplashScreen: {

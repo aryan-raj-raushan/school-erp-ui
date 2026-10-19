@@ -56,7 +56,7 @@ export function AuthLeftPanel() {
 ───────────────────────────────────────────── */
 export function AuthPageWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <Div variant="auth-force-light" type="row" padding="h-screen overflow-hidden">
+    <Div variant="auth-force-light" type="row" padding="h-dvh overflow-hidden">
       {children}
     </Div>
   );
@@ -67,23 +67,27 @@ export function AuthPageWrapper({ children }: { children: React.ReactNode }) {
 ───────────────────────────────────────────── */
 export function AuthRightPanel({ children }: { children: React.ReactNode }) {
   return (
-    <Div
-      type="col"
-      align="center"
-      justify="center"
-      grow
-      padding="px-8 py-6 lg:px-14"
-    >
-      {/* Mobile-only logo (left panel hidden on mobile) */}
-      <Div type="col" align="center" gap="sm" padding="mb-6 lg:hidden">
-        <Div variant="theme-icon-lg">
-          <GraduationCap size={22} />
+    <Div type="col" grow padding="min-w-0 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <Div
+        type="col"
+        align="center"
+        justify="center"
+        padding="min-h-full w-full px-4 sm:px-8 lg:px-14"
+        style={{
+          paddingTop: 'calc(var(--sat, 0px) + 1rem)',
+          paddingBottom: 'calc(var(--sab, 0px) + 2.5rem)',
+        }}
+      >
+        <Div type="col" align="center" gap="sm" padding="mb-4 lg:hidden">
+          <Div variant="theme-icon-lg">
+            <GraduationCap size={22} />
+          </Div>
+          <P color="default" size="xl" weight="bold">{APP.name}</P>
         </Div>
-        <P color="default" size="xl" weight="bold">{APP.name}</P>
-      </Div>
 
-      <Div type="col" gap="none" padding="w-full max-w-[540px]">
-        {children}
+        <Div type="col" gap="none" padding="w-full max-w-[540px]">
+          {children}
+        </Div>
       </Div>
     </Div>
   );
@@ -105,7 +109,7 @@ export function AuthCard({ title, subtitle, children }: AuthCardProps) {
         <P color="default" size="2xl" weight="bold">{title}</P>
         {subtitle && <P color="muted" size="sm">{subtitle}</P>}
       </Div>
-      <Div variant="card" padding="p-5">
+      <Div variant="card" padding="p-4 sm:p-5">
         {children}
       </Div>
     </Div>

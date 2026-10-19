@@ -63,6 +63,7 @@ export function ResponsiveBottomSheet({
       {isMobile ? (
         <motion.div
           className="fixed inset-0 z-50 flex flex-col"
+          style={{ paddingTop: "var(--sat, 0px)" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -78,7 +79,7 @@ export function ResponsiveBottomSheet({
               'relative mt-auto w-full rounded-t-2xl border-t border-border/50 bg-white shadow-lg',
               className,
             )}
-            style={{ maxHeight }}
+            style={{ maxHeight, paddingBottom: "var(--sab, 0px)" }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -112,7 +113,7 @@ export function ResponsiveBottomSheet({
         </motion.div>
       ) : (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 safe-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

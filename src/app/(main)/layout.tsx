@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ROUTES, STORAGE_KEYS } from "@/constants";
 import { AuthContext } from "@/types";
 import { TokenStorage } from "@/lib/api-gateway/token.storage";
@@ -10,6 +10,11 @@ import { SidebarProvider } from "@/components/ui";
 import { RouteGuard } from "@/components/layout/RouteGuard";
 import dynamic from "next/dynamic";
 
+const NavigationProgress = dynamic(
+  () => import("@/components/layout/NavigationProgress").then((m) => m.NavigationProgress),
+  { ssr: false },
+);
+
 const AppSidebar = dynamic(
   () => import("@/components/layout/AppSidebar").then((m) => m.AppSidebar),
   { ssr: false },
@@ -17,6 +22,16 @@ const AppSidebar = dynamic(
 
 const AppHeader = dynamic(
   () => import("@/components/layout/AppHeader").then((m) => m.AppHeader),
+  { ssr: false },
+);
+
+const MobileHeader = dynamic(
+  () => import("@/components/layout/MobileHeader").then((m) => m.MobileHeader),
+  { ssr: false },
+);
+
+const MobileTabBar = dynamic(
+  () => import("@/components/layout/MobileTabBar").then((m) => m.MobileTabBar),
   { ssr: false },
 );
 
@@ -40,6 +55,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // On cold start (native): restore from Preferences into localStorage if needed,
@@ -55,25 +71,38 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <NavigationProgress />
       <AppSidebar />
       <div
+        className="md:pt-[var(--sat)] md:pb-[var(--sab)]"
         style={{
           flex: 1,
           height: "100dvh",
+          boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
         }}
       >
-        <AppHeader />
+        <div className="hidden md:block">
+          <AppHeader />
+        </div>
+        <div className="md:hidden">
+          <MobileHeader />
+        </div>
         <RestrictionBanner />
         <main style={{ flex: 1, overflow: "auto" }}>
           <div
-            className="px-4 pb-4 sm:px-5 sm:pb-5 md:px-7 pt-0"
+            key={pathname}
+            className="px-4 pb-4 sm:px-5 sm:pb-5 md:px-7 pt-0 page-enter"
             style={{ minHeight: "100%" }}
-          >            <RouteGuard>{children}</RouteGuard>
+          >
+            <RouteGuard>{children}</RouteGuard>
           </div>
         </main>
+        <div className="md:hidden">
+          <MobileTabBar />
+        </div>
       </div>
     </SidebarProvider>
   );

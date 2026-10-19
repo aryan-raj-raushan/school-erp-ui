@@ -8,3 +8,5 @@ export * from './useStudents';
 export * from './useSubscriptions';
 export * from './useSchoolDashboard';
 export * from './useStorageFilter';
+export * from './useSwipeBack';
+export * from './useDashboardShared';

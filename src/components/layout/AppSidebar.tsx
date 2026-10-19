@@ -4,28 +4,14 @@ import { motion } from "framer-motion";
 import { GraduationCap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { NavMain } from "./NavMain";
 import { NavSecondary } from "./NavSecondary";
-import {
-  SCHOOL_NAV_MAIN,
-  SCHOOL_NAV_SECONDARY,
-  SUPER_ADMIN_NAV_SECONDARY,
-  SALES_NAV_SECONDARY,
-  OPERATOR_NAV_SECONDARY,
-} from "@/constants/layout/app-sidebar.constants";
+import type { SCHOOL_NAV_MAIN, SCHOOL_NAV_SECONDARY } from "@/constants/layout/app-sidebar.constants";
 import { APP } from "@/constants";
-import { AuthContext, Role } from "@/types";
-import { selectNavMain } from "@/lib/route-permissions";
-import { useAuthStore } from "@/store/auth.store";
-import { useSchoolBrandStore } from "@/store/school.store";
-import { SchoolProfileService } from "@/services/school-profile.service";
-import { Capacitor } from "@capacitor/core";
-
-// Add titles here as mobile screens are built out
-const MOBILE_ENABLED_NAV = ["Dashboard", "Teams", "Super Admin Dashboard"];
+import { useNavItems } from "@/hooks/useNavItems";
+import { useSchoolLogo } from "@/hooks/useSchoolLogo";
+import { MobileDrawer } from "./MobileDrawer";
 
 const EXPANDED_W = 272;
 const ICON_W = 76;
@@ -38,25 +24,6 @@ interface SidebarPanelProps {
   isCollapsed: boolean;
   navMain: NavItem[];
   navSecondary: SecondaryItem[];
-}
-
-function useSchoolLogo() {
-  const { brand, setBrand } = useSchoolBrandStore();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  useEffect(() => {
-    if (brand || !isAuthenticated) return;
-    SchoolProfileService.get()
-      .then((data) => setBrand({
-        name: data.name,
-        logo_url: data.logo_url ?? null,
-        restriction_level: data.restriction_level,
-        restriction_reason: data.restriction_reason,
-      }))
-      .catch(() => {});
-  }, [brand, isAuthenticated, setBrand]);
-
-  return brand;
 }
 
 function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps) {
@@ -198,64 +165,11 @@ function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps)
 }
 
 export function AppSidebar() {
-  const { state, isMobile, openMobile, setOpenMobile } = useSidebar();
-  const user = useAuthStore((s) => s.user);
-  const context = useAuthStore((s) => s.context);
-  const permissions = useAuthStore((s) => s.permissions);
+  const { state, isMobile } = useSidebar();
+  const { navMain, navSecondary } = useNavItems();
   const isCollapsed = state === "collapsed";
-  const isNative = Capacitor.isNativePlatform();
-  const isCompanyUser = context === AuthContext.COMPANY;
 
-  const navMainSource: NavItem[] = selectNavMain(user, context);
-  let navSecondarySource: SecondaryItem[] = SCHOOL_NAV_SECONDARY;
-  if (isCompanyUser) {
-    if (user?.role === Role.SALES) {
-      navSecondarySource = SALES_NAV_SECONDARY;
-    } else if (user?.role === Role.OPERATOR) {
-      navSecondarySource = OPERATOR_NAV_SECONDARY;
-    } else {
-      navSecondarySource = SUPER_ADMIN_NAV_SECONDARY;
-    }
-  }
-
-  const navMain = navMainSource
-    .map((item) => {
-      if (!item.items?.length) return item;
-      const visibleItems = item.items.filter(
-        (sub) => !sub.permissions || sub.permissions.some((p) => permissions.includes(p)),
-      );
-      return { ...item, items: visibleItems };
-    })
-    .filter((item) => {
-      const roleOk = !item.roles || (user?.role && item.roles.includes(user.role));
-      const permOk = !item.permissions || item.permissions.some((p) => permissions.includes(p));
-      const hasVisibleChildren = !item.items || item.items.length > 0;
-      const mobileOk = !isNative || MOBILE_ENABLED_NAV.includes(item.title);
-      return roleOk && permOk && hasVisibleChildren && mobileOk;
-    });
-
-  const navSecondary = isNative
-    ? []
-    : navSecondarySource.filter(
-        (item) => !item.roles || (user?.role && item.roles.includes(user.role)),
-      );
-
-  if (isMobile) {
-    return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent
-          side="left"
-          showCloseButton={false}
-          className="p-0 border-0 bg-transparent"
-          style={{ width: EXPANDED_W, maxWidth: "85vw", padding: 0 }}
-        >
-          <div style={{ padding: "10px 8px", height: "100%" }}>
-            <SidebarPanel isCollapsed={false} navMain={navMain} navSecondary={navSecondary} />
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  if (isMobile) return <MobileDrawer />;
 
   return (
     <motion.aside

@@ -44,7 +44,7 @@ export function Modal({ onClose, title, size = 'lg', children, className }: Moda
   return createPortal(
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center px-4"
+        className="fixed inset-0 z-50 flex items-center justify-center px-4 safe-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
