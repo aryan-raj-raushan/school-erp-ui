@@ -8,6 +8,8 @@ import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useExamAttendanceCard } from "@/hooks/exam/useExamAttendanceCard";
 import { PageHeader } from "@/components/ui/page-header";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ExamAttendanceMobile } from "@/components/exam/ExamAttendanceMobile";
 import {
   Div,
   P,
@@ -39,6 +41,7 @@ function fmtDate(iso: string) {
 
 function ViewAttendanceContent() {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const {
     years,
@@ -128,6 +131,33 @@ function ViewAttendanceContent() {
 
     return [...baseCols, ...scheduleCols];
   }, [schedules]);
+
+  if (isMobile) {
+    return (
+      <ExamAttendanceMobile
+        years={years}
+        classes={classes}
+        sections={sections}
+        exams={deduplicatedExams}
+        academicYearId={selectedAcademicYearId}
+        classId={selectedClassId}
+        sectionId={selectedSectionId}
+        examId={examId}
+        onYearChange={setSelectedAcademicYearId}
+        onClassChange={handleClassChange}
+        onSectionChange={handleSectionChange}
+        onExamChange={setExamId}
+        isLoadingClasses={isLoadingClasses}
+        schedules={schedules}
+        isLoadingSchedules={isLoadingSchedules}
+        rows={rows}
+        canMarkAttendance
+        canDownloadCard={canDownloadCard}
+        isDownloadingCard={isDownloadingCard}
+        onDownloadCard={downloadAttendanceCard}
+      />
+    );
+  }
 
   return (
     <Div type="col" gap="lg">

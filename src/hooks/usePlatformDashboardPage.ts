@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Building2, CheckCircle2, CircleDollarSign, AlertTriangle, CalendarCheck, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { SchoolsService } from '@/services/schools.service';
@@ -32,31 +32,32 @@ export function usePlatformDashboardPage() {
   const [counts, setCounts] = useState<Counts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      SchoolsService.list({ limit: 1 }),
-      SchoolsService.list({ limit: 1, is_active: true }),
-      SubscriptionsService.list({ limit: 1, status: 'ACTIVE' }),
-      InvoicesService.list({ limit: 1, status: 'OVERDUE' }),
-    ])
-      .then(([schools, active, subs, overdue]) => {
-        if (cancelled) return;
-        setCounts({
-          totalSchools: schools.pagination.total,
-          activeSchools: active.pagination.total,
-          activeSubscriptions: subs.pagination.total,
-          overdueInvoices: overdue.pagination.total,
-        });
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+  const load = useCallback(async () => {
+    try {
+      const [schools, active, subs, overdue] = await Promise.all([
+        SchoolsService.list({ limit: 1 }),
+        SchoolsService.list({ limit: 1, is_active: true }),
+        SubscriptionsService.list({ limit: 1, status: 'ACTIVE' }),
+        InvoicesService.list({ limit: 1, status: 'OVERDUE' }),
+      ]);
+      setCounts({
+        totalSchools: schools.pagination.total,
+        activeSchools: active.pagination.total,
+        activeSubscriptions: subs.pagination.total,
+        overdueInvoices: overdue.pagination.total,
       });
-    return () => {
-      cancelled = true;
-    };
+    } catch {
+      setCounts(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // Initial fetch: state updates happen after the requests resolve.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
   const isSuperAdmin = role === Role.SUPER_ADMIN || role === Role.ADMIN;
   const copy = (role && COPY[role]) || DEFAULT_COPY;
@@ -75,6 +76,7 @@ export function usePlatformDashboardPage() {
 
   return {
     isLoading,
+    refresh: load,
     greeting: identity.greeting,
     title: identity.firstName || 'there',
     eyebrow: copy.label,

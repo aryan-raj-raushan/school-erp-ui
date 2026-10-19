@@ -16,7 +16,7 @@ const schema = z.object({
   is_active: z.boolean(),
 });
 
-type RoleFormValues = z.infer<typeof schema>;
+export type RoleFormValues = z.infer<typeof schema>;
 
 export function useRoleDetail(id: string | undefined) {
   const router = useRouter();

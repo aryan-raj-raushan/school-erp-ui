@@ -18,6 +18,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./skeleton";
+import { PullToRefresh } from "./pull-to-refresh";
 import { DASH_ACCENT_CLASSES, DASH_CHART_COLORS } from "@/constants/dashboard.constants";
 import type {
   DashAction,
@@ -33,12 +34,20 @@ import type {
 } from "@/types/dashboard.types";
 
 
-export function DashboardRoot({ children }: { children: React.ReactNode }) {
-  return (
+export function DashboardRoot({
+  children,
+  onRefresh,
+}: {
+  children: React.ReactNode;
+  /** Enables pull-to-refresh on phones. */
+  onRefresh?: () => Promise<unknown> | void;
+}) {
+  const content = (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pt-4 pb-8 md:gap-6 md:pt-6">
       {children}
     </div>
   );
+  return onRefresh ? <PullToRefresh onRefresh={onRefresh}>{content}</PullToRefresh> : content;
 }
 
 export function DashboardSplit({

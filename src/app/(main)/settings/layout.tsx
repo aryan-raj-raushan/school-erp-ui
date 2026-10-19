@@ -53,9 +53,9 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
         </>
       )}
 
-      <main className={`flex-1  overflow-y-auto p-2 md:p-8 ${!isIndex ? " max-w-6xl" : ""}`}>
+      <div className={`min-w-0 flex-1 md:p-8 ${!isIndex ? "max-w-6xl" : ""}`}>
         {children}
-      </main>
+      </div>
     </div>
   );
 }

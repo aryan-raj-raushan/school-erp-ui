@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useBackLayer } from '@/hooks/useBackLayer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './button';
+import { BottomSheet } from './action-sheet';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 
 interface ModalProps {
   onClose: () => void;
@@ -36,6 +38,7 @@ export function ModalFooter({ className, ...props }: React.HTMLAttributes<HTMLDi
 }
 
 export function Modal({ onClose, title, size = 'lg', children, className }: ModalProps) {
+  const isMobile = useIsMobileSync();
   useBackLayer(true, onClose);
 
   React.useEffect(() => {
@@ -43,6 +46,14 @@ export function Modal({ onClose, title, size = 'lg', children, className }: Moda
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  if (isMobile) {
+    return (
+      <BottomSheet isOpen onClose={onClose} title={title} maxHeight="90dvh" flush>
+        {children}
+      </BottomSheet>
+    );
+  }
 
   return createPortal(
     <AnimatePresence>
@@ -61,7 +72,7 @@ export function Modal({ onClose, title, size = 'lg', children, className }: Moda
         {/* Dialog — glass surface via CSS vars */}
         <motion.div
           className={cn(
-            'relative z-10 w-full rounded-2xl sm:rounded-[32px] border border-border/50 max-h-[90vh] overflow-y-auto glass-card',
+            'relative z-10 w-full rounded-2xl sm:rounded-[32px] border border-border/50 max-h-[90dvh] overflow-y-auto glass-card',
             sizeMap[size],
             className,
           )}

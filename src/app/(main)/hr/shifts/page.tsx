@@ -9,10 +9,6 @@ import {
   Spinner,
   PageHeader,
   PageCol,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  Select,
   Input,
   FormField,
   EmptyState,
@@ -26,6 +22,8 @@ import {
   WORKING_DAY_OPTIONS,
 } from '@/constants/staff-shifts.constants';
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ShiftsMobile } from '@/components/hr/ShiftsMobile';
 import type { CreateStaffShiftPayload, ShiftType } from '@/types/staff-shifts.types';
 
 const EMPTY_FORM: CreateStaffShiftPayload = {
@@ -41,6 +39,7 @@ const EMPTY_FORM: CreateStaffShiftPayload = {
 };
 
 export default function StaffShiftsPage() {
+  const isMobile = useIsMobile();
   const { shifts, staff, isLoading, isSubmitting, isDialogOpen, editingShift, getStaffName, openCreate, openEdit, closeDialog, submit, remove } = useStaffShifts();
   const [form, setForm] = useState<CreateStaffShiftPayload>(EMPTY_FORM);
 
@@ -81,6 +80,27 @@ export default function StaffShiftsPage() {
           <Spinner />
         </Div>
       </PageCol>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <ShiftsMobile
+        shifts={shifts}
+        staff={staff}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isDialogOpen={isDialogOpen}
+        isEditing={!!editingShift}
+        form={form}
+        updateForm={updateForm}
+        getStaffName={getStaffName}
+        onCreate={handleOpenCreate}
+        onEdit={handleOpenEdit}
+        onDelete={remove}
+        onSubmit={() => submit(form)}
+        onClose={closeDialog}
+      />
     );
   }
 
@@ -128,7 +148,7 @@ export default function StaffShiftsPage() {
 
       {isDialogOpen && (
         <ResponsiveModalContainer isOpen={isDialogOpen} onClose={closeDialog} title={editingShift ? 'Edit Shift' : 'Assign Shift'}>
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="md">
               <Div type="grid" cols={2} gap="md">
                 {!editingShift && (
@@ -188,13 +208,13 @@ export default function StaffShiftsPage() {
                 </Div>
               </FormField>
             </Div>
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button variant="outline" onClick={closeDialog}>Cancel</Button>
             <Button loading={isSubmitting} onClick={() => submit(form)}>
               {editingShift ? 'Update' : 'Assign'}
             </Button>
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
     </PageCol>

@@ -171,6 +171,7 @@ export function useAdmissionSourceDetail(id?: string) {
     onSubmit,
     handleSubmit: form.handleSubmit(submit),
     isSubmitting: form.formState.isSubmitting,
+    refetch: fetchSource,
   };
 }
 
@@ -444,6 +445,7 @@ export function useAdmissionEnquiryDetail(id?: string) {
     teachers,
     handleSubmit: form.handleSubmit(submit),
     isSubmitting: form.formState.isSubmitting,
+    refetch: fetchEnquiry,
     showHistoryModal,
     openHistoryModal: () => setShowHistoryModal(true),
     closeHistoryModal: () => {

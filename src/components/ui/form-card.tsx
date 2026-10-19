@@ -9,7 +9,7 @@ interface FormCardProps {
 
 export function FormCard({ title, children }: FormCardProps) {
   return (
-    <div className="rounded-xl border border-border/50 bg-card p-5">
+    <div className="rounded-2xl border border-border/50 bg-card p-4 md:rounded-xl md:p-5">
       <P color="default" weight="semibold" className="mb-4">{title}</P>
       {children}
     </div>
@@ -25,9 +25,9 @@ interface SectionCardProps {
 
 export function SectionCard({ title, subtitle, actions, children }: SectionCardProps) {
   return (
-    <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-border/50 bg-card md:rounded-xl">
       {(title || actions) && (
-        <div className="px-5 py-3 border-b border-border/50 bg-muted/20 flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-muted/20 px-4 py-3 md:px-5">
           <div>
             {title && <P color="default" weight="semibold">{title}</P>}
             {subtitle && <P size="xs">{subtitle}</P>}

@@ -1,6 +1,7 @@
 "use client";
 
-import { Div, H1, H2, P, Badge, Spinner, EmptyState } from "@/components/ui";
+import { Div, H1, H2, P, Badge, Spinner, EmptyState, StatPill } from "@/components/ui";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import { CalendarCheck } from "lucide-react";
 import { useParentAttendance } from "@/hooks/useParentAttendance";
 const STATUS_VARIANT: Partial<Record<string, "success" | "danger" | "warning" | "default">> = {
@@ -15,6 +16,7 @@ const STATUS_VARIANT: Partial<Record<string, "success" | "danger" | "warning" | 
 };
 
 export default function ParentAttendancePage() {
+  const isMobile = useIsMobileSync();
   const { summary, history, isLoading, error } = useParentAttendance();
 
   if (isLoading) {
@@ -37,6 +39,25 @@ export default function ParentAttendancePage() {
     <Div type="col" gap="lg" className="p-4 sm:p-6">
       <H1 className="text-2xl font-bold">Attendance</H1>
 
+      {isMobile ? (
+        <section className="flex flex-col gap-3">
+          <div className="rounded-3xl border border-border/60 bg-white p-5 dark:bg-neutral-900">
+            <p className="text-xs text-muted-foreground">Attendance</p>
+            <p className="mt-1 text-4xl font-bold">{summary?.attendancePercent ?? 0}%</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className={`h-full rounded-full ${(summary?.attendancePercent ?? 0) >= 75 ? "bg-emerald-500" : "bg-red-500"}`}
+                style={{ width: `${Math.min(100, summary?.attendancePercent ?? 0)}%` }}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <StatPill label="Present" value={summary?.totalPresent ?? 0} tone="success" />
+            <StatPill label="Absent" value={summary?.totalAbsent ?? 0} tone="danger" />
+            <StatPill label="Total days" value={summary?.totalDays ?? 0} />
+          </div>
+        </section>
+      ) : (
       <Div type="grid" gap="md" className="grid-cols-2 sm:grid-cols-4">
         <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4">
           <P color="muted" className="text-xs">Attendance %</P>
@@ -55,6 +76,7 @@ export default function ParentAttendancePage() {
           <H1 className="text-2xl font-bold">{summary?.totalDays ?? 0}</H1>
         </Div>
       </Div>
+      )}
 
       <Div type="col" gap="sm">
         <H2 className="text-sm font-semibold">History</H2>

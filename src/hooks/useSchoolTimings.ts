@@ -104,5 +104,6 @@ export function useSchoolTimings() {
     closeDialog,
     submit,
     remove,
+    refresh: load,
   };
 }

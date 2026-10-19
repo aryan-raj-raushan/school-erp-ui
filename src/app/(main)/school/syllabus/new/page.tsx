@@ -1,19 +1,34 @@
 'use client';
 
 import { useCreateSyllabus } from '@/hooks/useCreateSyllabus';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SyllabusMobileForm } from '@/components/school/SyllabusMobileForm';
 import { SYLLABUS_PAGE } from '@/constants';
 import {
-  Div, Button, H2,
-  FormField, Input, Textarea,
-  CheckboxLabel, Spinner,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
+  Div,
+  Button,
+  H2,
+  FormField,
+  Input,
+  Textarea,
+  CheckboxLabel,
+  Spinner,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyRow,
   Badge,
-  PageHeader, PageCol,
+  PageHeader,
   ResponsiveSelect,
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 
 export default function NewSyllabusPage() {
+  const isMobile = useIsMobile();
   const {
     form, classes, isLoadingData,
     attachments, fileInputRef,
@@ -27,6 +42,29 @@ export default function NewSyllabusPage() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <SyllabusMobileForm
+        form={form}
+        isNew
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+        classes={classes}
+        fileInputRef={fileInputRef}
+        onFileChange={handleFileChange}
+        attachments={attachments.map((att) => ({
+          id: att.id,
+          name: att.file.name,
+          url: att.status === 'done' ? att.url : undefined,
+          isImage: att.file_type !== 'pdf',
+          status: att.status,
+          onRemove: () => removeAttachment(att.id),
+        }))}
+      />
     );
   }
 

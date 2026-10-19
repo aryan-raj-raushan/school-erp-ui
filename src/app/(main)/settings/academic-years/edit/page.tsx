@@ -16,6 +16,7 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AcademicYearMobileForm } from "@/components/settings/AcademicYearMobileForm";
 
 function EditAcademicYearPageInner() {
   const isMobile = useIsMobile();
@@ -37,6 +38,18 @@ function EditAcademicYearPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <AcademicYearMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
     );
   }
 

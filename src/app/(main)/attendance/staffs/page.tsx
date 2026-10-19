@@ -5,6 +5,8 @@ import { useStaffAttendance } from "@/hooks/useStaffAttendance";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { StaffAttendanceStats } from "@/components/staff/staff-attendance-stats";
+import { StaffAttendanceMobile } from "@/components/staff/StaffAttendanceMobile";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import {
   Div,
   P,
@@ -33,6 +35,7 @@ type StaffAttendanceRow = {
 type PersistedStaffAttendanceFilters = Pick<{ date?: string }, "date">;
 
 export default function StaffAttendancePage() {
+  const isMobile = useIsMobileSync();
   const {
     staff,
     attendanceMap,
@@ -189,6 +192,29 @@ export default function StaffAttendancePage() {
     ],
     [attendanceMap, setStatus, setLate, setRemarks]
   );
+
+  if (isMobile) {
+    return (
+      <StaffAttendanceMobile
+        staff={staff}
+        attendanceMap={attendanceMap}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        summary={pageHeaderConfig.subtitle}
+        filterFields={filterFields}
+        filterValues={filterValues}
+        onFilterChange={(next) => {
+          if ("date" in next) handleDateChange(next.date ?? "");
+        }}
+        onFilterClear={handleClearFilters}
+        onStatusChange={setStatus}
+        onLateChange={setLate}
+        onRemarksChange={setRemarks}
+        onMarkAll={markAll}
+        onSave={saveAttendance}
+      />
+    );
+  }
 
   return (
     <PageCol>

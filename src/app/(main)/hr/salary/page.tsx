@@ -23,6 +23,7 @@ import {
 } from "@/components/ui";
 import { Tabs } from "@/components/ui/tabs";
 import { useSalary, SalaryTab } from "@/hooks/useSalary";
+import { isNativeApp } from "@/lib/platform";
 
 const TABS = [
   { value: "heads" as const, label: "Salary Heads" },
@@ -1299,11 +1300,13 @@ export default function SalaryManagementPage() {
 
               return (
                 <Div type="col" gap="md">
-                  <Div type="row" justify="end" className="print:hidden">
-                    <Button variant="outline" onClick={() => window.print()}>
-                      <Printer size={14} className="mr-1" /> Print Payslip
-                    </Button>
-                  </Div>
+                  {!isNativeApp() && (
+                    <Div type="row" justify="end" className="print:hidden">
+                      <Button variant="outline" onClick={() => window.print()}>
+                        <Printer size={14} className="mr-1" /> Print Payslip
+                      </Button>
+                    </Div>
+                  )}
 
                   <Div type="col" gap="lg" variant="glass-sm" padding="p-6">
                     {/* Header */}

@@ -3,12 +3,16 @@
 import { useCreateAcademicYear } from '@/hooks/useCreateAcademicYear';
 import { ACADEMIC_YEARS_PAGE } from '@/constants';
 import {
-  Div, Button,
-  FormField, Input, Select, Textarea,
-  CheckboxLabel, Spinner,
-  PageHeader, PageCol,
+  Div,
+  Button,
+  FormField,
+  Input,
+  Textarea,
+  CheckboxLabel,
+  PageHeader,
 } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AcademicYearMobileForm } from '@/components/settings/AcademicYearMobileForm';
 
 export default function NewAcademicYearPage() {
   const isMobile = useIsMobile();
@@ -16,6 +20,18 @@ export default function NewAcademicYearPage() {
     form, isSubmitting,
     handleSubmit, handleBack, toggleIsEnabled, toggleIsCurrent,
   } = useCreateAcademicYear();
+
+  if (isMobile) {
+    return (
+      <AcademicYearMobileForm
+        form={form}
+        isNew={true}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
+    );
+  }
 
   return (
     <Div type="col" gap="lg">

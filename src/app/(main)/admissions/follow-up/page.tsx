@@ -19,8 +19,9 @@ import {
   type ColumnDef,
 } from "@/components/ui";
 import { getTodayDate } from "@/lib/time.utils";
-import { STATUS_BADGE } from "@/constants/admission.constants";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { ADMISSION_ROUTES, STATUS_BADGE } from "@/constants/admission.constants";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { FollowUpMobileList } from "@/components/admissions/EnquiryMobileList";
 
 type AdmissionFollowupRow = {
   id: string;
@@ -37,7 +38,7 @@ type AdmissionFollowupRow = {
   assigned_teacher_id?: string;
 };
 
-function AdmissionsContent() {
+function FollowUpDesktop() {
   const router = useRouter();
   const { teachers } = useAdmissionLookups();
 
@@ -45,14 +46,12 @@ function AdmissionsContent() {
     next_followup_date: getTodayDate(),
     page: 1,
   };
-    const isMobile = useIsMobile();
-  
 
   const { enquiries, pagination, isLoading } =
     useAdmissionEnquiries(initialFilters);
 
   const pageHeaderConfig: PageHeaderConfig = {
-    title: isMobile ? "Today's Follow up" : "Today's Followup Admission Enquiry",
+    title: "Today's Followup Admission Enquiry",
     subtitle: pagination ? `${pagination.total} followup schedule today` : "",
   };
 
@@ -110,13 +109,13 @@ function AdmissionsContent() {
         header: "Actions",
         cell: ({ row }) => (
           <RowActions
-            onView={() => router.push(`/admissions?id=${row.original.id}`)}
+            onView={() => router.push(ADMISSION_ROUTES.view(row.original.id))}
             actions={[
               {
                 label: "Edit",
                 icon: <Pencil size={14} />,
                 onClick: () =>
-                  router.push(`/admissions?id=${row.original.id}&edit=true`),
+                  router.push(ADMISSION_ROUTES.edit(row.original.id)),
               },
             ]}
           />
@@ -150,6 +149,20 @@ function AdmissionsContent() {
   );
 }
 
+function FollowUpContent() {
+  const isMobile = useIsMobileReady();
+
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return isMobile ? <FollowUpMobileList /> : <FollowUpDesktop />;
+}
+
 export default function AdmissionsPage() {
   return (
     <Suspense
@@ -159,7 +172,7 @@ export default function AdmissionsPage() {
         </Div>
       }
     >
-      <AdmissionsContent />
+      <FollowUpContent />
     </Suspense>
   );
 }

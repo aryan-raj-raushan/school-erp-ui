@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Pencil, X, Clock } from "lucide-react";
-import { useSchoolEventDetail } from "@/hooks/useSchoolEvents";
+import { useSchoolEventDetail, useStaffRoles } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { HolidayEventMobileForm } from "@/components/settings/HolidayEventMobileForm";
+import { HolidayEventMobileView } from "@/components/holiday-events/HolidayEventsMobile";
 import {
   Div,
   H2,
@@ -21,9 +23,6 @@ import {
   PageHeader,
   type PageHeaderConfig,
 } from "@/components/ui";
-import { SchoolEventsService } from "@/services/school-events.service";
-import { RolesService, type Role } from "@/services/roles.service";
-import { toast } from "sonner";
 
 const TYPE_OPTIONS = [
   { value: "EVENT", label: "Event" },
@@ -41,8 +40,6 @@ export function HolidayEventDetail({ id }: { id: string }) {
   const searchParams = useSearchParams();
   const startEditing = searchParams.get("edit") === "true";
   const isNew = id === "create-new";
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(false);
 
   const { years } = useAcademicYears();
   const {
@@ -51,24 +48,11 @@ export function HolidayEventDetail({ id }: { id: string }) {
     isEditing,
     setIsEditing,
     form,
-    handleSubmit,
     isSubmitting,
+    refetch,
+    saveValues,
   } = useSchoolEventDetail(id);
-
-  useEffect(() => {
-    async function fetchRoles() {
-      setRolesLoading(true);
-      try {
-        const result = await RolesService.list({ limit: 100 });
-        setRoles(result.items);
-      } catch (err: unknown) {
-        console.error('Failed to load roles:', err);
-      } finally {
-        setRolesLoading(false);
-      }
-    }
-    fetchRoles();
-  }, []);
+  const { roles, rolesLoading } = useStaffRoles();
 
   useEffect(() => {
     if (startEditing && !isNew) setIsEditing(true);
@@ -86,24 +70,10 @@ export function HolidayEventDetail({ id }: { id: string }) {
   }
 
   async function onSubmit() {
-    const result = await form.handleSubmit(async (values) => {
-      const payload = {
-        ...values,
-        from_time: values.from_time || undefined,
-        to_time: values.to_time || undefined,
-        description: values.description || undefined,
-      };
-      if (isNew) {
-        const res = await SchoolEventsService.create(payload);
-        toast.success(`${res.name} created`);
-        router.push("/school/holidays-events");
-      } else {
-        await SchoolEventsService.update(id, payload);
-        toast.success("Updated successfully");
-        setIsEditing(false);
-      }
+    await form.handleSubmit(async (values) => {
+      const saved = await saveValues(values);
+      if (saved && isNew) router.push("/school/holidays-events");
     })();
-    return result;
   }
 
   if (isLoading) {
@@ -111,6 +81,42 @@ export function HolidayEventDetail({ id }: { id: string }) {
       <Div type="row" justify="center" align="center" className="py-32">
         <Spinner size="lg" />
       </Div>
+    );
+  }
+
+  if (isMobile && !isEditing && !isNew && event) {
+    return (
+      <HolidayEventMobileView
+        event={event}
+        yearName={years.find((y) => y.id === event.academic_year_id)?.name}
+        workingRoleNames={roles
+          .filter((r) => event.exempt_role_ids?.includes(r.id))
+          .map((r) => r.name)}
+        onEdit={() => setIsEditing(true)}
+        onRefresh={refetch}
+      />
+    );
+  }
+
+  if (isMobile && (isEditing || isNew)) {
+    return (
+      <HolidayEventMobileForm
+        form={form}
+        isNew={isNew}
+        isSubmitting={isSubmitting}
+        onSubmit={onSubmit}
+        onCancel={() => {
+          if (isNew) {
+            handleBack();
+            return;
+          }
+          setIsEditing(false);
+          reset();
+        }}
+        years={years}
+        roles={roles}
+        rolesLoading={rolesLoading}
+      />
     );
   }
 

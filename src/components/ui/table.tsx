@@ -1,5 +1,36 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
+
+/**
+ * Copies each column header's text onto the matching body cells as
+ * `data-label`, so the phone card layout (see `table[data-stack]` in
+ * globals.css) can print "Label  value" rows. Re-applied whenever rows change.
+ */
+function useStackedTableLabels(tableRef: React.RefObject<HTMLTableElement | null>, enabled: boolean) {
+  React.useEffect(() => {
+    const table = tableRef.current;
+    if (!enabled || !table) return;
+
+    const applyLabels = () => {
+      const headers = Array.from(table.querySelectorAll('thead th')).map((th) =>
+        (th.textContent ?? '').trim(),
+      );
+      table.querySelectorAll('tbody tr').forEach((row) => {
+        const cells = Array.from(row.children) as HTMLElement[];
+        if (cells.length !== headers.length) return;
+        cells.forEach((cell, index) => {
+          if (headers[index]) cell.setAttribute('data-label', headers[index]);
+        });
+      });
+    };
+
+    applyLabels();
+    const observer = new MutationObserver(applyLabels);
+    observer.observe(table, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [tableRef, enabled]);
+}
 
 /** Nearest ancestor that actually scrolls — the boundary the table has to fit inside. */
 function getScrollParent(node: HTMLElement): HTMLElement {
@@ -93,11 +124,18 @@ export function Table({
     bottomOffset,
   );
   const resolvedMaxHeight = maxHeight ?? autoHeight;
+  const isMobile = useIsMobileSync();
+  const tableRef = React.useRef<HTMLTableElement>(null);
+  useStackedTableLabels(tableRef, isMobile);
 
   return (
     <div
       ref={wrapperRef}
-      className={cn('rounded-2xl border border-border bg-background overflow-hidden shadow-sm', className)}
+      className={cn(
+        'rounded-2xl border border-border bg-background overflow-hidden shadow-sm',
+        isMobile && 'overflow-visible border-0 bg-transparent shadow-none',
+        className,
+      )}
     >
       <div
         ref={scrollRef}
@@ -108,9 +146,32 @@ export function Table({
           !resolvedMaxHeight && '[&::-webkit-scrollbar]:hidden scrollbar-none',
         )}
       >
-        <table className="w-full min-w-max text-sm">{children}</table>
+        <table
+          ref={tableRef}
+          data-stack={isMobile ? '' : undefined}
+          className="w-full min-w-max text-sm"
+        >
+          {children}
+        </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Plain `<table>` that reflows into labelled cards on phones (same behaviour
+ * as `Table`, without its bordered scroll wrapper) — for tables nested in
+ * other cards.
+ */
+export function StackedTable({ className, children }: React.TableHTMLAttributes<HTMLTableElement>) {
+  const isMobile = useIsMobileSync();
+  const tableRef = React.useRef<HTMLTableElement>(null);
+  useStackedTableLabels(tableRef, isMobile);
+
+  return (
+    <table ref={tableRef} data-stack={isMobile ? '' : undefined} className={cn('w-full text-sm', className)}>
+      {children}
+    </table>
   );
 }
 

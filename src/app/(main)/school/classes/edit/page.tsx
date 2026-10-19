@@ -1,5 +1,7 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ClassMobileForm } from '@/components/settings/ClassMobileForm';
 import { useSearchParams } from 'next/navigation';
 
 import { Suspense } from 'react';
@@ -7,14 +9,21 @@ import { useEditClass } from '@/hooks/useEditClass';
 import { useClassTypeCrudSelect } from '@/hooks/useClassTypeCrudSelect';
 import { CLASSES_PAGE, CLASS_SEQUENCE_OPTIONS } from '@/constants';
 import {
-  Div, Button, H2,
-  FormField, Input, Textarea,
-  CheckboxLabel, Spinner, CrudDropdown,
-  PageHeader, PageCol,
+  Div,
+  Button,
+  H2,
+  FormField,
+  Input,
+  Textarea,
+  CheckboxLabel,
+  Spinner,
+  CrudDropdown,
+  PageHeader,
   ResponsiveSelect,
 } from '@/components/ui';
 
 function EditClassPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get('id') ?? '';
 
@@ -30,6 +39,21 @@ function EditClassPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <ClassMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+        years={years}
+        sectionNames={allSectionNames}
+        classTypes={{ classTypeItems, isClassTypesLoading, addClassType, updateClassType, deleteClassType }}
+      />
     );
   }
 
@@ -140,7 +164,7 @@ function EditClassPageInner() {
 
 export default function EditClassPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<Div type="row" className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></Div>}>
       <EditClassPageInner />
     </Suspense>
   );

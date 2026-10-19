@@ -3,23 +3,37 @@
 import { useCreateHomework } from '@/hooks/useCreateHomework';
 import { HOMEWORK_PAGE, HOMEWORK_STATUS_OPTIONS } from '@/constants';
 import {
-  Div, Button, H2,
-  FormField, Input, Textarea,
-  CheckboxLabel, Spinner,
-  Table, TableHead, TableHeadRow, TableHeaderCell,
-  TableBody, TableRow, TableCell, TableEmptyRow,
+  Div,
+  Button,
+  H2,
+  FormField,
+  Input,
+  Textarea,
+  CheckboxLabel,
+  Spinner,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyRow,
   Badge,
-  PageHeader, PageCol,
+  PageHeader,
   ResponsiveSelect,
 } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
+import { HomeworkFormMobile } from '@/components/homework/HomeworkFormMobile';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 
 export default function NewHomeworkPage() {
+  const isMobile = useIsMobileSync();
   const {
-    form, years, classes, subjects,
+    form, classes, subjects,
     isLoadingData, isLoadingSubjects, attachments, fileInputRef,
     isSubmitting,
-    handleSubmit, handleFileChange, removeAttachment,
+    handleSubmit, handleFileChange, handleNativeFilePick, isNative, removeAttachment,
     handleBack,
   } = useCreateHomework();
 
@@ -30,6 +44,41 @@ export default function NewHomeworkPage() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <>
+        <HomeworkFormMobile
+          form={form}
+          title={HOMEWORK_PAGE.form.createTitle}
+          submitLabel={HOMEWORK_PAGE.form.submit}
+          classes={classes}
+          subjects={subjects}
+          isLoadingSubjects={isLoadingSubjects}
+          attachments={attachments.map((att) => ({
+            id: att.id,
+            name: att.file.name,
+            status: att.status,
+            url: att.url,
+            isImage: att.file_type !== 'pdf',
+          }))}
+          onAttach={() => (isNative ? handleNativeFilePick() : fileInputRef.current?.click())}
+          onRemoveAttachment={removeAttachment}
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmit}
+          onCancel={handleBack}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".jpg,.jpeg,.png,.pdf"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </>
     );
   }
 

@@ -26,6 +26,8 @@ import {
   ResponsiveSelect,
 } from '@/components/ui';
 import { formatDate } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { GatePassSheet } from '@/components/attendance/GatePassSheet';
 import type { GatePassRecord } from '@/types';
 
 const STATUS_BADGE: Record<string, 'warning' | 'success' | 'info' | 'danger' | 'secondary'> = {
@@ -41,6 +43,7 @@ const STATUS_OPTIONS = ['PENDING', 'APPROVED', 'USED', 'EXPIRED', 'REJECTED'];
 type PersistedGatePassFilters = Pick<{ status?: string }, 'status'>;
 
 export default function GatePassPage() {
+  const isMobile = useIsMobile();
   const {
     records, isLoading, date, setDate, statusFilter, setStatusFilter, actionId,
     isDialogOpen, openDialog, closeDialog, fetch,
@@ -225,6 +228,26 @@ export default function GatePassPage() {
         emptyText="No gate passes found for these filters."
       />
 
+      {isMobile ? (
+        <GatePassSheet
+          isOpen={isDialogOpen}
+          onClose={closeDialog}
+          students={studentOptions}
+          isLoadingStudents={isLoadingStudents}
+          studentId={studentId}
+          onStudentChange={setStudentId}
+          reason={reason}
+          onReasonChange={setReason}
+          date={formDate}
+          onDateChange={setFormDate}
+          exitTime={exitTime}
+          onExitTimeChange={setExitTime}
+          returnTime={returnTime}
+          onReturnTimeChange={setReturnTime}
+          attemptedSubmit={attemptedSubmit}
+          onSubmit={handleSubmit}
+        />
+      ) : (
       <ResponsiveModalContainer
         isOpen={isDialogOpen}
         onClose={closeDialog}
@@ -311,6 +334,7 @@ export default function GatePassPage() {
           <Button onClick={handleSubmit}>Create Gate Pass</Button>
         </Div>
       </ResponsiveModalContainer>
+      )}
     </PageCol>
   );
 }

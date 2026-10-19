@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { openExternal } from '@/lib/external-link';
 import { toast } from 'sonner';
 import { InvoicesService, type InvoiceFilters } from '@/services/invoices.service';
 import { PaymentsService } from '@/services/payments.service';
@@ -80,7 +81,7 @@ export function useInvoices(initialFilters: InvoiceFilters = {}) {
     setIsDownloading(true);
     try {
       const url = await InvoicesService.getPdfUrl(id);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      void openExternal(url);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to generate PDF');
     } finally {

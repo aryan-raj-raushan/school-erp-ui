@@ -1,22 +1,52 @@
 'use client';
 
 import { useMemo } from 'react';
+import { isNativeApp } from '@/lib/platform';
 import {
-  Printer, AlertTriangle, CreditCard, Users, FilePlus, LayoutGrid, FileText,
-  Plus, User, Phone, Mail, BookOpen, Hash, Trash2, ChevronDown, ChevronRight, Zap, Tag,
+  Printer,
+  AlertTriangle,
+  CreditCard,
+  Users,
+  FilePlus,
+  LayoutGrid,
+  FileText,
+  Plus,
+  User,
+  Phone,
+  Mail,
+  BookOpen,
+  Hash,
+  ChevronDown,
+  ChevronRight,
+  Zap,
+  Tag,
 } from 'lucide-react';
 import {
-  Div, P, Span, Button, Badge, Spinner, Label,
-  FormField, Input,
-  FormCard, SectionCard, WarnBanner,
-  PageHeader, PageCol,
-  DataTable, type ColumnDef,
-  ResponsiveSelect, ResponsiveModalContainer,
+  Div,
+  P,
+  Span,
+  Button,
+  Badge,
+  Spinner,
+  FormField,
+  Input,
+  FormCard,
+  SectionCard,
+  WarnBanner,
+  PageHeader,
+  PageCol,
+  DataTable,
+  type ColumnDef,
+  StackedTable,
+  ResponsiveSelect,
+  ResponsiveModalContainer,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFeesPayments } from '@/hooks/useFeesPayments';
 import { useFeesSetup } from '@/hooks/useFeesSetup';
 import type { PaymentMode } from '@/services/fees.service';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { FeePaymentSheet } from '@/components/finance/FeePaymentSheet';
 import {
   FEE_PAYMENTS_TABS, FEE_BILL_STATUS_COLORS,
   buildMonthYearOpts, monthValueToLabel, billBalanceDue,
@@ -51,27 +81,18 @@ type StructureRow = {
   amount?: string;
 };
 
-type DemandReceiptRow = {
-  student_id: string;
-  student_name: string;
-  admission_number?: string;
-  roll_no?: string;
-  father_name?: string;
-  total_due: string;
-  bills: Array<{ fee_type_name: string; bill_month?: string; total_amount: string; paid_amount: string; due_amount: string; due_date?: string; }>;
-};
-
 export default function FeePaymentsPage() {
+  const isMobile = useIsMobile();
   const {
     tab, setTab,
     studentFilter,
     selectedStudentId,
-    payingBill, setPayingBill,
+    payingBill,
     payForm, setPayForm,
     addFeeModal, setAddFeeModal,
     addFeeForm, setAddFeeForm,
     monthlyFilter, setMonthlyFilter,
-    payingDue, setPayingDue,
+    payingDue,
     createForm, setCreateForm,
     createClassId,
     structFilter, setStructFilter,
@@ -88,10 +109,10 @@ export default function FeePaymentsPage() {
     classStudents, loadingClassStudents,
     selectedStudent, studentParents,
     studentStructure, loadingStudentStructure,
-    fetchStudentData, clearStudentSelection,
+    fetchStudentData,
     generatingBills, generateStudentBills,
-    billPaymentsMap, expandedBillId, loadingPaymentsFor,
-    toggleBillPayments, deleteBillPayment,
+    expandedBillId,
+    toggleBillPayments,
     studentBills, loadingStudentBills,
     financeAccounts,
     monthlyDues, loadingMonthlyDues, fetchMonthlyDues,
@@ -633,7 +654,7 @@ export default function FeePaymentsPage() {
               </FormField>
             </Div>
             <Div type="row" justify="end" gap="sm" padding="mt-4">
-              {demandReceipts.length > 0 && (
+              {demandReceipts.length > 0 && !isNativeApp() && (
                 <Button variant="outline" size="sm" onClick={() => window.print()}>
                   <Printer className="w-3.5 h-3.5 mr-1" /> Print
                 </Button>
@@ -663,7 +684,7 @@ export default function FeePaymentsPage() {
                     </Div>
                   }
                 >
-                  <table className="w-full text-sm">
+                  <StackedTable>
                     <thead>
                       <tr className="border-b border-border/40 text-xs text-muted-foreground uppercase tracking-wide bg-muted/10">
                         <th className="px-5 py-2 text-left">Fee</th>
@@ -686,7 +707,7 @@ export default function FeePaymentsPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </StackedTable>
                 </SectionCard>
               ))}
             </Div>
@@ -793,8 +814,28 @@ export default function FeePaymentsPage() {
       )}
 
       {/* ─── Pay Bill Modal ───────────────────────────────────────────────── */}
+      {isMobile && (
+        <FeePaymentSheet
+          isOpen={!!payingBill || !!payingDue}
+          onClose={closePayModal}
+          heading={payingBill?.fee_type_name ?? payingDue?.student_name ?? ''}
+          detail={
+            payingBill
+              ? `${payingBill.bill_month ?? 'One-time'} · Status: ${payingBill.status}`
+              : `Month: ${payingDue?.month ?? ''} · Due: ₹${payingDue?.due_amount ?? '0'}`
+          }
+          form={payForm}
+          onChange={(patch) => setPayForm((f) => ({ ...f, ...patch }))}
+          accounts={financeAccounts}
+          paymentModes={PAYMENT_MODES}
+          totalAmount={payingBill ? parseFloat(payingBill.total_amount) : parseFloat(payingDue?.due_amount ?? '0')}
+          balanceDue={payingBill ? billBalanceDue(payingBill) : parseFloat(payingDue?.due_amount ?? '0')}
+          onSubmit={payingBill ? handlePayBill : handleMonthlyPay}
+        />
+      )}
+      {!isMobile && (
       <ResponsiveModalContainer isOpen={!!payingBill || !!payingDue} onClose={closePayModal} title="Cash / Offline Payment Details">
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             {payingBill && (
               <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
@@ -857,18 +898,19 @@ export default function FeePaymentsPage() {
               </Div>
             </Div>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={closePayModal}>Cancel</Button>
           <Button onClick={payingBill ? handlePayBill : handleMonthlyPay} disabled={!payForm.amount || !payForm.payment_date}>
             <CreditCard className="w-3.5 h-3.5 mr-1" /> Record Payment
           </Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
+      )}
 
       {/* ─── Add Additional Fee Modal ─────────────────────────────────────── */}
       <ResponsiveModalContainer isOpen={!!(addFeeModal && selectedStudent)} onClose={() => setAddFeeModal(false)} title="Add Additional Fee">
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             {selectedStudent && (
               <Div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
@@ -892,18 +934,18 @@ export default function FeePaymentsPage() {
               <Input type="number" value={addFeeForm.amount} onChange={e => setAddFeeForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" />
             </FormField>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setAddFeeModal(false)}>Cancel</Button>
           <Button onClick={handleAddFee} disabled={!addFeeForm.fee_type_id || !addFeeForm.amount}>
             <FilePlus className="w-3.5 h-3.5 mr-1" /> Add Fee
           </Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
 
       {/* ─── Confirm Bulk Discount ────────────────────────────────────────── */}
       <ResponsiveModalContainer isOpen={confirmDiscount} onClose={() => setConfirmDiscount(false)} title="Confirm Bulk Discount">
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="row" align="start" gap="sm">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <Div type="col" gap="xs">
@@ -915,16 +957,16 @@ export default function FeePaymentsPage() {
               </P>
             </Div>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setConfirmDiscount(false)}>Cancel</Button>
           <Button variant="destructive" onClick={handleBulkDiscount}>Yes, Apply Discount</Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
 
       {/* ─── Confirm Bulk Extra ───────────────────────────────────────────── */}
       <ResponsiveModalContainer isOpen={confirmExtra} onClose={() => setConfirmExtra(false)} title="Confirm Bulk Extra Payment">
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="row" align="start" gap="sm">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <Div type="col" gap="xs">
@@ -936,11 +978,11 @@ export default function FeePaymentsPage() {
               </P>
             </Div>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setConfirmExtra(false)}>Cancel</Button>
           <Button variant="destructive" onClick={handleBulkExtra}>Yes, Create Bills</Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
     </PageCol>
   );

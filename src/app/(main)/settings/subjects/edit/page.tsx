@@ -15,6 +15,7 @@ import {
   PageHeader,
 } from "@/components/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SubjectMobileForm } from "@/components/settings/SubjectMobileForm";
 
 function EditSubjectPageInner() {
   const isMobile = useIsMobile();
@@ -36,6 +37,18 @@ function EditSubjectPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <SubjectMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
     );
   }
 

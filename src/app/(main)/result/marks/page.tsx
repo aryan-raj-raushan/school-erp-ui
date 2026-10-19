@@ -16,17 +16,7 @@ import { useExamResults } from "@/hooks/result/useExamResults";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  Div,
-  P,
-  Button,
-  Spinner,
-  DataTable,
-  PageCol,
-  FilterToolbar,
-  type FilterField,
-  ResponsiveModalContainer,
-} from "@/components/ui";
+import { Div, P, Button, Spinner, DataTable, PageCol, FilterToolbar, type FilterField, ResponsiveModalContainer, Span } from "@/components/ui";
 import {
   RESULT_MARKS_PAGE,
   EXAM_TERM_LABELS,
@@ -56,17 +46,17 @@ function ConfirmModal({
 }) {
   return (
     <ResponsiveModalContainer isOpen={true} onClose={onClose} title={title}>
-      <div className="px-4 py-4">
+      <Div className="px-4 py-4">
         <P>{description}</P>
-      </div>
-      <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+      </Div>
+      <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
         <Button variant="outline" onClick={onClose} disabled={isLoading}>
           {RESULT_MARKS_PAGE.confirmPublish.cancel}
         </Button>
         <Button onClick={onConfirm} loading={isLoading}>
           {confirmLabel}
         </Button>
-      </div>
+      </Div>
     </ResponsiveModalContainer>
   );
 }
@@ -275,28 +265,28 @@ function MarksContent() {
       )}
 
       {hasData && isEditMode && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-950/20 dark:border-indigo-800/40 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="flex items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/40 p-1.5 shrink-0">
+        <Div className="rounded-xl border border-indigo-200 bg-indigo-50/60 dark:bg-indigo-950/20 dark:border-indigo-800/40 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <Div type="row" className="flex items-center gap-2.5 min-w-0">
+            <Span className="flex items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/40 p-1.5 shrink-0">
               <PencilLine size={14} className="text-indigo-600 dark:text-indigo-400" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300 leading-tight">
+            </Span>
+            <Div className="min-w-0">
+              <P className="text-sm font-semibold text-indigo-800 dark:text-indigo-300 leading-tight">
                 Editing marks
-              </p>
-              <p className="text-[11px] text-indigo-500 dark:text-indigo-500 leading-tight mt-0.5">
+              </P>
+              <P className="text-[11px] text-indigo-500 dark:text-indigo-500 leading-tight mt-0.5">
                 {isDirty ? (
-                  <span className="flex items-center gap-1">
+                  <Span className="flex items-center gap-1">
                     <AlertCircle size={10} />
                     Unsaved changes — click Save when done
-                  </span>
+                  </Span>
                 ) : (
                   "Type marks and press Tab to move between cells"
                 )}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              </P>
+            </Div>
+          </Div>
+          <Div type="row" className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <Button
               size="sm"
               variant="ghost"
@@ -316,8 +306,8 @@ function MarksContent() {
               <Save size={14} />
               {RESULT_MARKS_PAGE.buttons.saveMarks}
             </Button>
-          </div>
-        </div>
+          </Div>
+        </Div>
       )}
 
       {noSelection ? (
@@ -342,7 +332,7 @@ function MarksContent() {
           <P color="muted">{RESULT_MARKS_PAGE.table.noExam}</P>
         </Div>
       ) : (
-        <div className={isEditMode ? "ring-2 ring-indigo-200 dark:ring-indigo-800/50 rounded-2xl" : undefined}>
+        <Div className={isEditMode ? "ring-2 ring-indigo-200 dark:ring-indigo-800/50 rounded-2xl" : undefined}>
           <DataTable
             columns={columns}
             data={studentEntries}
@@ -350,8 +340,9 @@ function MarksContent() {
             emptyText="No students found for this class and section."
             pinnedColumns={["index", "roll_number", "student_name"]}
             maxHeight="calc(100vh - 420px)"
+            mobileShowAll
           />
-        </div>
+        </Div>
       )}
 
       {confirmAction === "publish" && (

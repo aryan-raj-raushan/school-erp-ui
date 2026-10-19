@@ -2,17 +2,10 @@
 
 import { useMemo } from 'react';
 import { Plus, Trash2, Pencil, Save, ChevronDown, ChevronRight, Search, GripVertical, X } from 'lucide-react';
-import {
-  Div, Button, Badge, Spinner, Icon, P, FormField, Input, FormCard, SectionCard,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  PageHeader, PageCol,
-  ResponsiveSelect, ResponsiveModalContainer,
-  DataTable, type ColumnDef, RowActions,
-} from '@/components/ui';
+import { Div, Button, Badge, Spinner, Icon, P, FormField, Input, FormCard, SectionCard, Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, PageHeader, PageCol, ResponsiveSelect, ResponsiveModalContainer, DataTable, type ColumnDef, RowActions, Span } from '@/components/ui';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Tabs } from '@/components/ui/tabs';
 import { useFeesSetup } from '@/hooks/useFeesSetup';
-import type { FeeType } from '@/services/fees.service';
 
 export default function FeeSetupPage() {
   const {
@@ -36,13 +29,13 @@ export default function FeeSetupPage() {
     structureFilter, setStructureFilter,
     classStructure, loadingStructure,
     handleLoadStructure, handleSaveStructure,
-    handleDrop, removeFromBuilder, updateBuilderAmount,
+    handleDrop, addToBuilder, removeFromBuilder, updateBuilderAmount,
     transportRoutes, loadingRoutes,
     routeFees, routeFeesAcademicYear, setRouteFeesAcademicYear,
     deleteTransportRoute,
     openAddRoute, handleSaveRoute, handleRouteExpand,
     lateRules, loadingLateRules, deleteLateRule, handleSaveLateRule,
-    fetchFeePlans, fetchLateRules,
+    fetchFeePlans,
     FEE_FREQUENCIES, MONTHS, FEE_SETUP_TABS,
   } = useFeesSetup();
 
@@ -61,9 +54,9 @@ export default function FeeSetupPage() {
         accessorKey: 'applicable_months',
         header: 'Applicable Months',
         cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground">
+          <Span className="text-xs text-muted-foreground">
             {row.original.applicable_months?.join(', ') || '—'}
-          </span>
+          </Span>
         ),
       },
       {
@@ -356,10 +349,10 @@ export default function FeeSetupPage() {
                 </Div>
               }
             >
-              <Div type="row" className="min-h-115">
+              <Div type="row" className="min-h-115 max-md:min-h-0 max-md:flex-col">
 
                 {/* ── Left: palette ─────────────────────────────────── */}
-                <Div type="col" className="w-60 shrink-0 border-r border-border/50 bg-muted/30">
+                <Div type="col" className="w-60 shrink-0 border-r border-border/50 bg-muted/30 max-md:w-full max-md:border-b max-md:border-r-0">
                   <Div type="row" align="center" justify="between" className="px-4 pt-4 pb-3 border-b border-border/40">
                     <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest">Palette</P>
                     {availableTypes.length > 0 && (
@@ -367,7 +360,7 @@ export default function FeeSetupPage() {
                     )}
                   </Div>
 
-                  <Div type="col" className="flex-1 overflow-y-auto p-3 gap-1.5">
+                  <Div type="col" className="flex-1 overflow-y-auto p-3 gap-1.5 max-md:max-h-72">
                     {availableTypes.length === 0 ? (
                       <Div type="col" align="center" justify="center" className="h-full py-10">
                         <P size="xs" color="muted">All types added</P>
@@ -408,6 +401,16 @@ export default function FeeSetupPage() {
                             )}
                           </Div>
                         </Div>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="outline"
+                          className="shrink-0 self-center md:hidden"
+                          aria-label={`Add ${s.fee_type_name}`}
+                          onClick={() => addToBuilder(s.fee_type_id)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
                       </Div>
                     ))}
                   </Div>
@@ -442,7 +445,7 @@ export default function FeeSetupPage() {
                     <>
                       {/* column headers — overflow-x-auto for mobile */}
                       <Div className="overflow-x-auto">
-                      <Div type="row" className="grid min-w-120 grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 pt-4 pb-2.5 border-b border-border/40">
+                      <Div type="row" className="grid min-w-120 grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 pt-4 pb-2.5 border-b border-border/40 max-md:hidden">
                         <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest text-center">#</P>
                         <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest">Fee Type</P>
                         <P size="xs" weight="semibold" color="muted" className="uppercase tracking-widest">Schedule</P>
@@ -456,9 +459,9 @@ export default function FeeSetupPage() {
                           <Div
                             key={item.fee_type_id}
                             type="row"
-                            className="fee-structure-row group grid min-w-120 grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 py-3"
+                            className="fee-structure-row group grid min-w-120 grid-cols-[2.5rem_1fr_9rem_8.5rem_2.5rem] items-center gap-x-3 px-5 py-3 max-md:min-w-0 max-md:grid-cols-[1fr_6.5rem_2.5rem] max-md:px-4"
                           >
-                            <P size="xs" weight="medium" color="muted" className="text-center tabular-nums">{idx + 1}</P>
+                            <P size="xs" weight="medium" color="muted" className="text-center tabular-nums max-md:hidden">{idx + 1}</P>
                             <Div type="col" className="min-w-0">
                               <P size="sm" weight="medium" className="truncate leading-snug">{item.fee_type_name}</P>
                               <P size="xs" color="muted" className="leading-snug">
@@ -467,7 +470,7 @@ export default function FeeSetupPage() {
                                   : 'One-time payment'}
                               </P>
                             </Div>
-                            <Badge variant={item.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px] w-fit">
+                            <Badge variant={item.frequency === 'Monthly' ? 'default' : 'secondary'} className="text-[10px] w-fit max-md:hidden">
                               {item.frequency === 'Monthly'
                                 ? `Monthly · ${item.applicable_months?.length ?? 0} mo`
                                 : 'One-time'}
@@ -481,7 +484,7 @@ export default function FeeSetupPage() {
                             />
                             <Div type="row" justify="center">
                               <Button variant="ghost" size="icon-sm"
-                                className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+                                className="opacity-0 group-hover:opacity-60 hover:!opacity-100 [@media(hover:none)]:opacity-60 transition-opacity"
                                 onClick={() => removeFromBuilder(item.fee_type_id)}>
                                 <X className="w-3.5 h-3.5" />
                               </Button>
@@ -614,7 +617,7 @@ export default function FeeSetupPage() {
 
       {/* ─── Fee Type Modal ─────────────────────────────────────────────────── */}
       <ResponsiveModalContainer isOpen={showFeeTypeModal} onClose={() => setShowFeeTypeModal(false)} title={feeTypeForm.id ? 'Edit Fee Type' : 'Add Fee Type'}>
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             <FormField label="Name" required>
               <Input value={feeTypeForm.name}
@@ -647,16 +650,16 @@ export default function FeeSetupPage() {
               />
             </FormField>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setShowFeeTypeModal(false)}>Cancel</Button>
           <Button onClick={handleSaveFeeType} disabled={!feeTypeForm.name}>{feeTypeForm.id ? 'Update' : 'Create'}</Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
 
       {/* ─── Route Modal ────────────────────────────────────────────────────── */}
       <ResponsiveModalContainer isOpen={showRouteModal} onClose={() => setShowRouteModal(false)} title="Add Transport Route">
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             <FormField label="Route Name" required>
               <Input value={routeForm.name}
@@ -669,16 +672,16 @@ export default function FeeSetupPage() {
                 placeholder="Optional" />
             </FormField>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setShowRouteModal(false)}>Cancel</Button>
           <Button onClick={handleSaveRoute} disabled={!routeForm.name}>Create</Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
 
       {/* ─── Late Rule Modal ────────────────────────────────────────────────── */}
       <ResponsiveModalContainer isOpen={showLateRuleModal} onClose={() => setShowLateRuleModal(false)} title="Add Late Payment Rule">
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             <FormField label="Rule Name" required>
               <Input value={lateRuleForm.name}
@@ -720,11 +723,11 @@ export default function FeeSetupPage() {
               />
             </FormField>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setShowLateRuleModal(false)}>Cancel</Button>
           <Button onClick={handleSaveLateRule} disabled={!lateRuleForm.name || !lateRuleForm.academic_year_id || lateRuleForm.applicable_fee_type_ids.length === 0}>Create</Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
     </PageCol>
   );

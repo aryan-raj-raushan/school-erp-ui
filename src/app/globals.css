@@ -695,6 +695,15 @@ html {
   body {
     overscroll-behavior: none;
   }
+  /* App shell: <main> is the only scroller, so pin the document to stop
+     the WebView rubber-band. Body-scrolling pages (auth, legal) are unaffected. */
+  html:has(main),
+  body:has(main) {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    overflow: hidden;
+  }
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -712,7 +721,7 @@ html {
     -webkit-user-drag: none;
   }
   main {
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -752,5 +761,85 @@ html {
   input[type="radio"] {
     width: 1.375rem !important;
     height: 1.375rem !important;
+  }
+}
+
+/* Phones: raw tables reflow into stacked cards. Cells get their label from
+   the column header (see useStackedTableLabels in ui/table.tsx). */
+@media (max-width: 767px) {
+  table[data-stack],
+  table[data-stack] tbody {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  table[data-stack] thead {
+    display: none;
+  }
+  table[data-stack] tbody > tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--card);
+  }
+  table[data-stack] tbody > tr > td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 2.25rem;
+    padding: 0.375rem 0 !important;
+    text-align: right;
+    word-break: break-word;
+  }
+  table[data-stack] tbody > tr > td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    font-size: 0.6875rem;
+    text-align: left;
+    color: var(--muted-foreground);
+  }
+  table[data-stack] tbody > tr > td[colspan]::before,
+  table[data-stack] tbody > tr > td:not([data-label])::before {
+    content: none;
+  }
+  table[data-stack] tbody > tr > td:empty {
+    display: none;
+  }
+  table[data-stack] tbody > tr > td:has(input, select, textarea) {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+    gap: 0.25rem;
+  }
+  table[data-stack] tbody > tr > td:has(input, select, textarea)::before {
+    max-width: none;
+  }
+}
+
+/* Bottom-sheet forms: the Save / Cancel bar stays pinned to the bottom of the
+   sheet while the fields scroll, and its buttons share the width evenly. */
+@media (max-width: 767px) {
+  [data-sheet-body] .flex.justify-end.border-t:last-child {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    background-color: #fff;
+  }
+  .dark [data-sheet-body] .flex.justify-end.border-t:last-child {
+    background-color: var(--color-neutral-900, #171717);
+  }
+  [data-sheet-body] .flex.justify-end.border-t:last-child > button {
+    width: 100%;
+  }
+  [data-sheet-pad] .flex.justify-end.border-t:last-child {
+    margin-inline: -1rem;
+    margin-bottom: -1rem;
   }
 }

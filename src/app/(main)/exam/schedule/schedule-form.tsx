@@ -10,6 +10,8 @@ import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { PageHeader } from "@/components/ui/page-header";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ScheduleMobileForm, ScheduleMobileView } from "@/components/exam/ScheduleMobile";
 import {
   Div,
   P,
@@ -28,6 +30,7 @@ import {
 
 export function ScheduleFormContent() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const params = useSearchParams();
   const id = params.get("id");
   const isEdit = params.get("edit") === "true";
@@ -80,6 +83,32 @@ export function ScheduleFormContent() {
       <Div type="row" justify="center" className="py-20">
         <P color="muted">Schedule not found.</P>
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    if (!isEdit) {
+      return (
+        <ScheduleMobileView
+          schedule={schedule}
+          yearName={yearName}
+          className={className}
+          sectionName={sectionName}
+          examName={examName}
+          roomName={hallRooms.find((r) => r.id === schedule.hall_detail_id)?.room_name}
+          subSchedules={subSchedules}
+          onEdit={() => router.push(EXAM_ROUTES.schedule.edit(schedule.id))}
+        />
+      );
+    }
+    return (
+      <ScheduleMobileForm
+        form={form}
+        isSubmitting={isSubmitting}
+        onSubmit={onSubmit}
+        onCancel={() => router.push(EXAM_ROUTES.schedule.list)}
+        rooms={hallRooms}
+      />
     );
   }
 
@@ -254,7 +283,7 @@ export function ScheduleFormContent() {
           {subSchedules.length > 0 && (
             <Div type="col" gap="sm">
               <P className="text-sm font-medium">Sub-Subjects</P>
-              {subSchedules.map((sub, i) => (
+              {subSchedules.map((sub) => (
                 <Div key={sub.id} variant="glass-sm" className="p-3">
                   <Div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     <Div type="col" gap="xs">

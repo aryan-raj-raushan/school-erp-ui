@@ -239,7 +239,7 @@ export default function StudyMaterialsPage() {
                   <iframe
                     src={viewingMaterial.file_url}
                     className="w-full rounded"
-                    style={{ height: '60vh' }}
+                    style={{ height: '60dvh' }}
                     title={viewingMaterial.title}
                   />
                 ) : (
@@ -247,7 +247,7 @@ export default function StudyMaterialsPage() {
                   <img
                     src={viewingMaterial.file_url}
                     alt={viewingMaterial.title}
-                    className="w-full rounded object-contain max-h-[60vh]"
+                    className="w-full rounded object-contain max-h-[60dvh]"
                   />
                 )
               )}

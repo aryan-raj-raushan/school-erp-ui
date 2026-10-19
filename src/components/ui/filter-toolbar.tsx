@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Search, ChevronDown, X, SlidersHorizontal } from "lucide-react";
+import { Search, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Div } from "./layout";
-import { Span, FilterLabel } from "./typography";
+import { Span } from "./typography";
 import { Button } from "./button";
-import { Badge } from "./badge";
-import { useIsMobile, ResponsiveBottomSheet } from "./responsive-bottom-sheet";
+import { useIsMobile } from "./responsive-bottom-sheet";
+import { MobileFilterBar } from "./mobile-filter-bar";
 
 export interface FilterOption {
   value: string;
@@ -208,7 +208,6 @@ export function FilterToolbar({
   className,
 }: FilterToolbarProps) {
   const isMobile = useIsMobile();
-  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
   const activeCount = fields.reduce(
     (count, field) => (values[field.key] ? count + 1 : count),
@@ -220,193 +219,26 @@ export function FilterToolbar({
   }
 
   function handleClear() {
-    onClear?.();
-    setIsSheetOpen(false);
-  }
-
-  const activeChips = fields
-    .filter((field) => Boolean(values[field.key]))
-    .map((field) => {
-      if (field.type === "search") {
-        return { key: field.key, label: `"${values[field.key]}"` };
-      }
-      if (field.type === "custom") {
-        return {
-          key: field.key,
-          label: `${field.label}: ${field.chipLabel ?? values[field.key]}`,
-        };
-      }
-      const optionLabel = field.options.find(
-        (o) => o.value === values[field.key],
-      )?.label;
-      return {
-        key: field.key,
-        label: `${field.label}: ${optionLabel ?? values[field.key]}`,
-      };
+    if (onClear) {
+      onClear();
+      return;
+    }
+    const cleared: Record<string, string | undefined> = {};
+    fields.forEach((field) => {
+      cleared[field.key] = undefined;
     });
+    onChange(cleared);
+  }
 
   if (isMobile) {
     return (
-      <Div className="rounded-xl border border-border/60 bg-white p-2 dark:bg-neutral-900">
-        <Div gap="sm" className={className}>
-          <Div type="row" align="center" gap="sm">
-            <Button
-              variant="outline"
-              size="default"
-              onClick={() => setIsSheetOpen(true)}
-              className="h-9 gap-1 px-4 text-[0.8rem] sm:h-11 sm:gap-1.5 sm:px-5 sm:text-sm"
-            >
-              <SlidersHorizontal size={10} />
-              Filter
-              {activeCount > 0 && (
-                <Badge
-                  variant="primary"
-                  className="ml-0.5 h-4 min-w-4 px-1 text-xs"
-                >
-                  {activeCount}
-                </Badge>
-              )}
-            </Button>
-
-            {activeCount > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClear}
-                title="Clear all filters"
-                className="text-red-400"
-              >
-                <X size={18} className="text-red-400" />
-                Clear
-              </Button>
-            )}
-          </Div>
-
-          {/* {activeChips.length > 0 && (
-          <Div type="row" align="center" gap="sm" className="-mx-1 overflow-x-auto px-1 pb-1">
-            {activeChips.map((chip) => (
-              <Div
-                key={chip.key}
-                type="row"
-                align="center"
-                gap="xs"
-                className="shrink-0 whitespace-nowrap rounded-full border border-border bg-muted/50 px-2.5 py-1"
-              >
-                <Span className="text-xs">{chip.label}</Span>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="h-4 w-4 min-w-0 min-h-0 rounded-full text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    const field = fields.find((f) => f.key === chip.key);
-                    if (field) handleFieldChange(field, undefined);
-                  }}
-                >
-                  <X size={8}/>
-                </Button>
-              </Div>
-            ))}
-          </Div>
-        )} */}
-
-          <ResponsiveBottomSheet
-            isOpen={isSheetOpen}
-            onClose={() => setIsSheetOpen(false)}
-            title={sheetTitle}
-          >
-            <Div gap="lg">
-              {fields.map((field) => {
-                if (field.type === "search") {
-                  return (
-                    <Div key={field.key} className="relative">
-                      <Search
-                        size={14}
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      />
-                      <input
-                        value={values[field.key] ?? ""}
-                        onChange={(e) =>
-                          handleFieldChange(field, e.target.value || undefined)
-                        }
-                        placeholder={field.placeholder}
-                        className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50"
-                      />
-                    </Div>
-                  );
-                }
-
-                if (field.type === "custom") {
-                  return (
-                    <Div key={field.key}>
-                      <FilterLabel className="mb-2">{field.label}</FilterLabel>
-                      {field.render()}
-                    </Div>
-                  );
-                }
-
-                return (
-                  <Div key={field.key}>
-                    <FilterLabel className="mb-2">{field.label}</FilterLabel>
-                    <Div type="row" wrap gap="sm">
-                      <button
-                        type="button"
-                        onClick={() => handleFieldChange(field, undefined)}
-                        className={cn(
-                          "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                          !values[field.key]
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:bg-muted/50",
-                        )}
-                      >
-                        {field.placeholder}
-                      </button>
-                      {field.options.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          disabled={field.disabled}
-                          onClick={() => handleFieldChange(field, option.value)}
-                          className={cn(
-                            "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                            values[field.key] === option.value
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border text-muted-foreground hover:bg-muted/50",
-                            field.disabled && "cursor-not-allowed opacity-50",
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </Div>
-                  </Div>
-                );
-              })}
-            </Div>
-
-            <Div
-              type="row"
-              gap="sm"
-              className="mt-6 border-t border-border/50 pt-4"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="grow shrink basis-0 min-w-0"
-                onClick={handleClear}
-              >
-                Clear All
-              </Button>
-              <Button
-                size="sm"
-                className="grow shrink basis-0 min-w-0"
-                onClick={() => setIsSheetOpen(false)}
-              >
-                Done
-              </Button>
-            </Div>
-          </ResponsiveBottomSheet>
-        </Div>
-      </Div>
+      <MobileFilterBar
+        fields={fields}
+        values={values}
+        onChange={onChange}
+        onClear={handleClear}
+        sheetTitle={sheetTitle}
+      />
     );
   }
 

@@ -21,6 +21,7 @@ import {
   TIMEZONE_OPTIONS,
 } from '@/constants/school-profile.constants';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SchoolProfileMobileForm } from '@/components/settings/SchoolProfileMobileForm';
 
 export default function SchoolProfilePage() {
   const isMobile = useIsMobile();
@@ -36,6 +37,18 @@ export default function SchoolProfilePage() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <SchoolProfileMobileForm
+        form={form}
+        updateField={updateField}
+        isSaving={isSaving}
+        onSave={save}
+        uploadLogo={uploadLogo}
+      />
+    );
+  }
+
   const pageHeaderConfig: PageHeaderConfig = {
       title: SCHOOL_PROFILE_PAGE.title,
       subtitle: SCHOOL_PROFILE_PAGE.subtitle,
@@ -45,7 +58,6 @@ export default function SchoolProfilePage() {
           onClick: () => save(),
         },
       ],
-      backButton: isMobile,
     };
 
   return (

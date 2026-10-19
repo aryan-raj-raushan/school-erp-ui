@@ -19,7 +19,7 @@ export function TeacherDashboard() {
   const vm = useTeacherDashboardPage();
 
   return (
-    <DashboardRoot>
+    <DashboardRoot onRefresh={vm.refresh}>
       <DashboardHero
         eyebrow={vm.eyebrow}
         greeting={vm.greeting}

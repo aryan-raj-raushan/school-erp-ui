@@ -3,19 +3,11 @@
 import { useMemo } from "react";
 import { useClassSubjectTeacherMap } from "@/hooks/useClassSubjectTeacherMap";
 import { CLASS_SUBJECT_TEACHER_PAGE } from "@/constants";
-import {
-  Div,
-  Button,
-  PageHeader,
-  PageCol,
-  Spinner,
-  EmptyState,
-  ResponsiveSelect,
-  FilterToolbar,
-  type FilterField,
-} from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Div, Button, PageHeader, PageCol, Spinner, EmptyState, ResponsiveSelect, FilterToolbar, type FilterField, MobileSelectField, StickyActionBar, Span } from "@/components/ui";
 
 export default function SubjectTeacherMapPage() {
+  const isMobile = useIsMobile();
   const {
     years,
     academicYearId,
@@ -92,6 +84,27 @@ export default function SubjectTeacherMapPage() {
         </Div>
       ) : subjects.length === 0 ? (
         <EmptyState title={CLASS_SUBJECT_TEACHER_PAGE.empty} />
+      ) : isMobile ? (
+        <Div type="col" gap="sm">
+          {subjects.map((subject) => (
+            <MobileSelectField
+              key={subject.id}
+              label={subject.name}
+              value={teacherBySubject[subject.id] ?? ""}
+              onChange={(value) => setTeacherForSubject(subject.id, value)}
+              placeholder={CLASS_SUBJECT_TEACHER_PAGE.teacherPlaceholder}
+              options={teachers.map((t) => ({
+                value: t.id,
+                label: [t.first_name, t.last_name].filter(Boolean).join(" "),
+              }))}
+            />
+          ))}
+          <StickyActionBar>
+            <Button size="lg" className="flex-1" loading={isSaving} onClick={saveMapping}>
+              {CLASS_SUBJECT_TEACHER_PAGE.saveButton}
+            </Button>
+          </StickyActionBar>
+        </Div>
       ) : (
         <Div type="col" gap="lg">
           <Div
@@ -105,8 +118,8 @@ export default function SubjectTeacherMapPage() {
               gap="sm"
               className="grid-cols-2 font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-1"
             >
-              <span>{CLASS_SUBJECT_TEACHER_PAGE.table.subject}</span>
-              <span>{CLASS_SUBJECT_TEACHER_PAGE.table.teacher}</span>
+              <Span>{CLASS_SUBJECT_TEACHER_PAGE.table.subject}</Span>
+              <Span>{CLASS_SUBJECT_TEACHER_PAGE.table.teacher}</Span>
             </Div>
             {subjects.map((subject) => (
               <Div
@@ -116,7 +129,7 @@ export default function SubjectTeacherMapPage() {
                 key={subject.id}
                 className="grid-cols-2 items-center py-1"
               >
-                <span className="text-sm font-medium">{subject.name}</span>
+                <Span className="text-sm font-medium">{subject.name}</Span>
                 <ResponsiveSelect
                   value={teacherBySubject[subject.id] ?? ""}
                   onChange={(e) =>

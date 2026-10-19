@@ -9,7 +9,7 @@ import { fmtNumber, fmtShortDate, summariseAttendance } from '@/lib/dashboard.ut
 import type { DashKpi } from '@/types/dashboard.types';
 
 export function useTeacherDashboardPage() {
-  const { data, isLoading, error } = useTeacherDashboard();
+  const { data, isLoading, error, refresh } = useTeacherDashboard();
   const identity = useDashboardIdentity();
 
   const att = summariseAttendance(data?.attendanceSummary ?? []);
@@ -55,6 +55,7 @@ export function useTeacherDashboardPage() {
 
   return {
     isLoading,
+    refresh,
     error,
     greeting: identity.greeting,
     title: identity.firstName || 'there',

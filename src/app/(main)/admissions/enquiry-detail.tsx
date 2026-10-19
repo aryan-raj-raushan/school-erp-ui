@@ -8,8 +8,6 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
-  FileText,
-  Clock,
 } from "lucide-react";
 import { useAdmissionEnquiryDetail } from "@/hooks/useAdmissions";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
@@ -38,17 +36,19 @@ import {
   DataTable,
   type ColumnDef,
 } from "@/components/ui";
-import { ACTION_OPTIONS, STATUS_BADGE, STATUS_OPTIONS } from "@/constants/admission.constants";
+import {
+  ACTION_OPTIONS,
+  ADMISSION_ROUTES,
+  STATUS_BADGE,
+  STATUS_OPTIONS,
+} from "@/constants/admission.constants";
 import { GENDER_OPTIONS } from "@/constants";
 import { CATEGORY_OPTIONS, RELIGION_OPTIONS } from "@/constants/shared/index.constant";
-import { useIsMobile } from "@/hooks/use-mobile";
-
-const ACTION_ICON: Record<EnquiryAction, React.ReactNode> = {
-  NEW_ENQUIRY: <FileText size={16} className="text-slate-500" />,
-  NEXT_FOLLOW_UP_UPDATE: <Clock size={16} className="text-blue-500" />,
-  ADMISSION_CONFIRMED: <CheckCircle2 size={16} className="text-emerald-500" />,
-  ENQUIRY_REJECTED: <XCircle size={16} className="text-red-500" />,
-};
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { ACTION_ICON } from "@/components/admissions/enquiry-action-icons";
+import { EnquiryMobileForm } from "@/components/admissions/EnquiryMobileForm";
+import { EnquiryMobileProfile } from "@/components/admissions/EnquiryMobileProfile";
+import { EnquiryHistorySheet } from "@/components/admissions/EnquiryHistorySheet";
 
 export function AdmissionEnquiryDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -58,6 +58,8 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
   const isNew = id === "create-new";
 
   const { years } = useAcademicYears();
+  const viewportIsMobile = useIsMobileReady();
+  const isMobile = !!viewportIsMobile;
   const [lockedAction, setLockedAction] = useState(false);
 
   const {
@@ -77,11 +79,12 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
     openHistoryModal,
     closeHistoryModal,
     historyForm,
-    handleAddHistory,
     isHistorySubmitting,
     hasSavedDraft,
     restoreSavedDraft,
     discardSavedDraft,
+    refetch,
+    handleAddHistory,
   } = useAdmissionEnquiryDetail(id);
 
   useEffect(() => {
@@ -174,15 +177,22 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
   async function onFormSubmit() {
     await handleSubmit();
-    if (isNew) router.push("/admissions");
+    if (isNew) router.push(ADMISSION_ROUTES.list);
   }
 
-  if (isLoading) {
+  if (isLoading || viewportIsMobile === undefined) {
     return (
       <Div type="row" justify="center" align="center" className="py-32">
         <Spinner size="lg" />
       </Div>
     );
+  }
+
+  function teacherName(teacherId?: string | null) {
+    const teacher = teachers.find((t) => t.id === teacherId);
+    return teacher
+      ? `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim()
+      : undefined;
   }
 
   const canAddHistory = !isNew && !isTerminal;
@@ -212,7 +222,68 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
   const isViewMode = !isNew && !isEditing && !!enquiry;
   const isFormMode = isEditing || isNew;
-  const isMobile = useIsMobile();
+
+  const draftBanner =
+    isNew && hasSavedDraft ? (
+      <SavedFormBanner onContinue={restoreSavedDraft} onDiscard={discardSavedDraft} />
+    ) : undefined;
+
+  if (isMobile) {
+    const historySheet = (
+      <EnquiryHistorySheet
+        isOpen={showHistoryModal}
+        onClose={closeHistoryModal}
+        form={historyForm}
+        onSubmit={handleAddHistory}
+        isSubmitting={isHistorySubmitting}
+        lockedAction={lockedAction}
+      />
+    );
+
+    if (isViewMode && enquiry) {
+      return (
+        <>
+          <EnquiryMobileProfile
+            enquiry={enquiry}
+            history={history}
+            yearName={years.find((y) => y.id === enquiry.applying_academic_year_id)?.name}
+            className={classes.find((c) => c.id === enquiry.applying_class_id)?.name}
+            sourceName={sources.find((s) => s.id === enquiry.enquiry_source_id)?.name}
+            teacherName={teacherName(enquiry.assigned_teacher_id)}
+            isTerminal={isTerminal}
+            onEdit={() => setIsEditing(true)}
+            onRefresh={refetch}
+            onAction={openHistoryModalWithAction}
+            onAddEntry={handleAddEntryClick}
+          />
+          {historySheet}
+        </>
+      );
+    }
+
+    return (
+      <EnquiryMobileForm
+        form={form}
+        isNew={isNew}
+        isTerminal={isTerminal}
+        isSubmitting={isSubmitting}
+        onSubmit={onFormSubmit}
+        onCancel={
+          isNew
+            ? undefined
+            : () => {
+                setIsEditing(false);
+                reset();
+              }
+        }
+        banner={draftBanner}
+        years={years}
+        classes={classes}
+        sources={sources}
+        teachers={teachers}
+      />
+    );
+  }
 
   const pageHeaderActions: PageHeaderAction[] = [
     {
@@ -266,7 +337,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
       !isNew && enquiry
         ? `Enquiry from ${new Date(enquiry.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}`
         : undefined,
-    backButton: !isNew || isMobile,
+    backButton: !isNew,
     actions: pageHeaderActions,
   };
 
@@ -274,12 +345,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
     <Div type="col" gap="md" className="max-w-7xl">
       <PageHeader sticky {...pageHeaderConfig} />
 
-      {isNew && hasSavedDraft && (
-        <SavedFormBanner
-          onContinue={restoreSavedDraft}
-          onDiscard={discardSavedDraft}
-        />
-      )}
+      {draftBanner}
 
       {isViewMode && (
         <Div type="row">
@@ -421,15 +487,7 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
             />
             <InfoRow
               label="Assigned Teacher"
-              value={
-                teachers.find((t) => t.id === enquiry.assigned_teacher_id)
-                  ? `${teachers.find((t) => t.id === enquiry.assigned_teacher_id)?.first_name ?? ""} ${
-                      teachers.find(
-                        (t) => t.id === enquiry.assigned_teacher_id,
-                      )?.last_name ?? ""
-                    }`.trim()
-                  : "—"
-              }
+              value={teacherName(enquiry.assigned_teacher_id) ?? "—"}
             />
             <InfoRow
               label="Next Follow-up"
@@ -756,7 +814,6 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
         </Div>
       )}
 
-      {/* Add History Modal - Responsive */}
       <ResponsiveModalContainer
         isOpen={showHistoryModal}
         onClose={closeHistoryModal}

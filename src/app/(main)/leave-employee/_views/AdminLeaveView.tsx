@@ -6,7 +6,6 @@ import { LEAVE_PAGE, LEAVE_STATUS_BADGE } from "@/constants";
 import {
   Div,
   H1,
-  P,
   Button,
   Input,
   Badge,
@@ -18,12 +17,16 @@ import {
   DataTable,
   type ColumnDef,
   RowActions,
+  SegmentedControl,
 } from "@/components/ui";
-import {  Eye } from "lucide-react";
+import { Eye } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { LeaveDecisionSheet } from "@/components/leave/LeaveSheets";
 
 type Tab = "teacher" | "student";
 
 export default function AdminLeaveView() {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<Tab>("teacher");
 
   const {
@@ -165,7 +168,7 @@ export default function AdminLeaveView() {
   return (
     <Div type="col" gap="lg">
       {/* Header */}
-      <Div type="row" justify="between" align="center">
+      <Div type="row" justify="between" align="center" wrap>
         <H1>{LEAVE_PAGE.title}</H1>
         <Div type="row" gap="sm">
           <MiniStat label="Pending Teacher" value={pendingTeacher} color={pendingTeacher > 0 ? "yellow" : "default"} />
@@ -187,18 +190,30 @@ export default function AdminLeaveView() {
       </Div>
 
       {/* Tabs */}
-      <Div type="row" gap="sm">
-        {(["teacher", "student"] as Tab[]).map((tab) => (
-          <Button
-            key={tab}
-            size="sm"
-            variant={activeTab === tab ? "default" : "outline"}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab === "teacher" ? LEAVE_PAGE.tabs.teacher : LEAVE_PAGE.tabs.student}
-          </Button>
-        ))}
-      </Div>
+      {isMobile ? (
+        <SegmentedControl
+          ariaLabel="Request type"
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: "teacher", label: `${LEAVE_PAGE.tabs.teacher} (${pendingTeacher})` },
+            { value: "student", label: `${LEAVE_PAGE.tabs.student} (${pendingStudent})` },
+          ]}
+        />
+      ) : (
+        <Div type="row" gap="sm">
+          {(["teacher", "student"] as Tab[]).map((tab) => (
+            <Button
+              key={tab}
+              size="sm"
+              variant={activeTab === tab ? "default" : "outline"}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "teacher" ? LEAVE_PAGE.tabs.teacher : LEAVE_PAGE.tabs.student}
+            </Button>
+          ))}
+        </Div>
+      )}
 
       {/* Teacher requests */}
       {activeTab === "teacher" && (
@@ -223,6 +238,15 @@ export default function AdminLeaveView() {
       )}
 
       {/* Review Modal */}
+      {isMobile ? (
+        <LeaveDecisionSheet
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          form={reviewForm}
+          onSubmit={handleSubmit(handleReview)}
+          isSubmitting={isSaving}
+        />
+      ) : (
       <ResponsiveModalContainer isOpen={showReviewModal} title={LEAVE_PAGE.review.title} onClose={() => setShowReviewModal(false)}>
           <form onSubmit={handleSubmit(handleReview)}>
             <Div type="col" gap="md" className="px-4 py-4">
@@ -249,6 +273,7 @@ export default function AdminLeaveView() {
             </Div>
           </form>
       </ResponsiveModalContainer>
+      )}
     </Div>
   );
 }

@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { Pencil, X, Lock } from "lucide-react";
 import { useRoleDetail } from "@/hooks/useRoleDetail";
 import { PermissionMatrix } from "@/components/ui/permission-matrix";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { RoleMobileForm, RoleMobileView } from "@/components/school/RoleMobile";
 import {
   Div,
   H2,
@@ -21,6 +23,7 @@ import {
 } from "@/components/ui";
 
 export function RoleDetail({ id }: { id: string }) {
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const startEditing = searchParams.get("edit") === "true";
 
@@ -53,6 +56,37 @@ export function RoleDetail({ id }: { id: string }) {
       <Div type="row" justify="center" align="center" className="py-32">
         <Spinner size="lg" />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    if (!isEditing && !isNew) {
+      return (
+        <RoleMobileView
+          name={roleName}
+          description={form.getValues("description")}
+          isActive={form.getValues("is_active")}
+          isSystem={isSystem}
+          groupedPermissions={groupedPermissions}
+          selectedPermissionIds={selectedPermissionIds}
+          onEdit={() => setIsEditing(true)}
+        />
+      );
+    }
+    return (
+      <RoleMobileForm
+        form={form}
+        isNew={isNew}
+        isSystem={isSystem}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={isNew ? handleBack : handleCancelEdit}
+        groupedPermissions={groupedPermissions}
+        selectedPermissionIds={selectedPermissionIds}
+        onTogglePermission={togglePermission}
+        onToggleResourceAll={toggleResourceAll}
+        onToggleSelectAll={toggleSelectAll}
+      />
     );
   }
 

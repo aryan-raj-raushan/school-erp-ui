@@ -5,15 +5,9 @@ import { TEAM_PAGE, CREATE_TEAM_MEMBER_FORM } from '@/constants';
 import { Role } from '@/types';
 import { useCompanyUsers } from '@/hooks/useCompanyUsers';
 import type { CompanyUser } from '@/services/company-users.service';
-import {
-  Div, P, Button, Input,
-  PageHeader, PageCol, FilterBar,
-  DataTable,
-  ResponsiveModalContainer, FormField,
-  Badge,
-  type ColumnDef,
-  ResponsiveSelect,
-} from '@/components/ui';
+import { Div, P, Button, Input, PageHeader, PageCol, FilterBar, DataTable, ResponsiveModalContainer, FormField, Badge, type ColumnDef, ResponsiveSelect, RowActions, MobileFormSheet, BottomSheet, MobileSelectField, Span } from '@/components/ui';
+import { Building2, Power, PowerOff, Trash2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ASSIGNABLE_ROLE_OPTIONS = [
   { value: Role.SALES, label: TEAM_PAGE.roleLabels.SALES },
@@ -27,6 +21,7 @@ function roleLabel(role: string): string {
 }
 
 export default function TeamPage() {
+  const isMobile = useIsMobile();
   const {
     users, pagination, filters, isLoading,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
@@ -75,21 +70,36 @@ export default function TeamPage() {
       {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            {(row.original.role === Role.SALES || row.original.role === Role.OPERATOR) && (
-              <Button size="sm" variant="outline" onClick={() => openSchoolsModal(row.original)}>
-                Schools
-              </Button>
-            )}
-            <Button size="sm" variant="outline" onClick={() => toggleActive(row.original)}>
-              {row.original.is_active ? 'Deactivate' : 'Activate'}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => deleteUser(row.original)}>
-              Delete
-            </Button>
-          </Div>
-        ),
+        cell: ({ row }) => {
+          const canManageSchools =
+            row.original.role === Role.SALES || row.original.role === Role.OPERATOR;
+          return (
+            <RowActions
+              actions={[
+                {
+                  label: 'Schools',
+                  icon: <Building2 size={14} />,
+                  hidden: !canManageSchools,
+                  onClick: () => openSchoolsModal(row.original),
+                },
+                {
+                  label: row.original.is_active ? 'Deactivate' : 'Activate',
+                  icon: row.original.is_active ? <PowerOff size={14} /> : <Power size={14} />,
+                  onClick: () => toggleActive(row.original),
+                },
+                {
+                  label: 'Delete',
+                  icon: <Trash2 size={14} />,
+                  variant: 'destructive',
+                  confirm: {
+                    description: `Remove ${row.original.first_name} from the team? This cannot be undone.`,
+                  },
+                  onClick: () => deleteUser(row.original),
+                },
+              ]}
+            />
+          );
+        },
       },
     ],
     [toggleActive, deleteUser, openSchoolsModal],
@@ -120,10 +130,68 @@ export default function TeamPage() {
         pagination={pagination ?? undefined}
       />
 
-      {showCreateModal && (
+      {isMobile && (
+        <MobileFormSheet
+          isOpen={showCreateModal}
+          onClose={closeCreateModal}
+          title={CREATE_TEAM_MEMBER_FORM.title}
+          form={createForm}
+          onSubmit={handleCreateSubmit}
+          isSubmitting={isCreating}
+          submitLabel={CREATE_TEAM_MEMBER_FORM.submit.idle}
+          cancelLabel={CREATE_TEAM_MEMBER_FORM.cancel}
+          fields={[
+            {
+              kind: 'row',
+              fields: [
+                {
+                  kind: 'input',
+                  name: 'first_name',
+                  label: CREATE_TEAM_MEMBER_FORM.labels.first_name,
+                  required: true,
+                  autoCapitalize: 'words',
+                },
+                {
+                  kind: 'input',
+                  name: 'last_name',
+                  label: CREATE_TEAM_MEMBER_FORM.labels.last_name,
+                  autoCapitalize: 'words',
+                },
+              ],
+            },
+            {
+              kind: 'input',
+              type: 'email',
+              name: 'email',
+              label: CREATE_TEAM_MEMBER_FORM.labels.email,
+              required: true,
+              placeholder: CREATE_TEAM_MEMBER_FORM.placeholders.email,
+              autoCapitalize: 'none',
+            },
+            {
+              kind: 'input',
+              type: 'password',
+              name: 'password',
+              label: CREATE_TEAM_MEMBER_FORM.labels.password,
+              required: true,
+              placeholder: CREATE_TEAM_MEMBER_FORM.placeholders.password,
+            },
+            {
+              kind: 'select',
+              name: 'role',
+              label: CREATE_TEAM_MEMBER_FORM.labels.role,
+              required: true,
+              placeholder: 'Select role',
+              options: ASSIGNABLE_ROLE_OPTIONS,
+            },
+          ]}
+        />
+      )}
+
+      {!isMobile && showCreateModal && (
         <ResponsiveModalContainer isOpen={showCreateModal} onClose={closeCreateModal} title={CREATE_TEAM_MEMBER_FORM.title}>
           <form onSubmit={handleCreateSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <Div type="grid" cols={2} gap="md">
                   <FormField label={CREATE_TEAM_MEMBER_FORM.labels.first_name} error={createForm.formState.errors.first_name?.message}>
@@ -147,22 +215,61 @@ export default function TeamPage() {
                   />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeCreateModal}>{CREATE_TEAM_MEMBER_FORM.cancel}</Button>
               <Button type="submit" loading={isCreating}>{CREATE_TEAM_MEMBER_FORM.submit.idle}</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}
 
-      {managingSchoolsFor && (
+      {isMobile && (
+        <BottomSheet
+          isOpen={!!managingSchoolsFor}
+          onClose={closeSchoolsModal}
+          title={managingSchoolsFor ? `${TEAM_PAGE.schoolsModal.title} — ${managingSchoolsFor.first_name}` : undefined}
+          maxHeight="85dvh"
+        >
+          <Div className="flex flex-col gap-4 pt-1">
+            <P className="text-xs text-muted-foreground">{TEAM_PAGE.schoolsModal.hint}</P>
+            {!isSchoolsLoading && unassignedSchools.length > 0 && (
+              <MobileSelectField
+                key={assignedSchools.map((s) => s.school_id).join(',')}
+                label={TEAM_PAGE.schoolsModal.assign}
+                placeholder="Select a school to assign"
+                value=""
+                onChange={assignSchool}
+                options={unassignedSchools.map((s) => ({ value: s.id, label: s.name }))}
+              />
+            )}
+            {assignedSchools.length === 0 && !isSchoolsLoading && (
+              <P className="py-2 text-center text-sm text-muted-foreground">{TEAM_PAGE.schoolsModal.empty}</P>
+            )}
+            <ul className="flex flex-col gap-2">
+              {assignedSchools.map((s) => (
+                <li
+                  key={s.school_id}
+                  className="flex items-center justify-between gap-2 rounded-2xl border border-border/60 p-3"
+                >
+                  <Span className="min-w-0 truncate text-[15px] font-medium">{s.school_name}</Span>
+                  <Button size="sm" variant="destructive" onClick={() => unassignSchool(s.school_id)}>
+                    {TEAM_PAGE.schoolsModal.remove}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </Div>
+        </BottomSheet>
+      )}
+
+      {!isMobile && managingSchoolsFor && (
         <ResponsiveModalContainer
           isOpen={!!managingSchoolsFor}
           onClose={closeSchoolsModal}
           title={`${TEAM_PAGE.schoolsModal.title} — ${managingSchoolsFor.first_name}`}
         >
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="md">
               <P color="muted" className="text-xs">{TEAM_PAGE.schoolsModal.hint}</P>
 
@@ -191,7 +298,7 @@ export default function TeamPage() {
                 ))}
               </Div>
             </Div>
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
     </PageCol>

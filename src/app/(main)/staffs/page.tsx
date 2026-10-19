@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStaffsPage } from "@/hooks/useStaffsPage";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
@@ -32,11 +32,8 @@ import {
   Mail,
   Trash2,
   Plus,
-  Download,
-  Upload,
 } from "lucide-react";
 import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from "@/constants";
-import { StaffDetail } from "./staff-detail";
 import { StaffMobileList } from "@/components/staff/StaffMobileList";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 
@@ -57,12 +54,10 @@ function StaffsDesktop() {
     navigateToView,
     navigateToEdit,
     showBulkModal,
-    openBulkModal,
     closeBulkModal,
     bulkFileRef,
     isImporting,
     bulkImport,
-    downloadTemplate,
     isAdmin,
     roles,
   } = useStaffsPage();
@@ -330,13 +325,19 @@ function StaffsDesktop() {
 }
 
 function StaffsPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const detailId = searchParams.get("id");
+  const legacyId = searchParams.get("id");
   const isMobile = useIsMobileReady();
 
-  if (detailId) return <StaffDetail id={detailId} />;
+  // Old links used `/staffs?id=…` for the detail screen.
+  useEffect(() => {
+    if (!legacyId) return;
+    const edit = searchParams.get("edit") === "true";
+    router.replace(`/staffs/view?id=${legacyId}${edit ? "&edit=true" : ""}`);
+  }, [legacyId, searchParams, router]);
 
-  if (isMobile === undefined) {
+  if (isMobile === undefined || legacyId) {
     return (
       <Div type="row" justify="center" className="py-20">
         <Spinner size="lg" />

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { haptic } from "@/lib/haptics";
 
 
 const TAB_ITEM =
@@ -18,7 +19,13 @@ export function MobileTabLink({
   className,
   ...props
 }: React.ComponentProps<typeof Link> & { active: boolean }) {
-  return <Link className={cn(TAB_ITEM, tabTone(active), className)} {...props} />;
+  return (
+    <Link
+      className={cn(TAB_ITEM, tabTone(active), className)}
+      onClick={() => void haptic("light")}
+      {...props}
+    />
+  );
 }
 
 export function MobileTabButton({

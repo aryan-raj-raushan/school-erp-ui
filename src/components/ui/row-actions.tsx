@@ -15,6 +15,8 @@ import {
   DropdownMenuItem,
 } from "./dropdown-menu";
 import { useBackLayer } from "@/hooks/useBackLayer";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
+import { ActionSheet, type SheetAction } from "./action-sheet";
 
 export interface RowAction {
   label: string;
@@ -152,6 +154,8 @@ function ConfirmDialog({
  * centered dialog on desktop — before `onClick` fires.
  */
 export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsProps) {
+  const isMobile = useIsMobileSync();
+  const [sheetOpen, setSheetOpen] = React.useState(false);
   const [pendingAction, setPendingAction] = React.useState<RowAction | null>(null);
   const visibleActions = actions.filter((action) => !action.hidden);
 
@@ -171,6 +175,53 @@ export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsPr
   }
 
   if (!onView && visibleActions.length === 0) return null;
+
+  if (isMobile) {
+    const sheetActions: SheetAction[] = visibleActions.map((action) => {
+      const copy = action.confirm ? resolveConfirmCopy(action) : null;
+      return {
+        label: action.label,
+        icon: action.icon,
+        destructive: action.variant === "destructive",
+        onClick: action.onClick,
+        confirm: copy
+          ? { title: copy.title, description: copy.description, confirmLabel: copy.confirmLabel }
+          : undefined,
+      };
+    });
+
+    return (
+      <>
+        <Div type="row" gap="xs" align="center">
+          {onView && (
+            <button
+              type="button"
+              aria-label={viewLabel}
+              onClick={onView}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground active:bg-muted"
+            >
+              <Eye size={20} />
+            </button>
+          )}
+          {visibleActions.length > 0 && (
+            <button
+              type="button"
+              aria-label="More actions"
+              onClick={() => setSheetOpen(true)}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground active:bg-muted"
+            >
+              <MoreVertical size={20} />
+            </button>
+          )}
+        </Div>
+        <ActionSheet
+          isOpen={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          actions={sheetActions}
+        />
+      </>
+    );
+  }
 
   const confirmCopy = pendingAction ? resolveConfirmCopy(pendingAction) : null;
 

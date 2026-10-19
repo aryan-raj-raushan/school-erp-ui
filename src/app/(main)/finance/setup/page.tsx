@@ -11,8 +11,11 @@ import {
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFinanceSetup, FINANCE_SETUP_TABS } from '@/hooks/useFinanceSetup';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { AccountSheet, HeadSheet } from '@/components/finance/FinanceSetupSheets';
 
 export default function FinanceSetupPage() {
+  const isMobile = useIsMobile();
   const {
     tab, setTab,
     showAccountModal, showHeadModal,
@@ -190,8 +193,34 @@ export default function FinanceSetupPage() {
         />
       )}
 
+      {isMobile && (
+        <>
+          <AccountSheet
+            isOpen={showAccountModal}
+            isEditing={!!editingAccount}
+            form={accountForm}
+            onChange={(patch) => setAccountForm((f) => ({ ...f, ...patch }))}
+            accountTypes={ACCOUNT_TYPES}
+            isSubmitting={submitting}
+            onSubmit={handleAccountSubmit}
+            onClose={closeAccountModal}
+          />
+          <HeadSheet
+            isOpen={showHeadModal}
+            isEditing={!!editingHead}
+            form={headForm}
+            onChange={(patch) => setHeadForm((f) => ({ ...f, ...patch }))}
+            headTypes={HEAD_TYPES}
+            isSubmitting={submitting}
+            onSubmit={handleHeadSubmit}
+            onClose={closeHeadModal}
+          />
+        </>
+      )}
+
+      {!isMobile && (
       <ResponsiveModalContainer isOpen={showAccountModal} title={editingAccount ? 'Edit Finance Account' : 'Add Finance Account'} onClose={closeAccountModal}>
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             <FormField label="Account Name" required>
               <Input
@@ -239,17 +268,19 @@ export default function FinanceSetupPage() {
               <label htmlFor="acc-enabled" className="text-sm text-foreground">Enabled</label>
             </Div>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="ghost" onClick={closeAccountModal}>Cancel</Button>
           <Button onClick={handleAccountSubmit} disabled={submitting}>
             {submitting ? <Spinner /> : editingAccount ? 'Update' : 'Create'}
           </Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
+      )}
 
+      {!isMobile && (
       <ResponsiveModalContainer isOpen={showHeadModal} title={editingHead ? 'Edit Finance Head' : 'Add Income / Expense Head'} onClose={closeHeadModal}>
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             <FormField label="Head Name" required>
               <Input
@@ -276,14 +307,15 @@ export default function FinanceSetupPage() {
               <label htmlFor="head-enabled" className="text-sm text-foreground">Enabled</label>
             </Div>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="ghost" onClick={closeHeadModal}>Cancel</Button>
           <Button onClick={handleHeadSubmit} disabled={submitting}>
             {submitting ? <Spinner /> : editingHead ? 'Update' : 'Create'}
           </Button>
-        </div>
+        </Div>
       </ResponsiveModalContainer>
+      )}
     </PageCol>
   );
 }

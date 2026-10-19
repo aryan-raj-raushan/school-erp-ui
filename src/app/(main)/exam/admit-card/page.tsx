@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo } from "react";
+import { openExternal } from "@/lib/external-link";
 import { Download, FileText, Search } from "lucide-react";
 import { useAdmitCard } from "@/hooks/exam/useExamSittingAndAdmit";
 import { useAdmitCardSelectors } from "@/hooks/exam/useAdmitCardSelectors";
@@ -15,8 +16,10 @@ import {
   Button,
   Select,
   Spinner,
+  MobileSelectField,
 } from "@/components/ui";
 import { ADMIT_CARD_PAGE } from "@/constants/exam.constants";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ── Admit Card Preview ────────────────────────────────────────────────────────
 
@@ -81,7 +84,20 @@ function AdmitCardPreview({
         >
           {ADMIT_CARD_PAGE.preview.timetable}
         </P>
-        <Div className="rounded-lg border border-border overflow-hidden">
+        <ul className="flex flex-col gap-2 sm:hidden">
+          {data.schedules.map((s, i) => (
+            <li key={i} className="rounded-xl border border-border p-3 text-xs">
+              <P className="text-sm font-semibold text-foreground">{s.subjectName}</P>
+              <P className="mt-0.5 text-muted-foreground">
+                {s.examDate} · {s.startTime} – {s.endTime}
+              </P>
+              <P className="text-muted-foreground">
+                Max {s.examMarks} · Pass {s.passingMarks}
+              </P>
+            </li>
+          ))}
+        </ul>
+        <Div className="hidden overflow-hidden rounded-lg border border-border sm:block">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-muted/60 border-b border-border">
@@ -155,8 +171,8 @@ function AdmitCardPreview({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 function AdmitCardContent() {
+  const isMobile = useIsMobile();
   const {
-    academicYearId,
     setAcademicYearId,
     examId,
     setExamId,
@@ -213,6 +229,76 @@ function AdmitCardContent() {
           <Div type="col" gap="md">
             <H3 color="default">Generate Admit Card</H3>
 
+            {isMobile ? (
+              <Div type="col" gap="sm">
+                <MobileSelectField
+                  label={ADMIT_CARD_PAGE.labels.academicYear}
+                  required
+                  placeholder="Select year"
+                  value={selectedAcademicYearId}
+                  onChange={(value) => {
+                    setSelectedAcademicYearId(value);
+                    setExamId("");
+                    setStudentId("");
+                  }}
+                  options={years.map((y) => ({
+                    value: y.id,
+                    label: `${y.name}${y.is_current ? " (Current)" : ""}`,
+                  }))}
+                />
+                <MobileSelectField
+                  label={ADMIT_CARD_PAGE.labels.exam}
+                  required
+                  placeholder="Select exam"
+                  disabled={!selectedAcademicYearId}
+                  value={examId}
+                  onChange={(value) => {
+                    setExamId(value);
+                    setStudentId("");
+                  }}
+                  options={deduplicatedExams.map((e) => ({ value: e.id, label: e.exam_name }))}
+                />
+                {classes.length > 0 && (
+                  <MobileSelectField
+                    label="Class"
+                    placeholder="All classes"
+                    disabled={!examId}
+                    value={classId}
+                    onChange={(value) => {
+                      setClassId(value);
+                      setStudentId("");
+                    }}
+                    options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                  />
+                )}
+                {sections.length > 0 && (
+                  <MobileSelectField
+                    label="Section"
+                    placeholder="All sections"
+                    disabled={!examId}
+                    value={sectionId}
+                    onChange={(value) => {
+                      setSectionId(value);
+                      setStudentId("");
+                    }}
+                    options={sections.map((sec) => ({ value: sec.id, label: sec.name }))}
+                  />
+                )}
+                <MobileSelectField
+                  label={ADMIT_CARD_PAGE.labels.student}
+                  required
+                  placeholder={studentsLoading ? "Loading students…" : "Select student"}
+                  disabled={!examId || studentsLoading}
+                  value={studentId}
+                  onChange={setStudentId}
+                  options={students.map((st) => ({
+                    value: st.id,
+                    label: `${[st.first_name, st.last_name].filter(Boolean).join(" ")}${st.roll_number ? ` (#${st.roll_number})` : ""}`,
+                  }))}
+                />
+              </Div>
+            ) : (
+              <>
             <Div type="col" gap="xs">
               <P color="muted" className="text-xs font-medium">
                 {ADMIT_CARD_PAGE.labels.academicYear} *
@@ -305,6 +391,9 @@ function AdmitCardContent() {
               </Select>
             </Div>
 
+              </>
+            )}
+
             <Button
               fullWidth
               onClick={generate}
@@ -318,7 +407,7 @@ function AdmitCardContent() {
               <Button
                 fullWidth
                 variant="outline"
-                onClick={() => window.open(getPdfUrl(), "_blank")}
+                onClick={() => void openExternal(getPdfUrl())}
               >
                 <Download size={14} /> {ADMIT_CARD_PAGE.buttons.download}
               </Button>

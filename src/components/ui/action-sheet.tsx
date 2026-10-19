@@ -26,6 +26,8 @@ export interface BottomSheetProps {
   footer?: React.ReactNode;
   /** Cap on sheet height. Defaults to 85% of the dynamic viewport. */
   maxHeight?: string;
+  /** Removes the body padding, for content that brings its own (e.g. modal bodies). */
+  flush?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ export function BottomSheet({
   children,
   footer,
   maxHeight = "85dvh",
+  flush = false,
 }: BottomSheetProps) {
   const dragControls = useDragControls();
   useBackLayer(isOpen, onClose);
@@ -85,7 +88,7 @@ export function BottomSheet({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
         >
-          <div className="absolute inset-0 bg-black/45" onClick={onClose} />
+          <div className="absolute inset-0 touch-none bg-black/45" onClick={onClose} />
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -123,7 +126,10 @@ export function BottomSheet({
                 </button>
               </div>
             )}
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
+            <div
+              data-sheet-body
+              className={`min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain ${flush ? "" : "px-5 pb-4"}`}
+            >
               {children}
             </div>
             {footer && (

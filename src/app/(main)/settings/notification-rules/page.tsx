@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import type { NotificationRule, NotificationEvent } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { NotificationRulesMobile } from "@/components/settings/NotificationRulesMobile";
 
 const ALL_EVENTS: NotificationEvent[] = [
   "ABSENT",
@@ -133,8 +134,22 @@ export default function NotificationRulesPage() {
   const pageHeaderConfig: PageHeaderConfig = {
     title: "Notification Rules",
     subtitle: "Configure when and how notifications are sent",
-    backButton: isMobile,
   };
+
+  if (isMobile) {
+    return isLoading ? (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner />
+      </Div>
+    ) : (
+      <NotificationRulesMobile
+        events={ALL_EVENTS}
+        rules={rules}
+        savingEvent={savingEvent}
+        onUpdate={updateRule}
+      />
+    );
+  }
 
   return (
     <PageCol>

@@ -5,14 +5,10 @@ import { BILLING_PAGE, INVOICE_STATUS_BADGE, ONE_TIME_CHARGE_TYPE_OPTIONS, PENDI
 import { useBilling } from '@/hooks/useBilling';
 import { useSchools } from '@/hooks/useSchools';
 import type { Invoice, InvoicePayment } from '@/types';
-import {
-  Div, P, Button, Input,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell,
-  FormField, Badge, Spinner,
-  PageHeader, PageCol,
-  ResponsiveSelect, ResponsiveModalContainer,
-  DataTable, type ColumnDef, RowActions,
-} from '@/components/ui';
+import { Div, P, Button, Input, Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, FormField, Badge, Spinner, PageHeader, PageCol, ResponsiveSelect, ResponsiveModalContainer, DataTable, type ColumnDef, RowActions, MobileFormSheet } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { BillingInvoiceSheet, ReasonSheet } from '@/components/platform/InvoiceMobile';
+import { BillingExtraItems } from '@/components/platform/BillingExtraItems';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 function fmtDate(v?: string | null): string {
@@ -20,6 +16,7 @@ function fmtDate(v?: string | null): string {
 }
 
 export default function BillingPage() {
+  const isMobile = useIsMobile();
   const {
     invoices, pagination, isLoading,
     activeSubscriptions,
@@ -149,7 +146,7 @@ export default function BillingPage() {
         header: 'Actions',
         cell: ({ row }) => {
           const payment = row.original;
-          if (rejectingPaymentId === payment.id) {
+          if (!isMobile && rejectingPaymentId === payment.id) {
             return (
               <Div type="col" gap="xs">
                 <Input
@@ -189,7 +186,7 @@ export default function BillingPage() {
         },
       },
     ],
-    [schoolNameById, rejectingPaymentId, rejectReason, approvePayment, handleReject],
+    [schoolNameById, rejectingPaymentId, rejectReason, approvePayment, handleReject, isMobile],
   );
 
   return (
@@ -198,7 +195,7 @@ export default function BillingPage() {
         title={BILLING_PAGE.title}
         subtitle={pagination ? `${pagination.total} invoices` : BILLING_PAGE.description}
         actions={
-          <Div type="row" gap="sm">
+          <Div type="row" gap="sm" wrap>
             <Button variant="outline" onClick={openChargeModal}>{BILLING_PAGE.addCharge}</Button>
             <Button onClick={openGenerateModal}>{BILLING_PAGE.generateInvoice}</Button>
           </Div>
@@ -224,10 +221,162 @@ export default function BillingPage() {
         emptyText={PENDING_PAYMENTS_SECTION.empty}
       />
 
-      {showGenerateModal && (
+      {isMobile && (
+        <>
+          <MobileFormSheet
+            isOpen={showGenerateModal}
+            onClose={closeGenerateModal}
+            title={BILLING_PAGE.generateForm.title}
+            form={generateForm}
+            onSubmit={handleGenerateSubmit}
+            isSubmitting={isGenerating}
+            submitLabel={BILLING_PAGE.generateForm.submit}
+            cancelLabel={BILLING_PAGE.generateForm.cancel}
+            fields={[
+              {
+                kind: 'select',
+                name: 'subscription_id',
+                label: BILLING_PAGE.generateForm.subscription,
+                required: true,
+                placeholder: 'Select subscription',
+                options: activeSubscriptions.map((sub) => ({
+                  value: sub.id,
+                  label: `${schoolNameById.get(sub.school_id) ?? sub.school_id.slice(0, 8)} — ${sub.plan_name}`,
+                })),
+              },
+              { kind: 'input', type: 'date', name: 'due_date', label: BILLING_PAGE.generateForm.dueDate },
+              { kind: 'input', name: 'notes', label: BILLING_PAGE.generateForm.notes },
+            ]}
+          >
+            <BillingExtraItems
+              items={extraItems}
+              onAdd={addExtraItemRow}
+              onUpdate={updateExtraItemRow}
+              onRemove={removeExtraItemRow}
+              copy={{
+                heading: BILLING_PAGE.generateForm.extraItems,
+                description: BILLING_PAGE.generateForm.itemDescription,
+                amount: BILLING_PAGE.generateForm.itemAmount,
+                quantity: BILLING_PAGE.generateForm.itemQuantity,
+                remove: BILLING_PAGE.generateForm.remove,
+                add: BILLING_PAGE.generateForm.addItem,
+              }}
+            />
+          </MobileFormSheet>
+
+          <MobileFormSheet
+            isOpen={showChargeModal}
+            onClose={closeChargeModal}
+            title={BILLING_PAGE.chargeForm.title}
+            form={chargeForm}
+            onSubmit={handleChargeSubmit}
+            isSubmitting={isAddingCharge}
+            submitLabel={
+              targetInvoiceId ? BILLING_PAGE.chargeForm.submitToExisting : BILLING_PAGE.chargeForm.submit
+            }
+            cancelLabel={BILLING_PAGE.chargeForm.cancel}
+            fields={[
+              {
+                kind: 'select',
+                name: 'school_id',
+                label: BILLING_PAGE.chargeForm.school,
+                required: true,
+                placeholder: 'Select school',
+                options: schools.map((sch) => ({ value: sch.id, label: sch.name })),
+              },
+              {
+                kind: 'select',
+                name: 'charge_type',
+                label: BILLING_PAGE.chargeForm.chargeType,
+                required: true,
+                placeholder: 'Select charge type',
+                options: ONE_TIME_CHARGE_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+              },
+              { kind: 'input', name: 'description', label: BILLING_PAGE.chargeForm.description },
+              {
+                kind: 'row',
+                fields: [
+                  {
+                    kind: 'input',
+                    type: 'number',
+                    valueAsNumber: true,
+                    name: 'amount',
+                    label: BILLING_PAGE.chargeForm.amount,
+                    required: true,
+                  },
+                  {
+                    kind: 'input',
+                    type: 'number',
+                    valueAsNumber: true,
+                    name: 'quantity',
+                    label: BILLING_PAGE.chargeForm.quantity,
+                  },
+                ],
+              },
+              {
+                kind: 'select',
+                name: 'target_invoice_id',
+                label: BILLING_PAGE.chargeForm.targetInvoice,
+                placeholder: BILLING_PAGE.chargeForm.targetInvoicePlaceholder,
+                options: schoolInvoiceOptions.map((inv) => ({
+                  value: inv.id,
+                  label: `${inv.invoice_number} — ₹${(Number(inv.total_amount) - Number(inv.amount_paid)).toFixed(2)} due`,
+                })),
+              },
+            ]}
+          >
+            <P className="px-1 text-xs text-muted-foreground">{BILLING_PAGE.chargeForm.targetInvoiceHint}</P>
+          </MobileFormSheet>
+
+          <BillingInvoiceSheet
+            isOpen={!!viewingInvoice || isDetailLoading}
+            isLoading={isDetailLoading}
+            invoice={viewingInvoice}
+            schoolName={viewingInvoice ? schoolNameById.get(viewingInvoice.school_id) : undefined}
+            canAddItems={!!viewingInvoice && canAddItems(viewingInvoice)}
+            isAddingItem={isAddingItem}
+            onAddItem={addItemToInvoice}
+            onClose={closeInvoice}
+            copy={{
+              title: BILLING_PAGE.detail.title,
+              lineItems: BILLING_PAGE.detail.lineItems,
+              total: BILLING_PAGE.detail.total,
+              amountPaid: BILLING_PAGE.detail.amountPaid,
+              balanceDue: BILLING_PAGE.detail.balanceDue,
+              addItem: BILLING_PAGE.detail.addItem,
+              addItemSubmit: BILLING_PAGE.detail.addItemSubmit,
+              finalNotice: BILLING_PAGE.detail.finalNotice,
+              itemDescription: BILLING_PAGE.generateForm.itemDescription,
+              itemAmount: BILLING_PAGE.generateForm.itemAmount,
+              itemQuantity: BILLING_PAGE.generateForm.itemQuantity,
+              close: BILLING_PAGE.detail.close,
+            }}
+          />
+
+          <ReasonSheet
+            isOpen={rejectingPaymentId !== null}
+            title={PENDING_PAYMENTS_SECTION.reject}
+            placeholder={PENDING_PAYMENTS_SECTION.rejectPrompt}
+            submitLabel={PENDING_PAYMENTS_SECTION.rejectSubmit}
+            cancelLabel={PENDING_PAYMENTS_SECTION.rejectCancel}
+            value={rejectReason}
+            onChange={setRejectReason}
+            onClose={() => {
+              setRejectingPaymentId(null);
+              setRejectReason('');
+            }}
+            onSubmit={() => {
+              const payment = pendingPayments.find((p) => p.id === rejectingPaymentId);
+              if (payment) handleReject(payment);
+            }}
+          />
+        </>
+      )}
+
+      {!isMobile && showGenerateModal && (
         <ResponsiveModalContainer isOpen={showGenerateModal} onClose={closeGenerateModal} title={BILLING_PAGE.generateForm.title}>
           <form onSubmit={handleGenerateSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField label={BILLING_PAGE.generateForm.subscription} error={generateForm.formState.errors.subscription_id?.message}>
                   <ResponsiveSelect
@@ -281,19 +430,19 @@ export default function BillingPage() {
                   ))}
                 </Div>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeGenerateModal}>{BILLING_PAGE.generateForm.cancel}</Button>
               <Button type="submit" loading={isGenerating}>{BILLING_PAGE.generateForm.submit}</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}
 
-      {showChargeModal && (
+      {!isMobile && showChargeModal && (
         <ResponsiveModalContainer isOpen={showChargeModal} onClose={closeChargeModal} title={BILLING_PAGE.chargeForm.title}>
           <form onSubmit={handleChargeSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField label={BILLING_PAGE.chargeForm.school} error={chargeForm.formState.errors.school_id?.message}>
                   <ResponsiveSelect
@@ -337,24 +486,24 @@ export default function BillingPage() {
                   />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeChargeModal}>{BILLING_PAGE.chargeForm.cancel}</Button>
               <Button type="submit" loading={isAddingCharge}>
                 {targetInvoiceId ? BILLING_PAGE.chargeForm.submitToExisting : BILLING_PAGE.chargeForm.submit}
               </Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}
 
-      {(viewingInvoice || isDetailLoading) && (
+      {!isMobile && (viewingInvoice || isDetailLoading) && (
         <ResponsiveModalContainer
           isOpen={!!viewingInvoice || isDetailLoading}
           onClose={closeInvoice}
           title={viewingInvoice ? `${BILLING_PAGE.detail.title} — ${viewingInvoice.invoice_number}` : BILLING_PAGE.detail.title}
         >
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             {isDetailLoading || !viewingInvoice ? (
               <Spinner />
             ) : (
@@ -434,10 +583,10 @@ export default function BillingPage() {
                 )}
               </Div>
             )}
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button type="button" variant="outline" onClick={closeInvoice}>{BILLING_PAGE.detail.close}</Button>
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
     </PageCol>

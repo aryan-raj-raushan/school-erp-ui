@@ -8,6 +8,7 @@ import { useExamLifecycle } from "@/hooks/exam/useExamLifecycle";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CopyExamSheet, ExamMobileForm, ExamMobileView } from "@/components/exam/ExamMobile";
 import {
   Div,
   P,
@@ -158,6 +159,53 @@ export function ExamFormContent({ slug }: { slug: string }) {
       <Div type="row" justify="center" className="py-20">
         <Spinner size="lg" />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    const copySheet = showCopyModal && (
+      <CopyExamSheet
+        years={years}
+        isCopying={isCopying}
+        onCopy={handleCopy}
+        onDismiss={() => setShowCopyModal(false)}
+      />
+    );
+
+    if (!isNew && !isEditing && exam) {
+      return (
+        <>
+          <ExamMobileView
+            exam={exam}
+            yearName={years.find((y) => y.id === exam.academic_year_id)?.name}
+            classNames={classes
+              .filter((c) => (watchedClassIds ?? []).includes(c.id))
+              .map((c) => c.name)}
+            allowedNextStatuses={allowedNextStatuses}
+            isChangingStatus={isChangingStatus}
+            onChangeStatus={changeStatus}
+            onEdit={() => setIsEditing(true)}
+            onCopy={() => setShowCopyModal(true)}
+          />
+          {copySheet}
+        </>
+      );
+    }
+
+    return (
+      <ExamMobileForm
+        form={form}
+        isNew={isNew}
+        isSubmitting={isSubmitting}
+        overlapWarning={isEditing ? overlapWarning : null}
+        onSubmit={onSubmit}
+        onCancel={() =>
+          isNew ? router.push(EXAM_ROUTES.exams.list) : setIsEditing(false)
+        }
+        years={years}
+        classes={classes}
+        onYearChange={setSelectedAcademicYearId}
+      />
     );
   }
 

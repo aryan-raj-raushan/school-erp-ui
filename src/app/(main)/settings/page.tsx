@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { SETTINGS_ITEMS } from "@/constants/settings";
 import { Div } from "@/components/ui/layout";
 import { H3, P } from "@/components/ui/typography";
-import { PageHeader, PageCol, type PageHeaderConfig } from "@/components/ui";
+import { PageHeader, PageCol, LinkList, type PageHeaderConfig } from "@/components/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SettingsIndexPage() {
@@ -21,7 +21,16 @@ export default function SettingsIndexPage() {
     <PageCol>
       <PageHeader {...pageHeaderConfig} />
 
-      {/* Grid of setting cards */}
+      {isMobile ? (
+        <LinkList
+          items={SETTINGS_ITEMS.map((item) => ({
+            href: `/settings/${item.slug}`,
+            label: item.label,
+            description: item.description,
+            icon: item.icon,
+          }))}
+        />
+      ) : (
       <Div type="grid" cols={3} gap="md">
         {SETTINGS_ITEMS.map((item) => (
           <Div boxCard key={item.slug}>
@@ -47,6 +56,7 @@ export default function SettingsIndexPage() {
           </Div>
         ))}
       </Div>
+      )}
     </PageCol>
   );
 }

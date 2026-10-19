@@ -26,6 +26,18 @@ export const ACTION_OPTIONS: { value: EnquiryAction; label: string }[] = [
   { value: "ENQUIRY_REJECTED", label: "Enquiry Rejected" },
 ];
 
+export const ADMISSION_ROUTES = {
+  list: "/admissions",
+  createNew: "/admissions/create-new",
+  followUp: "/admissions/follow-up",
+  view: (id: string) => `/admissions/view?id=${id}`,
+  edit: (id: string) => `/admissions/view?id=${id}&edit=true`,
+  sources: "/admissions/source",
+  sourceCreateNew: "/admissions/source/create-new",
+  sourceView: (id: string) => `/admissions/source/view?id=${id}`,
+  sourceEdit: (id: string) => `/admissions/source/view?id=${id}&edit=true`,
+};
+
 export const ADMISSION_PAGE = {
   pageHeading: {
     title: "Admission Enquiries",

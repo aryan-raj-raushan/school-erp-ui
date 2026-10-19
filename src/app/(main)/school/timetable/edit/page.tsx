@@ -2,23 +2,20 @@
 
 import { useSearchParams } from 'next/navigation';
 
-import { Fragment, Suspense, useRef, useState } from 'react';
-import { GripVertical, Plus, X, Coffee } from 'lucide-react';
+import { Suspense } from 'react';
+import { Plus, X } from 'lucide-react';
 import { useEditTimetable } from '@/hooks/useEditTimetable';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS } from '@/constants';
 import { timeToMinutes, formatDuration } from '@/lib/time.utils';
-import { cn } from '@/lib/utils';
-import type { DayOfWeek, PeriodTimeDto } from '@/services/timetable.service';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
+import { TimetableDayEditor } from '@/components/timetable/TimetableDayEditor';
+import { TimetableGridEditor } from '@/components/timetable/TimetableGridEditor';
+import type { PeriodTimeDto } from '@/services/timetable.service';
 import {
   Div, Button, Spinner, Input, FormField, P, Badge,
   PageHeader, SectionCard,
   ResponsiveSelect,
 } from '@/components/ui';
-
-interface DragPayload {
-  day: DayOfWeek;
-  period: number;
-}
 
 function periodDurationLabel(startTime?: string, endTime?: string): string | null {
   if (!startTime || !endTime) return null;
@@ -47,8 +44,7 @@ function EditTimetablePageInner() {
     handleSubmit, handleBack,
   } = useEditTimetable(id);
 
-  const draggingRef = useRef<DragPayload | null>(null);
-  const [dragOver, setDragOver] = useState<DragPayload | null>(null);
+  const isMobile = useIsMobileSync();
 
   if (isLoadingData) {
     return <Div type="col" align="center" justify="center" className="py-20"><Spinner /></Div>;
@@ -58,20 +54,8 @@ function EditTimetablePageInner() {
     return periodTimes.find((pt) => pt.period_number === period)?.is_break ?? false;
   }
 
-  function handleDrop(day: DayOfWeek, period: number) {
-    const from = draggingRef.current;
-    draggingRef.current = null;
-    setDragOver(null);
-    if (!from || isBreakPeriod(period)) return;
-    swapCells(from.day, from.period, day, period);
-  }
-
   return (
-    <Div
-      type="col"
-      gap="lg"
-      onDragEnd={() => { draggingRef.current = null; setDragOver(null); }}
-    >
+    <Div type="col" gap="lg">
       <PageHeader
         title={SCHOOL_TIMETABLE_PAGE.form.editTitle}
         subtitle={name || undefined}
@@ -152,14 +136,15 @@ function EditTimetablePageInner() {
               </Div>
             );
           })}
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={addPeriod}
-            className="flex min-w-[136px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="h-auto min-w-[136px] shrink-0 flex-col gap-1 rounded-xl border-2 border-dashed text-muted-foreground hover:border-primary hover:text-primary"
           >
             <Plus size={16} />
             <P size="xs">Add Period</P>
-          </button>
+          </Button>
         </Div>
       </SectionCard>
 
@@ -173,98 +158,37 @@ function EditTimetablePageInner() {
         </Div>
       )}
 
+      {isMobile ? (
+        <SectionCard title="Weekly Schedule" subtitle="Pick a day, then set each period">
+          <Div className="p-4">
+            <TimetableDayEditor
+              days={DAYS_OF_WEEK}
+              periods={periods}
+              isBreak={isBreakPeriod}
+              timeLabel={(p) => periodTimeRangeLabel(periodTimes.find((x) => x.period_number === p))}
+              getCell={(day, p) => grid[day]?.[p]}
+              subjects={subjects}
+              staff={staff}
+              onChange={setCellValue}
+            />
+          </Div>
+        </SectionCard>
+      ) : (
       <SectionCard title="Weekly Schedule" subtitle="Grab the ⠿ handle on any period to swap it with another">
-        <Div className="overflow-x-auto p-5">
-          <div
-            className="grid gap-2"
-            style={{ gridTemplateColumns: `84px repeat(${periods.length}, minmax(152px, 1fr))` }}
-          >
-            <div className="sticky top-0 left-0 z-20 flex items-center justify-center rounded-lg bg-muted px-2 py-2">
-              <P size="xs" weight="semibold" className="uppercase tracking-wide">Day</P>
-            </div>
-            {periods.map((p) => {
-              const pt = periodTimes.find((x) => x.period_number === p);
-              return (
-                <div key={`head-${p}`} className="sticky top-0 z-10 flex flex-col items-center justify-center gap-0.5 rounded-lg bg-muted px-2 py-2">
-                  {isBreakPeriod(p) ? <Badge variant="warning">Break</Badge> : <Badge variant="secondary">Period {p}</Badge>}
-                  {periodTimeRangeLabel(pt) && <P size="xs" className="text-[10px]">{periodTimeRangeLabel(pt)}</P>}
-                </div>
-              );
-            })}
-
-            {DAYS_OF_WEEK.map((day) => (
-              <Fragment key={day}>
-                <div className="sticky left-0 z-10 flex items-center justify-center rounded-lg bg-muted/60 px-2 py-2">
-                  <P weight="semibold" className="text-foreground">{DAY_LABELS[day]}</P>
-                </div>
-                {periods.map((p) => {
-                  if (isBreakPeriod(p)) {
-                    return (
-                      <div
-                        key={p}
-                        className="flex flex-col items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50/60 py-3 dark:border-amber-900/40 dark:bg-amber-950/10"
-                      >
-                        <Coffee size={14} className="text-amber-500" />
-                        <P size="xs">Break</P>
-                      </div>
-                    );
-                  }
-                  const cell = grid[day]?.[p];
-                  const isFilled = !!(cell?.subject_id || cell?.teacher_id);
-                  const isDragOver = dragOver?.day === day && dragOver?.period === p;
-                  return (
-                    <div
-                      key={p}
-                      onDragOver={(e) => { e.preventDefault(); setDragOver({ day, period: p }); }}
-                      onDragLeave={() => setDragOver((prev) => (prev?.day === day && prev?.period === p ? null : prev))}
-                      onDrop={(e) => { e.preventDefault(); handleDrop(day, p); }}
-                      className={cn(
-                        'flex flex-col gap-1.5 rounded-lg border p-2 transition-all',
-                        isDragOver
-                          ? 'border-primary bg-primary/10 ring-2 ring-primary ring-inset'
-                          : isFilled
-                            ? 'border-border/60 bg-card hover:border-primary/40 hover:shadow-sm'
-                            : 'border-dashed border-border/50 bg-muted/10',
-                      )}
-                    >
-                      <div className="flex items-center justify-end">
-                        <button
-                          type="button"
-                          draggable={isFilled}
-                          onDragStart={() => { if (isFilled) draggingRef.current = { day, period: p }; }}
-                          onDragEnd={() => { draggingRef.current = null; setDragOver(null); }}
-                          disabled={!isFilled}
-                          title={isFilled ? 'Drag to swap' : undefined}
-                          className={cn(
-                            'flex h-5 w-5 items-center justify-center rounded text-muted-foreground',
-                            isFilled ? 'cursor-grab hover:bg-muted active:cursor-grabbing' : 'opacity-0',
-                          )}
-                        >
-                          <GripVertical size={12} />
-                        </button>
-                      </div>
-                      <ResponsiveSelect
-                        value={cell?.subject_id ?? ''}
-                        onChange={(e) => setCellValue(day, p, 'subject_id', e.target.value)}
-                        className="text-xs"
-                        customPlaceholder="Subject"
-                        options={subjects.map((s) => ({ value: s.id, label: s.name }))}
-                      />
-                      <ResponsiveSelect
-                        value={cell?.teacher_id ?? ''}
-                        onChange={(e) => setCellValue(day, p, 'teacher_id', e.target.value)}
-                        className="text-xs"
-                        customPlaceholder="Teacher"
-                        options={staff.map((s) => ({ value: s.id, label: s.name }))}
-                      />
-                    </div>
-                  );
-                })}
-              </Fragment>
-            ))}
-          </div>
-        </Div>
+        <TimetableGridEditor
+          days={DAYS_OF_WEEK}
+          dayLabels={DAY_LABELS}
+          periods={periods}
+          periodTimes={periodTimes}
+          timeRangeLabel={periodTimeRangeLabel}
+          grid={grid}
+          subjects={subjects}
+          staff={staff}
+          onChange={setCellValue}
+          onSwap={swapCells}
+        />
       </SectionCard>
+      )}
 
       <Div type="row" gap="md">
         <Button variant="outline" onClick={handleBack}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>

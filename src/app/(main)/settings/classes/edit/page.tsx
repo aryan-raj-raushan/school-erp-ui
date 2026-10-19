@@ -20,6 +20,7 @@ import {
   ResponsiveSelect,
 } from "@/components/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ClassMobileForm } from "@/components/settings/ClassMobileForm";
 
 function EditClassPageInner() {
   const isMobile = useIsMobile();
@@ -51,6 +52,21 @@ function EditClassPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <ClassMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+        years={years}
+        sectionNames={allSectionNames}
+        classTypes={{ classTypeItems, isClassTypesLoading, addClassType, updateClassType, deleteClassType }}
+      />
     );
   }
 

@@ -30,6 +30,8 @@ import {
   DataTable,
   type ColumnDef,
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { InvoiceDetailSheet, InvoicePaySheet } from "@/components/platform/InvoiceMobile";
 
 function fmtDate(v?: string | null): string {
   return v ? new Date(v).toLocaleDateString() : "—";
@@ -38,6 +40,7 @@ function fmtDate(v?: string | null): string {
 const PROOF_REQUIRED_METHODS: PaymentMethod[] = ["QR_CODE", "BANK_TRANSFER"];
 
 export default function InvoicesPage() {
+  const isMobile = useIsMobile();
   const {
     invoices,
     pagination,
@@ -151,7 +154,36 @@ export default function InvoicesPage() {
         fillViewport
       />
 
-      {(viewingInvoice || isDetailLoading) && (
+      {isMobile && (
+        <>
+          <InvoiceDetailSheet
+            isOpen={(!!viewingInvoice || isDetailLoading) && !showPayModal}
+            isLoading={isDetailLoading}
+            invoice={viewingInvoice}
+            balanceDue={balanceDue}
+            isDownloading={isDownloading}
+            onClose={closeInvoice}
+            onDownload={() => viewingInvoice && downloadPdf(viewingInvoice.id)}
+            onPay={handleOpenPayModal}
+          />
+          <InvoicePaySheet
+            isOpen={showPayModal && !!viewingInvoice}
+            onClose={closePayModal}
+            method={method}
+            onMethodChange={setMethod}
+            amount={amount}
+            onAmountChange={setAmount}
+            notes={notes}
+            onNotesChange={setNotes}
+            onProofChange={setProofFile}
+            balanceDue={balanceDue}
+            isPaying={isPaying}
+            onSubmit={handlePaySubmit}
+          />
+        </>
+      )}
+
+      {!isMobile && (viewingInvoice || isDetailLoading) && (
         <ResponsiveModalContainer
           isOpen={!!viewingInvoice || isDetailLoading}
           onClose={closeInvoice}
@@ -161,7 +193,7 @@ export default function InvoicesPage() {
               : INVOICES_PAGE.detail.title
           }
         >
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             {isDetailLoading || !viewingInvoice ? (
               <Spinner />
             ) : (
@@ -231,8 +263,8 @@ export default function InvoicesPage() {
                 </Div>
               </Div>
             )}
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button type="button" variant="outline" onClick={closeInvoice}>
               {INVOICES_PAGE.detail.close}
             </Button>
@@ -253,17 +285,17 @@ export default function InvoicesPage() {
                   {INVOICES_PAGE.detail.payNow}
                 </Button>
               )}
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
 
-      {showPayModal && viewingInvoice && (
+      {!isMobile && showPayModal && viewingInvoice && (
         <ResponsiveModalContainer
           isOpen={showPayModal}
           onClose={closePayModal}
           title={INVOICES_PAGE.payForm.title}
         >
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="md">
               <FormField label={INVOICES_PAGE.payForm.method}>
                 <ResponsiveSelect
@@ -314,8 +346,8 @@ export default function InvoicesPage() {
                 <P color="muted">{`₹${balanceDue} will be collected via Razorpay Checkout.`}</P>
               )}
             </Div>
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button type="button" variant="outline" onClick={closePayModal}>
               {INVOICES_PAGE.payForm.cancel}
             </Button>
@@ -324,7 +356,7 @@ export default function InvoicesPage() {
                 ? INVOICES_PAGE.payForm.payWithRazorpay
                 : INVOICES_PAGE.payForm.submit}
             </Button>
-          </div>
+          </Div>
         </ResponsiveModalContainer>
       )}
     </PageCol>

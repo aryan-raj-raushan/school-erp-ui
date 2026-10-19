@@ -2,13 +2,26 @@
 
 import { useMemo } from 'react';
 import { useSessionTimetable } from '@/hooks/useSessionTimetable';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
 import {
-  Div, Spinner, Badge, SectionLabel, P,
-  PageHeader, PageCol,
-  Table, TableHead, TableHeadRow, TableHeaderCell,
-  TableBody, TableRow, TableCell, TableEmptyRow,
-  FilterToolbar, type FilterField,
+  Div,
+  Spinner,
+  Badge,
+  SectionLabel,
+  P,
+  PageHeader,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  FilterToolbar,
+  type FilterField,
+  ScheduleSlotList,
+  type ScheduleSlot,
 } from '@/components/ui';
 import type { DayOfWeek } from '@/services/timetable.service';
 
@@ -21,6 +34,7 @@ function fmt12(time: string | null | undefined): string {
 }
 
 export default function SessionTimetablePage() {
+  const isMobile = useIsMobileSync();
   const {
     academicYearId, setAcademicYearId,
     day, setDay,
@@ -116,6 +130,32 @@ export default function SessionTimetablePage() {
             )}
           </Div>
 
+          {isMobile ? (
+            <Div type="col" gap="lg">
+              {rows.map((row) => {
+                const slots: ScheduleSlot[] = periods.flatMap((p) => {
+                  const cell = getCell(row.timetable_id, p);
+                  return cell
+                    ? [{
+                        id: `${row.timetable_id}-${p}`,
+                        marker: `P${p}`,
+                        title: cell.subject_name ?? 'No subject',
+                        subtitle: cell.teacher_name ?? 'Not assigned',
+                        timeLabel: cell.start_time && cell.end_time
+                          ? `${fmt12(cell.start_time)} – ${fmt12(cell.end_time)}`
+                          : undefined,
+                      }]
+                    : [];
+                });
+                return (
+                  <Div key={row.timetable_id} type="col" gap="sm">
+                    <P weight="semibold" className="px-1">{row.class_name || row.timetable_name}</P>
+                    <ScheduleSlotList slots={slots} emptyText="No periods" />
+                  </Div>
+                );
+              })}
+            </Div>
+          ) : (
           <Div className="overflow-x-auto rounded-xl border border-border/50">
             <Table>
               <TableHead>
@@ -129,7 +169,7 @@ export default function SessionTimetablePage() {
                 </TableHeadRow>
               </TableHead>
               <TableBody>
-                {rows.map((row, idx) => {
+                {rows.map((row) => {
                   const label = row.class_name || row.timetable_name;
                   return (
                     <TableRow key={row.timetable_id}>
@@ -169,6 +209,7 @@ export default function SessionTimetablePage() {
               </TableBody>
             </Table>
           </Div>
+          )}
         </Div>
       )}
     </Div>

@@ -9,6 +9,8 @@ import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { PageHeader } from "@/components/ui/page-header";
+import { ExamScheduleCreateMobile } from "@/components/exam/ExamScheduleCreateMobile";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import {
   Div,
   H3,
@@ -223,7 +225,7 @@ function BulkApplyStrip({ onApply, disabled }: { onApply: (f: string, v: any) =>
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-function ScheduleCreateContent() {
+function ScheduleCreateDesktop() {
   const router = useRouter();
   const {
     form,
@@ -501,6 +503,20 @@ function ScheduleCreateContent() {
       </Div>
     </Div>
   );
+}
+
+function ScheduleCreateContent() {
+  const isMobile = useIsMobileReady();
+
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return isMobile ? <ExamScheduleCreateMobile /> : <ScheduleCreateDesktop />;
 }
 
 export default function ScheduleSlugPage() {

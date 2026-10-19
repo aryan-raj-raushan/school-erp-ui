@@ -1,6 +1,9 @@
 'use client';
 
 import { Div, Spinner } from '@/components/ui';
+import { cn } from '@/lib/utils';
+import { haptic } from '@/lib/haptics';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 import { type GroupedPermissions } from '@/services/permissions.service';
 import { RESOURCE_LABELS, ACTION_LABELS } from '@/constants/permissions.registry';
 
@@ -34,7 +37,84 @@ export function PermissionMatrix({
   const allIds = Object.values(groupedPermissions).flatMap((p) => p.map((x) => x.id));
   const allSelected = allIds.length > 0 && allIds.every((id) => selectedPermissionIds.has(id));
 
+  const isMobile = useIsMobileSync();
+
   if (isLoading) return <Div type="col" align="center" gap="md"><Spinner /></Div>;
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            void haptic('light');
+            onToggleSelectAll();
+          }}
+          className="flex h-12 items-center justify-between rounded-2xl border border-border bg-white px-4 text-left disabled:opacity-60 dark:bg-neutral-900"
+        >
+          <span className="text-sm font-semibold">
+            {allSelected ? 'Clear all permissions' : 'Select all permissions'}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {selectedPermissionIds.size} / {allIds.length}
+          </span>
+        </button>
+
+        {Object.entries(groupedPermissions).map(([resource, perms]) => {
+          const resourceIds = perms.map((p) => p.id);
+          const selectedCount = resourceIds.filter((id) => selectedPermissionIds.has(id)).length;
+          const allResourceSelected = selectedCount === resourceIds.length;
+          return (
+            <section
+              key={resource}
+              className="rounded-2xl border border-border/60 bg-white p-3 dark:bg-neutral-900"
+            >
+              <header className="mb-2 flex items-center justify-between gap-2 px-1">
+                <h4 className="text-sm font-semibold">{resourceLabel(resource)}</h4>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    void haptic('light');
+                    onToggleResourceAll(resource);
+                  }}
+                  className="h-9 rounded-full px-3 text-xs font-semibold text-primary-text active:bg-muted disabled:opacity-60"
+                >
+                  {allResourceSelected ? 'Clear' : 'Select all'} · {selectedCount}/{resourceIds.length}
+                </button>
+              </header>
+              <div className="flex flex-wrap gap-2">
+                {perms.map((perm) => {
+                  const selected = selectedPermissionIds.has(perm.id);
+                  return (
+                    <button
+                      key={perm.id}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={disabled}
+                      onClick={() => {
+                        void haptic('light');
+                        onTogglePermission(perm.id);
+                      }}
+                      className={cn(
+                        'h-10 rounded-full border px-4 text-sm font-medium transition-colors active:scale-95 disabled:opacity-60',
+                        selected
+                          ? 'border-primary bg-primary/10 text-primary-text'
+                          : 'border-border text-muted-foreground',
+                      )}
+                    >
+                      {actionLabel(perm.action)}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <Div type="col" gap="sm">

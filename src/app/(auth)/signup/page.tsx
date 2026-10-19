@@ -27,6 +27,7 @@ export default function SignupPage() {
               id="school_name"
               type="text"
               placeholder="Sunrise Public School"
+              autoCapitalize="words"
               {...form.register('school_name')}
             />
           </FormField>
@@ -74,6 +75,8 @@ export default function SignupPage() {
               id="email"
               type="email"
               placeholder="admin@school.com"
+              autoCapitalize="none"
+              inputMode="email"
               {...form.register('email')}
             />
           </FormField>

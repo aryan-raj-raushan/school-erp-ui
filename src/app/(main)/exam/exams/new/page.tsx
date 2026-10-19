@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAutoGenerateExam } from "@/hooks/exam/useAutoGenerateExam";
 import { ExamFormContent } from "../exam-form";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AutoExamMobileForm } from "@/components/exam/AutoExamMobileForm";
 import {
   Div,
   Button,
@@ -57,6 +59,8 @@ export default function NewExamPage() {
 }
 
 function AutoGenerateExamForm() {
+  const isMobile = useIsMobile();
+  const autoState = useAutoGenerateExam();
   const {
     examName,
     setExamName,
@@ -103,7 +107,9 @@ function AutoGenerateExamForm() {
     conflicts,
     generate,
     handleBack,
-  } = useAutoGenerateExam();
+  } = autoState;
+
+  if (isMobile) return <AutoExamMobileForm state={autoState} />;
 
   const classNameById = Object.fromEntries(classes.map((c) => [c.id, c.name]));
   const classOptions = classes.map((c) => ({ value: c.id, label: c.name }));

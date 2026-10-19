@@ -1,29 +1,27 @@
 'use client';
 
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { CheckCircle2, XCircle, Plus, X } from 'lucide-react';
 import { useLeaveApplications } from '@/hooks/leave/useLeaveApplications';
 import { useAcademicYears } from '@/hooks/useAcademicYears';
 import { useAuthStore } from '@/store/auth.store';
+import { formatDate } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
 import {
   Div,
   P,
   Button,
   Input,
-  Select,
   Badge,
   Spinner,
   DataTable,
   type ColumnDef,
-  Modal,
-  ModalBody,
-  ModalFooter,
   FormField,
   PageCol,
   FilterBar,
   ResponsiveSelect,
   ResponsiveModalContainer,
+  RowActions,
 } from '@/components/ui';
 import {
   LEAVE_APPLICATION_PAGE,
@@ -33,8 +31,13 @@ import {
 } from '@/constants/emp-leave.constants';
 import type { LeaveApplicationFilters, LeaveApplication } from '@/types/leave.types';
 import { useLeaveTypes } from '@/hooks/leave/useLeaveTypes';
+import { useRouter } from 'next/navigation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { LeaveReviewSheet } from '@/components/leave/LeaveReviewSheet';
 
 function LeaveApplicationsContent() {
+  const router = useRouter();
+  const isMobile = useIsMobile();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'SCHOOL_ADMIN';
   const employeeId = user?.id ?? '';
@@ -73,7 +76,6 @@ function LeaveApplicationsContent() {
   const {
     register: applyRegister,
     formState: { errors: applyErrors },
-    watch: applyWatch,
   } = applyForm;
 
   const {
@@ -162,47 +164,40 @@ function LeaveApplicationsContent() {
       {
         id: 'actions',
         header: LEAVE_APPLICATION_PAGE.table.actions,
-        cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            {/* Admin: approve / reject on PENDING */}
-            {isAdmin && row.original.status === 'PENDING' && (
-              <>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => openReviewModal(row.original, 'APPROVED')}
-                  title={LEAVE_APPLICATION_PAGE.buttons.approve}
-                >
-                  <CheckCircle2
-                    size={14}
-                    className="text-emerald-600"
-                  />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => openReviewModal(row.original, 'REJECTED')}
-                  title={LEAVE_APPLICATION_PAGE.buttons.reject}
-                >
-                  <XCircle size={14} className="text-destructive" />
-                </Button>
-              </>
-            )}
-            {/* Employee: cancel own PENDING application */}
-            {!isAdmin &&
-              row.original.employee_id === employeeId &&
-              row.original.status === 'PENDING' && (
-                <Button
-                  size="icon-sm"
-                  variant="destructive"
-                  onClick={() => cancelLeave(row.original.id)}
-                  title={LEAVE_APPLICATION_PAGE.buttons.cancelApplication}
-                >
-                  <X size={14} />
-                </Button>
-              )}
-          </Div>
-        ),
+        cell: ({ row }) => {
+          const canReview = isAdmin && row.original.status === 'PENDING';
+          const canCancel =
+            !isAdmin &&
+            row.original.employee_id === employeeId &&
+            row.original.status === 'PENDING';
+          return (
+            <RowActions
+              actions={[
+                {
+                  label: LEAVE_APPLICATION_PAGE.buttons.approve,
+                  icon: <CheckCircle2 size={14} className="text-emerald-600" />,
+                  hidden: !canReview,
+                  onClick: () => openReviewModal(row.original, 'APPROVED'),
+                },
+                {
+                  label: LEAVE_APPLICATION_PAGE.buttons.reject,
+                  icon: <XCircle size={14} className="text-destructive" />,
+                  variant: 'destructive',
+                  hidden: !canReview,
+                  onClick: () => openReviewModal(row.original, 'REJECTED'),
+                },
+                {
+                  label: LEAVE_APPLICATION_PAGE.buttons.cancelApplication,
+                  icon: <X size={14} />,
+                  variant: 'destructive',
+                  hidden: !canCancel,
+                  confirm: { description: 'Cancel this leave application?' },
+                  onClick: () => cancelLeave(row.original.id),
+                },
+              ]}
+            />
+          );
+        },
       },
     ],
     [isAdmin, employeeId, allLeaveTypes, openReviewModal, cancelLeave],
@@ -215,7 +210,11 @@ function LeaveApplicationsContent() {
         subtitle={pagination ? `${pagination.total} applications` : ''}
         actions={
           !isAdmin ? (
-            <Button onClick={() => openApplyModal(employeeId)}>
+            <Button
+              onClick={() =>
+                isMobile ? router.push('/leave/apply') : openApplyModal(employeeId)
+              }
+            >
               <Plus size={16} />
               {LEAVE_APPLICATION_PAGE.buttons.applyLeave}
             </Button>
@@ -288,14 +287,14 @@ function LeaveApplicationsContent() {
       />
 
       {/* ─── Apply Leave Modal ────────────────────────────────────────── */}
-      {showApplyModal && (
+      {!isMobile && showApplyModal && (
         <ResponsiveModalContainer
           isOpen={showApplyModal}
           onClose={closeApplyModal}
           title={LEAVE_APPLICATION_PAGE.modal.applyTitle}
         >
           <form onSubmit={handleApply}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField
                   label={`${LEAVE_APPLICATION_PAGE.labels.academicYear} *`}
@@ -354,28 +353,65 @@ function LeaveApplicationsContent() {
                   />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeApplyModal}>
                 {LEAVE_APPLICATION_PAGE.buttons.cancel}
               </Button>
               <Button type="submit" loading={isApplying}>
                 {LEAVE_APPLICATION_PAGE.buttons.save}
               </Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}
 
       {/* ─── Review Leave Modal ───────────────────────────────────────── */}
-      {showReviewModal && selectedApplication && (
+      {isMobile && selectedApplication && (
+        <LeaveReviewSheet
+          isOpen={showReviewModal}
+          onClose={closeReviewModal}
+          title={LEAVE_APPLICATION_PAGE.modal.reviewTitle}
+          summary={
+            <>
+              <P color="default" className="font-semibold">
+                {allLeaveTypes.find((lt) => lt.id === selectedApplication.leave_type_id)
+                  ?.leave_name ?? 'Leave'}
+              </P>
+              <P className="mt-0.5 text-muted-foreground">
+                {formatDate(selectedApplication.start_date)} → {formatDate(selectedApplication.end_date)} ·{' '}
+                {selectedApplication.total_days} days
+              </P>
+              {selectedApplication.reason && (
+                <P className="mt-1 text-muted-foreground">Reason: {selectedApplication.reason}</P>
+              )}
+            </>
+          }
+          decision={reviewingStatus === 'APPROVED' ? 'APPROVED' : 'REJECTED'}
+          remarksLabel={LEAVE_APPLICATION_PAGE.labels.remarks}
+          remarksProps={{
+            placeholder: LEAVE_APPLICATION_PAGE.placeholders.remarks,
+            ...reviewRegister('remarks'),
+          }}
+          remarksError={reviewErrors.remarks?.message}
+          onSubmit={handleReview}
+          isSubmitting={isReviewing}
+          confirmLabel={
+            reviewingStatus === 'APPROVED'
+              ? LEAVE_APPLICATION_PAGE.buttons.approve
+              : LEAVE_APPLICATION_PAGE.buttons.reject
+          }
+          cancelLabel={LEAVE_APPLICATION_PAGE.buttons.cancel}
+        />
+      )}
+      {!isMobile && showReviewModal && selectedApplication && (
         <ResponsiveModalContainer
           isOpen={showReviewModal}
           onClose={closeReviewModal}
           title={LEAVE_APPLICATION_PAGE.modal.reviewTitle}
         >
           <form onSubmit={handleReview}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 {/* Summary of what is being reviewed */}
                 <Div
@@ -437,8 +473,8 @@ function LeaveApplicationsContent() {
                   />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeReviewModal}>
                 {LEAVE_APPLICATION_PAGE.buttons.cancel}
               </Button>
@@ -453,7 +489,7 @@ function LeaveApplicationsContent() {
                   ? LEAVE_APPLICATION_PAGE.buttons.approve
                   : LEAVE_APPLICATION_PAGE.buttons.reject}
               </Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}

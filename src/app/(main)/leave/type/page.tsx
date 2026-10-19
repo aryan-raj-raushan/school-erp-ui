@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useLeaveTypes } from '@/hooks/leave/useLeaveTypes';
 import { PageHeader } from '@/components/ui/page-header';
 import {
@@ -16,6 +16,7 @@ import {
   PageCol,
   FilterBar,
   ResponsiveSelect,
+  RowActions,
 } from '@/components/ui';
 import {
   LEAVE_TYPE_PAGE,
@@ -88,36 +89,26 @@ function LeaveTypeContent() {
         id: 'actions',
         header: LEAVE_TYPE_PAGE.table.actions,
         cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() =>
-                router.push(`/leave/type/view?id=${row.original.id}`)
-              }
-              title={LEAVE_TYPE_PAGE.buttons.edit}
-            >
-              <Eye size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() =>
-                router.push(`/leave/type/view?id=${row.original.id}&edit=true`)
-              }
-              title={LEAVE_TYPE_PAGE.buttons.edit}
-            >
-              <Pencil size={14} />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="destructive"
-              onClick={() => deleteLeaveType(row.original.id)}
-              title={LEAVE_TYPE_PAGE.buttons.delete}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Div>
+          <RowActions
+            onView={() => router.push(`/leave/type/view?id=${row.original.id}`)}
+            actions={[
+              {
+                label: LEAVE_TYPE_PAGE.buttons.edit,
+                icon: <Pencil size={14} />,
+                onClick: () =>
+                  router.push(`/leave/type/view?id=${row.original.id}&edit=true`),
+              },
+              {
+                label: LEAVE_TYPE_PAGE.buttons.delete,
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: {
+                  description: `Delete ${row.original.leave_name}? This action cannot be undone.`,
+                },
+                onClick: () => deleteLeaveType(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],

@@ -25,13 +25,17 @@ import {
   ResponsiveModalContainer,
   ResponsiveSelect,
   DataTable,
+  SegmentedControl,
   type ColumnDef,
 } from "@/components/ui";
 import { Plus } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { LeaveRequestSheet } from "@/components/leave/LeaveSheets";
 
 type Tab = "requests" | "balance";
 
 export default function TeacherLeaveView() {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<Tab>("requests");
 
   const {
@@ -107,7 +111,7 @@ export default function TeacherLeaveView() {
       </Div>
 
       {/* Stats */}
-      <Div type="row" gap="sm">
+      <Div type="row" gap="sm" wrap>
         <MiniStat label="Total Requests" value={myRequests.length} />
         <MiniStat label="Pending" value={pending} color={pending > 0 ? "yellow" : "default"} />
         <MiniStat label="Approved" value={approved} color="green" />
@@ -127,18 +131,30 @@ export default function TeacherLeaveView() {
       </Div>
 
       {/* Tabs */}
-      <Div type="row" gap="sm">
-        {(["requests", "balance"] as Tab[]).map((tab) => (
-          <Button
-            key={tab}
-            size="sm"
-            variant={activeTab === tab ? "default" : "outline"}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab === "requests" ? LEAVE_PAGE.tabs.myRequests : LEAVE_PAGE.tabs.myBalance}
-          </Button>
-        ))}
-      </Div>
+      {isMobile ? (
+        <SegmentedControl
+          ariaLabel="View"
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: "requests", label: LEAVE_PAGE.tabs.myRequests },
+            { value: "balance", label: LEAVE_PAGE.tabs.myBalance },
+          ]}
+        />
+      ) : (
+        <Div type="row" gap="sm">
+          {(["requests", "balance"] as Tab[]).map((tab) => (
+            <Button
+              key={tab}
+              size="sm"
+              variant={activeTab === tab ? "default" : "outline"}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "requests" ? LEAVE_PAGE.tabs.myRequests : LEAVE_PAGE.tabs.myBalance}
+            </Button>
+          ))}
+        </Div>
+      )}
 
       {/* My Requests */}
       {activeTab === "requests" && (
@@ -186,6 +202,19 @@ export default function TeacherLeaveView() {
       )}
 
       {/* Apply Leave Modal */}
+      {isMobile ? (
+        <LeaveRequestSheet
+          isOpen={showApplyModal}
+          onClose={() => setShowApplyModal(false)}
+          form={applyForm}
+          leaveTypeOptions={leaveTypes.map((lt) => ({
+            value: lt.id,
+            label: `${lt.name} (max ${lt.max_days} days)`,
+          }))}
+          onSubmit={handleSubmit(handleApply)}
+          isSubmitting={isSaving}
+        />
+      ) : (
       <ResponsiveModalContainer isOpen={showApplyModal} title={LEAVE_PAGE.apply.title} onClose={() => setShowApplyModal(false)}>
           <form onSubmit={handleSubmit(handleApply)}>
             <Div type="col" gap="md" className="px-4 py-4">
@@ -218,6 +247,7 @@ export default function TeacherLeaveView() {
             </Div>
           </form>
       </ResponsiveModalContainer>
+      )}
     </Div>
   );
 }

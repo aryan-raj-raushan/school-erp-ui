@@ -6,15 +6,25 @@ import { Role } from '@/types';
 import { useSchools } from '@/hooks/useSchools';
 import { useAuthStore } from '@/store/auth.store';
 import {
-  Div, P, Button, Input, Select,
-  PageHeader, PageCol, FilterBar,
+  Div,
+  P,
+  Button,
+  Input,
+  PageHeader,
+  PageCol,
+  FilterBar,
   DataTable,
-  Modal, ModalBody, ModalFooter, FormField, PhoneField,
-  Badge, Spinner,
+  FormField,
+  PhoneField,
+  Badge,
   type ColumnDef,
   ResponsiveSelect,
   ResponsiveModalContainer,
+  RowActions,
 } from '@/components/ui';
+import { LogIn, Pencil, Trash2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SchoolMobileForm } from '@/components/platform/SchoolMobileForm';
 
 type SchoolRow = {
   id: string;
@@ -27,6 +37,7 @@ type SchoolRow = {
 };
 
 export default function SchoolsPage() {
+  const isMobile = useIsMobile();
   const {
     schools, pagination, filters, isLoading, switchingId,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
@@ -78,29 +89,62 @@ export default function SchoolsPage() {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            <Button
-              size="sm"
-              onClick={() => loginAsSchool(row.original as any)}
-              loading={switchingId === row.original.id}
-              disabled={!row.original.is_active}
-            >
-              Login
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => openEditModal(row.original as any)}>
-              Edit
-            </Button>
-            {isSuperAdmin && (
-              <Button size="sm" variant="ghost" onClick={() => deleteSchool(row.original as any)}>
-                Delete
-              </Button>
-            )}
-          </Div>
+          <RowActions
+            actions={[
+              {
+                label: 'Login as school',
+                icon: <LogIn size={14} />,
+                disabled: !row.original.is_active || switchingId === row.original.id,
+                onClick: () => loginAsSchool(row.original as any),
+              },
+              {
+                label: 'Edit',
+                icon: <Pencil size={14} />,
+                onClick: () => openEditModal(row.original as any),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                hidden: !isSuperAdmin,
+                confirm: { description: `Delete ${row.original.name}? This cannot be undone.` },
+                onClick: () => deleteSchool(row.original as any),
+              },
+            ]}
+          />
         ),
       },
     ],
     [isSuperAdmin, switchingId, loginAsSchool, openEditModal, deleteSchool]
   );
+
+  if (isMobile && showCreateModal) {
+    return (
+      <SchoolMobileForm
+        form={createForm}
+        title={CREATE_SCHOOL_FORM.title}
+        submitLabel={CREATE_SCHOOL_FORM.submit.idle}
+        isEditing={false}
+        isSubmitting={isCreating}
+        onSubmit={handleCreateSubmit}
+        onCancel={closeCreateModal}
+      />
+    );
+  }
+
+  if (isMobile && editingSchool) {
+    return (
+      <SchoolMobileForm
+        form={editForm}
+        title={`Edit — ${editingSchool.name}`}
+        submitLabel="Save changes"
+        isEditing
+        isSubmitting={isUpdating}
+        onSubmit={handleEditSubmit}
+        onCancel={closeEditModal}
+      />
+    );
+  }
 
   return (
     <PageCol>
@@ -134,10 +178,10 @@ export default function SchoolsPage() {
       />
 
       {/* Create Modal */}
-      {showCreateModal && (
+      {!isMobile && showCreateModal && (
         <ResponsiveModalContainer isOpen={showCreateModal} onClose={closeCreateModal} title={CREATE_SCHOOL_FORM.title}>
           <form onSubmit={handleCreateSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="lg">
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.basic}</P>
@@ -214,20 +258,20 @@ export default function SchoolsPage() {
                   </FormField>
                 </Div>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeCreateModal}>{CREATE_SCHOOL_FORM.cancel}</Button>
               <Button type="submit" loading={isCreating}>{CREATE_SCHOOL_FORM.submit.idle}</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}
 
       {/* Edit Modal */}
-      {editingSchool && (
+      {!isMobile && editingSchool && (
         <ResponsiveModalContainer isOpen={!!editingSchool} onClose={closeEditModal} title={`Edit — ${editingSchool.name}`}>
           <form onSubmit={handleEditSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="lg">
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.basic}</P>
@@ -304,11 +348,11 @@ export default function SchoolsPage() {
                   </FormField>
                 </Div>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeEditModal}>{CREATE_SCHOOL_FORM.cancel}</Button>
               <Button type="submit" loading={isUpdating}>Save Changes</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}

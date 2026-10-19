@@ -13,6 +13,11 @@ const config: CapacitorConfig = {
     cleartext: true,
     ...(devUrl ? { url: devUrl } : {}),
   },
+  ios: {
+    // <main> is the only scroller; this stops the whole WebView from
+    // rubber-banding and springing back.
+    scrollEnabled: false,
+  },
   plugins: {
     // 'native' shrinks the whole WebView above the keyboard (iOS + Android), so
     // fixed/bottom-anchored UI always sits directly on top of the keyboard.

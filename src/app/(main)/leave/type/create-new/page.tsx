@@ -1,6 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { LeaveTypeMobileForm } from '@/components/leave/LeaveTypeMobile';
 import { ArrowLeft } from 'lucide-react';
 import { useLeaveTypeDetail } from '@/hooks/leave/useLeaveTypes';
 import {
@@ -10,7 +12,6 @@ import {
   Button,
   Input,
   FormField,
-  Spinner,
   ResponsiveSelect,
 } from '@/components/ui';
 import {
@@ -20,6 +21,7 @@ import {
 } from '@/constants/emp-leave.constants';
 export default function LeaveTypeCreatePage() {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const {
     form,
@@ -35,6 +37,18 @@ export default function LeaveTypeCreatePage() {
   async function onFormSubmit() {
     await handleSubmit();
     router.push('/leave/type');
+  }
+
+  if (isMobile) {
+    return (
+      <LeaveTypeMobileForm
+        form={form}
+        isNew
+        isSubmitting={isSubmitting}
+        onSubmit={form.handleSubmit(onFormSubmit as any)}
+        onCancel={() => router.back()}
+      />
+    );
   }
 
   return (

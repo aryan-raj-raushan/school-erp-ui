@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { Clock, CalendarRange, Pencil, Trash2 } from 'lucide-react';
 import type { SchoolTiming, CreateSchoolTimingPayload } from '@/types/school-settings.types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { TimingsMobile } from '@/components/settings/TimingsMobile';
 
 function fmtTime(t: string | null | undefined) {
   if (!t) return null;
@@ -66,7 +67,7 @@ export default function TimingsPage() {
   const isMobile = useIsMobile();
   const {
     timings, isLoading, isSubmitting, isDialogOpen,
-    editingTiming, openCreate, openEdit, closeDialog, submit, remove,
+    editingTiming, openCreate, openEdit, closeDialog, submit, remove, refresh,
   } = useSchoolTimings();
   const [form, setForm] = useState<CreateSchoolTimingPayload>(EMPTY_FORM);
 
@@ -249,6 +250,26 @@ export default function TimingsPage() {
     },
   ];
 
+  if (isMobile) {
+    return (
+      <TimingsMobile
+        timings={timings}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        isDialogOpen={isDialogOpen}
+        isEditing={!!editingTiming}
+        form={form}
+        updateForm={updateForm}
+        onCreate={handleOpenCreate}
+        onEdit={handleOpenEdit}
+        onDelete={remove}
+        onRefresh={refresh}
+        onSubmit={() => submit(form)}
+        onClose={closeDialog}
+      />
+    );
+  }
+
   const pageHeaderConfig: PageHeaderConfig = {
       title: TIMINGS_PAGE.title,
       subtitle: TIMINGS_PAGE.subtitle,
@@ -258,7 +279,6 @@ export default function TimingsPage() {
           onClick: () => handleOpenCreate(),
         },
       ],
-      backButton: isMobile,
     };
 
   return (

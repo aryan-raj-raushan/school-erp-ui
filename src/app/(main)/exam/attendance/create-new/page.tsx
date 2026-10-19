@@ -8,6 +8,8 @@ import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
 import { useExamAttendanceCard } from "@/hooks/exam/useExamAttendanceCard";
 import { PageHeader } from "@/components/ui/page-header";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ExamAttendanceMobile } from "@/components/exam/ExamAttendanceMobile";
 import {
   Div,
   H3,
@@ -42,6 +44,7 @@ function fmtDate(iso: string) {
 
 function MarkAttendanceContent() {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const {
     years,
@@ -155,6 +158,40 @@ function MarkAttendanceContent() {
 
     return [...baseCols, ...scheduleCols];
   }, [schedules, cycleStatus, setScheduleStatus]);
+
+  if (isMobile) {
+    return (
+      <ExamAttendanceMobile
+        years={years}
+        classes={classes}
+        sections={sections}
+        exams={exams}
+        academicYearId={selectedAcademicYearId}
+        classId={selectedClassId}
+        sectionId={selectedSectionId}
+        examId={examId}
+        onYearChange={setSelectedAcademicYearId}
+        onClassChange={handleClassChange}
+        onSectionChange={handleSectionChange}
+        onExamChange={setExamId}
+        isLoadingClasses={isLoadingClasses}
+        schedules={schedules}
+        isLoadingSchedules={isLoadingSchedules}
+        rows={rows}
+        canMarkAttendance={canMarkAttendance}
+        selectedExam={selectedExam}
+        onSetStatus={setScheduleStatus}
+        onMarkAllPresent={markAllPresent}
+        onMarkAllAbsent={markAllAbsent}
+        onSave={save}
+        isSaving={isSaving}
+        onCancel={() => router.push(EXAM_ROUTES.attendance.list)}
+        canDownloadCard={canDownloadCard}
+        isDownloadingCard={isDownloadingCard}
+        onDownloadCard={downloadAttendanceCard}
+      />
+    );
+  }
 
   return (
     <Div type="col" gap="lg">
@@ -310,6 +347,7 @@ function MarkAttendanceContent() {
                   columns={columns}
                   data={rows}
                   emptyText="No students found"
+                  mobileShowAll
                 />
               )}
 

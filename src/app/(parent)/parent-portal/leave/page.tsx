@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Div, H1, H2, P, Badge, Button, Input, Spinner, EmptyState } from "@/components/ui";
+import { Div, H1, H2, P, Badge, Button, Input, Spinner, EmptyState, FieldRow, MobileTextField } from "@/components/ui";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import { CalendarOff } from "lucide-react";
 import { useParentLeave } from "@/hooks/useParentLeave";
 
@@ -12,6 +13,7 @@ const STATUS_VARIANT: Record<string, "success" | "warning" | "danger" | "default
 };
 
 export default function ParentLeavePage() {
+  const isMobile = useIsMobileSync();
   const { requests, balance, isLoading, isApplying, error, apply } = useParentLeave();
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -51,6 +53,18 @@ export default function ParentLeavePage() {
 
       <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-4">
         <H2 className="text-sm font-semibold">Apply for Leave</H2>
+        {isMobile ? (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <FieldRow>
+              <MobileTextField label="From" type="date" required value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+              <MobileTextField label="To" type="date" required value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            </FieldRow>
+            <MobileTextField label="Reason" required placeholder="Reason for leave" value={reason} onChange={(e) => setReason(e.target.value)} />
+            <Button type="submit" size="lg" loading={isApplying}>
+              Submit request
+            </Button>
+          </form>
+        ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Div type="row" gap="sm" className="flex-col sm:flex-row">
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} required />
@@ -61,6 +75,7 @@ export default function ParentLeavePage() {
             Submit Request
           </Button>
         </form>
+        )}
       </Div>
 
       <Div type="col" gap="sm">

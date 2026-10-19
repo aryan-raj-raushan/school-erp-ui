@@ -6,7 +6,9 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './button';
+import { BottomSheet } from './action-sheet';
 import { useBackLayer } from '@/hooks/useBackLayer';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 
 interface ResponsiveBottomSheetProps {
   isOpen: boolean;
@@ -14,27 +16,12 @@ interface ResponsiveBottomSheetProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
-  showHandle?: boolean;
   maxHeight?: string;
+  /** Children bring their own padding (form bodies with a footer bar). */
+  flush?: boolean;
 }
 
-// Hook to detect if screen is mobile/small (md breakpoint)
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false,
-  );
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return isMobile;
-}
+export { useIsMobileSync as useIsMobile } from '@/hooks/useIsMobileSync';
 
 export function ResponsiveBottomSheet({
   isOpen,
@@ -42,121 +29,80 @@ export function ResponsiveBottomSheet({
   title,
   children,
   className,
-  showHandle = true,
-  maxHeight = '90vh',
+  maxHeight = '90dvh',
+  flush = false,
 }: ResponsiveBottomSheetProps) {
-  const isMobile = useIsMobile();
-  useBackLayer(isOpen, onClose);
+  const isMobile = useIsMobileSync();
+  const isDialogOpen = isOpen && !isMobile;
+  useBackLayer(isDialogOpen, onClose);
 
   React.useEffect(() => {
+    if (!isDialogOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (isOpen) {
-      document.addEventListener('keydown', onKey);
-      return () => document.removeEventListener('keydown', onKey);
-    }
-  }, [isOpen, onClose]);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isDialogOpen, onClose]);
+
+  // Phones share the native-style BottomSheet so every sheet locks the page
+  // behind it and keeps its content inside the sheet's own scroll area.
+  if (isMobile) {
+    return (
+      <BottomSheet isOpen={isOpen} onClose={onClose} title={title} maxHeight={maxHeight} flush>
+        <div data-sheet-pad={flush ? undefined : ''} className={cn(!flush && 'px-4 py-4', className)}>
+          {children}
+        </div>
+      </BottomSheet>
+    );
+  }
 
   if (!isOpen) return null;
 
   return createPortal(
     <AnimatePresence>
-      {isMobile ? (
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center px-4 safe-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
+      >
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-md"
+          onClick={onClose}
+        />
+
         <motion.div
-          className="fixed inset-0 z-50 flex flex-col"
-          style={{ paddingTop: "var(--sat, 0px)" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          className={cn(
+            'relative z-10 w-full rounded-2xl border border-border/50 max-h-[90dvh] overflow-y-auto glass-card sm:max-w-lg',
+            className,
+          )}
+          style={{
+            background: 'var(--glass-bg)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+          }}
+          initial={{ opacity: 0, scale: 0.95, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 8 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={onClose}
-          />
-
-          <motion.div
-            className={cn(
-              'relative mt-auto w-full rounded-t-2xl border-t border-border/50 bg-white text-foreground shadow-lg dark:bg-neutral-900',
-              className,
-            )}
-            style={{ maxHeight, paddingBottom: "var(--sab, 0px)" }}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {showHandle && (
-              <div className="flex justify-center pt-2 pb-2">
-                <div className="h-1 w-12 rounded-full bg-muted-foreground/30" />
-              </div>
-            )}
-
-            <div className="flex flex-col max-h-[calc(var(--max-height,90vh)-60px)] overflow-y-auto">
-              {title && (
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-                  <h2 className="text-base font-semibold text-foreground">
-                    {title}
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={onClose}
-                    className="min-w-9 min-h-9"
-                  >
-                    <X size={15} />
-                  </Button>
-                </div>
-              )}
-              <div className="px-4 py-4">{children}</div>
+          {title && (
+            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-border/40">
+              <h2 className="text-sm sm:text-base font-semibold text-foreground">{title}</h2>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={onClose}
+                className="min-w-9 min-h-9 sm:min-w-11 sm:min-h-11"
+              >
+                <X size={15} />
+              </Button>
             </div>
-          </motion.div>
+          )}
+          {children}
         </motion.div>
-      ) : (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4 safe-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-md"
-            onClick={onClose}
-          />
-
-          <motion.div
-            className={cn(
-              'relative z-10 w-full rounded-2xl border border-border/50 max-h-[90vh] overflow-y-auto glass-card sm:max-w-lg',
-              className,
-            )}
-            style={{
-              background: 'var(--glass-bg)',
-              backdropFilter: 'blur(24px) saturate(180%)',
-            }}
-            initial={{ opacity: 0, scale: 0.95, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 8 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {title && (
-              <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-border/40">
-                <h2 className="text-sm sm:text-base font-semibold text-foreground">{title}</h2>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={onClose}
-                  className="min-w-9 min-h-9 sm:min-w-11 sm:min-h-11"
-                >
-                  <X size={15} />
-                </Button>
-              </div>
-            )}
-            {children}
-          </motion.div>
-        </motion.div>
-      )}
+      </motion.div>
     </AnimatePresence>,
     document.body,
   );
@@ -169,14 +115,13 @@ export function ResponsiveDropdownContainer({
   title,
   children,
   className,
-}: Omit<ResponsiveBottomSheetProps, 'showHandle' | 'maxHeight'>) {
+}: Omit<ResponsiveBottomSheetProps, 'maxHeight'>) {
   return (
     <ResponsiveBottomSheet
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      showHandle
-      maxHeight="70vh"
+      maxHeight="70dvh"
       className={className}
     >
       {children}
@@ -191,14 +136,13 @@ export function ResponsiveModalContainer({
   title,
   children,
   className,
-}: Omit<ResponsiveBottomSheetProps, 'showHandle'>) {
+}: ResponsiveBottomSheetProps) {
   return (
     <ResponsiveBottomSheet
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      showHandle={false}
-      maxHeight="90vh"
+      maxHeight="90dvh"
       className={className}
     >
       {children}

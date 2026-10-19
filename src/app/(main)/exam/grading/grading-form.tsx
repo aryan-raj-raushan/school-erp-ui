@@ -9,9 +9,12 @@ import {
   Div, Button, Spinner, FormField, Input, Textarea,
 } from "@/components/ui";
 import { GRADING_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { GradingMobileForm, GradingMobileView } from "@/components/exam/GradingMobile";
 
 export function GradingFormContent({ slug }: { slug: string }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
 
@@ -28,6 +31,20 @@ export function GradingFormContent({ slug }: { slug: string }) {
 
   if (isLoading) {
     return <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>;
+  }
+
+  if (isMobile) {
+    if (!isEditing && grade) {
+      return <GradingMobileView grade={grade} onEdit={() => setIsEditing(true)} />;
+    }
+    return (
+      <GradingMobileForm
+        form={form}
+        isSubmitting={isSubmitting}
+        onSubmit={onSubmit}
+        onCancel={() => (isEditMode ? router.push(EXAM_ROUTES.grading.list) : setIsEditing(false))}
+      />
+    );
   }
 
   const isReadOnly = !isEditing;

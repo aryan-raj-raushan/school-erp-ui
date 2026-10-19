@@ -27,15 +27,16 @@ import {
   Trash2,
   Send,
   Undo2,
-  Printer,
   Download,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TimetableMobileView } from "@/components/timetable/TimetableMobileView";
 
 function ViewTimetableContent({ id }: { id: string }) {
 
   const isMobile = useIsMobile();
 
+  const timetableState = useViewTimetable(id);
   const {
     timetable,
     isLoading,
@@ -45,9 +46,9 @@ function ViewTimetableContent({ id }: { id: string }) {
     getPeriodTime,
     handlePrint,
     goToEdit,
-    handleBack,
     togglePublish,
-  } = useViewTimetable(id);
+    refetch,
+  } = timetableState;
 
   if (isLoading) {
     return (
@@ -58,6 +59,10 @@ function ViewTimetableContent({ id }: { id: string }) {
   }
 
   if (!timetable) return null;
+
+  if (isMobile) {
+    return <TimetableMobileView state={timetableState} onRefresh={refetch} />;
+  }
 
   return (
     <Div type="col" gap="lg">
@@ -233,8 +238,6 @@ function TimetablePageContent() {
     goToNew,
     goToView,
     goToEdit,
-    goToEmployee,
-    goToSession,
   } = useTimetablePage();
 
   const filterFields = useMemo<FilterField[]>(

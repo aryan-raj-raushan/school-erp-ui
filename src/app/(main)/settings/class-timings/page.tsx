@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { CLASS_TIMINGS_PAGE } from "@/constants/school-settings.constants";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ClassTimingsMobile } from "@/components/settings/ClassTimingsMobile";
 
 export default function ClassTimingsPage() {
   const isMobile = useIsMobile();
@@ -38,8 +39,19 @@ export default function ClassTimingsPage() {
   const pageHeaderConfig: PageHeaderConfig = {
     title: CLASS_TIMINGS_PAGE.title,
     subtitle: CLASS_TIMINGS_PAGE.subtitle,
-    backButton: isMobile,
   };
+
+  if (isMobile) {
+    return (
+      <ClassTimingsMobile
+        classes={classes}
+        timings={timings}
+        savingClassId={savingClassId}
+        getOverrideForClass={getOverrideForClass}
+        onChange={setClassTiming}
+      />
+    );
+  }
 
   return (
     <PageCol>

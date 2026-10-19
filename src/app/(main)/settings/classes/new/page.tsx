@@ -4,13 +4,20 @@ import { useCreateClass } from '@/hooks/useCreateClass';
 import { useClassTypeCrudSelect } from '@/hooks/useClassTypeCrudSelect';
 import { CLASSES_PAGE, CLASS_SEQUENCE_OPTIONS } from '@/constants';
 import {
-  Div, Button, H2,
-  FormField, Input, Textarea,
-  CheckboxLabel, Spinner, CrudDropdown,
-  PageHeader, PageCol,
+  Div,
+  Button,
+  H2,
+  FormField,
+  Input,
+  Textarea,
+  CheckboxLabel,
+  Spinner,
+  CrudDropdown,
+  PageHeader,
   ResponsiveSelect,
 } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ClassMobileForm } from '@/components/settings/ClassMobileForm';
 
 
 export default function NewClassPage() {
@@ -27,6 +34,21 @@ export default function NewClassPage() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <ClassMobileForm
+        form={form}
+        isNew={true}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+        years={years}
+        sectionNames={allSectionNames}
+        classTypes={{ classTypeItems, isClassTypesLoading, addClassType, updateClassType, deleteClassType }}
+      />
     );
   }
 

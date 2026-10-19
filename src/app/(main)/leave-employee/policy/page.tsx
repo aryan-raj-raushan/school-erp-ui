@@ -3,27 +3,17 @@
 import { useMemo } from "react";
 import { useLeavePolicy } from "@/hooks/useLeave";
 import { LEAVE_POLICY_PAGE } from "@/constants";
+import { Div, H2, P, Button, Input, PageHeader, PageCol, Badge, Spinner, FormField, Icon, CheckboxLabel, ResponsiveModalContainer, ResponsiveSelect, DataTable, MobileListCard, type ColumnDef, Span } from "@/components/ui";
+import { Plus, ChevronRight, Trash2, Settings, ShieldCheck } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  Div,
-  H2,
-  P,
-  Button,
-  Input,
-  PageHeader,
-  PageCol,
-  Badge,
-  Spinner,
-  FormField,
-  Icon,
-  CheckboxLabel,
-  ResponsiveModalContainer,
-  ResponsiveSelect,
-  DataTable,
-  type ColumnDef,
-} from "@/components/ui";
-import { Plus, ChevronRight, Trash2, Settings } from "lucide-react";
+  LeavePolicyCreateSheet,
+  LeavePolicyDetailSheet,
+  LeaveProvisionSheet,
+} from "@/components/leave/LeavePolicyMobile";
 
 export default function LeavePolicyPage() {
+  const isMobile = useIsMobile();
   const {
     years,
     policies,
@@ -38,11 +28,12 @@ export default function LeavePolicyPage() {
     append,
     remove,
     handleSelectPolicy,
+    clearSelectedPolicy,
     handleCreate,
     handleProvision,
   } = useLeavePolicy();
 
-  const { register, handleSubmit, formState: { errors }, watch } = form;
+  const { register, handleSubmit, formState: { errors } } = form;
 
   const leaveTypeColumns = useMemo<ColumnDef<any>[]>(
     () => [
@@ -68,6 +59,75 @@ export default function LeavePolicyPage() {
     ],
     [],
   );
+
+  if (isMobile) {
+    return (
+      <PageCol>
+        <PageHeader
+          title={LEAVE_POLICY_PAGE.title}
+          actions={
+            <Button onClick={() => setShowModal(true)}>
+              <Icon icon={Plus} type="btn-icon" />
+              {LEAVE_POLICY_PAGE.addButton}
+            </Button>
+          }
+        />
+
+        {isLoading ? (
+          <Div type="col" align="center" padding="py-8"><Spinner /></Div>
+        ) : policies.length === 0 ? (
+          <Div variant="card-dashed">
+            <P>{LEAVE_POLICY_PAGE.empty}</P>
+          </Div>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {policies.map((policy) => (
+              <li key={policy.id}>
+                <MobileListCard
+                  leading={
+                    <Span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text">
+                      <ShieldCheck size={20} />
+                    </Span>
+                  }
+                  title={policy.name}
+                  subtitle={policy.description || `${policy.leave_types?.length ?? 0} leave type(s)`}
+                  onClick={() => handleSelectPolicy(policy)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <LeavePolicyDetailSheet
+          isOpen={selectedPolicy !== null && !showProvisionModal}
+          onClose={clearSelectedPolicy}
+          name={selectedPolicy?.name}
+          description={selectedPolicy?.description}
+          leaveTypes={selectedPolicy?.leave_types ?? []}
+          onProvision={() => setShowProvisionModal(true)}
+        />
+        <LeavePolicyCreateSheet
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          form={form}
+          fields={fields}
+          onAddType={() => append({ name: '', max_days: '1', is_paid: true, description: '' })}
+          onRemoveType={remove}
+          onSubmit={handleSubmit(handleCreate)}
+          isSaving={isSaving}
+        />
+        <LeaveProvisionSheet
+          isOpen={showProvisionModal}
+          onClose={() => setShowProvisionModal(false)}
+          years={years}
+          academicYearId={provisionAcademicYearId}
+          onAcademicYearChange={setProvisionAcademicYearId}
+          onSubmit={() => handleProvision([])}
+          isSaving={isSaving}
+        />
+      </PageCol>
+    );
+  }
 
   return (
     <PageCol>

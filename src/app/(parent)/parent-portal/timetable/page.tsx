@@ -1,10 +1,12 @@
 "use client";
 
-import { Div, H1, H2, P, Badge, Spinner, EmptyState } from "@/components/ui";
+import { Div, H1, H2, P, Badge, Spinner, EmptyState, ScheduleSlotList } from "@/components/ui";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import { Clock } from "lucide-react";
 import { useParentTimetable } from "@/hooks/useParentTimetable";
 
 export default function ParentTimetablePage() {
+  const isMobile = useIsMobileSync();
   const { today, week, isLoading, error } = useParentTimetable();
 
   return (
@@ -21,6 +23,16 @@ export default function ParentTimetablePage() {
             <H2 className="text-sm font-semibold">Today</H2>
             {today.length === 0 ? (
               <EmptyState icon={<Clock size={28} />} title="No periods scheduled today" />
+            ) : isMobile ? (
+              <ScheduleSlotList
+                slots={today.map((p) => ({
+                  id: String(p.period_number),
+                  marker: `P${p.period_number}`,
+                  title: p.subject_name,
+                  subtitle: p.teacher_name,
+                  timeLabel: `${p.start_time} – ${p.end_time}`,
+                }))}
+              />
             ) : (
               <Div type="col" gap="xs">
                 {today.map((p, i) => (

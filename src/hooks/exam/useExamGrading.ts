@@ -34,8 +34,8 @@ export const gradingSchema = z.object({
 // export type GradingFormValues = z.infer<typeof gradingSchema>;
 export type GradingFormValues = z.input<typeof gradingSchema>;
 
-type GradingFormInput = z.input<typeof gradingSchema>;
-type GradingFormOutput = z.output<typeof gradingSchema>;
+export type GradingFormInput = z.input<typeof gradingSchema>;
+export type GradingFormOutput = z.output<typeof gradingSchema>;
 
 // ── List Hook ─────────────────────────────────────────────────────────────────
 

@@ -25,7 +25,7 @@ export function SchoolAdminDashboard() {
   const vm = useAdminDashboardPage();
 
   return (
-    <DashboardRoot>
+    <DashboardRoot onRefresh={vm.refresh}>
       <DashboardHero
         eyebrow={vm.eyebrow}
         greeting={vm.greeting}

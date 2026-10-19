@@ -5,7 +5,6 @@ import {
   Div,
   P,
   H3,
-  Button,
   Spinner,
   FormField,
   PageHeader,
@@ -19,6 +18,7 @@ import {
   CONFLICT_RESOLUTION_OPTIONS,
 } from "@/constants/school-settings.constants";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SchoolConfigMobile } from "@/components/settings/SchoolConfigMobile";
 
 export default function SchoolConfigPage() {
   const isMobile = useIsMobile();
@@ -34,6 +34,17 @@ export default function SchoolConfigPage() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <SchoolConfigMobile
+        form={form}
+        updateField={updateField}
+        isSaving={isSaving}
+        onSave={save}
+      />
+    );
+  }
+
   const pageHeaderConfig: PageHeaderConfig = {
     title: SCHOOL_CONFIG_PAGE.title,
     subtitle: SCHOOL_CONFIG_PAGE.subtitle,
@@ -44,7 +55,6 @@ export default function SchoolConfigPage() {
         onClick: () => save(),
       },
     ],
-    backButton: isMobile,
   };
 
   return (

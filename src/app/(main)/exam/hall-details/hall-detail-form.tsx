@@ -5,54 +5,16 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Pencil, Grid3x3 } from "lucide-react";
 import { useHallDetailForm } from "@/hooks/exam/useExamHall";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  Div,
-  P,
-  Button,
-  Spinner,
-  FormField,
-  Input,
-} from "@/components/ui";
+import { Div, Button, Spinner, FormField, Input, P, Span } from "@/components/ui";
 import { HALL_DETAILS_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import { GridPreview } from "@/components/exam/GridPreview";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { HallDetailMobileForm, HallDetailMobileView } from "@/components/exam/HallDetailMobile";
 import { useWatch } from "react-hook-form";
-
-function GridPreview({ rows, cols }: { rows: number; cols: number }) {
-  const r = Math.min(rows, 12);
-  const c = Math.min(cols, 12);
-  const capacity = rows * cols;
-
-  return (
-    <div className="mt-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Grid3x3 size={13} className="text-muted-foreground" />
-        <P color="muted" className="text-xs">
-          Preview — {rows} × {cols} ={" "}
-          <strong className="text-foreground">{capacity} seats</strong>
-          {(rows > 12 || cols > 12) && " (preview truncated)"}
-        </P>
-      </div>
-      <div
-        className="inline-grid gap-0.5 p-2 bg-muted/40 rounded-lg border border-border"
-        style={{ gridTemplateColumns: `repeat(${c}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: r * c }, (_, i) => {
-          const seatNum = Math.floor(i / c) * cols + (i % c) + 1;
-          return (
-            <div
-              key={i}
-              className="w-6 h-6 flex items-center justify-center rounded-sm bg-primary/10 border border-primary/20 text-[9px] font-medium text-primary/70"
-            >
-              {seatNum}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function HallDetailFormContent({ slug }: { slug: string }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
   const gridRowsId = useId();
@@ -89,6 +51,23 @@ function HallDetailFormContent({ slug }: { slug: string }) {
       <Div type="row" justify="center" className="py-20">
         <Spinner size="lg" />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    if (!isNew && !isEditing && detail) {
+      return <HallDetailMobileView detail={detail} onEdit={() => setIsEditing(true)} />;
+    }
+    return (
+      <HallDetailMobileForm
+        form={form}
+        isNew={isNew}
+        isSubmitting={isSubmitting}
+        onSubmit={onSubmit}
+        onCancel={() =>
+          isNew || isEditMode ? router.push(EXAM_ROUTES.hallDetails.list) : setIsEditing(false)
+        }
+      />
     );
   }
 
@@ -143,17 +122,17 @@ function HallDetailFormContent({ slug }: { slug: string }) {
               />
             </FormField>
 
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="flex items-center gap-2 mb-3">
+            <Div className="rounded-lg border border-border p-4 bg-muted/20">
+              <Div type="row" className="flex items-center gap-2 mb-3">
                 <Grid3x3 size={14} className="text-muted-foreground" />
-                <p className="text-sm font-medium">Grid Layout</p>
-                <span className="text-xs text-muted-foreground ml-1">
+                <P color="default" className="text-sm font-medium">Grid Layout</P>
+                <Span className="text-xs text-muted-foreground ml-1">
                   (optional — auto-calculates capacity)
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+                </Span>
+              </Div>
+              <Div type="grid" cols={2} gap="sm" className="grid-cols-2">
                 <FormField label="Rows" error={errors.grid_rows?.message}>
-                  <div className="relative">
+                  <Div className="relative">
                     <label htmlFor={gridRowsId} className="sr-only">Rows</label>
                     <Input
                       id={gridRowsId}
@@ -164,10 +143,10 @@ function HallDetailFormContent({ slug }: { slug: string }) {
                       placeholder="e.g. 5"
                       disabled={isReadOnly}
                     />
-                  </div>
+                  </Div>
                 </FormField>
                 <FormField label="Columns" error={errors.grid_cols?.message}>
-                  <div className="relative">
+                  <Div className="relative">
                     <label htmlFor={gridColsId} className="sr-only">Columns</label>
                     <Input
                       id={gridColsId}
@@ -178,14 +157,14 @@ function HallDetailFormContent({ slug }: { slug: string }) {
                       placeholder="e.g. 6"
                       disabled={isReadOnly}
                     />
-                  </div>
+                  </Div>
                 </FormField>
-              </div>
+              </Div>
               {gridMode && !isReadOnly && <GridPreview rows={parsedRows} cols={parsedCols} />}
               {isReadOnly && detail?.grid_rows && detail?.grid_cols && (
                 <GridPreview rows={detail.grid_rows} cols={detail.grid_cols} />
               )}
-            </div>
+            </Div>
 
             {!gridMode && (
               <FormField
@@ -203,12 +182,12 @@ function HallDetailFormContent({ slug }: { slug: string }) {
             )}
 
             {gridMode && displayCapacity && (
-              <div className="flex items-center gap-2 text-sm bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+              <Div type="row" className="flex items-center gap-2 text-sm bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+                <Span className="text-emerald-600 dark:text-emerald-400 font-medium">
                   {parsedRows} × {parsedCols} = {autoCapacity} seats
-                </span>
-                <span className="text-xs text-muted-foreground">auto-calculated</span>
-              </div>
+                </Span>
+                <Span className="text-xs text-muted-foreground">auto-calculated</Span>
+              </Div>
             )}
 
             <Div type="row" align="center" gap="sm">

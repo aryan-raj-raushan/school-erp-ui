@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { ROUTES, STORAGE_KEYS, APP } from "@/constants";
 import { AuthContext } from "@/types";
@@ -9,8 +9,8 @@ import { TokenStorage } from "@/lib/api-gateway/token.storage";
 import { initAppStorage } from "@/lib/app-storage";
 import { useAuth } from "@/hooks/useAuth";
 import { useParentChildren } from "@/hooks/useParentChildren";
-import { PARENT_NAV_TABS } from "@/constants/layout/app-parent-nav.constants";
-import { Div, P, Button, ResponsiveSelect, ParentTabButton } from "@/components/ui";
+import { Div, P, Button, ResponsiveSelect, PullToRefresh } from "@/components/ui";
+import { ParentTabBar } from "@/components/layout/ParentTabBar";
 
 const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.accessToken,
@@ -29,7 +29,7 @@ export default function ParentLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const [refreshKey, setRefreshKey] = useState(0);
   const { logout, isLoading: isLoggingOut } = useAuth();
   const { activeChild, activeStudentId, children: linkedChildren, hasMultipleChildren, switchTo, isSwitching } = useParentChildren();
 
@@ -41,12 +41,18 @@ export default function ParentLayout({
     });
   }, [router]);
 
+  // Pages fetch on mount, so remounting them re-runs every page's data load.
+  async function refreshPage() {
+    setRefreshKey((key) => key + 1);
+    await new Promise((resolve) => setTimeout(resolve, 700));
+  }
+
   return (
-    <div style={{ minHeight: "100dvh" }} className="flex flex-col">
+    <div style={{ height: "100dvh", overflow: "hidden" }} className="flex flex-col">
       {/* Gradient bleeds up through the status-bar safe area so there's no
           bare strip above the header on native (Capacitor) screens. */}
       <div
-        className="sticky top-0 z-20"
+        className="z-20 shrink-0"
         style={{
           background: "linear-gradient(180deg, var(--theme-gradient-from) 0%, var(--theme-gradient-to) 100%)",
           paddingTop: "var(--sat)",
@@ -89,31 +95,13 @@ export default function ParentLayout({
         </Div>
       </div>
 
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{ paddingBottom: "calc(5rem + var(--sab))" }}
-      >
-        {children}
-      </div>
+      <main className="flex-1 overflow-y-auto">
+        <PullToRefresh onRefresh={refreshPage}>
+          <div key={refreshKey}>{children}</div>
+        </PullToRefresh>
+      </main>
 
-      <Div
-        type="row"
-        align="center"
-        justify="between"
-        className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur px-2 pt-2"
-        style={{ paddingBottom: "calc(0.5rem + var(--sab))" }}
-      >
-        {PARENT_NAV_TABS.map((item) => {
-          const isActive = pathname === item.url;
-          const Icon = item.icon;
-          return (
-            <ParentTabButton key={item.url} active={isActive} onClick={() => router.push(item.url)}>
-              <Icon size={20} />
-              <span className="truncate max-w-[64px]">{item.title.split(" ")[0]}</span>
-            </ParentTabButton>
-          );
-        })}
-      </Div>
+      <ParentTabBar onLogout={() => logout()} isLoggingOut={isLoggingOut} />
     </div>
   );
 }

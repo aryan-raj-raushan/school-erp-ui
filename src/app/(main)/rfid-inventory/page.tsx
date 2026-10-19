@@ -16,13 +16,18 @@ import {
   Badge,
   type ColumnDef,
   ResponsiveSelect,
+  RowActions,
+  MobileFormSheet,
 } from '@/components/ui';
+import { Undo2, Wrench, UserPlus } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function fmtDate(v?: string | null): string {
   return v ? new Date(v).toLocaleDateString() : '—';
 }
 
 export default function RfidInventoryPage() {
+  const isMobile = useIsMobile();
   const {
     devices, pagination, filters, isLoading, updateFilters,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
@@ -74,25 +79,33 @@ export default function RfidInventoryPage() {
       {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            {(row.original.status === 'IN_STOCK' || row.original.status === 'RETURNED') && (
-              <Button size="sm" onClick={() => openAssignModal(row.original)}>
-                {RFID_INVENTORY_PAGE.actions.assign}
-              </Button>
-            )}
-            {row.original.status === 'ASSIGNED' && (
-              <Button size="sm" variant="outline" onClick={() => installDevice(row.original)}>
-                {RFID_INVENTORY_PAGE.actions.install}
-              </Button>
-            )}
-            {(row.original.status === 'ASSIGNED' || row.original.status === 'INSTALLED') && (
-              <Button size="sm" variant="ghost" onClick={() => returnDevice(row.original)}>
-                {RFID_INVENTORY_PAGE.actions.return}
-              </Button>
-            )}
-          </Div>
-        ),
+        cell: ({ row }) => {
+          const status = row.original.status;
+          return (
+            <RowActions
+              actions={[
+                {
+                  label: RFID_INVENTORY_PAGE.actions.assign,
+                  icon: <UserPlus size={14} />,
+                  hidden: status !== 'IN_STOCK' && status !== 'RETURNED',
+                  onClick: () => openAssignModal(row.original),
+                },
+                {
+                  label: RFID_INVENTORY_PAGE.actions.install,
+                  icon: <Wrench size={14} />,
+                  hidden: status !== 'ASSIGNED',
+                  onClick: () => installDevice(row.original),
+                },
+                {
+                  label: RFID_INVENTORY_PAGE.actions.return,
+                  icon: <Undo2 size={14} />,
+                  hidden: status !== 'ASSIGNED' && status !== 'INSTALLED',
+                  onClick: () => returnDevice(row.original),
+                },
+              ]}
+            />
+          );
+        },
       },
     ],
     [schoolNameById, openAssignModal, installDevice, returnDevice],
@@ -124,10 +137,47 @@ export default function RfidInventoryPage() {
         pagination={pagination ?? undefined}
       />
 
-      {showCreateModal && (
+      {isMobile && (
+        <MobileFormSheet
+          isOpen={showCreateModal}
+          onClose={closeCreateModal}
+          title={CREATE_DEVICE_FORM.title}
+          form={createForm}
+          onSubmit={handleCreateSubmit}
+          isSubmitting={isCreating}
+          submitLabel={CREATE_DEVICE_FORM.submit.idle}
+          cancelLabel={CREATE_DEVICE_FORM.cancel}
+          fields={[
+            {
+              kind: 'input',
+              name: 'device_identifier',
+              label: CREATE_DEVICE_FORM.labels.device_identifier,
+              required: true,
+              placeholder: CREATE_DEVICE_FORM.placeholders.device_identifier,
+              autoCapitalize: 'characters',
+            },
+            {
+              kind: 'input',
+              name: 'device_model',
+              label: CREATE_DEVICE_FORM.labels.device_model,
+              placeholder: CREATE_DEVICE_FORM.placeholders.device_model,
+            },
+            {
+              kind: 'row',
+              fields: [
+                { kind: 'input', type: 'date', name: 'purchase_date', label: CREATE_DEVICE_FORM.labels.purchase_date },
+                { kind: 'input', type: 'date', name: 'warranty_expiry', label: CREATE_DEVICE_FORM.labels.warranty_expiry },
+              ],
+            },
+            { kind: 'textarea', name: 'notes', label: CREATE_DEVICE_FORM.labels.notes },
+          ]}
+        />
+      )}
+
+      {!isMobile && showCreateModal && (
         <ResponsiveModalContainer isOpen={showCreateModal} onClose={closeCreateModal} title={CREATE_DEVICE_FORM.title}>
           <form onSubmit={handleCreateSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField label={CREATE_DEVICE_FORM.labels.device_identifier} error={createForm.formState.errors.device_identifier?.message}>
                   <Input placeholder={CREATE_DEVICE_FORM.placeholders.device_identifier} {...createForm.register('device_identifier', { required: true })} />
@@ -147,23 +197,62 @@ export default function RfidInventoryPage() {
                   <Input {...createForm.register('notes')} />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeCreateModal}>{CREATE_DEVICE_FORM.cancel}</Button>
               <Button type="submit" loading={isCreating}>{CREATE_DEVICE_FORM.submit.idle}</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}
 
-      {assigningDevice && (
+      {isMobile && (
+        <MobileFormSheet
+          isOpen={!!assigningDevice}
+          onClose={closeAssignModal}
+          title={assigningDevice ? `${ASSIGN_DEVICE_FORM.title} — ${assigningDevice.device_identifier}` : ASSIGN_DEVICE_FORM.title}
+          form={assignForm}
+          onSubmit={handleAssignSubmit}
+          isSubmitting={isAssigning}
+          submitLabel={ASSIGN_DEVICE_FORM.submit}
+          cancelLabel={ASSIGN_DEVICE_FORM.cancel}
+          fields={[
+            {
+              kind: 'select',
+              name: 'school_id',
+              label: ASSIGN_DEVICE_FORM.labels.school,
+              required: true,
+              placeholder: 'Select school',
+              options: schools.map((s) => ({ value: s.id, label: s.name })),
+            },
+            { kind: 'toggle', name: 'billable', label: ASSIGN_DEVICE_FORM.labels.billable },
+            {
+              kind: 'chips',
+              name: 'charge_type',
+              label: ASSIGN_DEVICE_FORM.labels.charge_type,
+              hidden: !billable,
+              options: ONE_TIME_CHARGE_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+            },
+            {
+              kind: 'input',
+              type: 'number',
+              valueAsNumber: true,
+              name: 'charge_amount',
+              label: ASSIGN_DEVICE_FORM.labels.charge_amount,
+              hidden: !billable,
+            },
+          ]}
+        />
+      )}
+
+      {!isMobile && assigningDevice && (
         <ResponsiveModalContainer
           isOpen={!!assigningDevice}
           onClose={closeAssignModal}
           title={`${ASSIGN_DEVICE_FORM.title} — ${assigningDevice.device_identifier}`}
         >
           <form onSubmit={handleAssignSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField label={ASSIGN_DEVICE_FORM.labels.school} error={assignForm.formState.errors.school_id?.message}>
                   <ResponsiveSelect
@@ -190,11 +279,11 @@ export default function RfidInventoryPage() {
                   </>
                 )}
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeAssignModal}>{ASSIGN_DEVICE_FORM.cancel}</Button>
               <Button type="submit" loading={isAssigning}>{ASSIGN_DEVICE_FORM.submit}</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}

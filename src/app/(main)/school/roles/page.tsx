@@ -1,19 +1,18 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useRolesPage } from '@/hooks/useRolesPage';
 import {
   Div, Button,
   PageHeader, PageCol,
-  DataTable,
+  DataTable, RowActions,
   Badge, Spinner, Icon,
   type ColumnDef,
 } from '@/components/ui';
 import { Pencil, Trash2, Lock, Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { Role } from '@/types';
-import { RoleDetail } from './role-detail';
 
 type RoleRow = {
   id: string;
@@ -24,9 +23,10 @@ type RoleRow = {
 };
 
 function RolesPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const detailId = searchParams.get('id');
-  const { roles, isLoading, removeRole, navigateToNew, navigateToEdit } = useRolesPage();
+  const legacyId = searchParams.get('id');
+  const { roles, isLoading, removeRole, navigateToNew, navigateToView, navigateToEdit } = useRolesPage();
   const user = useAuthStore((s) => s.user);
   const isSchoolAdmin = user?.role === Role.SCHOOL_ADMIN;
 
@@ -70,24 +70,43 @@ function RolesPageContent() {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => (
-          <Div type="row" gap="xs">
-            <Button size="sm" variant="ghost" onClick={() => navigateToEdit(row.original.id)} title="Edit">
-              <Icon icon={Pencil} type="sm" />
-            </Button>
-            {!row.original.is_system && isSchoolAdmin && (
-              <Button size="sm" variant="ghost" onClick={() => removeRole(row.original.id)} title="Delete">
-                <Icon icon={Trash2} type="sm-danger" />
-              </Button>
-            )}
-          </Div>
+          <RowActions
+            onView={() => navigateToView(row.original.id)}
+            actions={[
+              {
+                label: 'Edit',
+                icon: <Pencil size={14} />,
+                onClick: () => navigateToEdit(row.original.id),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                hidden: row.original.is_system || !isSchoolAdmin,
+                confirm: { description: `Delete the ${row.original.name} role? This cannot be undone.` },
+                onClick: () => removeRole(row.original.id),
+              },
+            ]}
+          />
         ),
       },
     ],
-    [navigateToEdit, removeRole, isSchoolAdmin]
+    [navigateToView, navigateToEdit, removeRole, isSchoolAdmin]
   );
 
-  if (detailId) {
-    return <RoleDetail id={detailId} />;
+  // Old links used `?id=…` on the list route for the detail screen.
+  useEffect(() => {
+    if (!legacyId) return;
+    const edit = searchParams.get('edit') === 'true';
+    router.replace(`/school/roles/view?id=${legacyId}${edit ? '&edit=true' : ''}`);
+  }, [legacyId, searchParams, router]);
+
+  if (legacyId) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
   }
 
   return (

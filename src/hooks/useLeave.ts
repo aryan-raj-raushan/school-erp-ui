@@ -9,12 +9,10 @@ import {
   LeavePoliciesService,
   TeacherLeaveService,
   StudentLeaveService,
-  ParentLeaveService,
   type CreateLeavePolicyPayload,
   type ReviewLeavePayload,
 } from '@/services/leave.service';
 import { useAcademicYears } from './useAcademicYears';
-import { useAuthStore } from '@/store/auth.store';
 import type {
   LeavePolicy,
   TeacherLeaveRequest,
@@ -171,6 +169,7 @@ export function useLeavePolicy() {
     append,
     remove,
     handleSelectPolicy,
+    clearSelectedPolicy: () => setSelectedPolicy(null),
     handleCreate,
     handleProvision,
   };

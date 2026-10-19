@@ -264,8 +264,8 @@ const singleScheduleSchema = z.object({
   sub_subject_enabled: z.boolean().optional(),
 });
 
-type SingleScheduleInput = z.input<typeof singleScheduleSchema>;
-type SingleScheduleValues = z.infer<typeof singleScheduleSchema>;
+export type SingleScheduleInput = z.input<typeof singleScheduleSchema>;
+export type SingleScheduleValues = z.infer<typeof singleScheduleSchema>;
 
 export function useExamScheduleEdit(id: string | null) {
   const router = useRouter();

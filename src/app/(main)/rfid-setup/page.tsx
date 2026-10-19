@@ -3,18 +3,18 @@
 import React, { useState, useEffect } from "react";
 import { RefreshCw, UserCheck, Link2Off, Bell } from "lucide-react";
 import { Div } from "@/components/ui/layout";
-import { H1, H3, P } from "@/components/ui/typography";
+import { H3, P } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import { FormCard } from "@/components/ui/form-card";
-import { FormField, Select } from "@/components/ui/form";
+import { FormField } from "@/components/ui/form";
 import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { ResponsiveModalContainer } from "@/components/ui/responsive-bottom-sheet";
 import { Badge } from "@/components/ui/badge";
-import { Modal, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { useRfidEvents } from "@/hooks/useRfidEvents";
 import { useAssignRfidModal } from "@/hooks/useAssignRfidModal";
 import type { RfidScanEvent } from "@/services/rfid.service";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, BottomSheet, MobileSelectField, SegmentedControl } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function AssignModal({
   event,
@@ -25,6 +25,7 @@ function AssignModal({
   onClose: () => void;
   assignCard: (rfidCardId: string, personType: "staff" | "student", personId: string) => Promise<void>;
 }) {
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<"student" | "staff">("student");
   const [assigning, setAssigning] = useState(false);
 
@@ -51,9 +52,95 @@ function AssignModal({
 
   const canAssign = tab === "student" ? !!studentId : !!staffId;
 
+  if (isMobile) {
+    return (
+      <BottomSheet
+        isOpen
+        onClose={onClose}
+        title="Assign RFID card"
+        maxHeight="92dvh"
+        footer={
+          <Div type="row" className="flex gap-3">
+            <Button variant="outline" size="lg" className="flex-1" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button size="lg" className="flex-[2]" onClick={handleAssign} disabled={!canAssign} loading={assigning}>
+              Assign
+            </Button>
+          </Div>
+        }
+      >
+        <Div className="flex flex-col gap-3 pt-1">
+          <Div className="rounded-2xl bg-muted/50 p-3">
+            <P className="text-xs text-muted-foreground">RFID card ID</P>
+            <P color="default" className="font-mono text-[15px] font-medium">{event.r}</P>
+          </Div>
+          <SegmentedControl
+            ariaLabel="Assign to"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "student", label: "Student" },
+              { value: "staff", label: "Staff" },
+            ]}
+          />
+          {tab === "student" ? (
+            <>
+              <MobileSelectField
+                label="Academic year"
+                placeholder="Select academic year"
+                value={yearId}
+                onChange={setYearId}
+                options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? " (Current)" : ""}` }))}
+              />
+              <MobileSelectField
+                label="Class"
+                placeholder="Select class"
+                disabled={!yearId}
+                value={classId}
+                onChange={setClassId}
+                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+              />
+              <MobileSelectField
+                label="Section"
+                placeholder="Select section"
+                disabled={!classId}
+                value={sectionId}
+                onChange={setSectionId}
+                options={sections.map((sec) => ({ value: sec.id, label: sec.name }))}
+              />
+              <MobileSelectField
+                label="Student"
+                placeholder="Select student"
+                disabled={!classId}
+                value={studentId}
+                onChange={setStudentId}
+                options={studentList.map((st) => ({
+                  value: st.id,
+                  label: `${st.first_name} ${st.last_name ?? ""}`.trim(),
+                }))}
+              />
+            </>
+          ) : (
+            <MobileSelectField
+              label="Staff member"
+              placeholder="Select staff"
+              value={staffId}
+              onChange={setStaffId}
+              options={staffList.map((st) => ({
+                value: st.id,
+                label: `${st.first_name} ${st.last_name ?? ""}${st.employee_code ? ` (${st.employee_code})` : ""}`.trim(),
+              }))}
+            />
+          )}
+        </Div>
+      </BottomSheet>
+    );
+  }
+
   return (
     <ResponsiveModalContainer isOpen={true} onClose={onClose} title="Assign RFID Card">
-      <div className="px-4 py-4">
+      <Div className="px-4 py-4">
         <Div type="col" gap="md">
           <Div type="col" gap="xs">
             <P size="xs" color="muted">RFID Card ID</P>
@@ -137,13 +224,13 @@ function AssignModal({
             </FormField>
           )}
         </Div>
-      </div>
-      <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+      </Div>
+      <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button onClick={handleAssign} disabled={!canAssign} loading={assigning}>
           Assign
         </Button>
-      </div>
+      </Div>
     </ResponsiveModalContainer>
   );
 }

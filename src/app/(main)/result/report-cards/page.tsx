@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useMemo, useEffect } from 'react';
+import { openExternal } from '@/lib/external-link';
 import { useRouter } from 'next/navigation';
 import {
   FileText,
@@ -97,7 +98,7 @@ function GenerateModal({
       title={REPORT_CARD_PAGE.generateModal.title}
     >
       <form onSubmit={handleGenerate}>
-        <div className="px-4 py-4">
+        <Div className="px-4 py-4">
           <Div type="col" gap="md">
             <Div type="row" gap="sm">
               <Button
@@ -192,15 +193,15 @@ function GenerateModal({
               />
             </FormField>
           </Div>
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+        </Div>
+        <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button type="button" variant="outline" onClick={onClose} disabled={isGenerating}>
             {REPORT_CARD_PAGE.buttons.cancel}
           </Button>
           <Button type="submit" loading={isGenerating}>
             {REPORT_CARD_PAGE.generateModal.submitLabel}
           </Button>
-        </div>
+        </Div>
       </form>
     </ResponsiveModalContainer>
   );
@@ -491,7 +492,7 @@ function ReportCardsContent() {
                   size="icon-sm"
                   variant="ghost"
                   title="View PDF"
-                  onClick={() => window.open(rc.pdf_url!, '_blank')}
+                  onClick={() => void openExternal(rc.pdf_url!)}
                 >
                   <ExternalLink size={14} />
                 </Button>

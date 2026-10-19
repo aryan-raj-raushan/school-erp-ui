@@ -107,11 +107,19 @@ export function PageCol({ children, ...props }: PageLayoutProps) {
  * Wraps to next line on mobile, horizontal on sm+.
  * Replaces <Div type="row" gap="md" align="center" wrap>
  */
-export function FilterBar({ children, ...props }: PageLayoutProps) {
+export function FilterBar({ children, className, ...props }: PageLayoutProps) {
   return (
-    <Div type="row" gap="md" align="center" wrap {...props}>
+    <div
+      className={cn(
+        // Phones: a tidy two-column grid of full-width controls (labels span both columns).
+        'grid grid-cols-2 gap-2 max-md:[&>*]:!w-full max-md:[&>*]:min-w-0 max-md:[&>p]:col-span-2',
+        'md:flex md:flex-row md:flex-wrap md:items-center md:gap-4',
+        className,
+      )}
+      {...props}
+    >
       {children}
-    </Div>
+    </div>
   );
 }
 

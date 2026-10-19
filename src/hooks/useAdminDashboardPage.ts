@@ -25,7 +25,7 @@ import {
 import type { DashAlert, DashKpi } from '@/types/dashboard.types';
 
 export function useAdminDashboardPage() {
-  const { data, isLoading, error } = useDashboard();
+  const { data, isLoading, error, refresh } = useDashboard();
   const identity = useDashboardIdentity();
 
   const rate = data?.attendance.rate ?? null;
@@ -123,6 +123,7 @@ export function useAdminDashboardPage() {
 
   return {
     isLoading,
+    refresh,
     error,
     hasData: !!data,
     greeting: identity.greeting,

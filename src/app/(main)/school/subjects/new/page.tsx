@@ -1,5 +1,7 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SubjectMobileForm } from '@/components/settings/SubjectMobileForm';
 import { useCreateSubject } from '@/hooks/useCreateSubject';
 import { SUBJECTS_PAGE } from '@/constants';
 import {
@@ -10,10 +12,23 @@ import {
 } from '@/components/ui';
 
 export default function NewSubjectPage() {
+  const isMobile = useIsMobile();
   const {
     form, isSubmitting,
     handleSubmit, handleBack, toggleIsElective, toggleIsActive,
   } = useCreateSubject();
+
+  if (isMobile) {
+    return (
+      <SubjectMobileForm
+        form={form}
+        isNew={true}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
+    );
+  }
 
   return (
     <Div type="col" gap="lg" className="max-w-2xl">

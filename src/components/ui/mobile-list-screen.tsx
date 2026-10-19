@@ -13,10 +13,11 @@ import {
 } from "./mobile-list";
 
 export interface MobileListScreenProps {
-  filterFields: FilterField[];
-  filterValues: Record<string, string | undefined>;
-  onFilterChange: (next: Record<string, string | undefined>) => void;
-  onFilterClear: () => void;
+  /** Omit (or pass none) for lists without search or filters. */
+  filterFields?: FilterField[];
+  filterValues?: Record<string, string | undefined>;
+  onFilterChange?: (next: Record<string, string | undefined>) => void;
+  onFilterClear?: () => void;
   filterSheetTitle?: string;
   /** Pull-to-refresh handler. */
   onRefresh: () => Promise<unknown> | void;
@@ -45,8 +46,8 @@ export interface MobileListScreenProps {
  * scroll and a floating add button. Screens only supply the rows.
  */
 export function MobileListScreen({
-  filterFields,
-  filterValues,
+  filterFields = [],
+  filterValues = {},
   onFilterChange,
   onFilterClear,
   filterSheetTitle,
@@ -70,13 +71,15 @@ export function MobileListScreen({
 
   return (
     <div className="flex flex-col gap-3 pt-3">
-      <MobileFilterBar
-        fields={filterFields}
-        values={filterValues}
-        onChange={onFilterChange}
-        onClear={onFilterClear}
-        sheetTitle={filterSheetTitle}
-      />
+      {filterFields.length > 0 && onFilterChange && onFilterClear && (
+        <MobileFilterBar
+          fields={filterFields}
+          values={filterValues}
+          onChange={onFilterChange}
+          onClear={onFilterClear}
+          sheetTitle={filterSheetTitle}
+        />
+      )}
 
       <PullIndicator
         pull={pullState.pull}

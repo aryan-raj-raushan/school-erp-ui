@@ -15,11 +15,16 @@ import {
   Badge, Spinner,
   PageHeader, PageCol,
   ResponsiveSelect, ResponsiveModalContainer,
+  BottomSheet,
+  MobileTextField,
 } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SubscriptionMobileForm } from '@/components/platform/SubscriptionMobileForm';
 
 const RESTRICTABLE_RESOURCES = Object.keys(PERMISSIONS);
 
 export default function SubscriptionsPage() {
+  const isMobile = useIsMobile();
   const {
     subscriptions, pagination, isLoading, plans,
     showModal, openModal, closeModal, form, handleSubmit, isSubmitting, toggleArrayValue,
@@ -40,6 +45,19 @@ export default function SubscriptionsPage() {
     cancelSubscription(id, cancelReason.trim() || undefined);
     setCancellingId(null);
     setCancelReason('');
+  }
+
+  if (isMobile && showModal) {
+    return (
+      <SubscriptionMobileForm
+        form={form}
+        schools={schools}
+        plans={plans}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={closeModal}
+      />
+    );
   }
 
   return (
@@ -91,7 +109,7 @@ export default function SubscriptionsPage() {
                   <TableCell>{sub.start_date ? new Date(sub.start_date).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>{sub.end_date ? new Date(sub.end_date).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>
-                    {sub.status !== 'ACTIVE' ? '—' : cancellingId === sub.id ? (
+                    {sub.status !== 'ACTIVE' ? '—' : !isMobile && cancellingId === sub.id ? (
                       <Div type="col" gap="xs">
                         <Input
                           width="sm"
@@ -125,9 +143,56 @@ export default function SubscriptionsPage() {
         <TablePagination total={pagination.total} page={pagination.page} totalPages={pagination.totalPages} />
       )}
 
+      {isMobile && (
+        <BottomSheet
+          isOpen={cancellingId !== null}
+          onClose={() => {
+            setCancellingId(null);
+            setCancelReason('');
+          }}
+          title={SUBSCRIPTIONS_PAGE.cancelAction}
+          maxHeight="70dvh"
+          footer={
+            <Div type="row" className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="flex-1"
+                onClick={() => {
+                  setCancellingId(null);
+                  setCancelReason('');
+                }}
+              >
+                {SUBSCRIPTIONS_PAGE.cancelDismiss}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="lg"
+                className="flex-[2]"
+                onClick={() => cancellingId && handleCancelConfirm(cancellingId)}
+              >
+                {SUBSCRIPTIONS_PAGE.cancelSubmit}
+              </Button>
+            </Div>
+          }
+        >
+          <Div className="pt-1">
+            <MobileTextField
+              label="Reason"
+              placeholder={SUBSCRIPTIONS_PAGE.cancelPrompt}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
+          </Div>
+        </BottomSheet>
+      )}
+
+      {!isMobile && (
       <ResponsiveModalContainer isOpen={showModal} onClose={closeModal} title={SUBSCRIPTIONS_PAGE.form.title}>
         <form onSubmit={handleSubmit}>
-          <div className="px-4 py-4">
+          <Div className="px-4 py-4">
             <Div type="col" gap="lg">
               <FormField label={SUBSCRIPTIONS_PAGE.form.school} error={form.formState.errors.school_id?.message}>
                 <ResponsiveSelect
@@ -255,13 +320,14 @@ export default function SubscriptionsPage() {
                 </FormField>
               </Div>
             </Div>
-          </div>
-          <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+          </Div>
+          <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
             <Button type="button" variant="outline" onClick={closeModal}>{SUBSCRIPTIONS_PAGE.form.cancel}</Button>
             <Button type="submit" loading={isSubmitting}>{SUBSCRIPTIONS_PAGE.form.submit}</Button>
-          </div>
+          </Div>
         </form>
       </ResponsiveModalContainer>
+      )}
     </PageCol>
   );
 }

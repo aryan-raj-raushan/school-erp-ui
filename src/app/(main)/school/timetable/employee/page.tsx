@@ -1,16 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import { useEmployeeTimetable } from '@/hooks/useEmployeeTimetable';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 import { SCHOOL_TIMETABLE_PAGE } from '@/constants';
 import {
-  Div, FilterLabel, Spinner, Badge, SectionLabel, P,
-  PageHeader, PageCol,
-  Table, TableHead, TableHeadRow, TableHeaderCell,
-  TableBody, TableRow, TableCell, TableEmptyRow,
+  Div,
+  FilterLabel,
+  Spinner,
+  Badge,
+  SectionLabel,
+  P,
+  PageHeader,
+  Table,
+  TableHead,
+  TableHeadRow,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
   ResponsiveSelect,
+  DaySchedule,
+  type ScheduleSlot,
 } from '@/components/ui';
 
 export default function EmployeeTimetablePage() {
+  const isMobile = useIsMobileSync();
+  const [activeDay, setActiveDay] = useState<string>('');
   const {
     teacherId, setTeacherId,
     staff, isLoadingStaff,
@@ -21,6 +37,18 @@ export default function EmployeeTimetablePage() {
   } = useEmployeeTimetable();
 
   const selectedTeacher = staff.find((s) => s.id === teacherId);
+  const currentDay = activeDay || days[Math.min((new Date().getDay() + 6) % 7, days.length - 1)];
+  const daySlots: ScheduleSlot[] = periods.flatMap((p) => {
+    const cell = getCell(currentDay as (typeof days)[number], p);
+    return cell
+      ? [{
+          id: `${currentDay}-${p}`,
+          marker: `P${p}`,
+          title: cell.subject_name ?? 'No subject',
+          subtitle: [cell.class_name, cell.timetable_name].filter(Boolean).join(' · '),
+        }]
+      : [];
+  });
 
   return (
     <Div type="col" gap="lg">
@@ -81,6 +109,15 @@ export default function EmployeeTimetablePage() {
             <Badge variant="default" className="text-xs">{periods.length} Periods</Badge>
           </Div>
 
+          {isMobile ? (
+            <DaySchedule
+              days={days.map((d) => ({ id: d, label: dayLabels[d] }))}
+              activeDay={currentDay}
+              onDayChange={setActiveDay}
+              slots={daySlots}
+              emptyText="No classes on this day"
+            />
+          ) : (
           <Div className="overflow-x-auto rounded-xl border border-border/50">
             <Table>
               <TableHead>
@@ -94,7 +131,7 @@ export default function EmployeeTimetablePage() {
                 </TableHeadRow>
               </TableHead>
               <TableBody>
-                {days.map((day, idx) => {
+                {days.map((day) => {
                   const hasAnyEntry = periods.some((p) => getCell(day, p) !== null);
                   return (
                     <TableRow key={day}>
@@ -134,6 +171,7 @@ export default function EmployeeTimetablePage() {
               </TableBody>
             </Table>
           </Div>
+          )}
         </Div>
       )}
     </Div>

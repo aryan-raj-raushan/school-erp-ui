@@ -49,6 +49,8 @@ function UnifiedLoginForm({
                 type="text"
                 placeholder="you@school.com or 9876543210"
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
                 maxLength={isPhone ? 10 : undefined}
                 className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 {...form.register('identifier')}

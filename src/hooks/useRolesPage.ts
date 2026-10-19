@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { RolesService, type Role } from '@/services/roles.service';
-import { ROUTES } from '@/constants';
 
 export function useRolesPage() {
   const router = useRouter();
@@ -33,10 +32,11 @@ export function useRolesPage() {
     }
   }
 
+  function navigateToView(id: string) { router.push(`/school/roles/view?id=${id}`); }
   function navigateToNew() { router.push('/school/roles/create-new'); }
-  function navigateToEdit(id: string) { router.push(`/school/roles?id=${id}&edit=true`); }
+  function navigateToEdit(id: string) { router.push(`/school/roles/view?id=${id}&edit=true`); }
 
   useEffect(() => { fetchRoles(); }, [fetchRoles]);
 
-  return { roles, isLoading, removeRole, navigateToNew, navigateToEdit };
+  return { roles, isLoading, removeRole, navigateToNew, navigateToView, navigateToEdit };
 }

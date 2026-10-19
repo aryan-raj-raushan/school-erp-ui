@@ -1,5 +1,7 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SubjectMobileForm } from '@/components/settings/SubjectMobileForm';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditSubject } from '@/hooks/useEditSubject';
@@ -12,6 +14,7 @@ import {
 } from '@/components/ui';
 
 function EditSubjectPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get('id') ?? '';
 
@@ -25,6 +28,18 @@ function EditSubjectPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <SubjectMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
     );
   }
 
@@ -94,7 +109,7 @@ function EditSubjectPageInner() {
 
 export default function EditSubjectPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}> {/* arch-ignore */}
+    <Suspense fallback={<Div type="row" className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></Div>}> {/* arch-ignore */}
       <EditSubjectPageInner />
     </Suspense>
   );

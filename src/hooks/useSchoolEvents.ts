@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { SchoolEventsService } from '@/services/school-events.service';
+import { RolesService, type Role } from '@/services/roles.service';
 import { schoolEventSchema, type SchoolEventFormValues } from '@/lib/validations/settings/school-event.validation';
 import type { SchoolEvent, SchoolEventFilters } from '@/types/setting/school-events.types';
 import type { PaginationMeta } from '@/types';
@@ -140,5 +141,30 @@ export function useSchoolEventDetail(id?: string) {
     event, isLoading, isEditing, setIsEditing, form, isNew,
     handleSubmit: form.handleSubmit(submit),
     isSubmitting: form.formState.isSubmitting,
+    saveValues: submit,
+    refetch: fetchEvent,
   };
+}
+
+/** Staff roles, used to pick who works on a holiday. */
+export function useStaffRoles() {
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchRoles() {
+      setRolesLoading(true);
+      try {
+        const result = await RolesService.list({ limit: 100 });
+        setRoles(result.items);
+      } catch (err: unknown) {
+        console.error('Failed to load roles:', err);
+      } finally {
+        setRolesLoading(false);
+      }
+    }
+    fetchRoles();
+  }, []);
+
+  return { roles, rolesLoading };
 }

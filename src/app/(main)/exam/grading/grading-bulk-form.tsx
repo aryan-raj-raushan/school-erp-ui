@@ -3,24 +3,35 @@
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Wand2 } from "lucide-react";
 import { useExamGradingBulkForm } from "@/hooks/exam/useExamGrading";
-import {
-  Div,
-  Button,
-  FormField,
-  Input,
-  Textarea,
-  PageHeader,
-  type PageHeaderConfig,
-} from "@/components/ui";
+import { Div, Button, FormField, Input, Textarea, PageHeader, type PageHeaderConfig, Span } from "@/components/ui";
 import { GRADING_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { GradingBulkMobile } from "@/components/exam/GradingMobile";
 
 export function GradingBulkFormContent() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const {
     form, gradesField, isSubmitting, onSubmit, addGradeRow, removeGradeRow, autoGenerate,
   } = useExamGradingBulkForm();
 
   const { register, formState: { errors } } = form;
+
+  if (isMobile) {
+    return (
+      <GradingBulkMobile
+        form={form}
+        rowCount={gradesField.fields.length}
+        rowIds={gradesField.fields.map((f) => f.id)}
+        isSubmitting={isSubmitting}
+        onSubmit={onSubmit}
+        onCancel={() => router.push(EXAM_ROUTES.grading.list)}
+        onAddRow={addGradeRow}
+        onRemoveRow={removeGradeRow}
+        onAutoGenerate={autoGenerate}
+      />
+    );
+  }
 
   const pageHeaderConfig: PageHeaderConfig = {
     title: "Add Grades",
@@ -47,7 +58,7 @@ export function GradingBulkFormContent() {
             return (
               <Div key={field.id} variant="card" className="p-3 sm:p-4">
                 <Div type="row" justify="between" align="center" className="mb-3">
-                  <span className="text-xs font-semibold text-muted-foreground">Grade {i + 1}</span>
+                  <Span className="text-xs font-semibold text-muted-foreground">Grade {i + 1}</Span>
                   {gradesField.fields.length > 1 && (
                     <Button size="icon-xs" type="button" variant="destructive" onClick={() => removeGradeRow(i)}>
                       <Trash2 size={12} />

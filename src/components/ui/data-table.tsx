@@ -24,6 +24,8 @@ import {
   TableRow,
 } from './table';
 import { Spinner } from './spinner';
+import { MobileDataCards } from './mobile-data-cards';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 
 // Augment ColumnMeta so callers can flag primary cells per-column
 declare module '@tanstack/react-table' {
@@ -31,6 +33,8 @@ declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     /** Renders cell text with font-medium foreground colour */
     primary?: boolean;
+    /** How this column appears in the phone card layout. Default: a label / value row. */
+    mobile?: 'hide' | 'badge' | 'subtitle';
   }
 }
 
@@ -75,6 +79,8 @@ export interface DataTableProps<TData> {
    * pixel offset. Ignored if maxHeight is also set.
    */
   fillViewport?: boolean;
+  /** Phones: show every field on each card (use for rows that contain inputs). */
+  mobileShowAll?: boolean;
 }
 
 function getColumnId(col: ColumnDef<any, any>): string | undefined {
@@ -109,7 +115,9 @@ export function DataTable<TData>({
   pinnedColumns,
   maxHeight,
   fillViewport,
+  mobileShowAll,
 }: DataTableProps<TData>) {
+  const isMobile = useIsMobileSync();
   const manualSort = sorting !== undefined && onSortingChange !== undefined;
   const showsPaginationFooter = !!pagination && pagination.totalPages > 1;
 
@@ -194,6 +202,28 @@ export function DataTable<TData>({
       getSortedRowModel: getSortedRowModel(),
     }),
   });
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileDataCards
+          table={table}
+          isLoading={isLoading}
+          emptyText={emptyText}
+          onRowClick={onRowClick}
+          getRowVariant={getRowVariant}
+          showAllDetails={mobileShowAll}
+        />
+        {pagination && pagination.totalPages > 1 && (
+          <TablePagination
+            total={pagination.total}
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <>

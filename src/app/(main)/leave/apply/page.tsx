@@ -5,6 +5,8 @@ import { Search, X, CalendarDays, User, Users } from "lucide-react";
 import { useLeaveApply } from "@/hooks/leave/useLeaveApply";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { PageHeader } from "@/components/ui/page-header";
+import { LeaveApplyMobile } from "@/components/leave/LeaveApplyMobile";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import {
   Div,
   H2,
@@ -24,7 +26,9 @@ import {
 } from "@/constants/emp-leave.constants";
 
 function LeaveApplyContent() {
+  const isMobile = useIsMobileSync();
   const { years } = useAcademicYears();
+  const leaveApply = useLeaveApply();
 
   const {
     form,
@@ -47,7 +51,7 @@ function LeaveApplyContent() {
     handleSubmit,
     isSubmitting,
     resetForm,
-  } = useLeaveApply();
+  } = leaveApply;
 
   const {
     register,
@@ -57,6 +61,10 @@ function LeaveApplyContent() {
 
   const selectedLeaveTypeId = watch("leave_type_id");
   const selectedAcademicYearId = watch("academic_year_id");
+
+  if (isMobile) {
+    return <LeaveApplyMobile state={leaveApply} />;
+  }
 
   return (
     <Div type="col" gap="lg">

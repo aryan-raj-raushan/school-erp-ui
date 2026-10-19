@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Power, PowerOff } from 'lucide-react';
 import { PLANS_PAGE, CREATE_PLAN_FORM, PLAN_TYPE_OPTIONS, BILLING_MODEL_OPTIONS } from '@/constants';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import type { SubscriptionPlan } from '@/types';
@@ -12,13 +13,17 @@ import {
   Badge,
   type ColumnDef,
   ResponsiveSelect,
+  RowActions,
+  MobileFormSheet,
 } from '@/components/ui';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function cycleLabel(cycle: string): string {
   return PLAN_TYPE_OPTIONS.find((o) => o.value === cycle)?.label ?? cycle;
 }
 
 export default function PlansPage() {
+  const isMobile = useIsMobile();
   const {
     plans, pagination, isLoading,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
@@ -60,14 +65,24 @@ export default function PlansPage() {
         accessorKey: 'is_active',
         header: PLANS_PAGE.table.status,
         cell: ({ row }) => (
-          <Div type="row" gap="sm">
-            <Badge variant={row.original.is_active ? 'success' : 'default'}>
-              {row.original.is_active ? PLANS_PAGE.status.active : PLANS_PAGE.status.inactive}
-            </Badge>
-            <Button size="sm" variant="outline" onClick={() => toggleActive(row.original)}>
-              {row.original.is_active ? 'Deactivate' : 'Activate'}
-            </Button>
-          </Div>
+          <Badge variant={row.original.is_active ? 'success' : 'default'}>
+            {row.original.is_active ? PLANS_PAGE.status.active : PLANS_PAGE.status.inactive}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <RowActions
+            actions={[
+              {
+                label: row.original.is_active ? 'Deactivate' : 'Activate',
+                icon: row.original.is_active ? <PowerOff size={14} /> : <Power size={14} />,
+                onClick: () => toggleActive(row.original),
+              },
+            ]}
+          />
         ),
       },
     ],
@@ -90,10 +105,63 @@ export default function PlansPage() {
         pagination={pagination ?? undefined}
       />
 
-      {showCreateModal && (
+      {isMobile && (
+        <MobileFormSheet
+          isOpen={showCreateModal}
+          onClose={closeCreateModal}
+          title={CREATE_PLAN_FORM.title}
+          form={createForm}
+          onSubmit={handleCreateSubmit}
+          isSubmitting={isCreating}
+          submitLabel={CREATE_PLAN_FORM.submit.idle}
+          cancelLabel={CREATE_PLAN_FORM.cancel}
+          fields={[
+            {
+              kind: 'input',
+              name: 'name',
+              label: CREATE_PLAN_FORM.labels.name,
+              required: true,
+              placeholder: CREATE_PLAN_FORM.placeholders.name,
+              autoCapitalize: 'words',
+            },
+            {
+              kind: 'chips',
+              name: 'billing_model',
+              label: CREATE_PLAN_FORM.labels.billing_model,
+              required: true,
+              options: BILLING_MODEL_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+            },
+            {
+              kind: 'input',
+              type: 'number',
+              name: 'price_per_student',
+              label: CREATE_PLAN_FORM.labels.price_per_student,
+              placeholder: CREATE_PLAN_FORM.placeholders.price_per_student,
+              hidden: billingModel !== 'PER_STUDENT',
+            },
+            {
+              kind: 'input',
+              type: 'number',
+              name: 'flat_amount',
+              label: CREATE_PLAN_FORM.labels.flat_amount,
+              placeholder: CREATE_PLAN_FORM.placeholders.flat_amount,
+              hidden: billingModel === 'PER_STUDENT',
+            },
+            {
+              kind: 'chips',
+              name: 'billing_cycle',
+              label: CREATE_PLAN_FORM.labels.billing_cycle,
+              required: true,
+              options: PLAN_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+            },
+          ]}
+        />
+      )}
+
+      {!isMobile && showCreateModal && (
         <ResponsiveModalContainer isOpen={showCreateModal} onClose={closeCreateModal} title={CREATE_PLAN_FORM.title}>
           <form onSubmit={handleCreateSubmit}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField label={CREATE_PLAN_FORM.labels.name} error={createForm.formState.errors.name?.message}>
                   <Input placeholder={CREATE_PLAN_FORM.placeholders.name} {...createForm.register('name')} />
@@ -120,11 +188,11 @@ export default function PlansPage() {
                   />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeCreateModal}>{CREATE_PLAN_FORM.cancel}</Button>
               <Button type="submit" loading={isCreating}>{CREATE_PLAN_FORM.submit.idle}</Button>
-            </div>
+            </Div>
           </form>
         </ResponsiveModalContainer>
       )}

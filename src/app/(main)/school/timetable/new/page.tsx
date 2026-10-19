@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCreateTimetable } from '@/hooks/useCreateTimetable';
 import { useAutoGenerateTimetable } from '@/hooks/useAutoGenerateTimetable';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
+import { TimetableDayEditor } from '@/components/timetable/TimetableDayEditor';
 import { SCHOOL_TIMETABLE_PAGE, DAYS_OF_WEEK, DAY_LABELS, MAX_PERIODS_OPTIONS, ROUTES } from '@/constants';
 import {
   Div, Button, Spinner, Input, FormField, P, Badge, Tabs,
@@ -163,6 +165,7 @@ function AutoGenerateForm() {
 }
 
 function ManualForm() {
+  const isMobile = useIsMobileSync();
   const {
     years, classes, subjects, staff,
     name, setName,
@@ -271,6 +274,21 @@ function ManualForm() {
 
       <Div type="col" gap="sm">
         <P size="sm" weight="semibold">Timetable Grid</P>
+        {isMobile ? (
+          <TimetableDayEditor
+            days={DAYS_OF_WEEK}
+            periods={periods}
+            isBreak={() => false}
+            timeLabel={(p) => {
+              const pt = periodTimes.find((x) => x.period_number === p);
+              return pt?.start_time && pt?.end_time ? `${pt.start_time}–${pt.end_time}` : null;
+            }}
+            getCell={(day, p) => grid[day]?.[p]}
+            subjects={subjects}
+            staff={staff}
+            onChange={setCellValue}
+          />
+        ) : (
         <Div className="overflow-x-auto rounded-lg border border-border/50">
           <Table>
             <TableHead>
@@ -310,6 +328,7 @@ function ManualForm() {
             </TableBody>
           </Table>
         </Div>
+        )}
       </Div>
 
       <Div type="row" gap="md">

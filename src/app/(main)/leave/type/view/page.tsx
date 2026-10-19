@@ -4,6 +4,8 @@ import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Pencil, X } from 'lucide-react';
 import { useLeaveTypeDetail } from '@/hooks/leave/useLeaveTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { LeaveTypeMobileForm, LeaveTypeMobileView } from '@/components/leave/LeaveTypeMobile';
 import {
   Div,
   H1,
@@ -27,6 +29,7 @@ import {
 
 function LeaveTypeViewContent() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? undefined;
   const startEditing = searchParams.get('edit') === 'true';
@@ -57,6 +60,30 @@ function LeaveTypeViewContent() {
         <Spinner size="lg" />
       </Div>
     );
+  }
+
+  if (isMobile) {
+    if (isEditing) {
+      return (
+        <LeaveTypeMobileForm
+          form={form}
+          isNew={false}
+          isSubmitting={isSubmitting}
+          onSubmit={form.handleSubmit(handleSubmit as any)}
+          onCancel={() => {
+            if (startEditing) {
+              router.back();
+              return;
+            }
+            setIsEditing(false);
+            reset();
+          }}
+        />
+      );
+    }
+    return leaveType ? (
+      <LeaveTypeMobileView leaveType={leaveType} onEdit={() => setIsEditing(true)} />
+    ) : null;
   }
 
   return (

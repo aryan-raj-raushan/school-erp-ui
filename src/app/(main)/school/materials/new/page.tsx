@@ -1,9 +1,17 @@
 'use client';
 
 import { useCreateStudyMaterial } from '@/hooks/useCreateStudyMaterial';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { StudyMaterialMobileForm } from '@/components/school/StudyMaterialMobileForm';
 import {
-  Div, Button, H2, FormField, Input, Textarea, Spinner,
-  PageHeader, PageCol,
+  Div,
+  Button,
+  H2,
+  FormField,
+  Input,
+  Textarea,
+  Spinner,
+  PageHeader,
   ResponsiveSelect,
 } from '@/components/ui';
 
@@ -14,6 +22,7 @@ const CONTENT_TYPE_OPTIONS = [
 ] as const;
 
 export default function NewStudyMaterialPage() {
+  const isMobile = useIsMobile();
   const {
     form, years, classes, subjects,
     isLoadingData, isLoadingSubjects, isSubmitting, isUploading,
@@ -28,6 +37,22 @@ export default function NewStudyMaterialPage() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <StudyMaterialMobileForm
+        form={form}
+        isSubmitting={isSubmitting || isUploading}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+        years={years}
+        classes={classes}
+        subjects={subjects}
+        isLoadingSubjects={isLoadingSubjects}
+        fileRef={fileRef}
+      />
     );
   }
 

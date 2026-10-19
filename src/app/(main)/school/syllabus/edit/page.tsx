@@ -4,20 +4,15 @@ import { useSearchParams } from 'next/navigation';
 
 import { Suspense } from 'react';
 import { useEditSyllabus } from '@/hooks/useEditSyllabus';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SyllabusMobileForm } from '@/components/school/SyllabusMobileForm';
 import { SYLLABUS_PAGE } from '@/constants';
-import {
-  Div, Button, H2,
-  FormField, Input, Textarea,
-  CheckboxLabel, Spinner,
-  Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge,
-  PageHeader, PageCol,
-  ResponsiveSelect,
-} from '@/components/ui';
+import { Div, Button, H2, FormField, Input, Textarea, CheckboxLabel, Spinner, Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, Badge, PageHeader, ResponsiveSelect, P, Span } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
 
 
 function EditSyllabusPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get('id') ?? '';
 
@@ -34,6 +29,38 @@ function EditSyllabusPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <SyllabusMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+        classes={classes}
+        fileInputRef={fileInputRef}
+        onFileChange={handleFileChange}
+        attachments={[
+          ...savedAttachments.map((att) => ({
+            id: att.id,
+            name: att.file_name,
+            url: att.file_url,
+            isImage: att.file_type !== 'pdf',
+            onRemove: () => removeSavedAttachment(att.id),
+          })),
+          ...newAttachments.map((att) => ({
+            id: att.id,
+            name: att.file.name,
+            url: att.status === 'done' ? att.url : undefined,
+            isImage: att.file_type !== 'pdf',
+            status: att.status,
+            onRemove: () => removeNewAttachment(att.id),
+          })),
+        ]}
+      />
     );
   }
 
@@ -88,7 +115,7 @@ function EditSyllabusPageInner() {
               </Button>
             </Div>
 
-            <p className="text-xs text-muted-foreground -mt-2">{SYLLABUS_PAGE.form.attachmentsHint}</p>
+            <P className="text-xs text-muted-foreground -mt-2">{SYLLABUS_PAGE.form.attachmentsHint}</P>
 
             <input
               ref={fileInputRef}
@@ -122,7 +149,7 @@ function EditSyllabusPageInner() {
                           {att.file_type !== 'pdf' ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={att.file_url} alt={att.file_name} className="h-10 w-10 object-cover rounded" />
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
+                          ) : <Span className="text-muted-foreground text-xs">—</Span>}
                         </TableCell>
                         <TableCell>
                           <a href={att.file_url} target="_blank" rel="noreferrer">
@@ -150,7 +177,7 @@ function EditSyllabusPageInner() {
                           {att.status === 'done' && att.url && att.file_type !== 'pdf' ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={att.url} alt={att.file.name} className="h-10 w-10 object-cover rounded" />
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
+                          ) : <Span className="text-muted-foreground text-xs">—</Span>}
                         </TableCell>
                         <TableCell>
                           {att.status === 'done' && att.url ? (
@@ -159,7 +186,7 @@ function EditSyllabusPageInner() {
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
                             </a>
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
+                          ) : <Span className="text-muted-foreground text-xs">—</Span>}
                         </TableCell>
                         <TableCell>
                           <Button type="button" variant="ghost" size="sm" onClick={() => removeNewAttachment(att.id)}>
@@ -186,7 +213,7 @@ function EditSyllabusPageInner() {
 
 export default function EditSyllabusPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<Div type="row" className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></Div>}>
       <EditSyllabusPageInner />
     </Suspense>
   );

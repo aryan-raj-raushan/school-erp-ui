@@ -10,6 +10,7 @@ import { Div, PageActions } from "./layout";
 import { PageTitle, P } from "./typography";
 import { Button, type buttonVariants } from "./button";
 import { useIsMobile } from "./responsive-bottom-sheet";
+import { ScreenFab } from "./screen-fab";
 
 /** One button rendered in the header's action row — pass these instead of hand-written `<Button>` JSX. */
 export interface PageHeaderAction {
@@ -43,6 +44,12 @@ export interface PageHeaderProps {
 /** Declarative header config — build one in a constants file and spread it: `<PageHeader {...config} />`. */
 export type PageHeaderConfig = PageHeaderProps;
 
+/** Header actions worth promoting to a floating button on phones. */
+const FAB_LABEL = /^(add|new|create|apply|upload|generate|import|schedule)/i;
+
+/** Header actions that must stay reachable while scrolling a long form. */
+const SAVE_LABEL = /^(save|submit|update|publish|confirm)/i;
+
 function isActionList(actions: PageHeaderProps["actions"]): actions is PageHeaderAction[] {
   return Array.isArray(actions);
 }
@@ -71,6 +78,64 @@ export function PageHeader({
     : actions;
 
     const isMobile = useIsMobile();
+
+  if (isMobile) {
+    const actionList = isActionList(visibleActions) ? visibleActions : null;
+    const fabAction = actionList?.find(
+      (a) => a.icon && (!a.variant || a.variant === "default") && FAB_LABEL.test(a.label),
+    );
+    const inlineActions = actionList?.filter((a) => a !== fabAction);
+    const keepVisible = sticky || Boolean(inlineActions?.some((a) => SAVE_LABEL.test(a.label)));
+
+    return (
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3",
+          keepVisible && "sticky top-0 z-20 bg-background/95 pb-2 backdrop-blur-sm",
+        )}
+      >
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="truncate text-xl font-bold leading-tight">{title}</h1>
+            {badge}
+          </div>
+          {subtitle && (
+            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+
+        {inlineActions && inlineActions.length > 0 && (
+          <div className="flex shrink-0 items-center gap-2">
+            {inlineActions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant}
+                size={action.showNoLabel ? "icon-sm" : "sm"}
+                onClick={action.onClick}
+                disabled={action.disabled}
+                loading={action.loading}
+                aria-label={action.label}
+              >
+                {action.icon}
+                {!action.showNoLabel && action.label}
+              </Button>
+            ))}
+          </div>
+        )}
+        {!isActionList(visibleActions) && visibleActions && (
+          <div className="flex w-full flex-wrap items-center gap-2">{visibleActions}</div>
+        )}
+
+        {fabAction && (
+          <ScreenFab
+            label={fabAction.label}
+            icon={fabAction.icon}
+            onClick={() => fabAction.onClick?.()}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <Div

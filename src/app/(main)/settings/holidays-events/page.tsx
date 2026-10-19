@@ -15,7 +15,8 @@ import { useSchoolEvents } from "@/hooks/useSchoolEvents";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
-import { HolidayEventDetail } from "./holiday-event-detail";
+import { HolidayEventsMobileList } from "@/components/holiday-events/HolidayEventsMobile";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import type { SchoolEventFilters } from "@/types/setting/school-events.types";
 import {
   Div,
@@ -48,11 +49,9 @@ const TYPE_TABS = [
   { value: "HOLIDAY", label: "Holidays" },
 ] as const;
 
-function SchoolEventsContent() {
+function SchoolEventsDesktop() {
   const isMobile = useIsMobile();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const detailId = searchParams.get("id");
   const { years } = useAcademicYears();
 
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -82,7 +81,6 @@ function SchoolEventsContent() {
     events,
     pagination,
     filters,
-    searchInput,
     isLoading,
     updateFilters,
     deleteEvent,
@@ -155,10 +153,6 @@ function SchoolEventsContent() {
   };
 
   const activeTab = filters.type ?? "";
-
-  if (detailId) {
-    return <HolidayEventDetail id={detailId} />;
-  }
 
   const pageHeaderConfig: PageHeaderConfig = {
     title: isMobile ? "Events" : "Events & Holidays",
@@ -286,7 +280,7 @@ function SchoolEventsContent() {
                       size="icon-sm"
                       variant="ghost"
                       onClick={() =>
-                        router.push(`/settings/holidays-events?id=${ev.id}`)
+                        router.push(`/settings/holidays-events/view?id=${ev.id}`)
                       }
                       title="View"
                     >
@@ -297,7 +291,7 @@ function SchoolEventsContent() {
                       variant="ghost"
                       onClick={() =>
                         router.push(
-                          `/settings/holidays-events?id=${ev.id}&edit=true`,
+                          `/settings/holidays-events/view?id=${ev.id}&edit=true`,
                         )
                       }
                       title="Edit"
@@ -333,6 +327,36 @@ function SchoolEventsContent() {
         <CalendarViewModal events={allEvents} onClose={() => setCalendarOpen(false)} />
       )}
     </PageCol>
+  );
+}
+
+function SchoolEventsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const legacyId = searchParams.get("id");
+  const isMobile = useIsMobileReady();
+
+  // Old links used `?id=…` on the list route for the detail screen.
+  useEffect(() => {
+    if (!legacyId) return;
+    const edit = searchParams.get("edit") === "true";
+    router.replace(
+      `/settings/holidays-events/view?id=${legacyId}${edit ? "&edit=true" : ""}`,
+    );
+  }, [legacyId, searchParams, router]);
+
+  if (isMobile === undefined || legacyId) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return isMobile ? (
+    <HolidayEventsMobileList basePath="/settings/holidays-events" />
+  ) : (
+    <SchoolEventsDesktop />
   );
 }
 

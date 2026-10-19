@@ -15,7 +15,7 @@ export function SuperAdminDashboard() {
   const vm = usePlatformDashboardPage();
 
   return (
-    <DashboardRoot>
+    <DashboardRoot onRefresh={vm.refresh}>
       <DashboardHero eyebrow={vm.eyebrow} greeting={vm.greeting} title={vm.title} chips={vm.chips} />
 
       <DashSection title="Quick actions">

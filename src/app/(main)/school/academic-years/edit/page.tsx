@@ -1,18 +1,25 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/use-mobile';
+import { AcademicYearMobileForm } from '@/components/settings/AcademicYearMobileForm';
 import { useSearchParams } from 'next/navigation';
 
 import { Suspense } from 'react';
 import { useEditAcademicYear } from '@/hooks/useEditAcademicYear';
 import { ACADEMIC_YEARS_PAGE } from '@/constants';
 import {
-  Div, Button,
-  FormField, Input, Select, Textarea,
-  CheckboxLabel, Spinner,
-  PageHeader, PageCol,
+  Div,
+  Button,
+  FormField,
+  Input,
+  Textarea,
+  CheckboxLabel,
+  Spinner,
+  PageHeader,
 } from '@/components/ui';
 
 function EditAcademicYearPageInner() {
+  const isMobile = useIsMobile();
   const _searchParams = useSearchParams();
   const id = _searchParams.get('id') ?? '';
 
@@ -26,6 +33,18 @@ function EditAcademicYearPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <AcademicYearMobileForm
+        form={form}
+        isNew={false}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
     );
   }
 
@@ -101,7 +120,7 @@ function EditAcademicYearPageInner() {
 
 export default function EditAcademicYearPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<Div type="row" className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></Div>}>
       <EditAcademicYearPageInner />
     </Suspense>
   );

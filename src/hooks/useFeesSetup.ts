@@ -3,15 +3,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
-  feeTypeService, feePlanService, feeClassStructureService,
-  transportRouteService, feeLateRuleService,
-  type FeeType, type FeePlan, type FeeClassStructureItem,
-  type TransportRoute, type TransportRouteFeeItem, type FeeLateRule,
-  type CreateFeeTypePayload, type UpdateFeeTypePayload, type FeeFrequency,
-  type UpsertClassStructurePayload, type FilterClassStructureParams,
-  type CreateTransportRoutePayload, type UpsertRouteFeePayload,
+  feeTypeService,
+  feePlanService,
+  feeClassStructureService,
+  transportRouteService,
+  feeLateRuleService,
+  type FeeType,
+  type FeePlan,
+  type FeeClassStructureItem,
+  type TransportRoute,
+  type TransportRouteFeeItem,
+  type FeeLateRule,
+  type CreateFeeTypePayload,
+  type UpdateFeeTypePayload,
+  type UpsertClassStructurePayload,
+  type FilterClassStructureParams,
+  type CreateTransportRoutePayload,
+  type UpsertRouteFeePayload,
   type CreateFeeLateRulePayload,
-  FEE_CATEGORIES, FEE_FREQUENCIES, MONTHS,
+  FEE_CATEGORIES,
+  FEE_FREQUENCIES,
+  MONTHS,
 } from '@/services/fees.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ClassesService } from '@/services/classes.service';
@@ -264,11 +276,9 @@ export function useFeesSetup() {
     setStructureMode('view');
   };
 
-  const handleDrop = () => {
-    setDropZoneActive(false);
-    if (!draggingId) return;
-    const type = classStructure.find(s => s.fee_type_id === draggingId);
-    if (!type || builderItems.some(i => i.fee_type_id === draggingId)) return;
+  const addToBuilder = (feeTypeId: string) => {
+    const type = classStructure.find(s => s.fee_type_id === feeTypeId);
+    if (!type || builderItems.some(i => i.fee_type_id === feeTypeId)) return;
     setBuilderItems(prev => [...prev, {
       fee_type_id: type.fee_type_id,
       fee_type_name: type.fee_type_name,
@@ -276,6 +286,12 @@ export function useFeesSetup() {
       applicable_months: type.applicable_months,
       amount: type.amount ?? '',
     }]);
+  };
+
+  const handleDrop = () => {
+    setDropZoneActive(false);
+    if (!draggingId) return;
+    addToBuilder(draggingId);
     setDraggingId(null);
   };
 
@@ -425,7 +441,7 @@ export function useFeesSetup() {
     structureFilter, setStructureFilter,
     classStructure, loadingStructure, fetchClassStructure, saveClassStructure,
     handleLoadStructure, handleSaveStructure,
-    handleDrop, removeFromBuilder, updateBuilderAmount,
+    handleDrop, addToBuilder, removeFromBuilder, updateBuilderAmount,
     // Transport routes
     transportRoutes, loadingRoutes, fetchTransportRoutes,
     selectedRouteId, setSelectedRouteId,

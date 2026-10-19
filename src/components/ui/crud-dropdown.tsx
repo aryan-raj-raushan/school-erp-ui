@@ -145,7 +145,7 @@ export function CrudDropdown({
                     <>
                       <input
                         autoFocus
-                        className={cn(inputBase, 'flex-1 h-8 py-1 px-2 text-sm')}
+                        className={cn(inputBase, 'flex-1 h-8 py-1 px-2 text-sm max-md:h-9 max-md:rounded-lg')}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -176,7 +176,7 @@ export function CrudDropdown({
                       <button
                         type="button"
                         onClick={(e) => startEdit(item, e)}
-                        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                        className="p-1 rounded opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
                       >
                         <Pencil className="h-3 w-3" />
                       </button>
@@ -184,7 +184,7 @@ export function CrudDropdown({
                         type="button"
                         disabled={isSaving}
                         onClick={(e) => handleDelete(item.id, item.name, e)}
-                        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground hover:text-destructive shrink-0"
+                        className="p-1 rounded opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:bg-muted text-muted-foreground hover:text-destructive shrink-0"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -198,7 +198,7 @@ export function CrudDropdown({
           <div className="border-t border-border px-3 py-2">
             <div className="flex items-center gap-2">
               <input
-                className={cn(inputBase, 'flex-1 h-8 py-1 px-2 text-sm')}
+                className={cn(inputBase, 'flex-1 h-8 py-1 px-2 text-sm max-md:h-9 max-md:rounded-lg')}
                 placeholder="Add item…"
                 value={addValue}
                 onChange={(e) => setAddValue(e.target.value)}

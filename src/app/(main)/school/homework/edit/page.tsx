@@ -5,24 +5,18 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useEditHomework } from '@/hooks/useEditHomework';
 import { HOMEWORK_PAGE, HOMEWORK_STATUS_OPTIONS } from '@/constants';
-import {
-  Div, Button, H2,
-  FormField, Input, Textarea,
-  CheckboxLabel, Spinner,
-  Table, TableHead, TableHeadRow, TableHeaderCell,
-  TableBody, TableRow, TableCell, TableEmptyRow,
-  Badge,
-  PageHeader, PageCol,
-  ResponsiveSelect,
-} from '@/components/ui';
+import { Div, Button, H2, FormField, Input, Textarea, CheckboxLabel, Spinner, Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, TableEmptyRow, Badge, PageHeader, ResponsiveSelect, P, Span } from '@/components/ui';
 import { Paperclip, ExternalLink, X } from 'lucide-react';
+import { HomeworkFormMobile } from '@/components/homework/HomeworkFormMobile';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 
 function EditHomeworkPageInner() {
+  const isMobile = useIsMobileSync();
   const _searchParams = useSearchParams();
   const id = _searchParams.get('id') ?? '';
 
   const {
-    form, years, classes, subjects,
+    form, classes, subjects,
     isLoadingData, isLoadingSubjects, savedAttachments, newAttachments, fileInputRef,
     isSubmitting,
     handleSubmit, handleFileChange, removeSavedAttachment, removeNewAttachment,
@@ -36,6 +30,55 @@ function EditHomeworkPageInner() {
       <Div type="col" align="center" justify="center" className="py-20">
         <Spinner />
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    const savedItems = savedAttachments.map((att) => ({
+      id: att.id,
+      name: att.file_name,
+      status: 'saved' as const,
+      url: att.file_url,
+      isImage: att.file_type !== 'pdf',
+    }));
+    const newItems = newAttachments.map((att) => ({
+      id: att.id,
+      name: att.file.name,
+      status: att.status,
+      url: att.url,
+      isImage: att.file_type !== 'pdf',
+    }));
+    const savedIds = new Set(savedItems.map((a) => a.id));
+
+    return (
+      <>
+        <HomeworkFormMobile
+          form={form}
+          title={HOMEWORK_PAGE.form.editTitle}
+          submitLabel={HOMEWORK_PAGE.form.submit}
+          classes={classes}
+          subjects={subjects}
+          isLoadingSubjects={isLoadingSubjects}
+          attachments={[...savedItems, ...newItems]}
+          onAttach={() => fileInputRef.current?.click()}
+          onRemoveAttachment={(attachmentId) =>
+            savedIds.has(attachmentId)
+              ? removeSavedAttachment(attachmentId)
+              : removeNewAttachment(attachmentId)
+          }
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmit}
+          onCancel={handleBack}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".jpg,.jpeg,.png,.pdf"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </>
     );
   }
 
@@ -148,7 +191,7 @@ function EditHomeworkPageInner() {
               </Button>
             </Div>
 
-            <p className="text-xs text-muted-foreground -mt-2">{HOMEWORK_PAGE.form.attachmentsHint}</p>
+            <P className="text-xs text-muted-foreground -mt-2">{HOMEWORK_PAGE.form.attachmentsHint}</P>
 
             <input
               ref={fileInputRef}
@@ -183,7 +226,7 @@ function EditHomeworkPageInner() {
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={att.file_url} alt={att.file_name} className="h-10 w-10 object-cover rounded" />
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
+                            <Span className="text-muted-foreground text-xs">—</Span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -213,7 +256,7 @@ function EditHomeworkPageInner() {
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={att.url} alt={att.file.name} className="h-10 w-10 object-cover rounded" />
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
+                            <Span className="text-muted-foreground text-xs">—</Span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -224,7 +267,7 @@ function EditHomeworkPageInner() {
                               </Button>
                             </a>
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
+                            <Span className="text-muted-foreground text-xs">—</Span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -252,7 +295,7 @@ function EditHomeworkPageInner() {
 
 export default function EditHomeworkPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+    <Suspense fallback={<Div type="row" className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></Div>}>
       <EditHomeworkPageInner />
     </Suspense>
   );

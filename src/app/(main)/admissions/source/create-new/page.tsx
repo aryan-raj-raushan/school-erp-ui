@@ -3,6 +3,8 @@
 import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAdmissionSourceDetail } from "@/hooks/useAdmissions";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { SourceMobileForm } from "@/components/admissions/SourceMobile";
 import {
   Div,
   H2,
@@ -19,6 +21,7 @@ function CreateAdmissionSourceContent() {
   const router = useRouter();
   const { form, isSubmitting, onSubmit } =
     useAdmissionSourceDetail("create-new");
+  const isMobile = useIsMobileReady();
   const {
     register,
     watch,
@@ -26,6 +29,27 @@ function CreateAdmissionSourceContent() {
     formState: { errors },
     handleSubmit,
   } = form;
+
+  if (isMobile === undefined) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <SourceMobileForm
+        form={form}
+        title="New source"
+        submitLabel="Create source"
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit(onSubmit)}
+        onCancel={() => router.back()}
+      />
+    );
+  }
 
   const pageHeaderConfig: PageHeaderConfig = {
     title: "New Admission Source",

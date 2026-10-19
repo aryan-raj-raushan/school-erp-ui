@@ -56,7 +56,7 @@ export function useViewTimetable(id: string) {
     : [];
 
   return {
-    timetable, isLoading, periods,
+    timetable, isLoading, periods, refetch: fetchTimetable,
     days: DAYS_OF_WEEK,
     getCell, getPeriodTime,
     handlePrint, goToEdit, handleBack, togglePublish,

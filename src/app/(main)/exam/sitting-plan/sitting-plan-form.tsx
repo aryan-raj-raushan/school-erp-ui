@@ -4,11 +4,13 @@ import { Suspense, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Save, Users, X, Download } from "lucide-react";
 import { useRoomSittingPlan } from "@/hooks/exam/useExamSittingAndAdmit";
-import { SittingPlanService } from "@/services/exam.service";
+import { useRoomPdfDownload } from "@/hooks/exam/useRoomPdfDownload";
 import { PageHeader } from "@/components/ui/page-header";
 import { Div, P, Button, Spinner } from "@/components/ui";
 import { EXAM_ROUTES, SITTING_PLAN_PAGE } from "@/constants/exam.constants";
 import type { StudentSlot } from "@/hooks/exam/useExamSittingAndAdmit";
+import { SittingPlanMobile } from "@/components/exam/SittingPlanMobile";
+import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 
 interface DragPayload {
   studentId: string;
@@ -160,24 +162,13 @@ function RoomSittingContent() {
     save,
   } = useRoomSittingPlan(hallDetailId, examId, academicYearId);
 
+  const isMobile = useIsMobileSync();
   const draggingRef = useRef<DragPayload | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const { isDownloadingPdf, downloadRoomPdf } = useRoomPdfDownload();
 
-  async function handleDownloadPdf() {
-    setIsDownloadingPdf(true);
-    try {
-      await SittingPlanService.downloadRoomPdf({
-        hall_detail_id: hallDetailId,
-        exam_ids: [examId],
-        academic_year_id: academicYearId,
-        room_name: room?.room_name,
-      });
-    } catch {
-      // toast shown by service on error
-    } finally {
-      setIsDownloadingPdf(false);
-    }
+  function handleDownloadPdf() {
+    void downloadRoomPdf({ hallDetailId, examId, academicYearId, roomName: room?.room_name });
   }
 
   function endDrag() { draggingRef.current = null; setIsDragging(false); }
@@ -208,8 +199,31 @@ function RoomSittingContent() {
   if (isLoading) return <Div type="row" justify="center" className="py-20"><Spinner size="lg" /></Div>;
   if (!room) return <Div type="row" justify="center" className="py-20"><P color="muted">Room not found.</P></Div>;
 
+  if (isMobile) {
+    return (
+      <SittingPlanMobile
+        roomName={room.room_name}
+        subtitle={[exam?.exam_name, room.grid_cols && room.grid_rows ? `${room.grid_rows}×${room.grid_cols} grid` : `${capacity} seats`].filter(Boolean).join(" · ")}
+        seated={seated}
+        unassigned={unassigned}
+        gridCols={gridCols}
+        capacity={capacity}
+        hasChanges={hasChanges}
+        changeSummary={[newCount > 0 && `+${newCount} new`, movedCount > 0 && `↔${movedCount} moved`, removedCount > 0 && `−${removedCount} removed`].filter(Boolean).join(", ")}
+        isSaving={isSaving}
+        isDownloadingPdf={isDownloadingPdf}
+        canDownload={seated.some(Boolean)}
+        onAssign={movePoolToSeat}
+        onMove={moveSeatToSeat}
+        onUnassign={removeSeat}
+        onSave={save}
+        onDownload={handleDownloadPdf}
+      />
+    );
+  }
+
   return (
-    <Div type="col" gap="sm" className="h-[calc(100vh-72px)]" onDragEnd={endDrag}>
+    <Div type="col" gap="sm" className="h-[calc(100dvh-72px)]" onDragEnd={endDrag}>
       {/* Header */}
       <PageHeader
         title={room.room_name}

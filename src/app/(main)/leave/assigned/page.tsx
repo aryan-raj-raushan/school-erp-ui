@@ -27,6 +27,8 @@ import {
   LEAVE_PAY_TYPE_LABEL,
 } from "@/constants/emp-leave.constants";
 import { useStaffsPage } from "@/hooks/useStaffsPage";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { LeaveAssignSheet } from "@/components/leave/LeaveAssignSheet";
 
 // ─── Assignments DataTable Component ──────────────────────────────────────────
 interface AssignmentsDataTableProps {
@@ -254,6 +256,7 @@ interface AssignmentsViewProps {
 }
 
 function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
+  const isMobile = useIsMobile();
   const { years } = useAcademicYears();
   const employeeName =
     `${employee.first_name} ${employee.last_name ?? ""}`.trim();
@@ -336,14 +339,33 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
         years={years}
       />
 
-      {/* Assign Leave Modal */}
+      {isMobile ? (
+        <LeaveAssignSheet
+          isOpen={showAssignModal}
+          onClose={closeAssignModal}
+          title={LEAVE_ASSIGNED_PAGE.modal.title}
+          form={form}
+          leaveTypeName="leave_type_id"
+          academicYearName="academic_year_id"
+          leaveTypeOptions={availableLeaveTypes.map((lt) => ({
+            value: lt.id,
+            label: `${lt.leave_name} (${lt.leave_count_days} days · ${LEAVE_PAY_TYPE_LABEL[lt.leave_pay_type]})`,
+          }))}
+          academicYearOptions={years.map((y) => ({ value: y.id, label: y.name }))}
+          isLoadingLeaveTypes={isLoadingLeaveTypes}
+          onSubmit={handleAssign}
+          isSubmitting={isAssigning}
+          submitLabel={LEAVE_ASSIGNED_PAGE.buttons.save}
+          cancelLabel={LEAVE_ASSIGNED_PAGE.buttons.cancel}
+        />
+      ) : (
       <ResponsiveModalContainer
         isOpen={showAssignModal}
         onClose={closeAssignModal}
         title={LEAVE_ASSIGNED_PAGE.modal.title}
       >
           <form onSubmit={handleAssign}>
-            <div className="px-4 py-4">
+            <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField
                   label={`${LEAVE_ASSIGNED_PAGE.labels.leaveType} *`}
@@ -371,8 +393,8 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
                   />
                 </FormField>
               </Div>
-            </div>
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button
                 type="button"
                 variant="outline"
@@ -383,9 +405,10 @@ function AssignmentsView({ employee, onBack }: AssignmentsViewProps) {
               <Button type="submit" loading={isAssigning}>
                 {LEAVE_ASSIGNED_PAGE.buttons.save}
               </Button>
-            </div>
+            </Div>
           </form>
       </ResponsiveModalContainer>
+      )}
     </Div>
   );
 }

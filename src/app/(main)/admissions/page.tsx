@@ -3,11 +3,10 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useAdmissionEnquiries, useAdmissionLookups } from "@/hooks/useAdmissions";
-import { useAcademicYears } from "@/hooks/useAcademicYears";
-import { useStorageFilter } from "@/hooks/useStorageFilter";
-import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
-import { AdmissionEnquiryDetail } from "./enquiry-detail";
+import { useAdmissionEnquiries } from "@/hooks/useAdmissions";
+import { useEnquiryFilterConfig } from "@/hooks/useEnquiryFilterConfig";
+import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { EnquiryMobileList } from "@/components/admissions/EnquiryMobileList";
 import type {
   AdmissionEnquiryFilters,
   AdmissionEnquiry,
@@ -23,26 +22,15 @@ import {
   PageHeader,
   type PageHeaderConfig,
   FilterToolbar,
-  type FilterField,
 } from "@/components/ui";
 import {
   ADMISSION_PAGE,
+  ADMISSION_ROUTES,
   STATUS_BADGE,
-  STATUS_OPTIONS,
 } from "@/constants/admission.constants";
-import { useIsMobile } from "@/hooks/use-mobile";
 
-type PersistedAdmissionFilters = Pick<
-  AdmissionEnquiryFilters,
-  "academic_year_id" | "applying_class_id" | "status"
->;
-
-function AdmissionsContent() {
+function AdmissionsDesktop() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const detailId = searchParams.get("id");
-  const { years } = useAcademicYears();
-  const { classes } = useAdmissionLookups();
 
   const {
     enquiries,
@@ -53,95 +41,17 @@ function AdmissionsContent() {
     deleteEnquiry,
   } = useAdmissionEnquiries({ page: 1 });
 
-  const {
-    filters: storedFilters,
-    updateFilters: persistFilters,
-    clearFilters: clearStoredFilters,
-    isHydrated: isStorageHydrated,
-  } = useStorageFilter<PersistedAdmissionFilters>({
-    key: STORAGE_FILTER_KEYS.ADMISSIONS,
-    defaultValue: {},
-  });
-
-  function handleFilterChange(next: Partial<AdmissionEnquiryFilters>) {
-    updateFilters(next);
-
-    const persisted: Partial<PersistedAdmissionFilters> = {};
-    (["academic_year_id", "applying_class_id", "status"] as const).forEach((field) => {
-      if (field in next) persisted[field] = next[field] as never;
-    });
-    if (Object.keys(persisted).length > 0) persistFilters(persisted);
-  }
-
-  function handleClearFilters() {
-    handleFilterChange({
-      academic_year_id: undefined,
-      applying_class_id: undefined,
-      status: undefined,
-      search: undefined,
-      page: 1,
-    });
-    clearStoredFilters();
-  }
-
-  // One-time: once storage has hydrated, apply any filters saved from a
-  // previous visit.
-  useEffect(() => {
-    if (!isStorageHydrated) return;
-    const hasStoredFilters = Object.values(storedFilters).some(Boolean);
-    if (hasStoredFilters) updateFilters(storedFilters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStorageHydrated]);
-
-  const filterFields = useMemo<FilterField[]>(
-    () => [
-      {
-        type: "search",
-        key: "search",
-        placeholder: "Search student name or phone…",
-      },
-      {
-        type: "select",
-        key: "academic_year_id",
-        label: "Academic Year",
-        placeholder: "All Years",
-        options: years.map((y) => ({ value: y.id, label: y.name })),
-      },
-      {
-        type: "select",
-        key: "applying_class_id",
-        label: "Applying Class",
-        placeholder: "All Classes",
-        options: classes.map((c) => ({ value: c.id, label: c.name })),
-      },
-      {
-        type: "select",
-        key: "status",
-        label: "Status",
-        placeholder: "All Status",
-        options: STATUS_OPTIONS.filter((o) => o.value).map((o) => ({ value: o.value, label: o.label })),
-      },
-    ],
-    [years, classes],
-  );
-
-  const filterValues: Record<string, string | undefined> = {
-    search: filters.search,
-    academic_year_id: filters.academic_year_id,
-    applying_class_id: filters.applying_class_id,
-    status: filters.status,
-  };
-
-  const isMobile = useIsMobile();
+  const { filterFields, filterValues, onChange, onClear, classes } =
+    useEnquiryFilterConfig(filters, updateFilters);
 
   const pageHeaderConfig: PageHeaderConfig = {
-    title: isMobile ? "Enquiries" : ADMISSION_PAGE.pageHeading.title,
+    title: ADMISSION_PAGE.pageHeading.title,
     subtitle: pagination ? `${pagination.total} enquiries` : "",
     actions: [
       {
         label: ADMISSION_PAGE.buttons.addEnquiry,
         icon: <Plus size={16} />,
-        onClick: () => router.push("/admissions/create-new"),
+        onClick: () => router.push(ADMISSION_ROUTES.createNew),
       },
     ],
   };
@@ -195,13 +105,13 @@ function AdmissionsContent() {
         header: ADMISSION_PAGE.table.actions,
         cell: ({ row }) => (
           <RowActions
-            onView={() => router.push(`/admissions?id=${row.original.id}`)}
+            onView={() => router.push(ADMISSION_ROUTES.view(row.original.id))}
             actions={[
               {
                 label: "Edit",
                 icon: <Pencil size={14} />,
                 onClick: () =>
-                  router.push(`/admissions?id=${row.original.id}&edit=true`),
+                  router.push(ADMISSION_ROUTES.edit(row.original.id)),
               },
               {
                 label: "Delete",
@@ -220,21 +130,17 @@ function AdmissionsContent() {
     [router, classes, deleteEnquiry],
   );
 
-  if (detailId) {
-    return <AdmissionEnquiryDetail id={detailId} />;
-  }
-
   return (
     <PageCol>
       <PageHeader sticky {...pageHeaderConfig} />
 
-        <FilterToolbar
-          fields={filterFields}
-          values={filterValues}
-          onChange={(next) => handleFilterChange(next as Partial<AdmissionEnquiryFilters>)}
-          onClear={handleClearFilters}
-          sheetTitle="Filter Enquiries"
-        />
+      <FilterToolbar
+        fields={filterFields}
+        values={filterValues}
+        onChange={(next) => onChange(next as Partial<AdmissionEnquiryFilters>)}
+        onClear={onClear}
+        sheetTitle="Filter Enquiries"
+      />
 
       <DataTable
         columns={columns}
@@ -246,6 +152,32 @@ function AdmissionsContent() {
       />
     </PageCol>
   );
+}
+
+function AdmissionsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const legacyId = searchParams.get("id");
+  const isMobile = useIsMobileReady();
+
+  // Old bookmarks and links used `/admissions?id=…` for the detail screen.
+  useEffect(() => {
+    if (!legacyId) return;
+    const edit = searchParams.get("edit") === "true";
+    router.replace(
+      edit ? ADMISSION_ROUTES.edit(legacyId) : ADMISSION_ROUTES.view(legacyId),
+    );
+  }, [legacyId, searchParams, router]);
+
+  if (isMobile === undefined || legacyId) {
+    return (
+      <Div type="row" justify="center" className="py-20">
+        <Spinner size="lg" />
+      </Div>
+    );
+  }
+
+  return isMobile ? <EnquiryMobileList /> : <AdmissionsDesktop />;
 }
 
 export default function AdmissionsPage() {

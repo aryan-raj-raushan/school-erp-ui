@@ -9,6 +9,7 @@ import {
   PageHeader,
 } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SubjectMobileForm } from '@/components/settings/SubjectMobileForm';
 
 export default function NewSubjectPage() {
   const isMobile = useIsMobile();
@@ -16,6 +17,18 @@ export default function NewSubjectPage() {
     form, isSubmitting,
     handleSubmit, handleBack, toggleIsElective, toggleIsActive,
   } = useCreateSubject();
+
+  if (isMobile) {
+    return (
+      <SubjectMobileForm
+        form={form}
+        isNew={true}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onCancel={handleBack}
+      />
+    );
+  }
 
   return (
     <Div type="col" gap="lg" className="max-w-2xl">

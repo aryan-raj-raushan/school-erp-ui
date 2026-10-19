@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { openExternal } from '@/lib/external-link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
@@ -10,6 +11,8 @@ import {
   FileText,
 } from 'lucide-react';
 import { useReportCardDetail, useReportCards } from '@/hooks/result/useReportCards';
+import { ReportCardMobile } from '@/components/result/ReportCardMobile';
+import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 import {
   Div,
   H1,
@@ -31,6 +34,7 @@ function ReportCardViewContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
 
+  const isMobile = useIsMobileSync();
   const { reportCard, isLoading } = useReportCardDetail(id);
   const { publishReportCards, isPublishing } = useReportCards();
 
@@ -51,6 +55,18 @@ function ReportCardViewContent() {
           <ArrowLeft size={14} /> Go Back
         </Button>
       </Div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <ReportCardMobile
+        reportCard={reportCard}
+        isPublishing={isPublishing}
+        onPublish={(publish) =>
+          publishReportCards(reportCard.exam_id ?? '', publish, { studentId: reportCard.student_id })
+        }
+      />
     );
   }
 
@@ -85,7 +101,7 @@ function ReportCardViewContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(reportCard.pdf_url!, '_blank')}
+              onClick={() => void openExternal(reportCard.pdf_url!)}
             >
               <ExternalLink size={14} />
               {REPORT_CARD_PAGE.buttons.viewPdf}
@@ -197,7 +213,7 @@ function ReportCardViewContent() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => window.open(reportCard.pdf_url!, '_blank')}
+              onClick={() => void openExternal(reportCard.pdf_url!)}
             >
               <ExternalLink size={14} />
               Open PDF

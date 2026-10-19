@@ -249,6 +249,124 @@ export function MobileSelectField({
   );
 }
 
+// ─── MobileMultiSelectField ───────────────────────────────────────────────────
+
+export interface MobileMultiSelectFieldProps {
+  label: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+  options: ReadonlyArray<SelectOption>;
+  placeholder?: string;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  className?: string;
+}
+
+/** Like `MobileSelectField`, but several options can be ticked before tapping Done. */
+export function MobileMultiSelectField({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = "Select",
+  error,
+  required,
+  disabled,
+  className,
+}: MobileMultiSelectFieldProps) {
+  const [open, setOpen] = React.useState(false);
+
+  const selectedLabels = options.filter((o) => value.includes(o.value)).map((o) => o.label);
+  const summary =
+    selectedLabels.length === 0
+      ? placeholder
+      : selectedLabels.length <= 2
+        ? selectedLabels.join(", ")
+        : `${selectedLabels.length} selected`;
+
+  function toggle(optionValue: string) {
+    void haptic("light");
+    onChange(
+      value.includes(optionValue)
+        ? value.filter((v) => v !== optionValue)
+        : [...value, optionValue],
+    );
+  }
+
+  return (
+    <div data-invalid={error ? "true" : undefined} className={className}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+        className={cn(
+          "flex w-full items-center gap-2 py-2 text-left disabled:opacity-50",
+          fieldShell,
+          fieldBorder(error),
+        )}
+      >
+        <span className="min-w-0 flex-1">
+          <FieldLabel label={label} required={required} />
+          <span
+            className={cn(
+              "block h-7 truncate text-base leading-7",
+              selectedLabels.length ? "text-foreground" : "text-muted-foreground/60",
+            )}
+          >
+            {summary}
+          </span>
+        </span>
+        <ChevronDown size={18} className="shrink-0 text-muted-foreground" />
+      </button>
+      <FieldError message={error} />
+
+      <BottomSheet
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        title={label}
+        maxHeight="80dvh"
+        footer={
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground active:opacity-80"
+          >
+            Done{value.length > 0 ? ` · ${value.length}` : ""}
+          </button>
+        }
+      >
+        <ul>
+          {options.map((option) => {
+            const active = value.includes(option.value);
+            return (
+              <li key={option.value}>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={active}
+                  onClick={() => toggle(option.value)}
+                  className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 text-left text-[15px] active:bg-muted"
+                >
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2",
+                      active ? "border-primary bg-primary text-primary-foreground" : "border-border",
+                    )}
+                  >
+                    {active && <Check size={14} />}
+                  </span>
+                  {option.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </BottomSheet>
+    </div>
+  );
+}
+
 // ─── ChoiceChips ──────────────────────────────────────────────────────────────
 
 export interface ChoiceChipsProps {
