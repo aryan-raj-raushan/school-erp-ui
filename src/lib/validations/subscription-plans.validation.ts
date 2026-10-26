@@ -1,9 +1,5 @@
 import { z } from 'zod';
-
-const toOptionalNumber = z.preprocess(
-  (v) => (v === '' || v == null ? undefined : Number(v)),
-  z.number().positive().optional(),
-);
+import { optionalMoneySchema } from './common.validation';
 
 // An untouched ResponsiveSelect submits its native <select>'s default value,
 // which is "" — not undefined. A plain z.enum(...) with a defaultValues-driven
@@ -18,10 +14,10 @@ function enumWithDefault<T extends z.ZodEnum<any>>(schema: T, fallback: z.infer<
 }
 
 const planFields = {
-  name: z.string().min(1, 'Plan name is required'),
+  name: z.string().trim().min(1, 'Plan name is required').max(100),
   billing_model: enumWithDefault(z.enum(['FLAT', 'PER_STUDENT']), 'FLAT'),
-  flat_amount: toOptionalNumber,
-  price_per_student: toOptionalNumber,
+  flat_amount: optionalMoneySchema,
+  price_per_student: optionalMoneySchema,
   billing_cycle: enumWithDefault(z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL', 'CUSTOM']), 'MONTHLY'),
   is_active: z.boolean().default(true),
 };

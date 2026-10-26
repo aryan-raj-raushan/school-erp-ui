@@ -234,11 +234,11 @@ export default function SubscriptionsPage() {
                     </FormField>
                     {billingModel === 'PER_STUDENT' ? (
                       <FormField label={SUBSCRIPTIONS_PAGE.form.pricePerStudent} error={form.formState.errors.price_per_student?.message}>
-                        <Input type="number" placeholder={SUBSCRIPTIONS_PAGE.placeholders.pricePerStudent} {...form.register('price_per_student')} />
+                        <Input type="number" step="any" placeholder={SUBSCRIPTIONS_PAGE.placeholders.pricePerStudent} {...form.register('price_per_student')} />
                       </FormField>
                     ) : (
                       <FormField label={SUBSCRIPTIONS_PAGE.form.amount} error={form.formState.errors.amount?.message}>
-                        <Input type="number" placeholder={SUBSCRIPTIONS_PAGE.placeholders.amount} {...form.register('amount')} />
+                        <Input type="number" step="any" placeholder={SUBSCRIPTIONS_PAGE.placeholders.amount} {...form.register('amount')} />
                       </FormField>
                     )}
                   </>

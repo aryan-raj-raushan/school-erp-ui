@@ -39,3 +39,15 @@ export const optionalAadhaarSchema = z
   .regex(REGEX.aadhaar, 'Aadhaar must be exactly 12 digits')
   .optional()
   .or(z.literal(''));
+
+const MAX_MONEY_AMOUNT = 99999999.99;
+
+export const optionalMoneySchema = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : Number(v)),
+  z
+    .number()
+    .positive()
+    .max(MAX_MONEY_AMOUNT, 'Amount cannot exceed 9,99,99,999.99')
+    .refine((n) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6, 'Use at most 2 decimal places')
+    .optional(),
+);

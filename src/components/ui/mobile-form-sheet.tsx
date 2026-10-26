@@ -73,6 +73,7 @@ function renderField<T extends FieldValues>(
           placeholder={field.placeholder}
           autoCapitalize={field.autoCapitalize}
           inputMode={field.type === "number" ? "decimal" : field.type === "tel" ? "tel" : undefined}
+          step={field.type === "number" ? "any" : undefined}
           error={error}
           {...form.register(field.name, { valueAsNumber: field.valueAsNumber })}
         />

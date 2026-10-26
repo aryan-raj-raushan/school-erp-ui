@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Power, PowerOff } from 'lucide-react';
+import { Power, PowerOff, Trash2 } from 'lucide-react';
 import { PLANS_PAGE, CREATE_PLAN_FORM, PLAN_TYPE_OPTIONS, BILLING_MODEL_OPTIONS } from '@/constants';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import type { SubscriptionPlan } from '@/types';
@@ -28,6 +28,7 @@ export default function PlansPage() {
     plans, pagination, isLoading,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     toggleActive,
+    deletePlan,
   } = useSubscriptionPlans();
 
   const billingModel = createForm.watch('billing_model');
@@ -81,12 +82,21 @@ export default function PlansPage() {
                 icon: row.original.is_active ? <PowerOff size={14} /> : <Power size={14} />,
                 onClick: () => toggleActive(row.original),
               },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={14} />,
+                variant: 'destructive',
+                confirm: {
+                  description: `Delete the plan "${row.original.name}"? Plans used by a current subscription can only be deactivated.`,
+                },
+                onClick: () => deletePlan(row.original),
+              },
             ]}
           />
         ),
       },
     ],
-    [toggleActive],
+    [toggleActive, deletePlan],
   );
 
   return (
@@ -174,11 +184,11 @@ export default function PlansPage() {
                 </FormField>
                 {billingModel === 'PER_STUDENT' ? (
                   <FormField label={CREATE_PLAN_FORM.labels.price_per_student} error={createForm.formState.errors.price_per_student?.message}>
-                    <Input type="number" placeholder={CREATE_PLAN_FORM.placeholders.price_per_student} {...createForm.register('price_per_student')} />
+                    <Input type="number" step="any" placeholder={CREATE_PLAN_FORM.placeholders.price_per_student} {...createForm.register('price_per_student')} />
                   </FormField>
                 ) : (
                   <FormField label={CREATE_PLAN_FORM.labels.flat_amount} error={createForm.formState.errors.flat_amount?.message}>
-                    <Input type="number" placeholder={CREATE_PLAN_FORM.placeholders.flat_amount} {...createForm.register('flat_amount')} />
+                    <Input type="number" step="any" placeholder={CREATE_PLAN_FORM.placeholders.flat_amount} {...createForm.register('flat_amount')} />
                   </FormField>
                 )}
                 <FormField label={CREATE_PLAN_FORM.labels.billing_cycle} error={createForm.formState.errors.billing_cycle?.message}>

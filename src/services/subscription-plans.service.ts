@@ -47,4 +47,8 @@ export const SubscriptionPlansService = {
     const res = await apiGateway.patch<SubscriptionPlan>(ENDPOINTS.subscriptionPlans.byId(id), payload);
     return res.data;
   },
+
+  async remove(id: string): Promise<void> {
+    await apiGateway.delete(ENDPOINTS.subscriptionPlans.byId(id));
+  },
 };

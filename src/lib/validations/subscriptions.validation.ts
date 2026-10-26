@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { optionalMoneySchema } from './common.validation';
 
 const toOptionalNumber = z.preprocess(
   (v) => (v === '' || v == null ? undefined : Number(v)),
@@ -27,8 +28,8 @@ const subscriptionFields = {
   plan_name: z.string().optional(),
   plan_type: optionalEnum(z.enum(['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL', 'CUSTOM'])),
   billing_model: optionalEnum(z.enum(['FLAT', 'PER_STUDENT'])),
-  amount: toOptionalNumber,
-  price_per_student: toOptionalNumber,
+  amount: optionalMoneySchema,
+  price_per_student: optionalMoneySchema,
   currency: z.string().default('INR'),
   max_students: toOptionalNumber,
   start_date: z.string().optional(),
@@ -42,6 +43,10 @@ const subscriptionFields = {
 };
 
 export const createSubscriptionSchema = z.object(subscriptionFields).superRefine((data, ctx) => {
+  const effectiveStart = data.start_date || new Date().toISOString().slice(0, 10);
+  if (data.end_date && data.end_date <= effectiveStart) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['end_date'], message: 'End date must be after the start date' });
+  }
   if (data.plan_id) return;
   if (!data.plan_name) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['plan_name'], message: 'Plan name is required' });

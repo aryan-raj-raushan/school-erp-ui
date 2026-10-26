@@ -47,8 +47,9 @@ export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {
       billing_model: values.billing_model,
       billing_cycle: values.billing_cycle,
       is_active: values.is_active,
-      ...(values.flat_amount != null && { flat_amount: values.flat_amount }),
-      ...(values.price_per_student != null && { price_per_student: values.price_per_student }),
+      ...(values.billing_model === 'FLAT'
+        ? { flat_amount: values.flat_amount }
+        : { price_per_student: values.price_per_student }),
     };
     try {
       const plan = await SubscriptionPlansService.create(payload);
@@ -67,6 +68,16 @@ export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {
       await fetchPlans();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to update plan');
+    }
+  }
+
+  async function deletePlan(plan: SubscriptionPlan) {
+    try {
+      await SubscriptionPlansService.remove(plan.id);
+      toast.success(`${plan.name} deleted`);
+      await fetchPlans();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete plan');
     }
   }
 
@@ -93,6 +104,7 @@ export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {
     handleCreateSubmit: createForm.handleSubmit(handleCreateSubmit),
     isCreating: createForm.formState.isSubmitting,
     toggleActive,
+    deletePlan,
     updateFilters,
   };
 }

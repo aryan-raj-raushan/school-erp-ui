@@ -15,4 +15,6 @@ export const REGEX = {
   aadhaar: /^\d{12}$/,
   /** Digits only, no length constraint (e.g. to detect phone-style input while typing) */
   digitsOnly: /^\d+$/,
+  /** Backend-enforced person name: letters, spaces, dots, apostrophes, hyphens */
+  personName: /^[A-Za-z][A-Za-z .'-]*$/,
 } as const;

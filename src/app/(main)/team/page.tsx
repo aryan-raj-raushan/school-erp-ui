@@ -73,6 +73,7 @@ export default function TeamPage() {
         cell: ({ row }) => {
           const canManageSchools =
             row.original.role === Role.SALES || row.original.role === Role.OPERATOR;
+          const isSuperAdmin = row.original.role === Role.SUPER_ADMIN;
           return (
             <RowActions
               actions={[
@@ -85,12 +86,14 @@ export default function TeamPage() {
                 {
                   label: row.original.is_active ? 'Deactivate' : 'Activate',
                   icon: row.original.is_active ? <PowerOff size={14} /> : <Power size={14} />,
+                  hidden: isSuperAdmin,
                   onClick: () => toggleActive(row.original),
                 },
                 {
                   label: 'Delete',
                   icon: <Trash2 size={14} />,
                   variant: 'destructive',
+                  hidden: isSuperAdmin,
                   confirm: {
                     description: `Remove ${row.original.first_name} from the team? This cannot be undone.`,
                   },
@@ -116,7 +119,7 @@ export default function TeamPage() {
       <FilterBar>
         <Input
           width="md"
-          placeholder="Search by name"
+          placeholder="Search by name or email"
           value={filters.search ?? ''}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
@@ -197,7 +200,7 @@ export default function TeamPage() {
                   <FormField label={CREATE_TEAM_MEMBER_FORM.labels.first_name} error={createForm.formState.errors.first_name?.message}>
                     <Input placeholder={CREATE_TEAM_MEMBER_FORM.placeholders.first_name} {...createForm.register('first_name')} />
                   </FormField>
-                  <FormField label={CREATE_TEAM_MEMBER_FORM.labels.last_name}>
+                  <FormField label={CREATE_TEAM_MEMBER_FORM.labels.last_name} error={createForm.formState.errors.last_name?.message}>
                     <Input placeholder={CREATE_TEAM_MEMBER_FORM.placeholders.last_name} {...createForm.register('last_name')} />
                   </FormField>
                 </Div>
