@@ -23,6 +23,7 @@ export interface SchoolMobileFormProps<T extends FieldValues> {
   title: string;
   submitLabel: string;
   isEditing: boolean;
+  schoolCode?: string | null;
   isSubmitting: boolean;
   onSubmit: () => Promise<unknown> | unknown;
   onCancel: () => void;
@@ -33,6 +34,7 @@ export function SchoolMobileForm<T extends FieldValues>({
   title,
   submitLabel,
   isEditing,
+  schoolCode,
   isSubmitting,
   onSubmit,
   onCancel,
@@ -42,7 +44,7 @@ export function SchoolMobileForm<T extends FieldValues>({
     (form.formState.errors as Record<string, { message?: string } | undefined>)[name]?.message;
 
   const steps: ReadonlyArray<FormStep<T>> = [
-    { id: "basic", label: "School", fields: ["name", "code", "board_type"].map(n) },
+    { id: "basic", label: "School", fields: ["name", "board_type"].map(n) },
     { id: "contact", label: "Contact", fields: ["email", "dial_code", "contact_number", "website"].map(n) },
     { id: "location", label: "Location", fields: ["address", "city", "state", "pincode"].map(n) },
     {
@@ -54,7 +56,6 @@ export function SchoolMobileForm<T extends FieldValues>({
         "admin_email",
         "admin_dial_code",
         "admin_phone",
-        "admin_password",
       ].map(n),
     },
   ];
@@ -89,7 +90,13 @@ export function SchoolMobileForm<T extends FieldValues>({
             error={err("name")}
             {...register(n("name"))}
           />
-          <MobileTextField label={L.code} placeholder={P.code} {...register(n("code"))} />
+          <MobileTextField
+            label={L.code}
+            placeholder={P.code}
+            value={schoolCode ?? ""}
+            readOnly
+            disabled
+          />
           <Controller
             control={form.control}
             name={n("board_type")}
@@ -194,13 +201,6 @@ export function SchoolMobileForm<T extends FieldValues>({
             prefix={(form.watch(n("admin_dial_code")) as string | undefined) || "+91"}
             error={err("admin_phone")}
             {...register(n("admin_phone"))}
-          />
-          <MobileTextField
-            label={isEditing ? "New password" : L.admin_password}
-            type="password"
-            placeholder={P.admin_password}
-            error={err("admin_password")}
-            {...register(n("admin_password"))}
           />
         </FormGroup>
       </StepPanel>

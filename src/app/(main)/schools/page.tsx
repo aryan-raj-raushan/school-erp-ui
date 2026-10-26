@@ -22,7 +22,8 @@ import {
   ResponsiveModalContainer,
   RowActions,
 } from '@/components/ui';
-import { LogIn, Pencil, Trash2 } from 'lucide-react';
+import { DatabaseBackup, KeyRound, LogIn, Pencil, Trash2 } from 'lucide-react';
+import { CredentialsDialog } from '@/components/shared/CredentialsDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SchoolMobileForm } from '@/components/platform/SchoolMobileForm';
 
@@ -42,7 +43,8 @@ export default function SchoolsPage() {
     schools, pagination, filters, isLoading, switchingId,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     editingSchool, openEditModal, closeEditModal, editForm, handleEditSubmit, isUpdating,
-    deleteSchool, loginAsSchool,
+    deleteSchool, loginAsSchool, resetAdminPassword, downloadBackup,
+    issuedCredentials, clearIssuedCredentials,
     updateFilters,
   } = useSchools();
 
@@ -103,6 +105,19 @@ export default function SchoolsPage() {
                 onClick: () => openEditModal(row.original as any),
               },
               {
+                label: 'Reset admin password',
+                icon: <KeyRound size={14} />,
+                hidden: !isSuperAdmin,
+                confirm: { description: `Issue a new temporary password for the admin of ${row.original.name}? The current password will stop working.` },
+                onClick: () => resetAdminPassword(row.original as any),
+              },
+              {
+                label: 'Download backup',
+                icon: <DatabaseBackup size={14} />,
+                hidden: !isSuperAdmin,
+                onClick: () => downloadBackup(row.original as any),
+              },
+              {
                 label: 'Delete',
                 icon: <Trash2 size={14} />,
                 variant: 'destructive',
@@ -115,7 +130,15 @@ export default function SchoolsPage() {
         ),
       },
     ],
-    [isSuperAdmin, switchingId, loginAsSchool, openEditModal, deleteSchool]
+    [isSuperAdmin, switchingId, loginAsSchool, openEditModal, deleteSchool, resetAdminPassword, downloadBackup]
+  );
+
+  const credentialsDialog = (
+    <CredentialsDialog
+      title="School admin login"
+      credentials={issuedCredentials}
+      onClose={clearIssuedCredentials}
+    />
   );
 
   if (isMobile && showCreateModal) {
@@ -139,6 +162,7 @@ export default function SchoolsPage() {
         title={`Edit — ${editingSchool.name}`}
         submitLabel="Save changes"
         isEditing
+        schoolCode={editingSchool.code}
         isSubmitting={isUpdating}
         onSubmit={handleEditSubmit}
         onCancel={closeEditModal}
@@ -148,6 +172,7 @@ export default function SchoolsPage() {
 
   return (
     <PageCol>
+      {credentialsDialog}
       <PageHeader
         title={SCHOOLS_PAGE.title}
         subtitle={pagination ? `${pagination.total} schools` : SCHOOLS_PAGE.description}
@@ -190,7 +215,7 @@ export default function SchoolsPage() {
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.name} {...createForm.register('name')} />
                     </FormField>
                     <FormField label={CREATE_SCHOOL_FORM.labels.code}>
-                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.code} {...createForm.register('code')} />
+                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.code} disabled />
                     </FormField>
                   </Div>
                   <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
@@ -253,9 +278,6 @@ export default function SchoolsPage() {
                     phoneProps={createForm.register('admin_phone')}
                     phoneError={createForm.formState.errors.admin_phone?.message}
                   />
-                  <FormField label={CREATE_SCHOOL_FORM.labels.admin_password} error={createForm.formState.errors.admin_password?.message}>
-                    <Input type="password" placeholder={CREATE_SCHOOL_FORM.placeholders.admin_password} {...createForm.register('admin_password')} />
-                  </FormField>
                 </Div>
               </Div>
             </Div>
@@ -280,7 +302,7 @@ export default function SchoolsPage() {
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.name} {...editForm.register('name')} />
                     </FormField>
                     <FormField label={CREATE_SCHOOL_FORM.labels.code}>
-                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.code} {...editForm.register('code')} />
+                      <Input value={editingSchool.code ?? ''} readOnly disabled />
                     </FormField>
                   </Div>
                   <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
@@ -343,9 +365,6 @@ export default function SchoolsPage() {
                     phoneProps={editForm.register('admin_phone')}
                     phoneError={editForm.formState.errors.admin_phone?.message}
                   />
-                  <FormField label="New Password" error={editForm.formState.errors.admin_password?.message}>
-                    <Input type="password" placeholder={CREATE_SCHOOL_FORM.placeholders.admin_password} {...editForm.register('admin_password')} />
-                  </FormField>
                 </Div>
               </Div>
             </Div>

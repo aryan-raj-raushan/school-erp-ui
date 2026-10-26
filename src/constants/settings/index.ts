@@ -11,6 +11,8 @@ import {
   CalendarRange,
   ClipboardList,
   History,
+  Hash,
+  DatabaseBackup,
 } from "lucide-react";
 
 export interface SettingItem {
@@ -35,6 +37,13 @@ export const SETTINGS_ITEMS: SettingItem[] = [
     description:
       "Configure attendance, grading, session rules, timezone, and other school-wide preferences.",
     icon: Settings2,
+  },
+  {
+    slug: "admission-numbers",
+    label: "Admission Numbers",
+    description:
+      "Set the format used to generate admission numbers automatically, e.g. CPS-2026-02901.",
+    icon: Hash,
   },
   {
     slug: "academic-years",
@@ -98,5 +107,11 @@ export const SETTINGS_ITEMS: SettingItem[] = [
     description:
       "View a complete history of changes, user actions, and system activities.",
     icon: ScrollText,
+  },
+  {
+    slug: "backup",
+    label: "School Backup",
+    description: "Download an Excel backup of students, parents, staff, classes and fee payments.",
+    icon: DatabaseBackup,
   },
 ];

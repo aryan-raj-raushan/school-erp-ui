@@ -117,7 +117,7 @@ export const STUDENT_PAGE = {
     // Document
     documentName: "Document Type",
     fileType: "File Type",
-    documentLink: "Document Link / URL",
+    documentLink: "Uploaded File",
     originalFilename: "Original Filename",
     remarks: "Remarks",
   },

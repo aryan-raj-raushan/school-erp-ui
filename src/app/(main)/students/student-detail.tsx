@@ -55,6 +55,9 @@ import {
   DOCUMENT_FILE_TYPE_OPTIONS,
 } from "@/constants/students.constants";
 import { useStudentDetail } from "@/hooks/useStudentDetail";
+import { CredentialsDialog } from "@/components/shared/CredentialsDialog";
+import { DocumentViewButton } from "@/components/shared/DocumentViewButton";
+import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 
 // ─── Section Wrapper ───────────────────────────────────────────────────────────
@@ -139,6 +142,9 @@ export function StudentDetail({ id }: { id: string }) {
     hasSavedDraft,
     restoreSavedDraft,
     discardSavedDraft,
+    nextNumbers,
+    issuedCredentials,
+    closeCredentials,
   } = useStudentDetail(id);
 
   const { years, currentYear } = useAcademicYears();
@@ -288,6 +294,14 @@ export function StudentDetail({ id }: { id: string }) {
     </>
   );
 
+  const credentialsDialog = (
+    <CredentialsDialog
+      title="Parent app login"
+      credentials={issuedCredentials}
+      onClose={closeCredentials}
+    />
+  );
+
   if (showMobileProfile && student) {
     return (
       <StudentMobileProfile
@@ -306,8 +320,11 @@ export function StudentDetail({ id }: { id: string }) {
 
   if (isMobile) {
     return (
+      <>
+      {credentialsDialog}
       <StudentMobileForm
         form={form}
+        nextNumbers={nextNumbers}
         parentsArray={parentsArray}
         documentsArray={documentsArray}
         photo={{
@@ -325,6 +342,7 @@ export function StudentDetail({ id }: { id: string }) {
         onCancel={isNew ? undefined : () => setIsEditing(false)}
         banner={hasBanners ? banners : undefined}
       />
+      </>
     );
   }
 
@@ -332,6 +350,7 @@ export function StudentDetail({ id }: { id: string }) {
     <PageCol>
       <Div type="col" gap="md" className="max-w-7xl">
         <PageHeader {...pageHeaderConfig} />
+        {credentialsDialog}
 
         {banners}
 
@@ -449,7 +468,7 @@ export function StudentDetail({ id }: { id: string }) {
                   </FormField>
                   <FormField
                     label={STUDENT_PAGE.labels.idCardNumber}
-                    hint="Managed from RFID Setup page"
+                    hint="Managed from Smart Attendance page"
                   >
                     <Input
                       {...register("id_card_number")}
@@ -568,26 +587,37 @@ export function StudentDetail({ id }: { id: string }) {
                 </FormField>
                 <FormField
                   label={STUDENT_PAGE.labels.admissionNumber}
-                  required
-                  error={errors.academic_info?.admission_number?.message}
+                  hint={isNew ? "Generated automatically when you save" : undefined}
                 >
                   <Input
                     {...register("academic_info.admission_number")}
-                    placeholder="Admission number"
-                    disabled={isReadOnly}
+                    placeholder={nextNumbers?.admission_number ?? "Auto-generated"}
+                    readOnly
+                    className="bg-muted cursor-not-allowed"
                   />
                 </FormField>
-                <FormField label={STUDENT_PAGE.labels.registrationNumber}>
+                <FormField
+                  label={STUDENT_PAGE.labels.registrationNumber}
+                  hint="Optional — letters, digits, / or -"
+                  error={errors.academic_info?.registration_number?.message}
+                >
                   <Input
                     {...register("academic_info.registration_number")}
-                    placeholder="Registration number"
+                    placeholder="e.g. REG/2026/104"
+                    maxLength={30}
                     disabled={isReadOnly}
                   />
                 </FormField>
-                <FormField label={STUDENT_PAGE.labels.rollNumber}>
+                <FormField
+                  label={STUDENT_PAGE.labels.rollNumber}
+                  hint="Leave blank to assign the next roll number in this section"
+                  error={errors.academic_info?.roll_number?.message}
+                >
                   <Input
                     {...register("academic_info.roll_number")}
-                    placeholder="Roll number"
+                    placeholder={nextNumbers?.roll_number ? `Next: ${nextNumbers.roll_number}` : "Auto-assigned"}
+                    inputMode="numeric"
+                    maxLength={4}
                     disabled={isReadOnly}
                   />
                 </FormField>
@@ -813,16 +843,26 @@ export function StudentDetail({ id }: { id: string }) {
                           disabled={isReadOnly}
                         />
                       </FormField>
-                      <PhoneField
-                        label={STUDENT_PAGE.labels.parentPhone}
-                        required
-                        dialCodeProps={register(`parents.${index}.dial_code`)}
-                        phoneProps={register(`parents.${index}.phone_number`)}
-                        phoneError={
-                          errors.parents?.[index]?.phone_number?.message
-                        }
-                        disabled={isReadOnly}
-                      />
+                      <Div type="row" align="end" gap="xs">
+                        <Div className="flex-1">
+                          <PhoneField
+                            label={STUDENT_PAGE.labels.parentPhone}
+                            required
+                            dialCodeProps={register(`parents.${index}.dial_code`)}
+                            phoneProps={register(`parents.${index}.phone_number`)}
+                            phoneError={
+                              errors.parents?.[index]?.phone_number?.message
+                            }
+                            disabled={isReadOnly}
+                          />
+                        </Div>
+                        {isReadOnly && (
+                          <WhatsAppButton
+                            phone={watch(`parents.${index}.phone_number`)}
+                            dialCode={watch(`parents.${index}.dial_code`)}
+                          />
+                        )}
+                      </Div>
                       <FormField label={STUDENT_PAGE.labels.alternatePhone}>
                         <Input
                           {...register(`parents.${index}.alternate_phone`)}
@@ -922,24 +962,29 @@ export function StudentDetail({ id }: { id: string }) {
                             Enable login for this parent
                           </label>
                         </Div>
-                        {watch(`parents.${index}.enable_login`) && (
-                          <FormField
-                            label="Password"
-                            required={!watch(`parents.${index}.has_login`)}
-                            error={errors.parents?.[index]?.password?.message}
-                          >
-                            <Input
-                              type="password"
-                              placeholder={
-                                watch(`parents.${index}.has_login`)
-                                  ? "Leave blank to keep current password"
-                                  : "Min 6 characters"
-                              }
-                              {...register(`parents.${index}.password`)}
-                              disabled={isReadOnly}
-                            />
-                          </FormField>
-                        )}
+                        {watch(`parents.${index}.enable_login`) &&
+                          (watch(`parents.${index}.has_login`) ? (
+                            <Div type="row" align="center" gap="sm">
+                              <input
+                                type="checkbox"
+                                {...register(`parents.${index}.reset_password`)}
+                                id={`reset-password-${index}`}
+                                disabled={isReadOnly}
+                                className="h-4 w-4 rounded border-border"
+                              />
+                              <label
+                                htmlFor={`reset-password-${index}`}
+                                className="text-sm"
+                              >
+                                Reset password (issue a new temporary password)
+                              </label>
+                            </Div>
+                          ) : (
+                            <P size="xs" color="muted">
+                              A temporary password will be generated when you save.
+                              The parent must change it after the first login.
+                            </P>
+                          ))}
                       </Div>
                     </FormGrid>
                   </Div>
@@ -1032,18 +1077,21 @@ export function StudentDetail({ id }: { id: string }) {
                           options={DOCUMENT_FILE_TYPE_OPTIONS}
                         />
                       </FormField>
-                      <FormField label="Upload File">
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          disabled={isReadOnly || isUploading}
-                          className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 disabled:opacity-50"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(file, index);
-                          }}
-                        />
-                      </FormField>
+                      {isEditing && (
+                        <FormField label="Upload File" hint="PDF, JPG or PNG · max 10 MB">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            disabled={isUploading}
+                            className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 disabled:opacity-50"
+                            onChange={async (e) => {
+                              const input = e.currentTarget;
+                              const file = input.files?.[0];
+                              if (file && !(await handleDocumentUpload(file, index))) input.value = "";
+                            }}
+                          />
+                        </FormField>
+                      )}
                       <FormField
                         label={STUDENT_PAGE.labels.documentLink}
                         required
@@ -1051,11 +1099,16 @@ export function StudentDetail({ id }: { id: string }) {
                           errors.documents?.[index]?.document_link?.message
                         }
                       >
-                        <Input
-                          {...register(`documents.${index}.document_link`)}
-                          placeholder="https://..."
-                          disabled={isReadOnly}
-                        />
+                        <Div type="row" align="center" gap="sm" className="min-h-11">
+                          <P size="sm" className="truncate flex-1">
+                            {watch(`documents.${index}.original_filename`) ||
+                              (watch(`documents.${index}.document_link`) ? "Uploaded document" : "No file uploaded yet")}
+                          </P>
+                          <DocumentViewButton
+                            link={watch(`documents.${index}.document_link`)}
+                            fileName={watch(`documents.${index}.original_filename`)}
+                          />
+                        </Div>
                       </FormField>
                       <FormField label={STUDENT_PAGE.labels.remarks}>
                         <Input

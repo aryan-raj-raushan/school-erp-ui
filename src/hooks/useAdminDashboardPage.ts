@@ -11,6 +11,8 @@ import {
   Contact,
   CalendarCheck,
   BookOpen,
+  ReceiptText,
+  BanknoteArrowDown,
 } from 'lucide-react';
 import { useDashboard } from './useDashboard';
 import { useDashboardIdentity } from './useDashboardShared';
@@ -106,6 +108,32 @@ export function useAdminDashboardPage() {
     },
   ];
 
+  kpis.push(
+    {
+      key: 'fee-bills',
+      label: 'Fee bills pending',
+      value: fmtNumber(data?.fees.pendingCount ?? 0),
+      sub: fmtRupees(data?.fees.totalPending ?? 0),
+      icon: ReceiptText,
+      accent: 'rose',
+      href: '/fees/payments',
+    },
+    {
+      key: 'salaries',
+      label: 'Salaries due',
+      value: fmtNumber(data?.finance.pendingSalaryCount ?? 0),
+      sub: 'Staff awaiting payment',
+      icon: BanknoteArrowDown,
+      accent: 'amber',
+      href: '/hr/salary',
+    },
+  );
+
+  const PRIMARY_KPIS = ['attendance', 'fees', 'leave', 'students'];
+  const byKey = new Map(kpis.map((k) => [k.key, k]));
+  const primaryKpis = PRIMARY_KPIS.map((key) => byKey.get(key)!);
+  const secondaryKpis = kpis.filter((k) => !PRIMARY_KPIS.includes(k.key));
+
   const alerts: DashAlert[] = [];
   if (data) {
     if (pendingLeave > 0)
@@ -139,7 +167,8 @@ export function useAdminDashboardPage() {
       sub: `${fmtNumber(data?.attendance.present ?? 0)} present today`,
       percent: rate,
     },
-    kpis,
+    primaryKpis,
+    secondaryKpis,
     alerts,
     actions: SCHOOL_ADMIN_ACTIONS,
     trend: (data?.attendance.trend ?? []).map((r) => ({

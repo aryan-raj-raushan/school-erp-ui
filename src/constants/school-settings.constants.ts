@@ -18,15 +18,15 @@ export const CLASS_TIMINGS_PAGE = {
 
 export const ATTENDANCE_METHOD_OPTIONS: { value: AttendanceMethod; label: string }[] = [
   { value: 'MANUAL', label: 'Manual Only' },
-  { value: 'RFID', label: 'RFID Only' },
-  { value: 'BOTH', label: 'Manual + RFID' },
+  { value: 'RFID', label: 'Smart Attendance Only' },
+  { value: 'BOTH', label: 'Manual + Smart Attendance' },
   { value: 'BIOMETRIC', label: 'Biometric' },
   { value: 'QR', label: 'QR Code' },
 ];
 
 export const CONFLICT_RESOLUTION_OPTIONS: { value: ConflictResolutionMode; label: string; description: string }[] = [
-  { value: 'MANUAL_WINS', label: 'Manual Wins', description: 'Teacher marking overrides RFID' },
-  { value: 'RFID_WINS', label: 'RFID Wins', description: 'RFID tap overrides teacher marking' },
+  { value: 'MANUAL_WINS', label: 'Manual Wins', description: 'Teacher marking overrides Smart Attendance' },
+  { value: 'RFID_WINS', label: 'Smart Attendance Wins', description: 'Card tap overrides teacher marking' },
   { value: 'FLAG_FOR_REVIEW', label: 'Flag for Review', description: 'Conflicts go to admin queue' },
 ];
 

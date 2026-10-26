@@ -135,7 +135,7 @@ export function StaffMobileProfile({
               wide
             />
             <DetailField
-              label="RFID card"
+              label="Smart card"
               value={staff.rfid_card_number}
               wide
             />

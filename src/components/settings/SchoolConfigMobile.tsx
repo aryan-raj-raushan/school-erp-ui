@@ -79,7 +79,7 @@ export function SchoolConfigMobile({ form, updateField, isSaving, onSave }: Scho
         />
       </FormGroup>
 
-      <FormGroup title="RFID vs manual conflicts" description="What happens when the two disagree.">
+      <FormGroup title="Smart Attendance vs manual conflicts" description="What happens when the two disagree.">
         <div role="radiogroup" className="flex flex-col gap-2">
           {CONFLICT_RESOLUTION_OPTIONS.map((option) => {
             const active = form.conflict_resolution_mode === option.value;

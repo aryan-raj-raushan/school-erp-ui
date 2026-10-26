@@ -176,7 +176,7 @@ export default function SchoolConfigPage() {
 
         {/* Conflict Resolution */}
         <Div variant="card" type="col" gap="md" padding="p-6">
-          <H3>RFID vs Manual Conflict Resolution</H3>
+          <H3>Smart Attendance vs Manual Conflict Resolution</H3>
           <Div type="col" gap="sm">
             {CONFLICT_RESOLUTION_OPTIONS.map((opt) => (
               <Div

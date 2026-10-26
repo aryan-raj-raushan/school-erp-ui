@@ -15,7 +15,7 @@ export function useRfidEvents() {
       const data = await RfidService.getEvents();
       setEvents(data);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to fetch RFID events');
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch Smart Attendance events');
     } finally {
       setIsLoading(false);
     }
@@ -27,13 +27,13 @@ export function useRfidEvents() {
 
   const assignCard = useCallback(async (rfidCardId: string, personType: 'staff' | 'student', personId: string) => {
     await RfidService.assignCard(rfidCardId, personType, personId);
-    toast.success('RFID card assigned');
+    toast.success('Smart card assigned');
     await fetchEvents();
   }, [fetchEvents]);
 
   const unassignCard = useCallback(async (personType: 'staff' | 'student', personId: string) => {
     await RfidService.unassignCard(personType, personId);
-    toast.success('RFID card unassigned');
+    toast.success('Smart card unassigned');
     await fetchEvents();
   }, [fetchEvents]);
 

@@ -226,7 +226,7 @@ export function StaffDetail({ id }: { id: string }) {
               <InfoRow label="City" value={staff?.city} />
               <InfoRow label="Father's Name" value={staff?.father_name} />
               <InfoRow label="Husband's Name" value={staff?.husband_name} />
-              <InfoRow label="RFID Card" value={staff?.rfid_card_number} />
+              <InfoRow label="Smart Card" value={staff?.rfid_card_number} />
               <InfoRow label="Qualification" value={staff?.qualification} />
             </FormGrid>
             {staff?.address && (
@@ -466,8 +466,8 @@ export function StaffDetail({ id }: { id: string }) {
                   />
                 </FormField>
                 <FormField
-                  label="RFID Card Number"
-                  hint="Managed from RFID Setup page"
+                  label="Smart Card Number"
+                  hint="Managed from Smart Attendance page"
                 >
                   <Input
                     readOnly

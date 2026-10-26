@@ -36,6 +36,7 @@ import {
 import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from "@/constants";
 import { StaffMobileList } from "@/components/staff/StaffMobileList";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 
 type PersistedStaffFilters = Pick<StaffFilters, "status" | "role">;
 
@@ -194,7 +195,15 @@ function StaffsDesktop() {
       {
         accessorKey: "phone_number",
         header: STAFF_PAGE.table.phone,
-        cell: ({ row }) => row.original.phone_number ?? "—",
+        cell: ({ row }) =>
+          row.original.phone_number ? (
+            <span className="inline-flex items-center gap-1">
+              {row.original.phone_number}
+              <WhatsAppButton phone={row.original.phone_number} dialCode={row.original.dial_code} />
+            </span>
+          ) : (
+            "—"
+          ),
       },
       {
         accessorKey: "is_active",

@@ -33,6 +33,8 @@ import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useClassSections } from "@/hooks/useClassSections";
 import { useMultiStepForm, type FormStep } from "@/hooks/useMultiStepForm";
 import type { StudentFormValues } from "@/lib/validations/students.validation";
+import type { StudentNextNumbers } from "@/types/students.types";
+import { DocumentViewButton } from "@/components/shared/DocumentViewButton";
 import {
   BLOOD_GROUP_OPTIONS,
   CATEGORY_OPTIONS,
@@ -73,9 +75,10 @@ export interface StudentMobileFormProps {
   isSubmitting: boolean;
   isUploading: boolean;
   onSubmit: () => Promise<unknown> | unknown;
-  onDocumentUpload: (file: File, index: number) => void;
+  onDocumentUpload: (file: File, index: number) => Promise<boolean> | void;
   onCancel?: () => void;
   banner?: React.ReactNode;
+  nextNumbers?: StudentNextNumbers | null;
 }
 
 // ─── Parent card ──────────────────────────────────────────────────────────────
@@ -208,16 +211,20 @@ function ParentCard({
             label="Parent app login"
             description="Lets this parent sign in to the parent portal"
           />
-          {loginEnabled && (
-            <MobileTextField
-              label="Password"
-              type="password"
-              required={!hasLogin}
-              placeholder={hasLogin ? "Leave blank to keep current" : "Min 6 characters"}
-              error={errors?.password?.message}
-              {...register(`parents.${index}.password`)}
-            />
-          )}
+          {loginEnabled &&
+            (hasLogin ? (
+              <ControlledToggleRow
+                control={control}
+                name={`parents.${index}.reset_password`}
+                label="Reset password"
+                description="Issue a new temporary password when you save"
+              />
+            ) : (
+              <p className="px-1 text-xs text-muted-foreground">
+                A temporary password will be generated when you save. The parent must change it
+                after the first login.
+              </p>
+            ))}
         </>
       ) : (
         <button
@@ -282,7 +289,7 @@ function DocumentCard({
         >
           <Paperclip size={20} className="shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-[15px]">
-            {isUploading ? "Uploading…" : link ? (filename ?? "File attached") : "Attach PDF or photo"}
+            {isUploading ? "Uploading…" : link ? (filename || "File attached") : "Attach PDF, JPG or PNG · max 10 MB"}
           </span>
           <span className="text-sm font-semibold text-primary-text">
             {link ? "Replace" : "Browse"}
@@ -305,6 +312,11 @@ function DocumentCard({
           </p>
         )}
       </div>
+      {link && (
+        <div className="px-1">
+          <DocumentViewButton link={link} fileName={filename} />
+        </div>
+      )}
 
       <MobileTextField
         label="Remarks"
@@ -329,6 +341,7 @@ export function StudentMobileForm({
   onDocumentUpload,
   onCancel,
   banner,
+  nextNumbers,
 }: StudentMobileFormProps) {
   const { control, register, watch, formState } = form;
   const errors = formState.errors;
@@ -543,18 +556,24 @@ export function StudentMobileForm({
           <FormGroup title="Numbers">
             <MobileTextField
               label="Admission number"
-              required
-              error={errors.academic_info?.admission_number?.message}
+              placeholder={nextNumbers?.admission_number ?? "Auto-generated on save"}
+              readOnly
               {...register("academic_info.admission_number")}
             />
             <FieldRow>
               <MobileTextField
                 label="Roll number"
                 inputMode="numeric"
+                maxLength={4}
+                placeholder={nextNumbers?.roll_number ? `Next: ${nextNumbers.roll_number}` : "Auto"}
+                error={errors.academic_info?.roll_number?.message}
                 {...register("academic_info.roll_number")}
               />
               <MobileTextField
                 label="Registration no."
+                placeholder="Optional"
+                maxLength={30}
+                error={errors.academic_info?.registration_number?.message}
                 {...register("academic_info.registration_number")}
               />
             </FieldRow>

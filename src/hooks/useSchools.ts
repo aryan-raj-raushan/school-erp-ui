@@ -5,7 +5,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { SchoolsService, type SchoolFilters, type CreateSchoolPayload, type UpdateSchoolPayload } from '@/services/schools.service';
+import {
+  SchoolsService,
+  type SchoolFilters,
+  type CreateSchoolPayload,
+  type UpdateSchoolPayload,
+  type SchoolAdminCredentials,
+} from '@/services/schools.service';
+import { BackupService } from '@/services/backup.service';
+import { saveBlob } from '@/lib/save-blob';
+import type { IssuedCredential } from '@/components/shared/CredentialsDialog';
 import { AuthService } from '@/services/auth.service';
 import { AuthContext, TokenStorage } from '@/lib/api-gateway/token.storage';
 import { ImpersonationStorage } from '@/lib/impersonation.storage';
@@ -27,6 +36,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [issuedCredentials, setIssuedCredentials] = useState<IssuedCredential[]>([]);
 
   const { setAuth, setPermissions } = useAuthStore();
   const router = useRouter();
@@ -53,10 +63,52 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     }
   }, [filters]);
 
+  function showCredentials(
+    credentials: SchoolAdminCredentials | undefined,
+    admin: { admin_first_name?: string; admin_last_name?: string; admin_phone?: string; admin_dial_code?: string },
+  ) {
+    if (!credentials) return;
+    setIssuedCredentials([
+      {
+        name: [admin.admin_first_name, admin.admin_last_name].filter(Boolean).join(' ') || 'School Admin',
+        loginId: credentials.login_id,
+        password: credentials.temporary_password,
+        phone: admin.admin_phone,
+        dialCode: admin.admin_dial_code,
+      },
+    ]);
+  }
+
+  async function resetAdminPassword(school: School) {
+    try {
+      const [credentials, admin] = await Promise.all([
+        SchoolsService.resetAdminPassword(school.id),
+        SchoolsService.getAdmin(school.id),
+      ]);
+      showCredentials(credentials, {
+        admin_first_name: admin?.first_name,
+        admin_last_name: admin?.last_name ?? undefined,
+        admin_phone: admin?.phone_number,
+        admin_dial_code: admin?.dial_code,
+      });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reset admin password');
+    }
+  }
+
+  async function downloadBackup(school: School) {
+    try {
+      const blob = await BackupService.downloadForSchool(school.id);
+      saveBlob(blob, `${school.code ?? 'school'}_backup_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success('Backup downloaded');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to download backup');
+    }
+  }
+
   async function handleCreateSubmit(values: CreateSchoolFormValues) {
     const payload: CreateSchoolPayload = {
       name: values.name,
-      ...(values.code && { code: values.code }),
       ...(values.email && { email: values.email }),
       ...(values.contact_number && { contact_number: values.contact_number, dial_code: values.dial_code }),
       ...(values.website && { website: values.website }),
@@ -69,11 +121,11 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.admin_last_name && { admin_last_name: values.admin_last_name }),
       ...(values.admin_phone && { admin_phone: values.admin_phone, admin_dial_code: values.admin_dial_code }),
       ...(values.admin_email && { admin_email: values.admin_email }),
-      ...(values.admin_password && { admin_password: values.admin_password }),
     };
     try {
       const school = await SchoolsService.create(payload);
-      toast.success(`${school.name} created`);
+      toast.success(`${school.name} created with code ${school.code}`);
+      showCredentials(school.admin_credentials, values);
       await fetchSchools();
       setShowCreateModal(false);
       createForm.reset();
@@ -86,7 +138,6 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     if (!editingSchool) return;
     const payload: UpdateSchoolPayload = {
       ...(values.name && { name: values.name }),
-      ...(values.code && { code: values.code }),
       ...(values.email && { email: values.email }),
       ...(values.contact_number && { contact_number: values.contact_number, dial_code: values.dial_code }),
       ...(values.website && { website: values.website }),
@@ -99,11 +150,11 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.admin_last_name && { admin_last_name: values.admin_last_name }),
       ...(values.admin_phone && { admin_phone: values.admin_phone, admin_dial_code: values.admin_dial_code }),
       ...(values.admin_email && { admin_email: values.admin_email }),
-      ...(values.admin_password && { admin_password: values.admin_password }),
     };
     try {
       const school = await SchoolsService.update(editingSchool.id, payload);
       toast.success(`${school.name} updated`);
+      showCredentials(school.admin_credentials, values);
       await fetchSchools();
       setEditingSchool(null);
       editForm.reset();
@@ -165,7 +216,6 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   async function openEditModal(school: School) {
     editForm.reset({
       name: school.name,
-      code: school.code ?? '',
       email: school.email ?? '',
       dial_code: school.dial_code ?? '+91',
       contact_number: school.contact_number ?? '',
@@ -223,6 +273,10 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     isUpdating: editForm.formState.isSubmitting,
     deleteSchool,
     loginAsSchool,
+    resetAdminPassword,
+    downloadBackup,
+    issuedCredentials,
+    clearIssuedCredentials: () => setIssuedCredentials([]),
     updateFilters,
   };
 }

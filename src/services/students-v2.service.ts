@@ -2,6 +2,8 @@ import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import type {
   StudentListItem,
   StudentFull,
+  StudentFullWithCredentials,
+  StudentNextNumbers,
   StudentFilters,
   StudentIdCardData,
   PickupCardData,
@@ -16,7 +18,7 @@ export interface StudentAcademicInfoPayload {
   academic_year_id: string;
   class_id: string;
   section_id?: string;
-  admission_number: string;
+  admission_number?: string;
   registration_number?: string;
   roll_number?: string;
   joining_date?: string;
@@ -63,7 +65,7 @@ export interface StudentParentPayload {
   is_primary?: boolean;
   can_pickup?: boolean;
   enable_login?: boolean;
-  password?: string;
+  reset_password?: boolean;
 }
 
 export interface StudentDocumentPayload {
@@ -148,13 +150,22 @@ export const StudentsService = {
     return res.data;
   },
 
-  async create(payload: CreateStudentPayload): Promise<StudentFull> {
-    const res = await apiGateway.post<StudentFull>(ENDPOINTS.student.list, payload);
+  async create(payload: CreateStudentPayload): Promise<StudentFullWithCredentials> {
+    const res = await apiGateway.post<StudentFullWithCredentials>(ENDPOINTS.student.list, payload);
     return res.data;
   },
 
-  async update(id: string, payload: UpdateStudentPayload): Promise<StudentFull> {
-    const res = await apiGateway.put<StudentFull>(ENDPOINTS.student.byId(id), payload);
+  async update(id: string, payload: UpdateStudentPayload): Promise<StudentFullWithCredentials> {
+    const res = await apiGateway.put<StudentFullWithCredentials>(ENDPOINTS.student.byId(id), payload);
+    return res.data;
+  },
+
+  async nextNumbers(params: {
+    academic_year_id?: string;
+    class_id?: string;
+    section_id?: string;
+  }): Promise<StudentNextNumbers> {
+    const res = await apiGateway.get<StudentNextNumbers>(ENDPOINTS.student.nextNumbers, { params });
     return res.data;
   },
 

@@ -171,6 +171,22 @@ export interface StudentFull {
   documents: StudentDocument[];
 }
 
+export interface ParentCredential {
+  parent_id: string;
+  name: string;
+  dial_code: string;
+  phone_number: string;
+  temporary_password: string;
+}
+
+export type StudentFullWithCredentials = StudentFull & { parent_credentials?: ParentCredential[] };
+
+export interface StudentNextNumbers {
+  admission_number: string;
+  roll_number: string | null;
+  last_issued: number;
+}
+
 // ─── List item (from GET /students) ───────────────────────────────────────────
 
 export interface StudentListItem {

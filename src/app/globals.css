@@ -843,3 +843,24 @@ html {
     margin-bottom: -1rem;
   }
 }
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+:root {
+  --dash-border: oklch(0.5 0.02 260 / 38%);
+  --dash-card: oklch(1 0 0 / 94%);
+}
+
+.dark {
+  --dash-border: oklch(1 0 0 / 24%);
+  --dash-card: oklch(0.22 0.01 240 / 92%);
+}

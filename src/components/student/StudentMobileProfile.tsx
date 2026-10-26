@@ -23,7 +23,6 @@ import {
   PullToRefresh,
 } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import { openExternal } from "@/lib/external-link";
 import {
   BLOOD_GROUP_OPTIONS,
   CATEGORY_OPTIONS,
@@ -34,6 +33,7 @@ import {
   STATUS_BADGE,
   STUDENT_PAGE,
 } from "@/constants/students.constants";
+import { DocumentViewButton } from "@/components/shared/DocumentViewButton";
 import type { StudentFull } from "@/types/students.types";
 
 interface Option {
@@ -300,24 +300,19 @@ export function StudentMobileProfile({
           ) : (
             <ul className="flex flex-col">
               {data.documents.map((doc) => (
-                <li key={doc.id}>
-                  <button
-                    type="button"
-                    onClick={() => void openExternal(doc.document_link)}
-                    className="flex min-h-14 w-full items-center gap-3 rounded-xl text-left active:bg-muted"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <FileText size={18} />
+                <li key={doc.id} className="flex min-h-14 w-full items-center gap-3 rounded-xl">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <FileText size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-medium">
+                      {labelOf(DOCUMENT_TYPE_OPTIONS, doc.document_name)}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-medium">
-                        {labelOf(DOCUMENT_TYPE_OPTIONS, doc.document_name)}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {doc.original_filename ?? doc.file_type}
-                      </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {doc.original_filename ?? doc.file_type}
                     </span>
-                  </button>
+                  </span>
+                  <DocumentViewButton link={doc.document_link} fileName={doc.original_filename} />
                 </li>
               ))}
             </ul>

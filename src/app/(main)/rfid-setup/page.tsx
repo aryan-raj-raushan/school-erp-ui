@@ -57,7 +57,7 @@ function AssignModal({
       <BottomSheet
         isOpen
         onClose={onClose}
-        title="Assign RFID card"
+        title="Assign smart card"
         maxHeight="92dvh"
         footer={
           <Div type="row" className="flex gap-3">
@@ -72,7 +72,7 @@ function AssignModal({
       >
         <Div className="flex flex-col gap-3 pt-1">
           <Div className="rounded-2xl bg-muted/50 p-3">
-            <P className="text-xs text-muted-foreground">RFID card ID</P>
+            <P className="text-xs text-muted-foreground">Smart card ID</P>
             <P color="default" className="font-mono text-[15px] font-medium">{event.r}</P>
           </Div>
           <SegmentedControl
@@ -139,11 +139,11 @@ function AssignModal({
   }
 
   return (
-    <ResponsiveModalContainer isOpen={true} onClose={onClose} title="Assign RFID Card">
+    <ResponsiveModalContainer isOpen={true} onClose={onClose} title="Assign Smart Card">
       <Div className="px-4 py-4">
         <Div type="col" gap="md">
           <Div type="col" gap="xs">
-            <P size="xs" color="muted">RFID Card ID</P>
+            <P size="xs" color="muted">Smart Card ID</P>
             <P color="default" className="font-mono font-medium">{event.r}</P>
           </Div>
 
@@ -266,7 +266,7 @@ export default function RfidSetupPage() {
 
   return (
     <Div type="col" gap="lg">
-     <PageHeader title="RFID Setup"/>
+     <PageHeader title="Smart Attendance"/>
 
       <FormCard title="Card Taps">
         <Div type="col" gap="sm">

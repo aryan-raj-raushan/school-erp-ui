@@ -24,6 +24,10 @@ export function useSchoolConfig() {
         two_half_days_equal_leave: data.two_half_days_equal_leave,
         auto_notify_parent_on_absent: data.auto_notify_parent_on_absent,
         conflict_resolution_mode: data.conflict_resolution_mode,
+        admission_prefix: data.admission_prefix ?? undefined,
+        admission_include_year: data.admission_include_year,
+        admission_number_digits: data.admission_number_digits,
+        admission_start_number: data.admission_start_number,
       });
     } catch {
       toast.error('Failed to load school configuration');
@@ -49,8 +53,8 @@ export function useSchoolConfig() {
       const updated = await SchoolSettingsService.updateSettings(form);
       setSettings(updated);
       toast.success(`${SCHOOL_CONFIG_PAGE.title} saved successfully`);
-    } catch {
-      toast.error('Failed to save configuration');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
       setIsSaving(false);
     }

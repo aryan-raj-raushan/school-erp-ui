@@ -24,6 +24,7 @@ import {
   Bell,
   ScrollText,
   UsersRound,
+  Contact,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
@@ -159,25 +160,20 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
   },
 
   /* ---------------------------------------------------
-  Team
+  People
   --------------------------------------------------- */
 
   {
-    title: "Teams",
+    title: "Students",
     url: "#",
     icon: Users,
-    permissions: [
-      PERMISSIONS.students.view,
-      PERMISSIONS.staff.view,
-      PERMISSIONS.parents.view,
-    ],
+    permissions: [PERMISSIONS.students.view, PERMISSIONS.parents.view],
     items: [
       {
-        title: "Students",
+        title: "All Students",
         url: "/students",
         permissions: [PERMISSIONS.students.view],
       },
-      { title: "Staff", url: "/staffs", permissions: [PERMISSIONS.staff.view] },
       {
         title: "Parents",
         url: "/parents",
@@ -189,6 +185,13 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
         permissions: [PERMISSIONS.students.view],
       },
     ],
+  },
+
+  {
+    title: "Staff",
+    url: "/staffs",
+    icon: Contact,
+    permissions: [PERMISSIONS.staff.view],
   },
 
   {
@@ -553,7 +556,7 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
     ],
   },
   {
-    title: "RFID Setup",
+    title: "Smart Attendance",
     url: "/rfid-setup",
     icon: Wifi,
   },

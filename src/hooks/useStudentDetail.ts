@@ -2,19 +2,24 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { usePlatformFilePicker } from './usePlatformFilePicker';
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { StudentsService } from "@/services/students-v2.service";
-import { UploadsService } from "@/services/uploads.service";
+import { UploadsService, documentFileError } from "@/services/uploads.service";
 import { AdmissionEnquiriesService } from "@/services/admissions.service";
 import type { AdmissionEnquiry } from "@/types/admissions.types";
 import {
   studentFormSchema,
   type StudentFormValues,
 } from "@/lib/validations/students.validation";
-import type { StudentFull } from "@/types/students.types";
+import type {
+  ParentCredential,
+  StudentFull,
+  StudentNextNumbers,
+} from "@/types/students.types";
+import type { IssuedCredential } from "@/components/shared/CredentialsDialog";
 import { STUDENT_ROUTES } from "@/constants/students.constants";
 import { FORM_STORAGE_KEYS } from "@/constants/form-storage-keys.constants";
 import { useSavedForm } from "@/hooks/useSavedForm";
@@ -34,6 +39,9 @@ export function useStudentDetail(id?: string) {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [nextNumbers, setNextNumbers] = useState<StudentNextNumbers | null>(null);
+  const [issuedCredentials, setIssuedCredentials] = useState<IssuedCredential[]>([]);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const { isNative, pickImage } = usePlatformFilePicker();
 
   const form = useForm<StudentFormValues>({
@@ -62,12 +70,53 @@ export function useStudentDetail(id?: string) {
     key: FORM_STORAGE_KEYS.STUDENT_CREATE,
     form,
     enabled: isNew,
-    // Never persist passwords to localStorage.
-    sanitize: (values) => ({
-      ...values,
-      parents: values.parents?.map((p) => ({ ...p, password: "" })),
-    }),
   });
+
+  const [academicYearId, classId, sectionId] = useWatch({
+    control: form.control,
+    name: ["academic_info.academic_year_id", "academic_info.class_id", "academic_info.section_id"],
+  });
+
+  useEffect(() => {
+    if (!isNew) return;
+    let cancelled = false;
+    StudentsService.nextNumbers({
+      academic_year_id: academicYearId || undefined,
+      class_id: classId || undefined,
+      section_id: sectionId || undefined,
+    })
+      .then((numbers) => {
+        if (!cancelled) setNextNumbers(numbers);
+      })
+      .catch(() => {
+        if (!cancelled) setNextNumbers(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isNew, academicYearId, classId, sectionId]);
+
+  function showParentCredentials(credentials: ParentCredential[] | undefined) {
+    if (!credentials?.length) return false;
+    setIssuedCredentials(
+      credentials.map((c) => ({
+        name: c.name,
+        loginId: c.phone_number,
+        password: c.temporary_password,
+        phone: c.phone_number,
+        dialCode: c.dial_code,
+      })),
+    );
+    return true;
+  }
+
+  function closeCredentials() {
+    setIssuedCredentials([]);
+    if (pendingRedirect) {
+      router.push(pendingRedirect);
+      setPendingRedirect(null);
+    }
+  }
 
   const fetchStudent = useCallback(async () => {
     if (!id || isNew) return;
@@ -153,7 +202,7 @@ export function useStudentDetail(id?: string) {
           can_pickup: p.can_pickup,
           has_login: p.has_login ?? false,
           enable_login: p.has_login ?? false,
-          password: "",
+          reset_password: false,
         })),
         documents: data.documents.map((d:any) => ({
           document_name: d.document_name,
@@ -199,7 +248,6 @@ export function useStudentDetail(id?: string) {
         academic_info: {
           academic_year_id: enquiry.applying_academic_year_id,
           class_id: enquiry.applying_class_id,
-          admission_number: "",
         },
         previous_academics: {
           previous_school_name: enquiry.previous_school_name ?? "",
@@ -322,7 +370,10 @@ export function useStudentDetail(id?: string) {
       const payload = {
         ...clean(values),
         academic_info: values.academic_info
-          ? clean(values.academic_info)
+          ? {
+              ...clean(values.academic_info),
+              registration_number: values.academic_info.registration_number ?? "",
+            }
           : undefined,
         previous_academics: values.previous_academics
           ? clean(values.previous_academics)
@@ -345,13 +396,21 @@ export function useStudentDetail(id?: string) {
           await handleImageUpload(pendingFile, created.student.id);
         }
         savedForm.clearSavedForm();
-        toast.success(`Student "${created.student.first_name}" created`);
-        router.push(STUDENT_ROUTES.view(created.student.id));
+        toast.success(
+          `Student "${created.student.first_name}" created — Admission No. ${created.academicInfo?.admission_number ?? ""}`,
+        );
+        if (showParentCredentials(created.parent_credentials)) {
+          setPendingRedirect(STUDENT_ROUTES.view(created.student.id));
+        } else {
+          router.push(STUDENT_ROUTES.view(created.student.id));
+        }
       } else {
         const updated = await StudentsService.update(id!, payload as any);
         setStudent(updated);
         toast.success("Student updated successfully");
+        showParentCredentials(updated.parent_credentials);
         setIsEditing(false);
+        await fetchStudent();
       }
     } catch (err: unknown) {
       console.error("Student save failed:", err);
@@ -360,6 +419,11 @@ export function useStudentDetail(id?: string) {
   }
 
   async function handleDocumentUpload(file: File, docIndex: number) {
+    const fileError = documentFileError(file);
+    if (fileError) {
+      toast.error(fileError);
+      return false;
+    }
     setIsUploading(true);
     try {
       const result = await UploadsService.uploadDocument(file, {
@@ -373,9 +437,12 @@ export function useStudentDetail(id?: string) {
         `documents.${docIndex}.file_type`,
         file.type.includes("pdf") ? "PDF" : "IMAGE",
       );
+      form.clearErrors(`documents.${docIndex}.document_link`);
       toast.success("File uploaded");
-    } catch {
-      toast.error("Upload failed");
+      return true;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+      return false;
     } finally {
       setIsUploading(false);
     }
@@ -414,6 +481,9 @@ export function useStudentDetail(id?: string) {
     isSubmitting: form.formState.isSubmitting,
     handleDocumentUpload,
     deleteDocument,
+    nextNumbers,
+    issuedCredentials,
+    closeCredentials,
     refetch: fetchStudent,
     hasSavedDraft: savedForm.hasDraft,
     restoreSavedDraft: savedForm.restoreDraft,

@@ -19,7 +19,6 @@ export interface PaginatedSchools {
 
 export interface CreateSchoolPayload {
   name: string;
-  code?: string;
   email?: string;
   contact_number?: string;
   dial_code?: string;
@@ -34,10 +33,16 @@ export interface CreateSchoolPayload {
   admin_dial_code?: string;
   admin_phone?: string;
   admin_email?: string;
-  admin_password?: string;
 }
 
 export type UpdateSchoolPayload = Partial<CreateSchoolPayload>;
+
+export interface SchoolAdminCredentials {
+  login_id: string;
+  temporary_password: string;
+}
+
+export type SchoolWithCredentials = School & { admin_credentials?: SchoolAdminCredentials };
 
 export interface SchoolAdmin {
   id: string;
@@ -64,13 +69,18 @@ export const SchoolsService = {
     return res.data;
   },
 
-  async create(payload: CreateSchoolPayload): Promise<School> {
-    const res = await apiGateway.post<School>(ENDPOINTS.schools.list, payload);
+  async create(payload: CreateSchoolPayload): Promise<SchoolWithCredentials> {
+    const res = await apiGateway.post<SchoolWithCredentials>(ENDPOINTS.schools.list, payload);
     return res.data;
   },
 
-  async update(id: string, payload: UpdateSchoolPayload): Promise<School> {
-    const res = await apiGateway.patch<School>(ENDPOINTS.schools.byId(id), payload);
+  async update(id: string, payload: UpdateSchoolPayload): Promise<SchoolWithCredentials> {
+    const res = await apiGateway.patch<SchoolWithCredentials>(ENDPOINTS.schools.byId(id), payload);
+    return res.data;
+  },
+
+  async resetAdminPassword(id: string): Promise<SchoolAdminCredentials> {
+    const res = await apiGateway.post<SchoolAdminCredentials>(ENDPOINTS.schools.resetAdminPassword(id), {});
     return res.data;
   },
 

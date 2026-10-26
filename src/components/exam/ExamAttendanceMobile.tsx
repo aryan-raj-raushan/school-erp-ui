@@ -224,7 +224,7 @@ export function ExamAttendanceMobile({
                       <div key={schedule.id}>
                         <p className="mb-1 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
                           {schedule.subject_name} · {shortDate(schedule.exam_date)}
-                          {entry.source === "rfid-auto" && <Radio size={12} aria-label="RFID" />}
+                          {entry.source === "rfid-auto" && <Radio size={12} aria-label="Smart Attendance" />}
                         </p>
                         <SegmentedControl<AttendanceStatus>
                           ariaLabel={`${row.student_name} – ${schedule.subject_name}`}

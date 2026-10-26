@@ -22,6 +22,7 @@ import {
 import { PARENT_RELATION_OPTIONS } from "@/constants/students.constants";
 import { ParentsMobileList } from "@/components/parent/ParentsMobileList";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 
 const RELATION_LABEL: Record<string, string> = {
   FATHER: "Father",
@@ -158,9 +159,14 @@ export default function ParentsPage() {
         accessorKey: "phone_number",
         header: "Phone",
         cell: ({ row }) =>
-          row.original.phone_number
-            ? `${row.original.dial_code ?? ""} ${row.original.phone_number}`
-            : "—",
+          row.original.phone_number ? (
+            <span className="inline-flex items-center gap-1">
+              {`${row.original.dial_code ?? ""} ${row.original.phone_number}`}
+              <WhatsAppButton phone={row.original.phone_number} dialCode={row.original.dial_code} />
+            </span>
+          ) : (
+            "—"
+          ),
       },
       {
         accessorKey: "student_name",

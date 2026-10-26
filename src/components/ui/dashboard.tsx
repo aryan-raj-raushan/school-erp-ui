@@ -147,12 +147,16 @@ interface DashboardHeroProps {
   title: string;
   chips?: DashHeroChip[];
   stat?: DashHeroStat | null;
+  compact?: boolean;
 }
 
-export function DashboardHero({ eyebrow, greeting, title, chips = [], stat }: DashboardHeroProps) {
+export function DashboardHero({ eyebrow, greeting, title, chips = [], stat, compact }: DashboardHeroProps) {
   return (
     <div
-      className="relative overflow-hidden rounded-3xl px-5 py-5 md:px-8 md:py-7"
+      className={cn(
+        "relative overflow-hidden rounded-3xl",
+        compact ? "px-5 py-4 md:px-6 md:py-4" : "px-5 py-5 md:px-8 md:py-7",
+      )}
       style={{
         background:
           "linear-gradient(135deg, var(--theme-gradient-from) 0%, var(--theme-gradient-to) 100%)",
@@ -196,16 +200,41 @@ export function DashboardHero({ eyebrow, greeting, title, chips = [], stat }: Da
 }
 
 
-export function KpiGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 md:gap-4">{children}</div>;
+export function KpiGrid({ children, dense }: { children: React.ReactNode; dense?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-3 md:gap-4",
+        dense ? "sm:grid-cols-3 lg:grid-cols-6" : "lg:grid-cols-4",
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
-export function KpiTile({ kpi, loading }: { kpi: DashKpi; loading?: boolean }) {
+export function KpiTile({ kpi, loading, dense }: { kpi: DashKpi; loading?: boolean; dense?: boolean }) {
   const Icon = kpi.icon;
+  if (dense) {
+    return (
+      <Link
+        href={kpi.href}
+        className="group flex min-w-0 items-center gap-3 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-3 transition-colors hover:bg-muted/40"
+      >
+        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", DASH_ACCENT_CLASSES[kpi.accent])}>
+          <Icon size={17} />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-lg font-bold leading-tight">{kpi.value}</span>
+          <span className="block truncate text-[11px] text-muted-foreground">{kpi.label}</span>
+        </span>
+      </Link>
+    );
+  }
   return (
     <Link
       href={kpi.href}
-      className="group flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card p-3.5 transition-all active:scale-[0.98] md:p-5 md:hover:-translate-y-0.5 md:hover:shadow-md"
+      className="group flex min-w-0 flex-col gap-3 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-3.5 transition-all active:scale-[0.98] md:p-5 md:hover:-translate-y-0.5 md:hover:shadow-md"
     >
       <div className="flex items-center justify-between">
         <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl md:h-10 md:w-10", DASH_ACCENT_CLASSES[kpi.accent])}>
@@ -236,7 +265,7 @@ export function QuickActions({ actions }: { actions: DashAction[] }) {
         <Link
           key={a.label}
           href={a.href}
-          className="flex w-[76px] shrink-0 snap-start flex-col items-center gap-2 sm:w-auto sm:flex-row sm:gap-3 sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:p-3.5 sm:transition-colors sm:hover:bg-muted/50"
+          className="flex w-[76px] shrink-0 snap-start flex-col items-center gap-2 sm:w-auto sm:flex-row sm:gap-3 sm:rounded-2xl sm:border sm:border-[var(--dash-border)] sm:bg-[var(--dash-card)] sm:shadow-sm sm:p-3 sm:transition-colors sm:hover:bg-muted/50"
         >
           <span className={cn("flex h-14 w-14 items-center justify-center rounded-2xl transition-transform active:scale-95 sm:h-10 sm:w-10 sm:rounded-xl", DASH_ACCENT_CLASSES[a.accent])}>
             <a.icon size={22} />
@@ -252,15 +281,15 @@ export function QuickActions({ actions }: { actions: DashAction[] }) {
 
 
 const ALERT_TONE: Record<DashAlertTone, string> = {
-  warn: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
-  danger: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20",
-  info: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
+  warn: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/50",
+  danger: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/50",
+  info: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/50",
 };
 
-export function AlertList({ alerts }: { alerts: DashAlert[] }) {
+export function AlertList({ alerts, inline }: { alerts: DashAlert[]; inline?: boolean }) {
   if (alerts.length === 0) return null;
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn("flex flex-col gap-2", inline && "md:grid md:grid-cols-3")}>
       {alerts.map((a) => (
         <Link
           key={a.id}
@@ -292,7 +321,7 @@ export function DashCard({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-w-0 flex-col gap-4 rounded-2xl border border-border bg-card p-4 md:p-5", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-4 md:p-5", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold">{title}</h3>
@@ -359,7 +388,7 @@ function TrendTooltip({ active, payload, label }: { active?: boolean; payload?: 
   );
 }
 
-export function AttendanceTrendCard({ data }: { data: DashTrendPoint[] }) {
+export function AttendanceTrendCard({ data, compact }: { data: DashTrendPoint[]; compact?: boolean }) {
   const rows = data.map((d) => ({ label: d.label, Present: d.present, Absent: d.absent }));
   return (
     <DashCard
@@ -372,7 +401,7 @@ export function AttendanceTrendCard({ data }: { data: DashTrendPoint[] }) {
         </div>
       }
     >
-      <div className="-ml-3 h-[190px] md:h-[240px]">
+      <div className={cn("-ml-3", compact ? "h-[170px] md:h-[190px]" : "h-[190px] md:h-[240px]")}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={rows} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <defs>

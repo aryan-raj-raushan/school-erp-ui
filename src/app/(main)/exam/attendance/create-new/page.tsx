@@ -133,7 +133,7 @@ function MarkAttendanceContent() {
                 variant={ATTENDANCE_BADGE[entry.status]}
                 className="text-xs cursor-pointer select-none"
                 onClick={() => cycleStatus(row.original.student_id, schedule.id)}
-                title={`${entry.status}${entry.source === "rfid-auto" ? " (RFID)" : ""} — click to change`}
+                title={`${entry.status}${entry.source === "rfid-auto" ? " (Smart Attendance)" : ""} — click to change`}
               >
                 {entry.status.charAt(0)}
                 {entry.source === "rfid-auto" && " 📡"}
@@ -197,7 +197,7 @@ function MarkAttendanceContent() {
     <Div type="col" gap="lg">
       <PageHeader
         title="Mark Exam Attendance"
-        subtitle="Click any cell to cycle: Present → Absent → Late. 📡 = RFID auto-marked."
+        subtitle="Click any cell to cycle: Present → Absent → Late. 📡 = Smart Attendance auto-marked."
         actions={
           <Div type="row" gap="sm">
             {canDownloadCard && (

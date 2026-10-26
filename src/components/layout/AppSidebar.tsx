@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { GraduationCap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSidebar } from "@/components/ui/sidebar";
 import { NavMain } from "./NavMain";
 import { NavSecondary } from "./NavSecondary";
@@ -28,9 +29,23 @@ interface SidebarPanelProps {
 
 function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps) {
   const brand = useSchoolLogo();
+  const router = useRouter();
+
+  const keepInSameTab = (e: React.MouseEvent) => {
+    const link = (e.target as Element).closest("a[href]") as HTMLAnchorElement | null;
+    if (!link || !(e.button === 1 || e.ctrlKey || e.metaKey || e.shiftKey)) return;
+    e.preventDefault();
+    router.push(link.getAttribute("href") ?? "/");
+  };
+
   return (
     <div
       data-sidebar-collapsed={isCollapsed}
+      onClickCapture={keepInSameTab}
+      onAuxClickCapture={keepInSameTab}
+      onMouseDownCapture={(e) => {
+        if (e.button === 1) e.preventDefault();
+      }}
       style={{
         background: "var(--glass-bg)",
         backdropFilter: "blur(28px) saturate(200%)",

@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/ui/theme-provider';
 import './globals.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ChatPatternBackground } from '@/components/background/chat-pattern-background';
+import { InputGuards } from '@/components/layout/InputGuards';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-full font-[family-name:var(--font-inter,var(--font-geist))]">
+        <InputGuards />
         <ThemeProvider>
           <TooltipProvider>
             <ChatPatternBackground>{children}</ChatPatternBackground>

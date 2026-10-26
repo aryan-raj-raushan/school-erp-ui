@@ -20,7 +20,12 @@ export const ENDPOINTS = {
     list: "/schools",
     byId: (id: string) => `/schools/${id}`,
     admin: (id: string) => `/schools/${id}/admin`,
+    resetAdminPassword: (id: string) => `/schools/${id}/admin/reset-password`,
     profile: "/schools/profile",
+  },
+  backup: {
+    own: "/backup",
+    school: (id: string) => `/backup/schools/${id}`,
   },
   companyUsers: {
     list: "/company-users",
@@ -184,6 +189,7 @@ export const ENDPOINTS = {
   uploads: {
     image: "/uploads/image",
     document: "/uploads/document",
+    file: "/uploads/file",
     delete: "/uploads",
   },
   homework: {
@@ -317,6 +323,7 @@ export const ENDPOINTS = {
   },
   student: {
     list: "/students",
+    nextNumbers: "/students/next-numbers",
     byId: (id: string) => `/students/${id}`,
     enable: (id: string) => `/students/${id}/enable`,
     disable: (id: string) => `/students/${id}/disable`,

@@ -14,9 +14,17 @@ export const studentAcademicInfoSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
   class_id: z.string().min(1, 'Class is required'),
   section_id: z.string().optional(),
-  admission_number: z.string().min(1, 'Admission number is required').max(50),
-  registration_number: z.string().max(50).optional(),
-  roll_number: z.string().max(20).optional(),
+  admission_number: z.string().max(50).optional(),
+  registration_number: z
+    .string()
+    .trim()
+    .regex(/^([A-Za-z0-9][A-Za-z0-9/-]{0,29})?$/, 'Use letters, digits, "/" or "-" only (max 30)')
+    .optional(),
+  roll_number: z
+    .string()
+    .trim()
+    .regex(/^(\d{1,4})?$/, 'Roll number must be a number (up to 4 digits)')
+    .optional(),
   joining_date: z.string().optional(),
 });
 
@@ -73,15 +81,7 @@ export const studentParentSchema = z
     can_pickup: z.boolean().optional(),
     has_login: z.boolean().optional(),
     enable_login: z.boolean().optional(),
-    password: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.enable_login && !data.has_login && !data.password?.trim()) {
-      ctx.addIssue({ code: 'custom', message: 'Password is required to enable login', path: ['password'] });
-    }
-    if (data.enable_login && data.password?.trim() && data.password.trim().length < 6) {
-      ctx.addIssue({ code: 'custom', message: 'Password must be at least 6 characters', path: ['password'] });
-    }
+    reset_password: z.boolean().optional(),
   });
 
 export const studentDocumentSchema = z.object({
@@ -91,7 +91,7 @@ export const studentDocumentSchema = z.object({
     'PREVIOUS_MARKSHEET', 'MERIT_CERTIFICATE', 'REPORT', 'OTHER',
   ]),
   file_type: z.enum(['PDF', 'IMAGE']),
-  document_link: z.string().min(1, 'Document link is required'),
+  document_link: z.string().min(1, 'Please upload the document file'),
   original_filename: z.string().optional(),
   remarks: z.string().max(300).optional(),
 });

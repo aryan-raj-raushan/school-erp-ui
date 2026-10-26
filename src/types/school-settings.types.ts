@@ -11,6 +11,10 @@ export interface SchoolSettings {
   two_half_days_equal_leave: boolean;
   auto_notify_parent_on_absent: boolean;
   conflict_resolution_mode: ConflictResolutionMode;
+  admission_prefix: string | null;
+  admission_include_year: boolean;
+  admission_number_digits: number;
+  admission_start_number: number;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +58,10 @@ export interface UpdateSchoolSettingsPayload {
   two_half_days_equal_leave?: boolean;
   auto_notify_parent_on_absent?: boolean;
   conflict_resolution_mode?: ConflictResolutionMode;
+  admission_prefix?: string;
+  admission_include_year?: boolean;
+  admission_number_digits?: number;
+  admission_start_number?: number;
 }
 
 export interface CreateSchoolTimingPayload {
