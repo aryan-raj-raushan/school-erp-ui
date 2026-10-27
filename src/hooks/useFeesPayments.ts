@@ -15,7 +15,9 @@ import {
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
 import { StudentsService } from '@/services/students.service';
-import type { Student, Parent } from '@/types';
+import { StudentsService as StudentProfilesService } from '@/services/students-v2.service';
+import type { Student } from '@/types';
+import type { StudentParent } from '@/types/students.types';
 import { type PaymentsTab } from '@/constants/fee-payments.constants';
 
 interface FinanceAccount {
@@ -70,7 +72,7 @@ export function useFeesPayments() {
   const [createStudents, setCreateStudents] = useState<Student[]>([]);
   const [loadingCreateStudents, setLoadingCreateStudents] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [studentParents, setStudentParents] = useState<Parent[]>([]);
+  const [studentParents, setStudentParents] = useState<StudentParent[]>([]);
   const [studentStructure, setStudentStructure] = useState<FeeClassStructureItem[]>([]);
   const [loadingStudentStructure, setLoadingStudentStructure] = useState(false);
   const [generatingBills, setGeneratingBills] = useState(false);
@@ -147,7 +149,7 @@ export function useFeesPayments() {
 
     const [billsRes, parentsRes, structRes] = await Promise.allSettled([
       feeBillService.studentBills(student.id, academicYearId),
-      StudentsService.getParents(student.id),
+      StudentProfilesService.getById(student.id),
       feePlanId && classId
         ? feeClassStructureService.get({ academic_year_id: academicYearId, fee_plan_id: feePlanId, class_id: classId })
         : Promise.resolve(null),
@@ -158,7 +160,7 @@ export function useFeesPayments() {
     } else { toast.error('Failed to load student bills'); }
 
     if (parentsRes.status === 'fulfilled') {
-      setStudentParents((parentsRes.value as any).data ?? parentsRes.value);
+      setStudentParents(parentsRes.value.parents ?? []);
     }
 
     if (structRes.status === 'fulfilled' && structRes.value) {

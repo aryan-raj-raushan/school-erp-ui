@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { StaffAttendanceService, type StaffAttendanceRecord, type StaffMember } from '@/services/staff-attendance.service';
+import { toLocalISODate } from '@/lib/time.utils';
+import { saveBlob } from '@/lib/save-blob';
 
 export type StaffReportTab = 'daily' | 'monthly' | 'history';
 
@@ -13,13 +15,12 @@ export interface StaffDailyReport {
 }
 
 function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  return toLocalISODate(new Date());
 }
 
 function firstOfMonthISO() {
   const d = new Date();
-  d.setDate(1);
-  return d.toISOString().split('T')[0];
+  return toLocalISODate(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 
 function currentMonth() {
@@ -69,7 +70,7 @@ export function useStaffAttendanceReports() {
     setIsLoading(true);
     try {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+      const endDate = toLocalISODate(new Date(year, month, 0));
       const data = await StaffAttendanceService.getDateRange(startDate, endDate);
       setMonthlyRecords(data);
     } catch {
@@ -91,12 +92,7 @@ export function useStaffAttendanceReports() {
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `staff_attendance_${exportStartDate}_to_${exportEndDate}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      saveBlob(blob, `staff_attendance_${exportStartDate}_to_${exportEndDate}.xlsx`);
       toast.success('Staff attendance exported successfully');
     } catch {
       toast.error('Failed to export attendance');

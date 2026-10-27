@@ -56,10 +56,7 @@ export const StaffAttendanceService = {
     role?: string;
     format?: 'xlsx' | 'csv';
   }): Promise<ArrayBuffer> {
-    const res = await apiGateway.get<ArrayBuffer>(ENDPOINTS.staffAttendance.export, {
-      params: filters,
-      responseType: 'arraybuffer',
-    });
-    return res.data;
+    const response = await apiGateway.axiosInstance.get(ENDPOINTS.staffAttendance.export, { params: filters });
+    return response.data as ArrayBuffer;
   },
 };

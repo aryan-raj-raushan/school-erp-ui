@@ -55,12 +55,6 @@ export interface SchoolSignupPayload {
   password: string;
 }
 
-export interface SetupPasswordPayload {
-  setup_token: string;
-  password: string;
-  confirm_password: string;
-}
-
 export interface ChangePasswordPayload {
   change_token: string;
   password: string;
@@ -73,21 +67,16 @@ export interface LoginUnifiedPayload {
   password: string;
 }
 
-export interface PasswordSetupRequired {
-  needs_password_setup: true;
-  setup_token: string;
-}
-
 export interface PasswordChangeRequired {
   must_change_password: true;
   change_token: string;
   context: 'SCHOOL' | 'PARENT';
 }
 
-export type LoginOrSetupResult = LoginResult | PasswordSetupRequired | PasswordChangeRequired;
+export type LoginOrChangeResult = LoginResult | PasswordChangeRequired;
 export type LoginParentResult = LoginResult | PasswordChangeRequired;
 
-export function isLoginResult(result: LoginOrSetupResult): result is LoginResult {
+export function isLoginResult(result: LoginOrChangeResult): result is LoginResult {
   return 'accessToken' in result;
 }
 
@@ -152,12 +141,6 @@ export const AuthService = {
     return res.data;
   },
 
-  async setupPassword(payload: SetupPasswordPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.setupPassword, payload, { skipAuth: true, skipRefresh: true });
-    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
-    return res.data;
-  },
-
   async changePassword(payload: ChangePasswordPayload): Promise<LoginResult> {
     const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.changePassword, payload, { skipAuth: true, skipRefresh: true });
     TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
@@ -170,8 +153,8 @@ export const AuthService = {
     return res.data;
   },
 
-  async loginUnified(payload: LoginUnifiedPayload): Promise<LoginOrSetupResult> {
-    const res = await apiGateway.post<LoginOrSetupResult>(ENDPOINTS.auth.login, payload, { skipAuth: true, skipRefresh: true });
+  async loginUnified(payload: LoginUnifiedPayload): Promise<LoginOrChangeResult> {
+    const res = await apiGateway.post<LoginOrChangeResult>(ENDPOINTS.auth.login, payload, { skipAuth: true, skipRefresh: true });
     if (isLoginResult(res.data)) {
       const context = res.data.user.context;
       TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, context);

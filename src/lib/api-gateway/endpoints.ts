@@ -6,7 +6,6 @@ export const ENDPOINTS = {
     parentLogin: "/auth/parent/login",
     schoolSignup: "/auth/school/signup",
     login: "/auth/login",
-    setupPassword: "/auth/school/setup-password",
     changePassword: "/auth/school/change-password",
     parentChangePassword: "/auth/parent/change-password",
     refresh: "/auth/refresh",
@@ -78,13 +77,6 @@ export const ENDPOINTS = {
   },
   students: {
     list: "/students",
-    byId: (id: string) => `/students/${id}`,
-    parents: (studentId: string) => `/students/${studentId}/parents`,
-    parentById: (studentId: string, parentId: string) =>
-      `/students/${studentId}/parents/${parentId}`,
-    documents: (studentId: string) => `/students/${studentId}/documents`,
-    documentById: (studentId: string, docId: string) =>
-      `/students/${studentId}/documents/${docId}`,
   },
   subscriptions: {
     list: "/subscriptions",

@@ -96,10 +96,6 @@ export function useAuth() {
     try {
       const result = await AuthService.loginUnified(payload);
 
-      if ('needs_password_setup' in result) {
-        router.replace(`${ROUTES.setupPassword}?token=${result.setup_token}`);
-        return result;
-      }
       if ('must_change_password' in result) {
         const ctxSuffix = result.context === AuthContext.PARENT ? '&ctx=parent' : '';
         router.replace(`${ROUTES.changePassword}?token=${result.change_token}${ctxSuffix}`);

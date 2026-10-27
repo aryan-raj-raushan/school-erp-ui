@@ -56,20 +56,6 @@ export const schoolSignupSchema = z.object({
     .regex(strongPasswordRegex, 'Password must include uppercase, lowercase, number and special character'),
 });
 
-export const setupPasswordSchema = z
-  .object({
-    setup_token: z.string().min(1, 'Setup token is required'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(strongPasswordRegex, 'Password must include uppercase, lowercase, number and special character'),
-    confirm_password: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: 'Passwords do not match',
-    path: ['confirm_password'],
-  });
-
 export const changePasswordSchema = z
   .object({
     change_token: z.string().min(1, 'Change token is required'),
@@ -85,5 +71,4 @@ export const changePasswordSchema = z
   });
 
 export type SchoolSignupFormValues = z.infer<typeof schoolSignupSchema>;
-export type SetupPasswordFormValues = z.infer<typeof setupPasswordSchema>;
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

@@ -15,7 +15,6 @@ export const ROUTES = {
   root: '/',
   login: '/login',
   signup: '/signup',
-  setupPassword: '/setup-password',
   changePassword: '/change-password',
   privacyPolicy: '/privacy-policy',
   unauthorized: '/unauthorized',

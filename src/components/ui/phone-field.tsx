@@ -15,6 +15,15 @@ interface PhoneFieldProps {
   className?: string;
 }
 
+const PHONE_DIGITS = 10;
+
+export function normalizePhoneInput(raw: string): string {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.length === PHONE_DIGITS + 2 && digits.startsWith('91')) digits = digits.slice(2);
+  if (digits.length === PHONE_DIGITS + 1 && digits.startsWith('0')) digits = digits.slice(1);
+  return digits.slice(0, PHONE_DIGITS);
+}
+
 /** Fixed dial code + phone number in a single bordered box — used anywhere a phone number is collected. */
 export function PhoneField({
   label = 'Phone',
@@ -41,7 +50,13 @@ export function PhoneField({
         <input type="hidden" {...dialCodeProps} />
         <input
           {...phoneProps}
+          onChange={(e) => {
+            e.target.value = normalizePhoneInput(e.target.value);
+            return phoneProps.onChange(e);
+          }}
           type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
           placeholder="Phone number"
           disabled={disabled}
           className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed"
