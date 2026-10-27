@@ -968,6 +968,7 @@ export interface OneTimeCharge {
   charge_type: OneTimeChargeType;
   description?: string | null;
   amount: string;
+  quantity: number;
   status: 'PENDING' | 'INVOICED';
   created_by?: string | null;
   created_at: string;

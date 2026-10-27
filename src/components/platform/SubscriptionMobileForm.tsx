@@ -47,7 +47,7 @@ const STEPS: ReadonlyArray<FormStep<SubscriptionFormValues>> = [
   {
     id: "term",
     label: "Term",
-    fields: ["max_students", "start_date", "end_date", "auto_renew"],
+    fields: ["max_students", "start_date", "end_date", "auto_renew", "is_trial", "trial_end_date"],
   },
   {
     id: "policy",
@@ -87,6 +87,7 @@ export function SubscriptionMobileForm({
   const billingModel = watch("billing_model");
   const restrictionMode = watch("restriction_mode");
   const autoRenew = watch("auto_renew");
+  const isTrial = watch("is_trial");
   const restrictedResources = watch("restricted_resources") ?? [];
   const paymentMethods = watch("payment_methods_allowed") ?? [];
 
@@ -200,6 +201,20 @@ export function SubscriptionMobileForm({
             checked={!!autoRenew}
             onChange={(value) => setValue("auto_renew", value, { shouldDirty: true })}
           />
+          <ToggleRow
+            label={F.trial}
+            description={isTrial ? F.trialHint : undefined}
+            checked={!!isTrial}
+            onChange={(value) => setValue("is_trial", value, { shouldDirty: true })}
+          />
+          {isTrial && (
+            <MobileTextField
+              label={F.trialEndDate}
+              type="date"
+              error={errors.trial_end_date?.message}
+              {...register("trial_end_date")}
+            />
+          )}
         </FormGroup>
       </StepPanel>
 

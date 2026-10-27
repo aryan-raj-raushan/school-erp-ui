@@ -35,7 +35,6 @@ export function useSchoolProfile() {
       syncBrand(data);
       setForm({
         name: data.name,
-        code: data.code ?? '',
         udise_code: data.udise_code ?? '',
         affiliation_number: data.affiliation_number ?? '',
         established_year: data.established_year ?? undefined,

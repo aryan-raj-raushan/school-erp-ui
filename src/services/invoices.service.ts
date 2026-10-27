@@ -68,6 +68,13 @@ export const InvoicesService = {
     return res.data;
   },
 
+  async listOneTimeCharges(
+    filters: { school_id?: string; status?: OneTimeCharge['status']; page?: number; limit?: number } = {},
+  ): Promise<{ items: OneTimeCharge[]; pagination: PaginationMeta }> {
+    const res = await apiGateway.get<OneTimeCharge[]>(ENDPOINTS.oneTimeCharges.list, { params: filters });
+    return { items: res.data, pagination: res.pagination! };
+  },
+
   async createOneTimeCharge(payload: CreateOneTimeChargePayload): Promise<OneTimeCharge> {
     const res = await apiGateway.post<OneTimeCharge>(ENDPOINTS.oneTimeCharges.list, payload);
     return res.data;

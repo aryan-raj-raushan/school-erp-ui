@@ -25,7 +25,7 @@ import { SchoolProfileMobileForm } from '@/components/settings/SchoolProfileMobi
 
 export default function SchoolProfilePage() {
   const isMobile = useIsMobile();
-  const { form, isLoading, isSaving, updateField, save, uploadLogo } = useSchoolProfile();
+  const { school, form, isLoading, isSaving, updateField, save, uploadLogo } = useSchoolProfile();
 
   if (isLoading) {
     return (
@@ -40,6 +40,7 @@ export default function SchoolProfilePage() {
   if (isMobile) {
     return (
       <SchoolProfileMobileForm
+        schoolCode={school?.code ?? ''}
         form={form}
         updateField={updateField}
         isSaving={isSaving}
@@ -78,11 +79,7 @@ export default function SchoolProfilePage() {
               />
             </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.code}>
-              <Input
-                value={form.code ?? ''}
-                onChange={(e) => updateField('code', e.target.value)}
-                placeholder="DPS"
-              />
+              <Input value={school?.code ?? ''} disabled readOnly />
             </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.udise_code}>
               <Input

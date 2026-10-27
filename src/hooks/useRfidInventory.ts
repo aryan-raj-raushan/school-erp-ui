@@ -45,7 +45,10 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
 
   async function handleCreateSubmit(values: CreateRfidDevicePayload) {
     try {
-      const device = await RfidInventoryService.create(values);
+      const payload = Object.fromEntries(
+        Object.entries(values).filter(([, v]) => v !== '' && v != null),
+      ) as CreateRfidDevicePayload;
+      const device = await RfidInventoryService.create(payload);
       toast.success(`${device.device_identifier} added`);
       await fetchDevices();
       setShowCreateModal(false);
@@ -94,6 +97,16 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
     }
   }
 
+  async function deleteDevice(device: RfidDevice) {
+    try {
+      await RfidInventoryService.remove(device.id);
+      toast.success(`${device.device_identifier} deleted`);
+      await fetchDevices();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete device');
+    }
+  }
+
   function openCreateModal() {
     createForm.reset();
     setShowCreateModal(true);
@@ -130,6 +143,6 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
     assignForm,
     handleAssignSubmit: assignForm.handleSubmit(handleAssignSubmit),
     isAssigning: assignForm.formState.isSubmitting,
-    installDevice, returnDevice,
+    installDevice, returnDevice, deleteDevice,
   };
 }

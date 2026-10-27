@@ -56,4 +56,8 @@ export const RfidInventoryService = {
     const res = await apiGateway.post<RfidDevice>(ENDPOINTS.rfidInventory.return(id));
     return res.data;
   },
+
+  async remove(id: string): Promise<void> {
+    await apiGateway.delete(ENDPOINTS.rfidInventory.byId(id));
+  },
 };

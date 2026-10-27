@@ -11,12 +11,17 @@ import { AcademicYearsService } from '@/services/academic-years.service';
 import { ALL_SECTION_NAMES, ROUTES } from '@/constants';
 import type { AcademicYear, Section } from '@/types';
 
+const optionalPositiveInt = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : Number(v)),
+  z.number().int().min(1).optional(),
+);
+
 const editClassSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
   name: z.string().min(1, 'Name is required').max(50),
   class_type: z.string().max(50).optional(),
-  class_sequence: z.coerce.number().int().min(1).optional(),
-  no_of_sessions: z.coerce.number().int().min(1).optional(),
+  class_sequence: optionalPositiveInt,
+  no_of_sessions: optionalPositiveInt,
   class_code: z.string().max(50).optional(),
   sections: z.array(z.string()).min(1, 'Select at least one section'),
   description: z.string().max(255).optional(),

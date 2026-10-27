@@ -23,6 +23,7 @@ export interface CreateSubscriptionPayload {
   start_date?: string;
   end_date?: string;
   is_trial?: boolean;
+  trial_end_date?: string;
   auto_renew?: boolean;
   grace_period_days?: number;
   restriction_mode?: RestrictionMode;

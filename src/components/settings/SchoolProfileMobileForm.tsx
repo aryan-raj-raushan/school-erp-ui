@@ -29,6 +29,7 @@ const STEPS = [
 ] as const;
 
 export interface SchoolProfileMobileFormProps {
+  schoolCode: string;
   form: UpdateSchoolProfilePayload;
   updateField: <K extends keyof UpdateSchoolProfilePayload>(
     key: K,
@@ -40,6 +41,7 @@ export interface SchoolProfileMobileFormProps {
 }
 
 export function SchoolProfileMobileForm({
+  schoolCode,
   form,
   updateField,
   isSaving,
@@ -101,9 +103,9 @@ export function SchoolProfileMobileForm({
           <FieldRow>
             <MobileTextField
               label="School code"
-              placeholder="DPS"
-              value={form.code ?? ""}
-              onChange={(e) => updateField("code", e.target.value)}
+              value={schoolCode}
+              disabled
+              readOnly
             />
             <MobileTextField
               label="Established"

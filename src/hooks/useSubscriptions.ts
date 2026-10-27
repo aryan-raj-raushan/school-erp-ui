@@ -71,6 +71,7 @@ export function useSubscriptions(schoolId?: string) {
       ...(values.start_date && { start_date: values.start_date }),
       ...(values.end_date && { end_date: values.end_date }),
       is_trial: values.is_trial,
+      ...(values.is_trial && values.trial_end_date && { trial_end_date: values.trial_end_date }),
       auto_renew: values.auto_renew,
       ...(values.grace_period_days != null && { grace_period_days: values.grace_period_days }),
       restriction_mode: values.restriction_mode,

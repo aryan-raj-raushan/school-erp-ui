@@ -243,18 +243,18 @@ export default function SchoolsPage() {
                 </Div>
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.location}</P>
-                  <FormField label={CREATE_SCHOOL_FORM.labels.address}>
+                  <FormField label={CREATE_SCHOOL_FORM.labels.address} error={createForm.formState.errors.address?.message}>
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.address} {...createForm.register('address')} />
                   </FormField>
                   <Div type="grid" cols={3} gap="md">
-                    <FormField label={CREATE_SCHOOL_FORM.labels.city}>
+                    <FormField label={CREATE_SCHOOL_FORM.labels.city} error={createForm.formState.errors.city?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.city} {...createForm.register('city')} />
                     </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.state}>
+                    <FormField label={CREATE_SCHOOL_FORM.labels.state} error={createForm.formState.errors.state?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.state} {...createForm.register('state')} />
                     </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.pincode}>
-                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...createForm.register('pincode')} />
+                    <FormField label={CREATE_SCHOOL_FORM.labels.pincode} error={createForm.formState.errors.pincode?.message}>
+                      <Input inputMode="numeric" maxLength={6} placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...createForm.register('pincode')} />
                     </FormField>
                   </Div>
                 </Div>
@@ -330,18 +330,18 @@ export default function SchoolsPage() {
                 </Div>
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.location}</P>
-                  <FormField label={CREATE_SCHOOL_FORM.labels.address}>
+                  <FormField label={CREATE_SCHOOL_FORM.labels.address} error={editForm.formState.errors.address?.message}>
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.address} {...editForm.register('address')} />
                   </FormField>
                   <Div type="grid" cols={3} gap="md">
-                    <FormField label={CREATE_SCHOOL_FORM.labels.city}>
+                    <FormField label={CREATE_SCHOOL_FORM.labels.city} error={editForm.formState.errors.city?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.city} {...editForm.register('city')} />
                     </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.state}>
+                    <FormField label={CREATE_SCHOOL_FORM.labels.state} error={editForm.formState.errors.state?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.state} {...editForm.register('state')} />
                     </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.pincode}>
-                      <Input placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...editForm.register('pincode')} />
+                    <FormField label={CREATE_SCHOOL_FORM.labels.pincode} error={editForm.formState.errors.pincode?.message}>
+                      <Input inputMode="numeric" maxLength={6} placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...editForm.register('pincode')} />
                     </FormField>
                   </Div>
                 </Div>

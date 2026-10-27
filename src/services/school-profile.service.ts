@@ -4,7 +4,6 @@ import type { School } from '@/types';
 
 export interface UpdateSchoolProfilePayload {
   name?: string;
-  code?: string;
   contact_number?: string;
   dial_code?: string;
   email?: string;

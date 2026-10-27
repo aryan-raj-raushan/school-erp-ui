@@ -12,7 +12,7 @@ import {
 } from '@/services/invoices.service';
 import { SubscriptionsService } from '@/services/subscriptions.service';
 import { PaymentsService } from '@/services/payments.service';
-import type { Invoice, InvoiceWithLineItems, PaginationMeta, Subscription, OneTimeChargeType, InvoicePayment } from '@/types';
+import type { Invoice, InvoiceWithLineItems, PaginationMeta, Subscription, OneTimeCharge, OneTimeChargeType, InvoicePayment } from '@/types';
 
 interface GenerateInvoiceFormValues {
   subscription_id: string;
@@ -42,6 +42,9 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
   const [pendingPayments, setPendingPayments] = useState<InvoicePayment[]>([]);
   const [isPendingLoading, setIsPendingLoading] = useState(false);
   const [rejectingPaymentId, setRejectingPaymentId] = useState<string | null>(null);
+  const [oneTimeCharges, setOneTimeCharges] = useState<OneTimeCharge[]>([]);
+  const [chargesPagination, setChargesPagination] = useState<PaginationMeta | null>(null);
+  const [isChargesLoading, setIsChargesLoading] = useState(false);
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showChargeModal, setShowChargeModal] = useState(false);
@@ -67,6 +70,19 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
       setIsLoading(false);
     }
   }, [filters]);
+
+  const fetchOneTimeCharges = useCallback(async () => {
+    setIsChargesLoading(true);
+    try {
+      const result = await InvoicesService.listOneTimeCharges({ limit: 50 });
+      setOneTimeCharges(result.items);
+      setChargesPagination(result.pagination);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load one-time charges');
+    } finally {
+      setIsChargesLoading(false);
+    }
+  }, []);
 
   const fetchActiveSubscriptions = useCallback(async () => {
     try {
@@ -147,7 +163,7 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
         await InvoicesService.createOneTimeCharge(payload);
         toast.success('One-time charge added');
       }
-      await fetchInvoices();
+      await Promise.all([fetchInvoices(), fetchOneTimeCharges()]);
       setShowChargeModal(false);
       chargeForm.reset();
       setSchoolInvoiceOptions([]);
@@ -234,12 +250,14 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
   useEffect(() => { fetchActiveSubscriptions(); }, [fetchActiveSubscriptions]);
   useEffect(() => { fetchPendingPayments(); }, [fetchPendingPayments]);
+  useEffect(() => { fetchOneTimeCharges(); }, [fetchOneTimeCharges]);
 
   return {
     invoices, pagination, filters, isLoading, updateFilters,
     activeSubscriptions,
     pendingPayments, isPendingLoading, approvePayment, rejectPayment,
     rejectingPaymentId, setRejectingPaymentId,
+    oneTimeCharges, chargesPagination, isChargesLoading,
     showGenerateModal,
     openGenerateModal: () => setShowGenerateModal(true),
     closeGenerateModal: () => { setShowGenerateModal(false); generateForm.reset(); setExtraItems([]); },

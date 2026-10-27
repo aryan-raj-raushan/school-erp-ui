@@ -17,4 +17,6 @@ export const REGEX = {
   digitsOnly: /^\d+$/,
   /** Backend-enforced person name: letters, spaces, dots, apostrophes, hyphens */
   personName: /^[A-Za-z][A-Za-z .'-]*$/,
+  /** Backend-enforced Indian pincode: 6 digits, not starting with 0 */
+  pincodeIn: /^[1-9][0-9]{5}$/,
 } as const;

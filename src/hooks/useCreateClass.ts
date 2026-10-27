@@ -6,17 +6,22 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { ClassesService, SectionsService } from '@/services/classes.service';
+import { ClassesService } from '@/services/classes.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ALL_SECTION_NAMES, ROUTES } from '@/constants';
 import type { AcademicYear } from '@/types';
+
+const optionalPositiveInt = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : Number(v)),
+  z.number().int().min(1).optional(),
+);
 
 const createClassSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
   name: z.string().min(1, 'Name is required').max(50),
   class_type: z.string().max(50).optional(),
-  class_sequence: z.coerce.number().int().min(1).optional(),
-  no_of_sessions: z.coerce.number().int().min(1).optional(),
+  class_sequence: optionalPositiveInt,
+  no_of_sessions: optionalPositiveInt,
   class_code: z.string().max(50).optional(),
   sections: z.array(z.string()).min(1, 'Select at least one section'),
   description: z.string().max(255).optional(),
@@ -67,7 +72,6 @@ export function useCreateClass() {
 
   async function createClass(values: CreateClassFormValues) {
     try {
-      const defaultSectionsStr = values.sections.join('');
       const cls = await ClassesService.create({
         name: values.name,
         academic_year_id: values.academic_year_id,
@@ -75,16 +79,10 @@ export function useCreateClass() {
         class_sequence: values.class_sequence,
         no_of_sessions: values.no_of_sessions,
         class_code: values.class_code || undefined,
-        default_sections: defaultSectionsStr,
+        default_sections: values.sections.join(''),
         description: values.description || undefined,
         is_active: values.is_active,
       });
-
-      await Promise.all(
-        values.sections.map((name) =>
-          SectionsService.create({ name, class_id: cls.id }),
-        ),
-      );
 
       toast.success(`Class ${cls.name} created with sections ${values.sections.join(', ')}`);
       router.push(ROUTES.classes);

@@ -65,6 +65,25 @@ export const PAYMENT_METHOD_FORM_OPTIONS = [
   { value: 'RAZORPAY', label: 'Razorpay (Online)' },
 ] as const;
 
+export const ONE_TIME_CHARGES_SECTION = {
+  title: 'One-time Charges',
+  empty: 'No one-time charges yet',
+  table: {
+    school: 'School',
+    type: 'Type',
+    description: 'Description',
+    quantity: 'Qty',
+    amount: 'Amount',
+    status: 'Status',
+    added: 'Added',
+  },
+} as const;
+
+export const ONE_TIME_CHARGE_STATUS_BADGE: Record<string, BadgeVariant> = {
+  PENDING: 'warning',
+  INVOICED: 'success',
+};
+
 export const PENDING_PAYMENTS_SECTION = {
   title: 'Pending Payments',
   empty: 'No payments awaiting verification',

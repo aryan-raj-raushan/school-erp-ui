@@ -30,7 +30,7 @@ export default function SubscriptionsPage() {
     showModal, openModal, closeModal, form, handleSubmit, isSubmitting, toggleArrayValue,
     cancelSubscription,
   } = useSubscriptions();
-  const { schools } = useSchools();
+  const { schools } = useSchools({ limit: 100 });
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
 
@@ -40,6 +40,7 @@ export default function SubscriptionsPage() {
   const restrictedResources = form.watch('restricted_resources') ?? [];
   const paymentMethods = form.watch('payment_methods_allowed') ?? [];
   const autoRenew = form.watch('auto_renew');
+  const isTrial = form.watch('is_trial');
 
   function handleCancelConfirm(id: string) {
     cancelSubscription(id, cancelReason.trim() || undefined);
@@ -102,14 +103,14 @@ export default function SubscriptionsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={SUBSCRIPTION_STATUS_BADGE[sub.status]}>{sub.status}</Badge>
-                    {sub.auto_renew && sub.status === 'ACTIVE' && (
+                    {sub.auto_renew && (sub.status === 'ACTIVE' || sub.status === 'TRIAL') && (
                       <Badge variant="default" className="ml-1">↻</Badge>
                     )}
                   </TableCell>
                   <TableCell>{sub.start_date ? new Date(sub.start_date).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>{sub.end_date ? new Date(sub.end_date).toLocaleDateString() : '—'}</TableCell>
                   <TableCell>
-                    {sub.status !== 'ACTIVE' ? '—' : !isMobile && cancellingId === sub.id ? (
+                    {sub.status !== 'ACTIVE' && sub.status !== 'TRIAL' ? '—' : !isMobile && cancellingId === sub.id ? (
                       <Div type="col" gap="xs">
                         <Input
                           width="sm"
@@ -266,6 +267,23 @@ export default function SubscriptionsPage() {
                 </Div>
                 {autoRenew && (
                   <P color="muted" className="text-xs">{SUBSCRIPTIONS_PAGE.form.autoRenewHint}</P>
+                )}
+                <Div type="row" align="center" gap="xs">
+                  <input
+                    type="checkbox"
+                    id="is-trial"
+                    checked={!!isTrial}
+                    onChange={(e) => form.setValue('is_trial', e.target.checked, { shouldDirty: true })}
+                  />
+                  <CheckboxLabel htmlFor="is-trial">{SUBSCRIPTIONS_PAGE.form.trial}</CheckboxLabel>
+                </Div>
+                {isTrial && (
+                  <FormField label={SUBSCRIPTIONS_PAGE.form.trialEndDate} error={form.formState.errors.trial_end_date?.message}>
+                    <Input type="date" {...form.register('trial_end_date')} />
+                  </FormField>
+                )}
+                {isTrial && (
+                  <P color="muted" className="text-xs">{SUBSCRIPTIONS_PAGE.form.trialHint}</P>
                 )}
               </Div>
 

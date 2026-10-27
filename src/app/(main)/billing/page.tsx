@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BILLING_PAGE, INVOICE_STATUS_BADGE, ONE_TIME_CHARGE_TYPE_OPTIONS, PENDING_PAYMENTS_SECTION } from '@/constants';
+import { BILLING_PAGE, INVOICE_STATUS_BADGE, ONE_TIME_CHARGE_TYPE_OPTIONS, PENDING_PAYMENTS_SECTION, ONE_TIME_CHARGES_SECTION, ONE_TIME_CHARGE_STATUS_BADGE } from '@/constants';
 import { useBilling } from '@/hooks/useBilling';
 import { useSchools } from '@/hooks/useSchools';
-import type { Invoice, InvoicePayment } from '@/types';
+import type { Invoice, InvoicePayment, OneTimeCharge } from '@/types';
 import { Div, P, Button, Input, Table, TableHead, TableHeadRow, TableHeaderCell, TableBody, TableRow, TableCell, FormField, Badge, Spinner, PageHeader, PageCol, ResponsiveSelect, ResponsiveModalContainer, DataTable, type ColumnDef, RowActions, MobileFormSheet } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BillingInvoiceSheet, ReasonSheet } from '@/components/platform/InvoiceMobile';
@@ -26,10 +26,11 @@ export default function BillingPage() {
     schoolInvoiceOptions,
     pendingPayments, isPendingLoading, approvePayment, rejectPayment,
     rejectingPaymentId, setRejectingPaymentId,
+    oneTimeCharges, chargesPagination, isChargesLoading,
     viewingInvoice, isDetailLoading, openInvoice, closeInvoice,
     canAddItems, addItemToInvoice, isAddingItem,
   } = useBilling();
-  const { schools } = useSchools();
+  const { schools } = useSchools({ limit: 100 });
   const [rejectReason, setRejectReason] = useState('');
   const [newItemDescription, setNewItemDescription] = useState('');
   const [newItemAmount, setNewItemAmount] = useState('');
@@ -101,6 +102,55 @@ export default function BillingPage() {
       },
     ],
     [schoolNameById],
+  );
+
+  const chargeTypeLabel = useMemo(
+    () => new Map<string, string>(ONE_TIME_CHARGE_TYPE_OPTIONS.map((o) => [o.value, o.label])),
+    [],
+  );
+
+  const oneTimeChargeColumns = useMemo<ColumnDef<OneTimeCharge>[]>(
+    () => [
+      {
+        id: 'school',
+        header: ONE_TIME_CHARGES_SECTION.table.school,
+        cell: ({ row }) =>
+          schoolNameById.get(row.original.school_id) ?? row.original.school_id.slice(0, 8),
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'charge_type',
+        header: ONE_TIME_CHARGES_SECTION.table.type,
+        cell: ({ row }) => chargeTypeLabel.get(row.original.charge_type) ?? row.original.charge_type,
+      },
+      {
+        accessorKey: 'description',
+        header: ONE_TIME_CHARGES_SECTION.table.description,
+        cell: ({ row }) => row.original.description || '—',
+      },
+      {
+        accessorKey: 'quantity',
+        header: ONE_TIME_CHARGES_SECTION.table.quantity,
+      },
+      {
+        accessorKey: 'amount',
+        header: ONE_TIME_CHARGES_SECTION.table.amount,
+        cell: ({ row }) => `₹${row.original.amount}`,
+      },
+      {
+        accessorKey: 'status',
+        header: ONE_TIME_CHARGES_SECTION.table.status,
+        cell: ({ row }) => (
+          <Badge variant={ONE_TIME_CHARGE_STATUS_BADGE[row.original.status]}>{row.original.status}</Badge>
+        ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: ONE_TIME_CHARGES_SECTION.table.added,
+        cell: ({ row }) => fmtDate(row.original.created_at),
+      },
+    ],
+    [schoolNameById, chargeTypeLabel],
   );
 
   const pendingPaymentColumns = useMemo<ColumnDef<InvoicePayment>[]>(
@@ -210,6 +260,18 @@ export default function BillingPage() {
         pagination={pagination ?? undefined}
         onRowClick={(row) => openInvoice(row.original.id)}
         fillViewport
+      />
+
+      <PageHeader
+        title={ONE_TIME_CHARGES_SECTION.title}
+        subtitle={chargesPagination ? `${chargesPagination.total} charges` : undefined}
+      />
+
+      <DataTable
+        columns={oneTimeChargeColumns}
+        data={oneTimeCharges}
+        isLoading={isChargesLoading}
+        emptyText={ONE_TIME_CHARGES_SECTION.empty}
       />
 
       <PageHeader title={PENDING_PAYMENTS_SECTION.title} />

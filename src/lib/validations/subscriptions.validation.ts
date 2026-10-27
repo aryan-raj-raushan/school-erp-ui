@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { optionalMoneySchema } from './common.validation';
 
-const toOptionalNumber = z.preprocess(
-  (v) => (v === '' || v == null ? undefined : Number(v)),
-  z.number().positive().optional(),
-);
+const optionalWholeNumber = (min: number) =>
+  z.preprocess(
+    (v) => (v === '' || v == null ? undefined : Number(v)),
+    z.number().int('Must be a whole number').min(min, `Must be at least ${min}`).optional(),
+  );
 
 // A ResponsiveSelect that's untouched (or was hidden then never re-selected)
 // submits its native <select>'s default value, which is "" — not undefined.
@@ -31,12 +32,13 @@ const subscriptionFields = {
   amount: optionalMoneySchema,
   price_per_student: optionalMoneySchema,
   currency: z.string().default('INR'),
-  max_students: toOptionalNumber,
+  max_students: optionalWholeNumber(1),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   is_trial: z.boolean().default(false),
+  trial_end_date: z.string().optional(),
   auto_renew: z.boolean().default(false),
-  grace_period_days: toOptionalNumber,
+  grace_period_days: optionalWholeNumber(0),
   restriction_mode: enumWithDefault(z.enum(['NONE', 'SOFT', 'PARTIAL', 'COMPLETE']), 'NONE'),
   restricted_resources: z.array(z.string()).default([]),
   payment_methods_allowed: z.array(z.string()).default([]),
@@ -46,6 +48,12 @@ export const createSubscriptionSchema = z.object(subscriptionFields).superRefine
   const effectiveStart = data.start_date || new Date().toISOString().slice(0, 10);
   if (data.end_date && data.end_date <= effectiveStart) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['end_date'], message: 'End date must be after the start date' });
+  }
+  if (data.is_trial && !data.trial_end_date) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['trial_end_date'], message: 'Trial end date is required' });
+  }
+  if (data.is_trial && data.trial_end_date && data.trial_end_date <= effectiveStart) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['trial_end_date'], message: 'Trial must end after the start date' });
   }
   if (data.plan_id) return;
   if (!data.plan_name) {

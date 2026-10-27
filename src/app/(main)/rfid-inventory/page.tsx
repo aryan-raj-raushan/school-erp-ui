@@ -19,7 +19,7 @@ import {
   RowActions,
   MobileFormSheet,
 } from '@/components/ui';
-import { Undo2, Wrench, UserPlus } from 'lucide-react';
+import { Undo2, Wrench, UserPlus, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 function fmtDate(v?: string | null): string {
@@ -32,11 +32,15 @@ export default function RfidInventoryPage() {
     devices, pagination, filters, isLoading, updateFilters,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     assigningDevice, openAssignModal, closeAssignModal, assignForm, handleAssignSubmit, isAssigning,
-    installDevice, returnDevice,
+    installDevice, returnDevice, deleteDevice,
   } = useRfidInventory();
-  const { schools } = useSchools();
+  const { schools } = useSchools({ limit: 100 });
 
   const schoolNameById = useMemo(() => new Map(schools.map((s) => [s.id, s.name])), [schools]);
+  const assignableSchoolOptions = useMemo(
+    () => schools.filter((s) => s.is_active).map((s) => ({ value: s.id, label: s.name })),
+    [schools],
+  );
   const billable = assignForm.watch('billable');
 
   const columns = useMemo<ColumnDef<RfidDevice>[]>(
@@ -102,13 +106,23 @@ export default function RfidInventoryPage() {
                   hidden: status !== 'ASSIGNED' && status !== 'INSTALLED',
                   onClick: () => returnDevice(row.original),
                 },
+                {
+                  label: 'Delete',
+                  icon: <Trash2 size={14} />,
+                  variant: 'destructive',
+                  hidden: status !== 'IN_STOCK' && status !== 'RETURNED',
+                  confirm: {
+                    description: `Delete device ${row.original.device_identifier}? This cannot be undone.`,
+                  },
+                  onClick: () => deleteDevice(row.original),
+                },
               ]}
             />
           );
         },
       },
     ],
-    [schoolNameById, openAssignModal, installDevice, returnDevice],
+    [schoolNameById, openAssignModal, installDevice, returnDevice, deleteDevice],
   );
 
   return (
@@ -187,7 +201,7 @@ export default function RfidInventoryPage() {
                 </FormField>
                 <Div type="grid" cols={2} gap="md">
                   <FormField label={CREATE_DEVICE_FORM.labels.purchase_date}>
-                    <Input type="date" {...createForm.register('purchase_date')} />
+                    <Input type="date" max={new Date().toISOString().slice(0, 10)} {...createForm.register('purchase_date')} />
                   </FormField>
                   <FormField label={CREATE_DEVICE_FORM.labels.warranty_expiry}>
                     <Input type="date" {...createForm.register('warranty_expiry')} />
@@ -223,7 +237,7 @@ export default function RfidInventoryPage() {
               label: ASSIGN_DEVICE_FORM.labels.school,
               required: true,
               placeholder: 'Select school',
-              options: schools.map((s) => ({ value: s.id, label: s.name })),
+              options: assignableSchoolOptions,
             },
             { kind: 'toggle', name: 'billable', label: ASSIGN_DEVICE_FORM.labels.billable },
             {
@@ -258,7 +272,7 @@ export default function RfidInventoryPage() {
                   <ResponsiveSelect
                     {...assignForm.register('school_id', { required: true })}
                     customPlaceholder="Select school"
-                    options={schools.map((s) => ({ value: s.id, label: s.name }))}
+                    options={assignableSchoolOptions}
                   />
                 </FormField>
                 <Div type="row" align="center" gap="xs">
