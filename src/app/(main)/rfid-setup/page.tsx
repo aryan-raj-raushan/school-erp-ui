@@ -287,7 +287,7 @@ export default function RfidSetupPage() {
           </Div>
 
           {uniqueEvents.length === 0 ? (
-            <P color="muted">No taps received yet. Tap a card then click Refresh.</P>
+            <P color="muted">No taps received yet. Tap a card on a reader mapped to your school, then click Refresh.</P>
           ) : (
             <Div type="col" gap="sm">
               {uniqueEvents.map((event) => (

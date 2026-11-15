@@ -1,17 +1,21 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileSpreadsheet } from 'lucide-react';
 import {
   Div, Button, Span, P, FormField, Input,
   PageHeader, PageCol,
   Badge, Spinner,
   ResponsiveSelect, ResponsiveModalContainer,
   DataTable, type ColumnDef, RowActions,
+  BulkImportDialog,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFinanceSetup, FINANCE_SETUP_TABS } from '@/hooks/useFinanceSetup';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useBulkImport } from '@/hooks/useBulkImport';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/constants/permissions.registry';
 import { AccountSheet, HeadSheet } from '@/components/finance/FinanceSetupSheets';
 
 export default function FinanceSetupPage() {
@@ -28,7 +32,13 @@ export default function FinanceSetupPage() {
     deleteHead,
     openAddHead, openEditHead, closeHeadModal, handleHeadSubmit,
     submitting, ACCOUNT_TYPES, HEAD_TYPES,
+    refetchAccounts, refetchHeads,
   } = useFinanceSetup();
+  const { hasPermission } = usePermissions();
+  const canImport = hasPermission(PERMISSIONS.finance.create);
+  const accountImport = useBulkImport('finance-accounts', { title: 'Finance Accounts', onImported: refetchAccounts });
+  const headImport = useBulkImport('finance-heads', { title: 'Income & Expense Heads', onImported: refetchHeads });
+  const activeImport = tab === 'accounts' ? accountImport : headImport;
 
   const accountColumns = useMemo<ColumnDef<any>[]>(
     () => [
@@ -165,11 +175,21 @@ export default function FinanceSetupPage() {
         title="Finance Setup"
         subtitle="Manage finance accounts and income/expense heads"
         actions={
-          tab === 'accounts'
-            ? <Button onClick={openAddAccount}><Plus size={16} /> Add Account</Button>
-            : <Button onClick={openAddHead}><Plus size={16} /> Add Head</Button>
+          <Div type="row" gap="sm">
+            {canImport && (
+              <Button variant="outline" onClick={activeImport.open}>
+                <FileSpreadsheet size={16} /> Import Excel
+              </Button>
+            )}
+            {tab === 'accounts'
+              ? <Button onClick={openAddAccount}><Plus size={16} /> Add Account</Button>
+              : <Button onClick={openAddHead}><Plus size={16} /> Add Head</Button>}
+          </Div>
         }
       />
+
+      <BulkImportDialog controller={accountImport} />
+      <BulkImportDialog controller={headImport} />
 
       <Tabs options={FINANCE_SETUP_TABS} value={tab} onChange={setTab} />
 

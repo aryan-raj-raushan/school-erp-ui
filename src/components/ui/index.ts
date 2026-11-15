@@ -55,3 +55,4 @@ export * from './screen-fab';
 export * from './day-schedule';
 export * from './attendance-roster';
 export * from './link-list';
+export * from './bulk-import-dialog';

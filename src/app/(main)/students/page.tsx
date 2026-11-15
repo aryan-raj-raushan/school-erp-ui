@@ -9,10 +9,14 @@ import {
   CreditCard,
   ToggleLeft,
   ToggleRight,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudentV2";
 import { useStudentFilterConfig } from "@/hooks/useStudentFilterConfig";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { useBulkImport } from "@/hooks/useBulkImport";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/constants/permissions.registry";
 import type { StudentFilters, StudentListItem } from "@/types/students.types";
 import {
   Div,
@@ -26,6 +30,7 @@ import {
   type PageHeaderConfig,
   FilterToolbar,
   RowActions,
+  BulkImportDialog,
 } from "@/components/ui";
 import { StudentMobileList } from "@/components/student/StudentMobileList";
 import {
@@ -45,7 +50,10 @@ function StudentsDesktop() {
     updateFilters,
     deleteStudent,
     toggleEnabled,
+    refetch,
   } = useStudents({ page: 1 });
+  const { hasPermission } = usePermissions();
+  const studentImport = useBulkImport("students", { title: "Students", onImported: refetch });
 
   const { filterFields, filterValues, onChange, onClear } =
     useStudentFilterConfig(filters, updateFilters);
@@ -192,6 +200,13 @@ function StudentsDesktop() {
     subtitle: pagination ? `${pagination.total} students` : "",
     actions: [
       {
+        label: STUDENT_PAGE.buttons.importExcel,
+        icon: <FileSpreadsheet size={14} />,
+        variant: "outline",
+        onClick: studentImport.open,
+        hidden: !hasPermission(PERMISSIONS.students.create),
+      },
+      {
         label: STUDENT_PAGE.buttons.addStudent,
         icon: <Plus size={14} />,
         onClick: () => router.push(STUDENT_ROUTES.createNew),
@@ -219,6 +234,8 @@ function StudentsDesktop() {
         pagination={pagination ?? undefined}
         fillViewport
       />
+
+      <BulkImportDialog controller={studentImport} />
     </PageCol>
   );
 }

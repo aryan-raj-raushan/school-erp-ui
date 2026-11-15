@@ -32,6 +32,22 @@ export const RFID_INVENTORY_PAGE = {
     school: 'Assigned School',
     installDate: 'Installation Date',
     warranty: 'Warranty Expiry',
+    lastSeen: 'Last Tap',
+  },
+  discovered: {
+    title: 'Discovered Devices',
+    subtitle: 'Readers that sent taps in the last 30 days but are not mapped to a school. Their unknown card taps are hidden from every school until mapped.',
+    empty: 'No unmapped devices have sent taps',
+    refresh: 'Refresh',
+    table: {
+      identifier: 'Device ID',
+      lastSeen: 'Last Tap',
+      taps: 'Taps',
+      lastCard: 'Last Card',
+      inventory: 'Inventory',
+    },
+    notInInventory: 'New',
+    map: 'Map to School',
   },
   actions: {
     assign: 'Assign',
@@ -58,7 +74,7 @@ export const CREATE_DEVICE_FORM = {
 } as const;
 
 export const ASSIGN_DEVICE_FORM = {
-  title: 'Assign Device',
+  title: 'Map Device to School',
   labels: {
     school: 'School',
     billable: 'Bill this assignment',

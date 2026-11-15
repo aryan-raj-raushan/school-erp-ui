@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { StaffService, type StaffFilters } from "@/services/staff.service";
 import { RolesService, type Role as ApiRole } from "@/services/roles.service";
 import { ROUTES } from "@/constants";
 import { Role } from "@/types";
-import type { Staff, PaginationMeta, BulkImportJob } from "@/types";
+import type { Staff, PaginationMeta } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
 
 export function useStaffsPage(initialFilters: StaffFilters = {}) {
@@ -19,11 +19,7 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<StaffFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
   const [roles, setRoles] = useState<ApiRole[]>([]);
-  const [bulkJob, setBulkJob] = useState<BulkImportJob | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const bulkFileRef = useRef<HTMLInputElement>(null);
 
   const fetchStaff = useCallback(
     async (overrideFilters?: StaffFilters) => {
@@ -84,63 +80,6 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     }
   }
 
-  async function downloadTemplate() {
-    try {
-      const blob = await StaffService.downloadBulkTemplate();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "staff-import-template.xlsx";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to download template",
-      );
-    }
-  }
-
-  async function bulkImport() {
-    const file = bulkFileRef.current?.files?.[0];
-    if (!file) {
-      toast.error("Select a file first");
-      return;
-    }
-    setIsImporting(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const { jobId } = await StaffService.bulkImport(formData);
-      toast.success(`Import started — Job ID: ${jobId}`);
-      setBulkJob({ jobId, status: "PENDING" });
-      if (bulkFileRef.current) bulkFileRef.current.value = "";
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Bulk import failed");
-    } finally {
-      setIsImporting(false);
-    }
-  }
-
-  async function checkBulkStatus() {
-    if (!bulkJob?.jobId) return;
-    try {
-      const job = await StaffService.getBulkStatus(bulkJob.jobId);
-      setBulkJob(job);
-      if (job.status === "COMPLETED") {
-        toast.success(`Import complete — ${job.processed ?? 0} processed`);
-        await fetchStaff();
-        setShowBulkModal(false);
-        setBulkJob(null);
-      } else if (job.status === "FAILED") {
-        toast.error("Import failed");
-      }
-    } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to check status",
-      );
-    }
-  }
-
   function updateFilters(next: Partial<StaffFilters>) {
     setFilters((prev) => ({ ...prev, ...next }));
   }
@@ -180,18 +119,6 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     navigateToNew,
     navigateToView,
     navigateToEdit,
-    showBulkModal,
-    openBulkModal: () => setShowBulkModal(true),
-    closeBulkModal: () => {
-      setShowBulkModal(false);
-      setBulkJob(null);
-    },
-    bulkJob,
-    bulkFileRef,
-    isImporting,
-    bulkImport,
-    checkBulkStatus,
-    downloadTemplate,
     isAdmin,
     roles,
   };

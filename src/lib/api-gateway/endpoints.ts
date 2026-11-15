@@ -111,6 +111,8 @@ export const ENDPOINTS = {
   },
   rfidInventory: {
     list: "/rfid-inventory",
+    discovered: "/rfid-inventory/discovered",
+    map: "/rfid-inventory/map",
     byId: (id: string) => `/rfid-inventory/${id}`,
     assign: (id: string) => `/rfid-inventory/${id}/assign`,
     install: (id: string) => `/rfid-inventory/${id}/install`,
@@ -161,9 +163,6 @@ export const ENDPOINTS = {
   },
   staff: {
     list: "/staff",
-    bulkTemplate: "/staff/bulk/template",
-    bulkImport: "/staff/bulk/import",
-    bulkStatus: (jobId: string) => `/staff/bulk/status/${jobId}`,
     byId: (id: string) => `/staff/${id}`,
     offboard: (id: string) => `/staff/${id}/offboard`,
     reonboard: (id: string) => `/staff/${id}/reonboard`,
@@ -177,6 +176,13 @@ export const ENDPOINTS = {
   invite: {
     verifyToken: "/invite/verify-token",
     resend: (userId: string) => `/invite/resend/${userId}`,
+  },
+  bulkImport: {
+    template: (entity: string) => `/bulk-import/${entity}/template`,
+    validate: (entity: string) => `/bulk-import/${entity}/validate`,
+    report: (entity: string) => `/bulk-import/${entity}/report`,
+    commit: (entity: string) => `/bulk-import/${entity}/commit`,
+    job: (entity: string, jobId: string) => `/bulk-import/${entity}/jobs/${jobId}`,
   },
   uploads: {
     image: "/uploads/image",

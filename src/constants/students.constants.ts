@@ -17,6 +17,7 @@ export const STUDENT_PAGE = {
   },
   buttons: {
     addStudent: "Add Student",
+    importExcel: "Import Excel",
     export: "Export",
     generateCards: "Generate ID Cards",
     save: "Save",

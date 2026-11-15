@@ -289,5 +289,7 @@ export function useFinanceLedger() {
     profitLoss, loadingPL, plFilters, setPlFilters, loadProfitLoss,
     submitting,
     fmt, fmtDate,
+    refreshAfterExpenseImport: () => Promise.all([fetchExpenses(), loadAccounts()]),
+    refreshAfterIncomeImport: () => Promise.all([fetchIncome(), loadAccounts()]),
   };
 }

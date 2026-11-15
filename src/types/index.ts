@@ -265,19 +265,6 @@ export interface SchoolParent {
   updated_at?: string | null;
 }
 
-// ─── Bulk Import ──────────────────────────────────────────────────────────────
-
-export type BulkImportStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-
-export interface BulkImportJob {
-  jobId: string;
-  status: BulkImportStatus;
-  total?: number;
-  processed?: number;
-  failed?: number;
-  errors?: string[];
-}
-
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 export type AttendanceStatus =
@@ -956,9 +943,19 @@ export interface RfidDevice {
   installation_date?: string | null;
   warranty_expiry?: string | null;
   notes?: string | null;
+  last_seen_at?: string | null;
   created_by?: string | null;
   created_at: string;
   updated_at?: string | null;
+}
+
+export interface DiscoveredRfidDevice {
+  device_identifier: string;
+  tap_count: number;
+  last_seen_at: string;
+  last_card: string;
+  inventory_id: string | null;
+  status: RfidDeviceStatus | null;
 }
 
 export interface OneTimeCharge {

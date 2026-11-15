@@ -1,6 +1,8 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { PaginationMeta, RfidDevice, RfidDeviceStatus, OneTimeChargeType } from '@/types';
+import type {
+  PaginationMeta, RfidDevice, RfidDeviceStatus, OneTimeChargeType, DiscoveredRfidDevice,
+} from '@/types';
 
 export interface RfidDeviceFilters {
   page?: number;
@@ -31,10 +33,24 @@ export interface AssignRfidDevicePayload {
   charge_amount?: number;
 }
 
+export interface MapRfidDevicePayload extends AssignRfidDevicePayload {
+  device_identifier: string;
+}
+
 export const RfidInventoryService = {
   async list(filters: RfidDeviceFilters = {}): Promise<PaginatedRfidDevices> {
     const res = await apiGateway.get<RfidDevice[]>(ENDPOINTS.rfidInventory.list, { params: filters });
     return { items: res.data, pagination: res.pagination! };
+  },
+
+  async discovered(): Promise<DiscoveredRfidDevice[]> {
+    const res = await apiGateway.get<DiscoveredRfidDevice[]>(ENDPOINTS.rfidInventory.discovered);
+    return res.data ?? [];
+  },
+
+  async map(payload: MapRfidDevicePayload): Promise<RfidDevice> {
+    const res = await apiGateway.post<RfidDevice>(ENDPOINTS.rfidInventory.map, payload);
+    return res.data;
   },
 
   async create(payload: CreateRfidDevicePayload): Promise<RfidDevice> {

@@ -9,7 +9,12 @@ import {
   type CreateRfidDevicePayload,
   type AssignRfidDevicePayload,
 } from '@/services/rfid-inventory.service';
-import type { PaginationMeta, RfidDevice, OneTimeChargeType } from '@/types';
+import type { PaginationMeta, RfidDevice, OneTimeChargeType, DiscoveredRfidDevice } from '@/types';
+
+interface AssignTarget {
+  id: string | null;
+  device_identifier: string;
+}
 
 interface AssignFormValues {
   school_id: string;
@@ -23,9 +28,11 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<RfidDeviceFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
+  const [discovered, setDiscovered] = useState<DiscoveredRfidDevice[]>([]);
+  const [isLoadingDiscovered, setIsLoadingDiscovered] = useState(false);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [assigningDevice, setAssigningDevice] = useState<RfidDevice | null>(null);
+  const [assigningDevice, setAssigningDevice] = useState<AssignTarget | null>(null);
 
   const createForm = useForm<CreateRfidDevicePayload>();
   const assignForm = useForm<AssignFormValues>({ defaultValues: { billable: false } });
@@ -42,6 +49,17 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
       setIsLoading(false);
     }
   }, [filters]);
+
+  const fetchDiscovered = useCallback(async () => {
+    setIsLoadingDiscovered(true);
+    try {
+      setDiscovered(await RfidInventoryService.discovered());
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load discovered devices');
+    } finally {
+      setIsLoadingDiscovered(false);
+    }
+  }, []);
 
   async function handleCreateSubmit(values: CreateRfidDevicePayload) {
     try {
@@ -67,9 +85,13 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
       ...(values.billable && values.charge_amount != null && { charge_amount: Number(values.charge_amount) }),
     };
     try {
-      await RfidInventoryService.assign(assigningDevice.id, payload);
-      toast.success('Device assigned');
-      await fetchDevices();
+      if (assigningDevice.id) {
+        await RfidInventoryService.assign(assigningDevice.id, payload);
+      } else {
+        await RfidInventoryService.map({ ...payload, device_identifier: assigningDevice.device_identifier });
+      }
+      toast.success(`${assigningDevice.device_identifier} mapped to school`);
+      await Promise.all([fetchDevices(), fetchDiscovered()]);
       setAssigningDevice(null);
       assignForm.reset();
     } catch (err: unknown) {
@@ -91,7 +113,7 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
     try {
       await RfidInventoryService.returnDevice(device.id);
       toast.success('Device returned to stock');
-      await fetchDevices();
+      await Promise.all([fetchDevices(), fetchDiscovered()]);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to update device');
     }
@@ -119,7 +141,12 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
 
   function openAssignModal(device: RfidDevice) {
     assignForm.reset({ billable: false });
-    setAssigningDevice(device);
+    setAssigningDevice({ id: device.id, device_identifier: device.device_identifier });
+  }
+
+  function openMapModal(device: DiscoveredRfidDevice) {
+    assignForm.reset({ billable: false });
+    setAssigningDevice({ id: device.inventory_id, device_identifier: device.device_identifier });
   }
 
   function closeAssignModal() {
@@ -132,9 +159,11 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
   }
 
   useEffect(() => { fetchDevices(); }, [fetchDevices]);
+  useEffect(() => { fetchDiscovered(); }, [fetchDiscovered]);
 
   return {
     devices, pagination, filters, isLoading, updateFilters,
+    discovered, isLoadingDiscovered, refetchDiscovered: fetchDiscovered, openMapModal,
     showCreateModal, openCreateModal, closeCreateModal,
     createForm,
     handleCreateSubmit: createForm.handleSubmit(handleCreateSubmit),

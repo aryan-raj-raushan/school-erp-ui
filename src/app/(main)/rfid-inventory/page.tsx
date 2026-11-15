@@ -7,7 +7,7 @@ import {
 } from '@/constants';
 import { useRfidInventory } from '@/hooks/useRfidInventory';
 import { useSchools } from '@/hooks/useSchools';
-import type { RfidDevice } from '@/types';
+import type { RfidDevice, DiscoveredRfidDevice } from '@/types';
 import {
   Div, Button, Input, CheckboxLabel,
   PageHeader, PageCol, FilterBar,
@@ -18,18 +18,24 @@ import {
   ResponsiveSelect,
   RowActions,
   MobileFormSheet,
+  SectionCard,
 } from '@/components/ui';
-import { Undo2, Wrench, UserPlus, Trash2 } from 'lucide-react';
+import { Undo2, Wrench, UserPlus, Trash2, RefreshCw, Link2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 function fmtDate(v?: string | null): string {
   return v ? new Date(v).toLocaleDateString() : '—';
 }
 
+function fmtDateTime(v?: string | null): string {
+  return v ? new Date(v).toLocaleString() : '—';
+}
+
 export default function RfidInventoryPage() {
   const isMobile = useIsMobile();
   const {
     devices, pagination, filters, isLoading, updateFilters,
+    discovered, isLoadingDiscovered, refetchDiscovered, openMapModal,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     assigningDevice, openAssignModal, closeAssignModal, assignForm, handleAssignSubmit, isAssigning,
     installDevice, returnDevice, deleteDevice,
@@ -81,6 +87,11 @@ export default function RfidInventoryPage() {
         cell: ({ row }) => fmtDate(row.original.warranty_expiry),
       },
       {
+        accessorKey: 'last_seen_at',
+        header: RFID_INVENTORY_PAGE.table.lastSeen,
+        cell: ({ row }) => fmtDateTime(row.original.last_seen_at),
+      },
+      {
         id: 'actions',
         header: 'Actions',
         cell: ({ row }) => {
@@ -125,6 +136,50 @@ export default function RfidInventoryPage() {
     [schoolNameById, openAssignModal, installDevice, returnDevice, deleteDevice],
   );
 
+  const discoveredColumns = useMemo<ColumnDef<DiscoveredRfidDevice>[]>(
+    () => [
+      {
+        accessorKey: 'device_identifier',
+        header: RFID_INVENTORY_PAGE.discovered.table.identifier,
+        meta: { primary: true },
+      },
+      {
+        accessorKey: 'last_seen_at',
+        header: RFID_INVENTORY_PAGE.discovered.table.lastSeen,
+        cell: ({ row }) => fmtDateTime(row.original.last_seen_at),
+      },
+      {
+        accessorKey: 'tap_count',
+        header: RFID_INVENTORY_PAGE.discovered.table.taps,
+      },
+      {
+        accessorKey: 'last_card',
+        header: RFID_INVENTORY_PAGE.discovered.table.lastCard,
+      },
+      {
+        id: 'inventory',
+        header: RFID_INVENTORY_PAGE.discovered.table.inventory,
+        cell: ({ row }) =>
+          row.original.status ? (
+            <Badge variant={RFID_DEVICE_STATUS_BADGE[row.original.status]}>{row.original.status}</Badge>
+          ) : (
+            <Badge variant="info">{RFID_INVENTORY_PAGE.discovered.notInInventory}</Badge>
+          ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <Button size="xs" variant="outline" onClick={() => openMapModal(row.original)}>
+            <Link2 size={12} className="mr-1" />
+            {RFID_INVENTORY_PAGE.discovered.map}
+          </Button>
+        ),
+      },
+    ],
+    [openMapModal],
+  );
+
   return (
     <PageCol>
       <PageHeader
@@ -132,6 +187,24 @@ export default function RfidInventoryPage() {
         subtitle={pagination ? `${pagination.total} devices` : RFID_INVENTORY_PAGE.description}
         actions={<Button onClick={openCreateModal}>{RFID_INVENTORY_PAGE.addButton}</Button>}
       />
+
+      <SectionCard
+        title={RFID_INVENTORY_PAGE.discovered.title}
+        subtitle={RFID_INVENTORY_PAGE.discovered.subtitle}
+        actions={
+          <Button size="sm" variant="outline" onClick={refetchDiscovered} loading={isLoadingDiscovered}>
+            <RefreshCw size={13} className="mr-1.5" />
+            {RFID_INVENTORY_PAGE.discovered.refresh}
+          </Button>
+        }
+      >
+        <DataTable
+          columns={discoveredColumns}
+          data={discovered}
+          isLoading={isLoadingDiscovered}
+          emptyText={RFID_INVENTORY_PAGE.discovered.empty}
+        />
+      </SectionCard>
 
       <FilterBar>
         <ResponsiveSelect

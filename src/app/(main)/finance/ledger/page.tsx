@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Trash2, Search, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
+import { Trash2, Search, TrendingUp, TrendingDown, ArrowRightLeft, FileSpreadsheet } from 'lucide-react';
 import {
   Div, Button, Span, P,
   PageHeader, PageCol,
@@ -9,9 +9,13 @@ import {
   Badge, Spinner, Icon, FormField, Input, FormCard,
   ResponsiveSelect,
   DataTable, type ColumnDef, RowActions,
+  BulkImportDialog,
 } from '@/components/ui';
 import { Tabs } from '@/components/ui/tabs';
 import { useFinanceLedger, LEDGER_TABS } from '@/hooks/useFinanceLedger';
+import { useBulkImport } from '@/hooks/useBulkImport';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/constants/permissions.registry';
 
 export default function FinanceLedgerPage() {
   const {
@@ -25,7 +29,11 @@ export default function FinanceLedgerPage() {
     profitLoss, loadingPL, plFilters, setPlFilters, loadProfitLoss,
     submitting,
     fmt, fmtDate,
+    refreshAfterExpenseImport, refreshAfterIncomeImport,
   } = useFinanceLedger();
+  const { hasPermission } = usePermissions();
+  const expenseImport = useBulkImport('finance-expenses', { title: 'Expense Entries', onImported: refreshAfterExpenseImport });
+  const incomeImport = useBulkImport('finance-income', { title: 'Income Entries', onImported: refreshAfterIncomeImport });
 
   const expenseColumns = useMemo<ColumnDef<any>[]>(
     () => [
@@ -200,7 +208,26 @@ export default function FinanceLedgerPage() {
       <PageHeader
         title="Finance Ledger"
         subtitle="Record income, expenses, transfers and view reports"
+        actions={[
+          {
+            label: 'Import Expenses',
+            icon: <FileSpreadsheet size={14} />,
+            variant: 'outline',
+            onClick: expenseImport.open,
+            hidden: activeTab !== 'expenses' || !hasPermission(PERMISSIONS.finance.create),
+          },
+          {
+            label: 'Import Income',
+            icon: <FileSpreadsheet size={14} />,
+            variant: 'outline',
+            onClick: incomeImport.open,
+            hidden: activeTab !== 'income' || !hasPermission(PERMISSIONS.finance.create),
+          },
+        ]}
       />
+
+      <BulkImportDialog controller={expenseImport} />
+      <BulkImportDialog controller={incomeImport} />
 
       <Tabs options={LEDGER_TABS} value={activeTab} onChange={setActiveTab} />
 

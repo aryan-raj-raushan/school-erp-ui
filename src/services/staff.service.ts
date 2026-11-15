@@ -1,6 +1,6 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { Staff, StaffRole, Gender, BloodGroup, StaffStatus, PaginationMeta, BulkImportJob } from '@/types';
+import type { Staff, StaffRole, Gender, BloodGroup, StaffStatus, PaginationMeta } from '@/types';
 
 export interface StaffFilters {
   page?: number;
@@ -116,23 +116,6 @@ export const StaffService = {
 
   async reonboard(id: string): Promise<Staff> {
     const res = await apiGateway.patch<Staff>(ENDPOINTS.staff.reonboard(id), {});
-    return res.data;
-  },
-
-  async downloadBulkTemplate(): Promise<Blob> {
-    const res = await apiGateway.axiosInstance.get(ENDPOINTS.staff.bulkTemplate, {
-      responseType: 'blob',
-    });
-    return res.data;
-  },
-
-  async bulkImport(formData: FormData): Promise<{ jobId: string }> {
-    const res = await apiGateway.upload<{ jobId: string }>(ENDPOINTS.staff.bulkImport, formData);
-    return res.data;
-  },
-
-  async getBulkStatus(jobId: string): Promise<BulkImportJob> {
-    const res = await apiGateway.get<BulkImportJob>(ENDPOINTS.staff.bulkStatus(jobId));
     return res.data;
   },
 

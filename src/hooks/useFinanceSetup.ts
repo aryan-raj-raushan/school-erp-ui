@@ -176,5 +176,7 @@ export function useFinanceSetup() {
     openAddHead, openEditHead, closeHeadModal, handleHeadSubmit,
     submitting,
     ACCOUNT_TYPES, HEAD_TYPES,
+    refetchAccounts: fetchAccounts,
+    refetchHeads: fetchHeads,
   };
 }

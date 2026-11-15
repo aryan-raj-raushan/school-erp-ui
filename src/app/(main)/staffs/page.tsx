@@ -9,21 +9,17 @@ import type { Staff } from "@/types";
 import type { StaffFilters } from "@/services/staff.service";
 import {
   Div,
-  P,
-  Button,
   DataTable,
   type ColumnDef,
-  FormField,
   Badge,
   Spinner,
-  FileInput,
   PageCol,
   PageHeader,
   type PageHeaderConfig,
   FilterToolbar,
   type FilterField,
   RowActions,
-  ResponsiveModalContainer,
+  BulkImportDialog,
 } from "@/components/ui";
 import {
   Pencil,
@@ -32,10 +28,14 @@ import {
   Mail,
   Trash2,
   Plus,
+  FileSpreadsheet,
 } from "lucide-react";
 import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from "@/constants";
 import { StaffMobileList } from "@/components/staff/StaffMobileList";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { useBulkImport } from "@/hooks/useBulkImport";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PERMISSIONS } from "@/constants/permissions.registry";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 
 type PersistedStaffFilters = Pick<StaffFilters, "status" | "role">;
@@ -54,14 +54,12 @@ function StaffsDesktop() {
     navigateToNew,
     navigateToView,
     navigateToEdit,
-    showBulkModal,
-    closeBulkModal,
-    bulkFileRef,
-    isImporting,
-    bulkImport,
     isAdmin,
     roles,
+    refetch,
   } = useStaffsPage();
+  const { hasPermission } = usePermissions();
+  const staffImport = useBulkImport("staff", { title: "Staff", onImported: () => refetch() });
 
   const {
     filters: storedFilters,
@@ -142,18 +140,13 @@ function StaffsDesktop() {
     title: STAFF_PAGE.title,
     subtitle: pagination ? `${pagination.total} staff members` : "Loading...",
     actions: [
-      // {
-      //   label: STAFF_PAGE.downloadTemplate,
-      //   icon: <Download size={14} />,
-      //   variant: 'outline',
-      //   onClick: downloadTemplate,
-      // },
-      // {
-      //   label: STAFF_PAGE.bulkImport,
-      //   icon: <Upload size={14} />,
-      //   variant: 'outline',
-      //   onClick: openBulkModal,
-      // },
+      {
+        label: STAFF_PAGE.importButton,
+        icon: <FileSpreadsheet size={14} />,
+        variant: "outline",
+        onClick: staffImport.open,
+        hidden: !hasPermission(PERMISSIONS.staff.create),
+      },
       {
         label: STAFF_PAGE.addButton,
         icon: <Plus size={14} />,
@@ -302,33 +295,7 @@ function StaffsDesktop() {
         fillViewport
       />
 
-      <ResponsiveModalContainer
-        isOpen={showBulkModal}
-        onClose={closeBulkModal}
-        title="Bulk Import Staff"
-      >
-        <Div type="col" gap="md" className="px-4 py-4">
-          <FormField label="Excel File *">
-            <FileInput ref={bulkFileRef} type="file" accept=".xlsx,.xls,.csv" />
-          </FormField>
-          <P color="muted" size="xs">
-            Download the template above to see the required format.
-          </P>
-        </Div>
-
-        <Div className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
-          <Button variant="secondary" onClick={closeBulkModal}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => bulkImport()}
-            loading={isImporting}
-            disabled={!bulkFileRef.current?.files?.length}
-          >
-            Import
-          </Button>
-        </Div>
-      </ResponsiveModalContainer>
+      <BulkImportDialog controller={staffImport} />
     </PageCol>
   );
 }

@@ -39,8 +39,7 @@ export const STAFF_STATUS_OPTIONS = [
 export const STAFF_PAGE = {
   title: 'Staff',
   addButton: 'Add Staff',
-  bulkImport: 'Bulk Import',
-  downloadTemplate: 'Download Template',
+  importButton: 'Import Excel',
   table: {
     name: 'Name',
     role: 'Role',
@@ -66,12 +65,6 @@ export const STAFF_PAGE = {
   editForm: {
     title: 'Edit Staff Member',
     submit: 'Save Changes',
-    cancel: 'Cancel',
-  },
-  bulkImportForm: {
-    title: 'Bulk Import Staff',
-    file: 'Excel File *',
-    submit: 'Import',
     cancel: 'Cancel',
   },
   placeholders: {

@@ -23,6 +23,19 @@ function extractMessage(body: { message?: string; error?: string; errors?: Recor
   return body?.message ?? body?.error ?? `Request failed with status ${status}`;
 }
 
+// Uploads (FormData) and file downloads get JSON error bodies, everything else gets msgpack.
+function decodeErrorBody(buffer: ArrayBuffer): unknown {
+  try {
+    return decode(new Uint8Array(buffer));
+  } catch {
+    try {
+      return JSON.parse(new TextDecoder().decode(buffer));
+    } catch {
+      return null;
+    }
+  }
+}
+
 export function applyErrorInterceptor(axiosInstance: AxiosInstance): void {
   axiosInstance.interceptors.response.use(
     (response) => response,
@@ -31,7 +44,7 @@ export function applyErrorInterceptor(axiosInstance: AxiosInstance): void {
         const { status } = error.response;
         let body = error.response.data;
         if (body instanceof ArrayBuffer) {
-          try { body = decode(new Uint8Array(body)) as typeof body; } catch { /* fallback to raw */ }
+          body = decodeErrorBody(body) as typeof body;
         }
         const message = extractMessage(body as Parameters<typeof extractMessage>[0], status);
         return Promise.reject(new GatewayError(message, status, body));
