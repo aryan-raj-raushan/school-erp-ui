@@ -50,7 +50,7 @@ export interface SchoolAdmin {
   last_name?: string | null;
   email?: string | null;
   dial_code: string;
-  phone_number: string;
+  phone_number: string | null;
 }
 
 export const SchoolsService = {

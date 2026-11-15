@@ -235,7 +235,7 @@ export default function SchoolsPage() {
                     label={CREATE_SCHOOL_FORM.labels.contact_number}
                     dialCodeProps={createForm.register('dial_code')}
                     phoneProps={createForm.register('contact_number')}
-                    phoneError={createForm.formState.errors.contact_number?.message}
+                    phoneError={createForm.formState.errors.contact_number?.message ?? createForm.formState.errors.dial_code?.message}
                   />
                   <FormField label={CREATE_SCHOOL_FORM.labels.website} error={createForm.formState.errors.website?.message}>
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.website} {...createForm.register('website')} />
@@ -276,7 +276,7 @@ export default function SchoolsPage() {
                     label={CREATE_SCHOOL_FORM.labels.admin_phone}
                     dialCodeProps={createForm.register('admin_dial_code')}
                     phoneProps={createForm.register('admin_phone')}
-                    phoneError={createForm.formState.errors.admin_phone?.message}
+                    phoneError={createForm.formState.errors.admin_phone?.message ?? createForm.formState.errors.admin_dial_code?.message}
                   />
                 </Div>
               </Div>
@@ -322,7 +322,7 @@ export default function SchoolsPage() {
                     label={CREATE_SCHOOL_FORM.labels.contact_number}
                     dialCodeProps={editForm.register('dial_code')}
                     phoneProps={editForm.register('contact_number')}
-                    phoneError={editForm.formState.errors.contact_number?.message}
+                    phoneError={editForm.formState.errors.contact_number?.message ?? editForm.formState.errors.dial_code?.message}
                   />
                   <FormField label={CREATE_SCHOOL_FORM.labels.website} error={editForm.formState.errors.website?.message}>
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.website} {...editForm.register('website')} />
@@ -363,7 +363,7 @@ export default function SchoolsPage() {
                     label={CREATE_SCHOOL_FORM.labels.admin_phone}
                     dialCodeProps={editForm.register('admin_dial_code')}
                     phoneProps={editForm.register('admin_phone')}
-                    phoneError={editForm.formState.errors.admin_phone?.message}
+                    phoneError={editForm.formState.errors.admin_phone?.message ?? editForm.formState.errors.admin_dial_code?.message}
                   />
                 </Div>
               </Div>

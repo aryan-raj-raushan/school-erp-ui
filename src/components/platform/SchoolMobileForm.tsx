@@ -131,7 +131,7 @@ export function SchoolMobileForm<T extends FieldValues>({
             type="tel"
             inputMode="tel"
             prefix={(form.watch(n("dial_code")) as string | undefined) || "+91"}
-            error={err("contact_number")}
+            error={err("contact_number") ?? err("dial_code")}
             {...register(n("contact_number"))}
           />
           <MobileTextField
@@ -199,7 +199,7 @@ export function SchoolMobileForm<T extends FieldValues>({
             type="tel"
             inputMode="tel"
             prefix={(form.watch(n("admin_dial_code")) as string | undefined) || "+91"}
-            error={err("admin_phone")}
+            error={err("admin_phone") ?? err("admin_dial_code")}
             {...register(n("admin_phone"))}
           />
         </FormGroup>

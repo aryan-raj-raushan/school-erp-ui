@@ -28,6 +28,8 @@ import {
 } from '@/lib/validations/schools.validation';
 import type { PaginationMeta, School } from '@/types';
 
+const DEFAULT_DIAL_CODE = '+91';
+
 export function useSchools(initialFilters: SchoolFilters = {}) {
   const [schools, setSchools] = useState<School[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -43,7 +45,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
 
   const createForm = useForm<CreateSchoolFormValues>({
     resolver: zodResolver(createSchoolSchema),
-    defaultValues: { dial_code: '+91', admin_dial_code: '+91' },
+    defaultValues: { dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE },
   });
 
   const editForm = useForm<UpdateSchoolFormValues>({
@@ -88,7 +90,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       showCredentials(credentials, {
         admin_first_name: admin?.first_name,
         admin_last_name: admin?.last_name ?? undefined,
-        admin_phone: admin?.phone_number,
+        admin_phone: admin?.phone_number ?? undefined,
         admin_dial_code: admin?.dial_code,
       });
     } catch (err: unknown) {
@@ -204,7 +206,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   }
 
   function openCreateModal() {
-    createForm.reset({ dial_code: '+91', admin_dial_code: '+91' });
+    createForm.reset({ dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE });
     setShowCreateModal(true);
   }
 
@@ -217,7 +219,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     editForm.reset({
       name: school.name,
       email: school.email ?? '',
-      dial_code: school.dial_code ?? '+91',
+      dial_code: school.dial_code || DEFAULT_DIAL_CODE,
       contact_number: school.contact_number ?? '',
       website: school.website ?? '',
       address: school.address ?? '',
@@ -225,6 +227,11 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       state: school.state ?? '',
       pincode: school.pincode ?? '',
       board_type: (school.board_type as any) ?? undefined,
+      admin_first_name: '',
+      admin_last_name: '',
+      admin_dial_code: DEFAULT_DIAL_CODE,
+      admin_phone: '',
+      admin_email: '',
     });
     setEditingSchool(school);
 
@@ -235,8 +242,8 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
           ...editForm.getValues(),
           admin_first_name: admin.first_name,
           admin_last_name: admin.last_name ?? '',
-          admin_dial_code: admin.dial_code,
-          admin_phone: admin.phone_number,
+          admin_dial_code: admin.dial_code || DEFAULT_DIAL_CODE,
+          admin_phone: admin.phone_number ?? '',
           admin_email: admin.email ?? '',
         });
       }
