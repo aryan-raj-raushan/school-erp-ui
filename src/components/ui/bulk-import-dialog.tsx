@@ -46,7 +46,7 @@ const STATUS_STYLE: Record<RowStatus, { label: string; badge: string; cell: stri
   },
 };
 
-function Stepper({ step }: { step: BulkImportStep }) {
+export function ImportStepper({ step }: { step: BulkImportStep }) {
   const active = step === "done" ? STEPS.length : STEPS.findIndex((s) => s.key === step);
   return (
     <ol className="flex items-center gap-2 px-4 pt-4 sm:px-6">
@@ -78,7 +78,7 @@ function Stepper({ step }: { step: BulkImportStep }) {
   );
 }
 
-function Alert({
+export function ImportAlert({
   tone,
   title,
   children,
@@ -107,10 +107,21 @@ function Alert({
   );
 }
 
-function Dropzone({ ctrl }: { ctrl: BulkImportController }) {
+export function ImportDropzone({
+  checking,
+  fileName,
+  onSelect,
+  accept,
+  hint,
+}: {
+  checking: boolean;
+  fileName?: string;
+  onSelect: (file: File | undefined) => void;
+  accept: string;
+  hint: string;
+}) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
-  const checking = ctrl.busy === "validate";
 
   return (
     <div
@@ -129,7 +140,7 @@ function Dropzone({ ctrl }: { ctrl: BulkImportController }) {
       onDrop={(e) => {
         e.preventDefault();
         setDragging(false);
-        if (!checking) ctrl.selectFile(e.dataTransfer.files?.[0]);
+        if (!checking) onSelect(e.dataTransfer.files?.[0]);
       }}
       className={cn(
         "group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-10 text-center transition-all",
@@ -140,10 +151,10 @@ function Dropzone({ ctrl }: { ctrl: BulkImportController }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+        accept={accept}
         className="hidden"
         onChange={(e) => {
-          ctrl.selectFile(e.target.files?.[0]);
+          onSelect(e.target.files?.[0]);
           e.target.value = "";
         }}
       />
@@ -157,7 +168,7 @@ function Dropzone({ ctrl }: { ctrl: BulkImportController }) {
       </span>
       {checking ? (
         <div>
-          <p className="font-semibold text-foreground">Checking {ctrl.file?.name}…</p>
+          <p className="font-semibold text-foreground">Checking {fileName}…</p>
           <p className="text-sm text-muted-foreground">Validating every row and looking for duplicates</p>
         </div>
       ) : (
@@ -165,7 +176,7 @@ function Dropzone({ ctrl }: { ctrl: BulkImportController }) {
           <p className="font-semibold text-foreground">
             Drag & drop your Excel file here, or <span className="text-primary underline">browse</span>
           </p>
-          <p className="text-sm text-muted-foreground">.xlsx or .csv · up to 5 MB · up to 2,000 rows</p>
+          <p className="text-sm text-muted-foreground">{hint}</p>
         </div>
       )}
     </div>
@@ -191,12 +202,18 @@ function UploadStep({ ctrl }: { ctrl: BulkImportController }) {
         </Button>
       </div>
 
-      <Dropzone ctrl={ctrl} />
+      <ImportDropzone
+        checking={ctrl.busy === "validate"}
+        fileName={ctrl.file?.name}
+        onSelect={ctrl.selectFile}
+        accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+        hint=".xlsx or .csv · up to 5 MB · up to 2,000 rows"
+      />
 
       {ctrl.error && (
-        <Alert tone="error" title="This file can't be imported yet">
+        <ImportAlert tone="error" title="This file can't be imported yet">
           {ctrl.error}
-        </Alert>
+        </ImportAlert>
       )}
 
       <ul className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
@@ -211,6 +228,44 @@ function UploadStep({ ctrl }: { ctrl: BulkImportController }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+const FILTERS: { key: BulkImportFilter; label: string; tone: "default" | "success" | "warning" | "danger" }[] = [
+  { key: "all", label: "Total rows", tone: "default" },
+  { key: "ready", label: "Ready", tone: "success" },
+  { key: "warning", label: "Warnings", tone: "warning" },
+  { key: "error", label: "Errors", tone: "danger" },
+];
+
+export function ImportSummaryTiles({
+  summary,
+  filter,
+  onFilter,
+}: {
+  summary: { total: number; ready: number; warning: number; error: number };
+  filter: BulkImportFilter;
+  onFilter: (filter: BulkImportFilter) => void;
+}) {
+  const counts: Record<BulkImportFilter, number> = {
+    all: summary.total,
+    ready: summary.ready,
+    warning: summary.warning,
+    error: summary.error,
+  };
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {FILTERS.map((f) => (
+        <SummaryTile
+          key={f.key}
+          label={f.label}
+          value={counts[f.key]}
+          tone={f.tone}
+          active={filter === f.key}
+          onClick={() => onFilter(f.key)}
+        />
+      ))}
     </div>
   );
 }
@@ -260,7 +315,7 @@ function issueLabel(issue: RowIssue, headers: Map<string, string>): string {
   return issue.column ? `${headers.get(issue.column) ?? issue.column}: ${issue.message}` : issue.message;
 }
 
-function PreviewGrid({
+export function ImportPreviewGrid({
   columns,
   rows,
 }: {
@@ -374,21 +429,8 @@ function PreviewGrid({
   );
 }
 
-const FILTERS: { key: BulkImportFilter; label: string; tone: "default" | "success" | "warning" | "danger" }[] = [
-  { key: "all", label: "Total rows", tone: "default" },
-  { key: "ready", label: "Ready", tone: "success" },
-  { key: "warning", label: "Warnings", tone: "warning" },
-  { key: "error", label: "Errors", tone: "danger" },
-];
-
 function ReviewStep({ ctrl }: { ctrl: BulkImportController }) {
   const report = ctrl.report!;
-  const counts: Record<BulkImportFilter, number> = {
-    all: report.summary.total,
-    ready: report.summary.ready,
-    warning: report.summary.warning,
-    error: report.summary.error,
-  };
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted/30 p-3">
@@ -408,53 +450,42 @@ function ReviewStep({ ctrl }: { ctrl: BulkImportController }) {
       </div>
 
       {report.header_issues.length > 0 && (
-        <Alert tone="warning" title="Some columns need attention">
+        <ImportAlert tone="warning" title="Some columns need attention">
           <ul className="list-disc pl-4">
             {report.header_issues.map((issue) => (
               <li key={issue}>{issue}</li>
             ))}
           </ul>
-        </Alert>
+        </ImportAlert>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {FILTERS.map((f) => (
-          <SummaryTile
-            key={f.key}
-            label={f.label}
-            value={counts[f.key]}
-            tone={f.tone}
-            active={ctrl.filter === f.key}
-            onClick={() => ctrl.setFilter(f.key)}
-          />
-        ))}
-      </div>
+      <ImportSummaryTiles summary={report.summary} filter={ctrl.filter} onFilter={ctrl.setFilter} />
 
       {ctrl.importableCount === 0 ? (
-        <Alert tone="error" title="Nothing can be imported yet">
+        <ImportAlert tone="error" title="Nothing can be imported yet">
           Every row has at least one error. Download the error rows, fix the highlighted cells and upload
           the corrected file.
-        </Alert>
+        </ImportAlert>
       ) : report.summary.error > 0 ? (
-        <Alert tone="warning" title={`${report.summary.error} row(s) have errors`}>
+        <ImportAlert tone="warning" title={`${report.summary.error} row(s) have errors`}>
           Fix them in the file and re-upload, or skip them and import the other {ctrl.importableCount} row(s)
           now.
-        </Alert>
+        </ImportAlert>
       ) : (
-        <Alert tone="info" title="All rows passed the rules">
+        <ImportAlert tone="info" title="All rows passed the rules">
           {report.summary.warning
             ? `${report.summary.warning} row(s) have warnings — review them, they will still be imported.`
             : "No duplicates or problems were found."}
-        </Alert>
+        </ImportAlert>
       )}
 
       {ctrl.error && (
-        <Alert tone="error" title="The import could not start">
+        <ImportAlert tone="error" title="The import could not start">
           {ctrl.error}
-        </Alert>
+        </ImportAlert>
       )}
 
-      <PreviewGrid columns={report.columns} rows={ctrl.visibleRows} />
+      <ImportPreviewGrid columns={report.columns} rows={ctrl.visibleRows} />
     </div>
   );
 }
@@ -525,8 +556,8 @@ function DoneStep({ ctrl }: { ctrl: BulkImportController }) {
         )}
       </div>
 
-      {ctrl.error && <Alert tone="error" title="Something went wrong">{ctrl.error}</Alert>}
-      {job?.error && <Alert tone="error" title="Import stopped">{job.error}</Alert>}
+      {ctrl.error && <ImportAlert tone="error" title="Something went wrong">{ctrl.error}</ImportAlert>}
+      {job?.error && <ImportAlert tone="error" title="Import stopped">{job.error}</ImportAlert>}
 
       {job && job.credentials.length > 0 && (
         <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
@@ -637,7 +668,7 @@ export function BulkImportDialog({ controller }: { controller: BulkImportControl
   if (!controller.isOpen) return null;
   return (
     <Modal onClose={controller.close} title={`Import ${controller.title} from Excel`} size="xl">
-      <Stepper step={controller.step} />
+      <ImportStepper step={controller.step} />
       <ModalBody>
         {controller.step === "upload" && <UploadStep ctrl={controller} />}
         {controller.step === "review" && controller.report && <ReviewStep ctrl={controller} />}

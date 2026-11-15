@@ -52,10 +52,12 @@ export interface ImportRowResult {
   message?: string;
 }
 
+export type ImportJobStatus = 'pending' | 'running' | 'completed' | 'failed';
+
 export interface ImportJob {
   job_id: string;
   entity: BulkEntity;
-  status: 'running' | 'completed' | 'failed';
+  status: ImportJobStatus;
   total: number;
   processed: number;
   created: number;
@@ -63,6 +65,27 @@ export interface ImportJob {
   skipped: number;
   results: ImportRowResult[];
   credentials: ImportCredential[];
+  error?: string;
+  started_at: string;
+  finished_at?: string;
+}
+
+export interface WorkbookSheetReport extends ValidationReport {
+  sheet_name: string;
+  sheet_error?: string;
+}
+
+export interface WorkbookReport {
+  file_name: string;
+  sheets: WorkbookSheetReport[];
+  ignored_sheets: string[];
+  summary: ValidationReport['summary'];
+}
+
+export interface WorkbookJob {
+  job_id: string;
+  status: ImportJobStatus;
+  sections: ImportJob[];
   error?: string;
   started_at: string;
   finished_at?: string;

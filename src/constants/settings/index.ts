@@ -13,6 +13,7 @@ import {
   History,
   Hash,
   DatabaseBackup,
+  FileUp,
 } from "lucide-react";
 
 export interface SettingItem {
@@ -107,6 +108,13 @@ export const SETTINGS_ITEMS: SettingItem[] = [
     description:
       "View a complete history of changes, user actions, and system activities.",
     icon: ScrollText,
+  },
+  {
+    slug: "data-import",
+    label: "Data Import",
+    description:
+      "Upload one Excel workbook to add students, staff, finance accounts, heads and ledger entries in one go.",
+    icon: FileUp,
   },
   {
     slug: "backup",

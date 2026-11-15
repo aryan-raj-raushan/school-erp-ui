@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BulkImportService } from "@/services/bulk-import.service";
 import { saveBlob } from "@/lib/save-blob";
+import { checkImportFile, describeImportError, downloadCsv } from "@/lib/bulk-import.utils";
 import type {
   BulkEntity,
   ImportJob,
@@ -15,44 +16,8 @@ export type BulkImportStep = "upload" | "review" | "importing" | "done";
 export type BulkImportBusy = "template" | "validate" | "report" | "errors" | "import" | null;
 export type BulkImportFilter = "all" | RowStatus;
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const POLL_MS = 1000;
 const MAX_POLL_FAILURES = 5;
-
-function describeError(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message) {
-    if (/timeout/i.test(error.message)) {
-      return "The server took too long to respond. Try a smaller file (split it into parts).";
-    }
-    return error.message;
-  }
-  return fallback;
-}
-
-function checkFile(file: File): string | null {
-  const name = file.name.toLowerCase();
-  if (name.endsWith(".xls")) {
-    return "The old .xls format isn't supported. In Excel use File → Save As → Excel Workbook (.xlsx), then upload again.";
-  }
-  if (!name.endsWith(".xlsx") && !name.endsWith(".csv")) {
-    return `'${file.name}' is not a spreadsheet. Upload the .xlsx template (or a .csv file).`;
-  }
-  if (file.size === 0) return "This file is empty.";
-  if (file.size > MAX_FILE_BYTES) {
-    return `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 5 MB. Split it into smaller files.`;
-  }
-  return null;
-}
-
-function csvCell(value: string | number): string {
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function downloadCsv(rows: (string | number)[][], fileName: string) {
-  const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
-  saveBlob(new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" }), fileName);
-}
 
 export interface UseBulkImportOptions {
   title: string;
@@ -109,7 +74,7 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
       } catch (err) {
         setReport(null);
         setStep("upload");
-        setError(describeError(err, "The file could not be checked."));
+        setError(describeImportError(err, "The file could not be checked."));
       } finally {
         setBusy(null);
       }
@@ -120,7 +85,7 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
   const selectFile = useCallback(
     (picked: File | null | undefined) => {
       if (!picked) return;
-      const problem = checkFile(picked);
+      const problem = checkImportFile(picked, true);
       if (problem) {
         setError(problem);
         return;
@@ -141,7 +106,7 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
       saveBlob(await BulkImportService.downloadTemplate(entity), `${entity}-import-template.xlsx`);
       toast.success("Sample Excel downloaded — fill the Data sheet and upload it here.");
     } catch (err) {
-      toast.error(describeError(err, "Could not download the template."));
+      toast.error(describeImportError(err, "Could not download the template."));
     } finally {
       setBusy(null);
     }
@@ -155,7 +120,7 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
         const blob = await BulkImportService.downloadReport(entity, file, errorsOnly);
         saveBlob(blob, `${entity}-import-${errorsOnly ? "errors" : "report"}.xlsx`);
       } catch (err) {
-        toast.error(describeError(err, "Could not download the report."));
+        toast.error(describeImportError(err, "Could not download the report."));
       } finally {
         setBusy(null);
       }
@@ -171,7 +136,7 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
       setJob(await BulkImportService.startImport(entity, file, skipErrors));
       setStep("importing");
     } catch (err) {
-      setError(describeError(err, "The import could not be started."));
+      setError(describeImportError(err, "The import could not be started."));
     } finally {
       setBusy(null);
     }
@@ -200,7 +165,7 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
         if (failures >= MAX_POLL_FAILURES) {
           clearInterval(timer);
           setError(
-            `Lost track of the import progress (${describeError(err, "network error")}). It may still be running — refresh the list shortly.`,
+            `Lost track of the import progress (${describeImportError(err, "network error")}). It may still be running — refresh the list shortly.`,
           );
           setStep("done");
           onImportedRef.current?.();

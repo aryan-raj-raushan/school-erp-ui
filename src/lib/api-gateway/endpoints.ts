@@ -183,6 +183,13 @@ export const ENDPOINTS = {
     report: (entity: string) => `/bulk-import/${entity}/report`,
     commit: (entity: string) => `/bulk-import/${entity}/commit`,
     job: (entity: string, jobId: string) => `/bulk-import/${entity}/jobs/${jobId}`,
+    workbook: {
+      template: "/bulk-import/workbook/template",
+      validate: "/bulk-import/workbook/validate",
+      report: "/bulk-import/workbook/report",
+      commit: "/bulk-import/workbook/commit",
+      job: (jobId: string) => `/bulk-import/workbook/jobs/${jobId}`,
+    },
   },
   uploads: {
     image: "/uploads/image",
