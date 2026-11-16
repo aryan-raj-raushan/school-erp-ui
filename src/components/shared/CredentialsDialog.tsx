@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy } from "lucide-react";
+import { Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Modal, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,10 @@ interface CredentialsDialogProps {
 export function CredentialsDialog({ title, credentials, onClose }: CredentialsDialogProps) {
   if (!credentials.length) return null;
 
-  const copy = async (c: IssuedCredential) => {
+  const copy = async (text: string, success: string) => {
     try {
-      await navigator.clipboard.writeText(credentialsMessage(c.name, c.loginId, c.password));
-      toast.success("Login details copied");
+      await navigator.clipboard.writeText(text);
+      toast.success(success);
     } catch {
       toast.error("Could not copy — please note the password manually");
     }
@@ -50,8 +50,16 @@ export function CredentialsDialog({ title, credentials, onClose }: CredentialsDi
               <span className="font-mono select-all">{c.password}</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => void copy(c)}>
-                <Copy /> Copy
+              <Button type="button" variant="outline" size="sm" onClick={() => void copy(c.password, "Password copied")}>
+                <KeyRound /> Copy password
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void copy(credentialsMessage(c.name, c.loginId, c.password), "Login message copied")}
+              >
+                <Copy /> Copy message
               </Button>
               <WhatsAppButton
                 phone={c.phone}
