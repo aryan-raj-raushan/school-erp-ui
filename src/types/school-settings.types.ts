@@ -70,13 +70,13 @@ export interface CreateSchoolTimingPayload {
   school_start_time: string;
   school_end_time: string;
   grace_period_minutes?: number;
-  late_cutoff_time?: string;
-  half_day_cutoff_time?: string;
-  absent_cutoff_time?: string;
+  late_cutoff_time?: string | null;
+  half_day_cutoff_time?: string | null;
+  absent_cutoff_time?: string | null;
   working_days?: string;
   period_duration_minutes?: number;
-  lunch_start_time?: string;
-  lunch_end_time?: string;
+  lunch_start_time?: string | null;
+  lunch_end_time?: string | null;
   effective_from: string;
   effective_to: string;
   priority?: number;

@@ -117,7 +117,34 @@ export interface ParentDashboard {
   pendingFees: { count: number; amount: number };
 }
 
+export type SetupStepKey =
+  | 'school_profile'
+  | 'academic_year'
+  | 'classes'
+  | 'sections'
+  | 'timings'
+  | 'staff'
+  | 'students'
+  | 'parent_logins';
+
+export interface SetupStep {
+  key: SetupStepKey;
+  done: boolean;
+  count: number | null;
+}
+
+export interface SetupStatus {
+  steps: SetupStep[];
+  completed: number;
+  total: number;
+}
+
 export const DashboardService = {
+  async getSetupStatus(): Promise<SetupStatus> {
+    const res = await apiGateway.get<SetupStatus>(ENDPOINTS.dashboard.setupStatus);
+    return res.data;
+  },
+
   async getAdminDashboard(): Promise<AdminDashboard> {
     const res = await apiGateway.get<AdminDashboard>(ENDPOINTS.dashboard.admin);
     return res.data;

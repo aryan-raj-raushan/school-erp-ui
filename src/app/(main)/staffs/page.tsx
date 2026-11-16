@@ -25,7 +25,7 @@ import {
   Pencil,
   UserX,
   UserCheck,
-  Mail,
+  KeyRound,
   Trash2,
   Plus,
   FileSpreadsheet,
@@ -37,6 +37,7 @@ import { useBulkImport } from "@/hooks/useBulkImport";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PERMISSIONS } from "@/constants/permissions.registry";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { CredentialsDialog } from "@/components/shared/CredentialsDialog";
 
 type PersistedStaffFilters = Pick<StaffFilters, "status" | "role">;
 
@@ -49,7 +50,9 @@ function StaffsDesktop() {
     removeStaff,
     offboardStaff,
     reonboardStaff,
-    resendInvite,
+    resetStaffPassword,
+    issuedCredentials,
+    clearIssuedCredentials,
     updateFilters,
     navigateToNew,
     navigateToView,
@@ -225,10 +228,13 @@ function StaffsDesktop() {
                   hidden: !isAdmin,
                 },
                 {
-                  label: "Resend Invite",
-                  icon: <Mail size={14} />,
-                  onClick: () => resendInvite(row.original.id),
+                  label: "Reset login password",
+                  icon: <KeyRound size={14} />,
                   hidden: !isAdmin,
+                  confirm: {
+                    description: `Issue a new temporary password for ${name}? Their current password will stop working.`,
+                  },
+                  onClick: () => resetStaffPassword(row.original),
                 },
                 {
                   label: "Offboard",
@@ -267,7 +273,7 @@ function StaffsDesktop() {
       isAdmin,
       navigateToView,
       navigateToEdit,
-      resendInvite,
+      resetStaffPassword,
       offboardStaff,
       reonboardStaff,
       removeStaff,
@@ -276,6 +282,11 @@ function StaffsDesktop() {
 
   return (
     <PageCol>
+      <CredentialsDialog
+        title="Staff login"
+        credentials={issuedCredentials}
+        onClose={clearIssuedCredentials}
+      />
       <PageHeader sticky {...pageHeaderConfig} />
 
       <FilterToolbar

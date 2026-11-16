@@ -1,5 +1,6 @@
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { TokenStorage } from '../token.storage';
+import { GatewayError } from './error.interceptor';
 import type { RefreshTokenFn } from '@/types';
 
 declare module 'axios' {
@@ -30,24 +31,23 @@ export function applyAuthInterceptors(
   );
 
   // ── Response: 401 → refresh → retry ──────────────────────────────────────
-  let isRefreshing = false;
-  // Each queued item holds resolve/reject AND its original config for retry
-  const failedQueue: Array<{
-    config: InternalAxiosRequestConfig;
-    resolve: (res: AxiosResponse) => void;
-    reject: (err: unknown) => void;
-  }> = [];
+  let inFlight: Promise<string> | null = null;
 
-  function flushQueue(error: unknown, accessToken: string | null): void {
-    const queue = failedQueue.splice(0);
-    if (error) {
-      queue.forEach(({ reject }) => reject(error));
-    } else {
-      queue.forEach(({ config, resolve, reject }) => {
-        config.headers['Authorization'] = `Bearer ${accessToken}`;
-        axiosInstance(config).then(resolve).catch(reject);
-      });
-    }
+  async function refreshOnce(staleAccessToken: string | null): Promise<string> {
+    return withRefreshLock(async () => {
+      const current = TokenStorage.getAccessToken();
+      if (current && current !== staleAccessToken) return current;
+      const tokens = await onRefreshToken();
+      TokenStorage.updateTokens(tokens);
+      return tokens.accessToken;
+    });
+  }
+
+  function freshAccessToken(staleAccessToken: string | null): Promise<string> {
+    inFlight ??= refreshOnce(staleAccessToken).finally(() => {
+      inFlight = null;
+    });
+    return inFlight;
   }
 
   axiosInstance.interceptors.response.use(
@@ -62,29 +62,36 @@ export function applyAuthInterceptors(
         return Promise.reject(error);
       }
 
-      // Already refreshing — queue this request
-      if (isRefreshing) {
-        return new Promise<AxiosResponse>((resolve, reject) => {
-          failedQueue.push({ config: originalRequest, resolve, reject });
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const tokens = await onRefreshToken();
-        TokenStorage.updateTokens(tokens);
-        originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`;
-        flushQueue(null, tokens.accessToken);
+        const accessToken = await freshAccessToken(bearerToken(originalRequest));
+        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        flushQueue(refreshError, null);
-        onAuthFailure();
+        if (isSessionRejected(refreshError) || !TokenStorage.getRefreshToken()) onAuthFailure();
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     },
   );
+}
+
+const REFRESH_LOCK_NAME = 'auth-token-refresh';
+
+// Refresh tokens are single-use, so tabs must take turns; the second tab then reuses the first tab's result.
+function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    return navigator.locks.request(REFRESH_LOCK_NAME, task) as Promise<T>;
+  }
+  return task();
+}
+
+function bearerToken(config: InternalAxiosRequestConfig): string | null {
+  const header = config.headers?.['Authorization'];
+  return typeof header === 'string' ? header.replace(/^Bearer /, '') : null;
+}
+
+// Only an explicit rejection ends the session; rate limits, timeouts and network drops must not log the user out.
+function isSessionRejected(error: unknown): boolean {
+  return error instanceof GatewayError && (error.status === 401 || error.status === 403);
 }

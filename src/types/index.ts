@@ -51,6 +51,16 @@ export interface UserProfile {
   custom_role_id?: string | null;
   /** Resolved permission slugs from /auth/me — populated for school users */
   permissions?: string[];
+  /** null until a new staff member or parent confirms their details after first login */
+  profile_confirmed_at?: string | null;
+  gender?: string | null;
+  /** A Date when decoded from msgpack, an ISO string once read back from storage */
+  date_of_birth?: string | Date | null;
+  blood_group?: string | null;
+  address?: string | null;
+  city?: string | null;
+  alternate_phone?: string | null;
+  occupation?: string | null;
   created_at: string;
 }
 

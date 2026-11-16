@@ -71,6 +71,17 @@ export interface OffboardPayload {
   offboard_date?: string;
 }
 
+export interface StaffLoginCredentials {
+  login_id: string;
+  temporary_password: string;
+}
+
+export interface CreatedStaff {
+  staff: Staff;
+  inviteToken: string;
+  login_credentials?: StaffLoginCredentials;
+}
+
 export const StaffService = {
   async list(filters: StaffFilters = {}): Promise<{ items: Staff[]; pagination: PaginationMeta }> {
     const { status, ...rest } = filters;
@@ -95,8 +106,13 @@ export const StaffService = {
     return res.data;
   },
 
-  async create(payload: CreateStaffPayload): Promise<{ staff: Staff; inviteToken: string }> {
-    const res = await apiGateway.post<{ staff: Staff; inviteToken: string }>(ENDPOINTS.staff.list, payload);
+  async create(payload: CreateStaffPayload): Promise<CreatedStaff> {
+    const res = await apiGateway.post<CreatedStaff>(ENDPOINTS.staff.list, payload);
+    return res.data;
+  },
+
+  async resetPassword(id: string): Promise<StaffLoginCredentials> {
+    const res = await apiGateway.post<StaffLoginCredentials>(ENDPOINTS.staff.resetPassword(id), {});
     return res.data;
   },
 
@@ -117,10 +133,6 @@ export const StaffService = {
   async reonboard(id: string): Promise<Staff> {
     const res = await apiGateway.patch<Staff>(ENDPOINTS.staff.reonboard(id), {});
     return res.data;
-  },
-
-  async resendInvite(userId: string): Promise<void> {
-    await apiGateway.post(ENDPOINTS.invite.resend(userId), {});
   },
 
   async uploadProfileImage(file: File, staffId: string): Promise<{ url: string; s3Key: string }> {

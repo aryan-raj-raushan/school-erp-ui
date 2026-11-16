@@ -8,6 +8,7 @@ import { TokenStorage } from "@/lib/api-gateway/token.storage";
 import { initAppStorage } from "@/lib/app-storage";
 import { SidebarProvider } from "@/components/ui";
 import { RouteGuard } from "@/components/layout/RouteGuard";
+import { ProfileConfirmGate } from "@/components/onboarding/ProfileConfirmGate";
 import dynamic from "next/dynamic";
 
 const NavigationProgress = dynamic(
@@ -97,7 +98,9 @@ export default function DashboardLayout({
             className="px-4 pb-4 sm:px-5 sm:pb-5 md:px-7 pt-0 page-enter"
             style={{ minHeight: "100%" }}
           >
-            <RouteGuard>{children}</RouteGuard>
+            <ProfileConfirmGate>
+              <RouteGuard>{children}</RouteGuard>
+            </ProfileConfirmGate>
           </div>
         </main>
         <div className="md:hidden">

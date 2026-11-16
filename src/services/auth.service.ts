@@ -3,6 +3,19 @@ import { TokenStorage } from '@/lib/api-gateway/token.storage';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
 import { AuthContext, type Role, type UserProfile } from '@/types';
 
+export interface ConfirmProfilePayload {
+  first_name: string;
+  last_name?: string;
+  email?: string;
+  gender?: string;
+  date_of_birth?: string;
+  blood_group?: string;
+  address?: string;
+  city?: string;
+  alternate_phone?: string;
+  occupation?: string;
+}
+
 export interface RegisterCompanyPayload {
   first_name: string;
   last_name: string;
@@ -118,6 +131,11 @@ export const AuthService = {
 
   async getMe(): Promise<UserProfile> {
     const res = await apiGateway.get<UserProfile>(ENDPOINTS.auth.me);
+    return res.data;
+  },
+
+  async confirmProfile(payload: ConfirmProfilePayload): Promise<UserProfile> {
+    const res = await apiGateway.patch<UserProfile>(ENDPOINTS.auth.meProfile, payload);
     return res.data;
   },
 

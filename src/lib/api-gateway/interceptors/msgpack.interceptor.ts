@@ -5,6 +5,8 @@ export function applyMsgpackInterceptors(axiosInstance: AxiosInstance): void {
   axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     // Skip FormData (file uploads)
     if (config.data instanceof FormData) return config;
+    // Already encoded: a request replayed after a token refresh comes back through here.
+    if (config.data instanceof Uint8Array || config.data instanceof ArrayBuffer) return config;
 
     config.headers['Accept'] = 'application/msgpack';
 

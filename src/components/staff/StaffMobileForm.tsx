@@ -270,14 +270,13 @@ export function StaffMobileForm({
           <StepHeader
             icon={<KeyRound size={22} />}
             title="Login details"
-            description="They sign in with their email or phone and this password."
+            description="They sign in with their phone number. Leave the password blank to generate a temporary one."
           />
           <FormGroup>
             <MobileTextField
               label="Password"
               type="password"
-              required
-              placeholder="Min 6 characters"
+              placeholder="Leave blank to auto-generate"
               autoCapitalize="none"
               error={errors.password?.message}
               {...register("password")}

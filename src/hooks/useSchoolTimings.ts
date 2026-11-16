@@ -6,6 +6,27 @@ import { SchoolSettingsService } from '@/services/school-settings.service';
 import { TIMINGS_PAGE } from '@/constants/school-settings.constants';
 import type { SchoolTiming, CreateSchoolTimingPayload, UpdateSchoolTimingPayload } from '@/types/school-settings.types';
 
+const OPTIONAL_TIME_FIELDS = [
+  'late_cutoff_time',
+  'half_day_cutoff_time',
+  'absent_cutoff_time',
+  'lunch_start_time',
+  'lunch_end_time',
+] as const;
+
+// Blank time inputs mean "not set": the API rejects '' but accepts null, which also clears a value on edit.
+function toTimingPayload(form: CreateSchoolTimingPayload): CreateSchoolTimingPayload {
+  const payload = { ...form };
+  OPTIONAL_TIME_FIELDS.forEach((field) => {
+    if (!payload[field]) payload[field] = null;
+  });
+  return payload;
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 export function useSchoolTimings() {
   const [timings, setTimings] = useState<SchoolTiming[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,8 +72,8 @@ export function useSchoolTimings() {
       setTimings((prev) => [...prev, created]);
       toast.success(`${TIMINGS_PAGE.title} — schedule created`);
       closeDialog();
-    } catch {
-      toast.error('Failed to create timing schedule');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Failed to create timing schedule'));
     } finally {
       setIsSubmitting(false);
     }
@@ -65,8 +86,8 @@ export function useSchoolTimings() {
       setTimings((prev) => prev.map((t) => (t.id === id ? updated : t)));
       toast.success('Timing schedule updated');
       closeDialog();
-    } catch {
-      toast.error('Failed to update timing schedule');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Failed to update timing schedule'));
     } finally {
       setIsSubmitting(false);
     }
@@ -77,17 +98,18 @@ export function useSchoolTimings() {
       await SchoolSettingsService.deleteTiming(id);
       setTimings((prev) => prev.filter((t) => t.id !== id));
       toast.success('Timing schedule deleted');
-    } catch {
-      toast.error('Failed to delete timing schedule');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Failed to delete timing schedule'));
     }
   }, []);
 
   const submit = useCallback(
     async (payload: CreateSchoolTimingPayload) => {
+      const normalized = toTimingPayload(payload);
       if (editingTiming) {
-        await update(editingTiming.id, payload);
+        await update(editingTiming.id, normalized);
       } else {
-        await create(payload);
+        await create(normalized);
       }
     },
     [editingTiming, update, create],

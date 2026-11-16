@@ -17,6 +17,12 @@ import { ImpersonationStorage } from '@/lib/impersonation.storage';
 import { useAuthStore } from '@/store/auth.store';
 import { useParentStore } from '@/store/parent.store';
 
+const HOME_BY_CONTEXT: Record<AuthContext, string> = {
+  [AuthContext.COMPANY]: ROUTES.dashboard,
+  [AuthContext.SCHOOL]: ROUTES.schoolDashboard,
+  [AuthContext.PARENT]: ROUTES.parentPortal,
+};
+
 export function useAuth() {
   const router = useRouter();
   const { setAuth, setPermissions, clearAuth } = useAuthStore();
@@ -105,7 +111,7 @@ export function useAuth() {
       const profile = await AuthService.getMe();
       setAuth(profile, result.user.context);
       hydratePermissions(profile);
-      router.replace(result.user.context === AuthContext.COMPANY ? ROUTES.dashboard : ROUTES.schoolDashboard);
+      router.replace(HOME_BY_CONTEXT[result.user.context]);
       return result;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';

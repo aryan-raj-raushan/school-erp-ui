@@ -37,12 +37,10 @@ export const staffBaseSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-export const createStaffSchema = staffBaseSchema.extend({
-  password: z.string().min(6, 'Min 6 characters'),
-});
+const optionalPassword = z.string().min(6, 'Min 6 characters').optional().or(z.literal(''));
 
-export const updateStaffSchema = staffBaseSchema.extend({
-  password: z.string().min(6, 'Min 6 characters').optional().or(z.literal('')),
-});
+export const createStaffSchema = staffBaseSchema.extend({ password: optionalPassword });
+
+export const updateStaffSchema = staffBaseSchema.extend({ password: optionalPassword });
 
 export type StaffFormValues = z.infer<typeof updateStaffSchema>;

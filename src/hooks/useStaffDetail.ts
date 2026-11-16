@@ -12,6 +12,7 @@ import { ROUTES, REGEX } from '@/constants';
 import { FORM_STORAGE_KEYS } from '@/constants/form-storage-keys.constants';
 import { useSavedForm } from '@/hooks/useSavedForm';
 import type { Staff } from '@/types';
+import type { IssuedCredential } from '@/components/shared/CredentialsDialog';
 import { createStaffSchema, updateStaffSchema, type StaffFormValues } from '@/lib/validations/staff.validation';
 
 export type { StaffFormValues };
@@ -34,6 +35,7 @@ export function useStaffDetail(id: string | undefined) {
   const isNew = !id || id === 'create-new';
 
   const [staff, setStaff] = useState<Staff | null>(null);
+  const [issuedCredentials, setIssuedCredentials] = useState<IssuedCredential[]>([]);
   const [staffId, setStaffId] = useState<string | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(isNew);
   const [isLoadingData, setIsLoadingData] = useState(!isNew);
@@ -198,14 +200,26 @@ export function useStaffDetail(id: string | undefined) {
       };
 
       if (isNew) {
-        const { staff: created } = await StaffService.create(payload);
+        const { staff: created, login_credentials } = await StaffService.create(payload);
         const pendingFile = (imageInputRef as any)._pendingFile as File | undefined;
         if (pendingFile) {
           await handleImageUpload(pendingFile, created.id);
         }
         savedForm.clearSavedForm();
         toast.success(`${created.first_name} added successfully`);
-        router.push(ROUTES.staffs);
+        if (login_credentials) {
+          setIssuedCredentials([
+            {
+              name: [created.first_name, created.last_name].filter(Boolean).join(' '),
+              loginId: login_credentials.login_id,
+              password: login_credentials.temporary_password,
+              phone: created.phone_number,
+              dialCode: created.dial_code,
+            },
+          ]);
+        } else {
+          router.push(ROUTES.staffs);
+        }
       } else {
         const updated = await StaffService.update(staffId ?? staff!.id, payload);
         toast.success(`${updated.first_name} updated`);
@@ -276,5 +290,10 @@ export function useStaffDetail(id: string | undefined) {
     hasSavedDraft: savedForm.hasDraft,
     restoreSavedDraft: savedForm.restoreDraft,
     discardSavedDraft: savedForm.discardDraft,
+    issuedCredentials,
+    closeIssuedCredentials: () => {
+      setIssuedCredentials([]);
+      router.push(ROUTES.staffs);
+    },
   };
 }

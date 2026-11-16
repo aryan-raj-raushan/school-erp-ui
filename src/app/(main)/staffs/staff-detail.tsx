@@ -24,6 +24,7 @@ import {
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import { StaffMobileProfile } from "@/components/staff/StaffMobileProfile";
 import { StaffMobileForm } from "@/components/staff/StaffMobileForm";
+import { CredentialsDialog } from "@/components/shared/CredentialsDialog";
 
 export function StaffDetail({ id }: { id: string }) {
   const isNew = id === "create-new";
@@ -56,7 +57,17 @@ export function StaffDetail({ id }: { id: string }) {
     hasSavedDraft,
     restoreSavedDraft,
     discardSavedDraft,
+    issuedCredentials,
+    closeIssuedCredentials,
   } = useStaffDetail(resolvedId);
+
+  const credentialsDialog = (
+    <CredentialsDialog
+      title="Staff login"
+      credentials={issuedCredentials}
+      onClose={closeIssuedCredentials}
+    />
+  );
 
   if (isLoadingData || viewportIsMobile === undefined) {
     return (
@@ -81,29 +92,32 @@ export function StaffDetail({ id }: { id: string }) {
 
   if (isMobile) {
     return (
-      <StaffMobileForm
-        form={form}
-        isNew={isNew}
-        fullName={fullName}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
-        onCancel={isNew ? undefined : handleCancelEdit}
-        photo={{
-          url: profileImageUrl,
-          isUploading: isUploadingImage,
-          onFileChange: onImageChange,
-          inputRef: imageInputRef,
-          onPick: isNative ? handleNativeImagePick : undefined,
-        }}
-        roles={roles}
-        managers={staffMembers}
-        currentStaffId={resolvedId}
-        banner={
-          isNew && hasSavedDraft ? (
-            <SavedFormBanner onContinue={restoreSavedDraft} onDiscard={discardSavedDraft} />
-          ) : undefined
-        }
-      />
+      <>
+        {credentialsDialog}
+        <StaffMobileForm
+          form={form}
+          isNew={isNew}
+          fullName={fullName}
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmit}
+          onCancel={isNew ? undefined : handleCancelEdit}
+          photo={{
+            url: profileImageUrl,
+            isUploading: isUploadingImage,
+            onFileChange: onImageChange,
+            inputRef: imageInputRef,
+            onPick: isNative ? handleNativeImagePick : undefined,
+          }}
+          roles={roles}
+          managers={staffMembers}
+          currentStaffId={resolvedId}
+          banner={
+            isNew && hasSavedDraft ? (
+              <SavedFormBanner onContinue={restoreSavedDraft} onDiscard={discardSavedDraft} />
+            ) : undefined
+          }
+        />
+      </>
     );
   }
 
@@ -146,6 +160,7 @@ export function StaffDetail({ id }: { id: string }) {
 
   return (
     <Div type="col" gap="md" className="max-w-7xl">
+      {credentialsDialog}
       {/* Header */}
       <PageHeader {...pageHeaderConfig} />
 
@@ -520,18 +535,18 @@ export function StaffDetail({ id }: { id: string }) {
                   Login Details
                 </H2>
                 <P color="muted" className="text-xs -mt-2">
-                  Staff will log in with their email / phone number and this
-                  password.
+                  Staff log in with their phone number. Leave the password blank to
+                  generate a temporary one; it is shown after saving and must be
+                  changed at first login.
                 </P>
                 <FormGrid>
                   <FormField
                     label="Password"
-                    required
                     error={form.formState.errors.password?.message}
                   >
                     <Input
                       type="password"
-                      placeholder="Min 6 characters"
+                      placeholder="Leave blank to auto-generate"
                       {...form.register("password")}
                     />
                   </FormField>

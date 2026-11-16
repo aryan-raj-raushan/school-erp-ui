@@ -2,6 +2,7 @@
 
 import { BookOpen, CalendarDays } from "lucide-react";
 import { useAdminDashboardPage } from "@/hooks/useAdminDashboardPage";
+import { SetupChecklist } from "@/components/onboarding/SetupChecklist";
 import {
   AlertList,
   AttendanceTrendCard,
@@ -36,6 +37,8 @@ export function SchoolAdminDashboard() {
         chips={vm.chips}
         stat={vm.hasData ? vm.heroStat : null}
       />
+
+      <SetupChecklist />
 
       {vm.error && <DashboardError message="Couldn't load the latest numbers. Pull to refresh or try again." />}
 

@@ -6,7 +6,7 @@ import {
   Mail,
   Pencil,
   Phone,
-  Send,
+  KeyRound,
   Trash2,
   UserCheck,
   UserCog,
@@ -27,6 +27,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { ROUTES, STAFF_PAGE } from "@/constants";
 import type { StaffFilters } from "@/services/staff.service";
 import { Role, type Staff } from "@/types";
+import { CredentialsDialog } from "@/components/shared/CredentialsDialog";
 
 function fullName(staff: Staff) {
   return `${staff.first_name} ${staff.last_name ?? ""}`.trim();
@@ -49,6 +50,11 @@ export function StaffMobileList() {
 
   return (
     <>
+      <CredentialsDialog
+        title="Staff login"
+        credentials={list.issuedCredentials}
+        onClose={list.clearIssuedCredentials}
+      />
       <MobileListScreen
         filterFields={filterConfig.filterFields}
         filterValues={filterConfig.filterValues}
@@ -126,10 +132,14 @@ export function StaffMobileList() {
                   },
                 },
                 {
-                  label: "Resend invite",
-                  icon: <Send size={18} />,
+                  label: "Reset login password",
+                  icon: <KeyRound size={18} />,
                   hidden: !isAdmin,
-                  onClick: () => void list.resendInvite(actionTarget),
+                  confirm: {
+                    title: `Reset password for ${fullName(actionTarget)}?`,
+                    description: "A new temporary password is issued and the current one stops working.",
+                  },
+                  onClick: () => void list.resetStaffPassword(actionTarget),
                 },
                 {
                   label: "Offboard",

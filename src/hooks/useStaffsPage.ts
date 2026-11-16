@@ -9,6 +9,7 @@ import { ROUTES } from "@/constants";
 import { Role } from "@/types";
 import type { Staff, PaginationMeta } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
+import type { IssuedCredential } from "@/components/shared/CredentialsDialog";
 
 export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const router = useRouter();
@@ -16,6 +17,7 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
   const isAdmin =
     user?.role === Role.SCHOOL_ADMIN || user?.role === ("PRINCIPAL" as any);
   const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [issuedCredentials, setIssuedCredentials] = useState<IssuedCredential[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [filters, setFilters] = useState<StaffFilters>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,14 +71,20 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     }
   }
 
-  async function resendInvite(id: string) {
+  async function resetStaffPassword(staff: Staff) {
     try {
-      await StaffService.resendInvite(id);
-      toast.success("Invite resent");
+      const credentials = await StaffService.resetPassword(staff.id);
+      setIssuedCredentials([
+        {
+          name: [staff.first_name, staff.last_name].filter(Boolean).join(" "),
+          loginId: credentials.login_id,
+          password: credentials.temporary_password,
+          phone: staff.phone_number,
+          dialCode: staff.dial_code,
+        },
+      ]);
     } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to resend invite",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to reset password");
     }
   }
 
@@ -113,7 +121,9 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
     removeStaff,
     offboardStaff,
     reonboardStaff,
-    resendInvite,
+    resetStaffPassword,
+    issuedCredentials,
+    clearIssuedCredentials: () => setIssuedCredentials([]),
     updateFilters,
     refetch: fetchStaff,
     navigateToNew,

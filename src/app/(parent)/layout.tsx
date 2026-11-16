@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useParentChildren } from "@/hooks/useParentChildren";
 import { Div, P, Button, ResponsiveSelect, PullToRefresh } from "@/components/ui";
 import { ParentTabBar } from "@/components/layout/ParentTabBar";
+import { ProfileConfirmGate } from "@/components/onboarding/ProfileConfirmGate";
 
 const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.accessToken,
@@ -97,7 +98,9 @@ export default function ParentLayout({
 
       <main className="flex-1 overflow-y-auto">
         <PullToRefresh onRefresh={refreshPage}>
-          <div key={refreshKey}>{children}</div>
+          <div key={refreshKey}>
+            <ProfileConfirmGate>{children}</ProfileConfirmGate>
+          </div>
         </PullToRefresh>
       </main>
 

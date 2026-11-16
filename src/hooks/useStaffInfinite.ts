@@ -1,16 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
 import { StaffService, type StaffFilters } from "@/services/staff.service";
 import { haptic } from "@/lib/haptics";
 import type { Staff } from "@/types";
+import type { IssuedCredential } from "@/components/shared/CredentialsDialog";
 
 type ListFilters = Omit<StaffFilters, "page" | "limit">;
 
 /**
  * Mobile staff list: infinite paging plus optimistic offboard / re-onboard,
- * delete and resend-invite, so screens never touch the service directly.
+ * delete and login password resets, so screens never touch the service directly.
  */
 export function useStaffInfinite() {
   const list = useInfiniteList<Staff, ListFilters>({
@@ -20,6 +22,7 @@ export function useStaffInfinite() {
   });
 
   const { patchItem, removeItem } = list;
+  const [issuedCredentials, setIssuedCredentials] = useState<IssuedCredential[]>([]);
 
   async function setActive(staff: Staff, active: boolean) {
     patchItem(staff.id, { is_active: active });
@@ -45,15 +48,30 @@ export function useStaffInfinite() {
     }
   }
 
-  async function resendInvite(staff: Staff) {
+  async function resetStaffPassword(staff: Staff) {
     try {
-      await StaffService.resendInvite(staff.id);
+      const credentials = await StaffService.resetPassword(staff.id);
       void haptic("success");
-      toast.success("Invite resent");
+      setIssuedCredentials([
+        {
+          name: [staff.first_name, staff.last_name].filter(Boolean).join(" "),
+          loginId: credentials.login_id,
+          password: credentials.temporary_password,
+          phone: staff.phone_number,
+          dialCode: staff.dial_code,
+        },
+      ]);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to resend invite");
+      toast.error(err instanceof Error ? err.message : "Failed to reset password");
     }
   }
 
-  return { ...list, setActive, deleteStaff, resendInvite };
+  return {
+    ...list,
+    setActive,
+    deleteStaff,
+    resetStaffPassword,
+    issuedCredentials,
+    clearIssuedCredentials: () => setIssuedCredentials([]),
+  };
 }

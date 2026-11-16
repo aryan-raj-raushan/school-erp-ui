@@ -11,6 +11,7 @@ export const ENDPOINTS = {
     refresh: "/auth/refresh",
     logout: "/auth/logout",
     me: "/auth/me",
+    meProfile: "/auth/me/profile",
     switchSchool: (schoolId: string) => `/auth/switch-school/${schoolId}`,
     parentChildren: "/auth/parent/children",
     switchStudent: (studentId: string) => `/auth/parent/switch-student/${studentId}`,
@@ -166,6 +167,7 @@ export const ENDPOINTS = {
     byId: (id: string) => `/staff/${id}`,
     offboard: (id: string) => `/staff/${id}/offboard`,
     reonboard: (id: string) => `/staff/${id}/reonboard`,
+    resetPassword: (id: string) => `/staff/${id}/reset-password`,
   },
   staffShifts: {
     list: '/staff-shifts',
@@ -175,7 +177,6 @@ export const ENDPOINTS = {
   },
   invite: {
     verifyToken: "/invite/verify-token",
-    resend: (userId: string) => `/invite/resend/${userId}`,
   },
   bulkImport: {
     template: (entity: string) => `/bulk-import/${entity}/template`,
@@ -399,6 +400,7 @@ export const ENDPOINTS = {
     admin: "/dashboard/admin",
     teacher: "/dashboard/teacher",
     parent: "/dashboard/parent",
+    setupStatus: "/dashboard/setup-status",
   },
   notifications: {
     list: "/notifications",

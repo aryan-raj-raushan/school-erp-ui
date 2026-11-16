@@ -58,6 +58,8 @@ export const ROUTES = {
   staffView: (id: string) => `/staffs/view?id=${id}`,
   staffEdit: (id: string) => `/staffs/view?id=${id}&edit=true`,
   parents: '/parents',
+  schoolProfile: '/settings/school-profile',
+  timings: '/settings/timings',
   financeSetup: '/finance/setup',
   financeLedger: '/finance/ledger',
   salary: '/hr/salary',
