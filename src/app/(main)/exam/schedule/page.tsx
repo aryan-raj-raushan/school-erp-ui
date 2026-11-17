@@ -37,6 +37,7 @@ import {
 } from "@/constants/exam.constants";
 import type { ExamSchedule } from "@/types/exam.types";
 import type { Staff } from "@/types";
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 type PersistedScheduleFilters = {
   academic_year_id?: string;
@@ -421,7 +422,7 @@ function ScheduleContent() {
               <Button size="sm" variant="outline" loading={bulk.isApplying} onClick={() => bulk.applyBulkLock(false)}>
                 <Unlock size={13} /> Unlock
               </Button>
-              <Button size="sm" variant="destructive" loading={bulk.isApplying} onClick={bulk.applyBulkDelete}>
+              <Button size="sm" variant="destructive" loading={bulk.isApplying} onClick={() => void confirmDelete(`${bulk.selectedIds.size} selected schedule(s)`, bulk.applyBulkDelete)}>
                 <Trash2 size={13} /> Delete
               </Button>
             </Div>

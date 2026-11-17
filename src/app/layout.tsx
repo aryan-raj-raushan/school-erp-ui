@@ -6,6 +6,7 @@ import './globals.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ChatPatternBackground } from '@/components/background/chat-pattern-background';
 import { InputGuards } from '@/components/layout/InputGuards';
+import { ConfirmDialogHost } from '@/components/ui/confirm-dialog';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full font-[family-name:var(--font-inter,var(--font-geist))]">
         <InputGuards />
+        <ConfirmDialogHost />
         <ThemeProvider>
           <TooltipProvider>
             <ChatPatternBackground>{children}</ChatPatternBackground>

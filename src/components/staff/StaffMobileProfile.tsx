@@ -41,9 +41,6 @@ export function StaffMobileProfile({
   const phone = staff.phone_number
     ? `${staff.dial_code ?? ""}${staff.phone_number}`
     : null;
-  const hasExperience =
-    staff.previous_employer || staff.previous_role || staff.total_experience;
-
   return (
     <PullToRefresh onRefresh={onRefresh}>
       <div className="flex flex-col gap-3 pt-3">
@@ -86,6 +83,9 @@ export function StaffMobileProfile({
 
         <DetailSection title="Personal information" icon={<User size={18} />}>
           <DetailGrid>
+            <DetailField label="Salutation" value={staff.salutation} />
+            <DetailField label="First name" value={staff.first_name} />
+            <DetailField label="Last name" value={staff.last_name} />
             <DetailField
               label="Gender"
               value={
@@ -142,26 +142,24 @@ export function StaffMobileProfile({
           </DetailGrid>
         </DetailSection>
 
-        {hasExperience && (
-          <DetailSection
-            title="Work experience"
-            icon={<History size={18} />}
-            defaultOpen={false}
-          >
-            <DetailGrid>
-              <DetailField
-                label="Previous employer"
-                value={staff.previous_employer}
-                wide
-              />
-              <DetailField label="Previous role" value={staff.previous_role} />
-              <DetailField
-                label="Total experience"
-                value={staff.total_experience}
-              />
-            </DetailGrid>
-          </DetailSection>
-        )}
+        <DetailSection
+          title="Work experience"
+          icon={<History size={18} />}
+          defaultOpen={false}
+        >
+          <DetailGrid>
+            <DetailField
+              label="Previous employer"
+              value={staff.previous_employer}
+              wide
+            />
+            <DetailField label="Previous role" value={staff.previous_role} />
+            <DetailField
+              label="Total experience"
+              value={staff.total_experience}
+            />
+          </DetailGrid>
+        </DetailSection>
       </div>
     </PullToRefresh>
   );

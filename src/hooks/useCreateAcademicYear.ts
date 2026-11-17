@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ROUTES } from '@/constants';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const createAcademicYearSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
@@ -24,12 +25,14 @@ export function useCreateAcademicYear() {
   const router = useRouter();
 
   const form = useForm<CreateAcademicYearFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(createAcademicYearSchema) as any,
     defaultValues: { is_enabled: true, is_current: false },
   });
 
   async function createAcademicYear(values: CreateAcademicYearFormValues) {
     try {
+      if (!(await confirmCreate(`academic year ${values.name}`))) return;
       await AcademicYearsService.create({
         name: values.name,
         session_code: values.session_code || undefined,

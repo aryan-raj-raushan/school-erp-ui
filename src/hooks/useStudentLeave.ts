@@ -6,6 +6,7 @@ import { StudentLeaveService, ParentLeaveService, type ReviewLeavePayload } from
 import { ClassesService } from '@/services/classes.service';
 import { StudentsService } from '@/services/students.service';
 import type { StudentLeaveRequest, Student, Section, Class } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 function todayISO() {
   return new Date().toISOString().split('T')[0];
@@ -39,8 +40,8 @@ export function useStudentLeave() {
     try {
       const data = await StudentLeaveService.allRequests();
       setRequests(data);
-    } catch {
-      toast.error('Failed to load student leave requests');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load student leave requests'));
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +68,8 @@ export function useStudentLeave() {
       const res = await StudentsService.list({ section_id: sectionId, limit: 100 });
       setApplyStudents(res.items);
       setApplyStudentId('');
-    } catch {
-      toast.error('Failed to load students');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load students'));
     } finally {
       setIsLoadingApplyStudents(false);
     }
@@ -108,8 +109,8 @@ export function useStudentLeave() {
       setRequests((prev) => [created, ...prev]);
       toast.success('Leave request submitted');
       closeApply();
-    } catch {
-      toast.error('Failed to submit leave request');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to submit leave request'));
     } finally {
       setIsApplying(false);
     }
@@ -134,8 +135,8 @@ export function useStudentLeave() {
       setRequests((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       toast.success(`Leave request ${status.toLowerCase()}`);
       closeReview();
-    } catch {
-      toast.error('Failed to review leave request');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to review leave request'));
     } finally {
       setIsReviewing(false);
     }

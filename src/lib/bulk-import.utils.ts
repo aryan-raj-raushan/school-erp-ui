@@ -39,3 +39,49 @@ export function downloadCsv(rows: (string | number)[][], fileName: string) {
   const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
   saveBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }), fileName);
 }
+
+const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_BACKOFF_MS = 15000;
+const POLL_GIVE_UP_AFTER_MS = 2 * 60 * 1000;
+
+export function pollImportJob<T extends { status: string }>(options: {
+  fetchJob: () => Promise<T>;
+  onUpdate: (job: T) => void;
+  onFinished: (job: T) => void;
+  onLost: (lastError: unknown) => void;
+}): () => void {
+  let cancelled = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let failures = 0;
+  let lastSuccessAt = Date.now();
+
+  const schedule = (delay: number) => {
+    timer = setTimeout(tick, delay);
+  };
+
+  async function tick() {
+    try {
+      const job = await options.fetchJob();
+      if (cancelled) return;
+      failures = 0;
+      lastSuccessAt = Date.now();
+      options.onUpdate(job);
+      if (job.status === "running") schedule(POLL_INTERVAL_MS);
+      else options.onFinished(job);
+    } catch (err) {
+      if (cancelled) return;
+      failures++;
+      if (Date.now() - lastSuccessAt >= POLL_GIVE_UP_AFTER_MS) {
+        options.onLost(err);
+        return;
+      }
+      schedule(Math.min(POLL_INTERVAL_MS * 2 ** failures, POLL_MAX_BACKOFF_MS));
+    }
+  }
+
+  schedule(POLL_INTERVAL_MS);
+  return () => {
+    cancelled = true;
+    clearTimeout(timer);
+  };
+}

@@ -27,6 +27,8 @@ import {
   type UpdateSchoolFormValues,
 } from '@/lib/validations/schools.validation';
 import type { PaginationMeta, School } from '@/types';
+import { usePincodeAutofill } from '@/hooks/usePincodeLookup';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const DEFAULT_DIAL_CODE = '+91';
 
@@ -43,12 +45,15 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   const { setAuth, setPermissions } = useAuthStore();
   const router = useRouter();
 
+  const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
   const createForm = useForm<CreateSchoolFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(createSchoolSchema),
     defaultValues: { dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE },
   });
 
   const editForm = useForm<UpdateSchoolFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(updateSchoolSchema),
   });
 
@@ -125,6 +130,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.admin_email && { admin_email: values.admin_email }),
     };
     try {
+      if (!(await confirmCreate(`school "${values.name}"`))) return;
       const school = await SchoolsService.create(payload);
       toast.success(`${school.name} created with code ${school.code}`);
       showCredentials(school.admin_credentials, values);
@@ -165,15 +171,13 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     }
   }
 
-  async function deleteSchool(school: School) {
-    if (!confirm(`Delete "${school.name}"? This cannot be undone.`)) return;
-    try {
-      await SchoolsService.remove(school.id);
-      toast.success('School deleted');
-      await fetchSchools();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete school');
-    }
+  function deleteSchool(school: School) {
+    setDeletingSchool(school);
+  }
+
+  async function handleSchoolDeleted() {
+    setDeletingSchool(null);
+    await fetchSchools();
   }
 
   async function loginAsSchool(school: School) {
@@ -263,7 +267,12 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
 
   useEffect(() => { fetchSchools(); }, [fetchSchools]);
 
+  const createPincode = usePincodeAutofill(createForm, { pincode: 'pincode', city: 'city', state: 'state' });
+  const editPincode = usePincodeAutofill(editForm, { pincode: 'pincode', city: 'city', state: 'state' });
+
   return {
+    createPincode,
+    editPincode,
     schools, pagination, filters, isLoading,
     switchingId,
     showCreateModal,
@@ -282,6 +291,9 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     loginAsSchool,
     resetAdminPassword,
     downloadBackup,
+    deletingSchool,
+    closeDeleteDialog: () => setDeletingSchool(null),
+    handleSchoolDeleted,
     issuedCredentials,
     clearIssuedCredentials: () => setIssuedCredentials([]),
     updateFilters,

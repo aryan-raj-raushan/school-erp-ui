@@ -24,13 +24,13 @@ import { useStaffInfinite } from "@/hooks/useStaffInfinite";
 import { useStaffFilterConfig } from "@/hooks/useStaffFilterConfig";
 import { getStaffRoleLabel } from "@/hooks/useStaffDetail";
 import { useAuthStore } from "@/store/auth.store";
-import { ROUTES, STAFF_PAGE } from "@/constants";
+import { ROUTES, STAFF_PAGE, formatPersonName } from "@/constants";
 import type { StaffFilters } from "@/services/staff.service";
 import { Role, type Staff } from "@/types";
 import { CredentialsDialog } from "@/components/shared/CredentialsDialog";
 
 function fullName(staff: Staff) {
-  return `${staff.first_name} ${staff.last_name ?? ""}`.trim();
+  return formatPersonName(staff);
 }
 
 export function StaffMobileList() {

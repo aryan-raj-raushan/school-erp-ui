@@ -24,6 +24,7 @@ import {
 import { Tabs } from "@/components/ui/tabs";
 import { useSalary, SalaryTab } from "@/hooks/useSalary";
 import { isNativeApp } from "@/lib/platform";
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 const TABS = [
   { value: "heads" as const, label: "Salary Heads" },
@@ -718,7 +719,7 @@ export default function SalaryManagementPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => deleteTemplate(tpl.id)}
+                            onClick={() => void confirmDelete(`salary template ${tpl.name}`, () => deleteTemplate(tpl.id))}
                           >
                             <Icon icon={Trash2} type="sm-danger" />
                           </Button>

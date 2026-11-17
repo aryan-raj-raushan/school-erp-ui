@@ -32,6 +32,7 @@ import {
   ResponsiveSelect,
 } from "@/components/ui";
 import { CalendarViewModal } from "@/components/holiday-events/CalendarViewModal";
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 const TYPE_TABS = [
   { value: "", label: "All" },
@@ -257,7 +258,7 @@ function SchoolEventsDesktop() {
                     <Button
                       size="icon-sm"
                       variant="destructive"
-                      onClick={() => deleteEvent(ev.id)}
+                      onClick={() => void confirmDelete('this holiday / event', () => deleteEvent(ev.id))}
                       title="Delete"
                     >
                       <Trash2 size={14} />

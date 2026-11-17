@@ -157,8 +157,8 @@ export interface SheetAction {
   onClick: () => void;
   destructive?: boolean;
   hidden?: boolean;
-  /** Destructive actions ask for a second tap inside the same sheet. */
-  confirm?: { title?: string; description?: string; confirmLabel?: string };
+  /** Destructive actions ask for a second tap inside the same sheet; `false` skips it. */
+  confirm?: false | { title?: string; description?: string; confirmLabel?: string };
 }
 
 export interface ActionSheetProps {
@@ -187,7 +187,7 @@ export function ActionSheet({
 
   function run(action: SheetAction) {
     void haptic("light");
-    if (action.confirm) {
+    if (action.confirm !== false && (action.confirm || action.destructive)) {
       setPending(action);
       return;
     }
@@ -213,10 +213,10 @@ export function ActionSheet({
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-semibold">
-                {pending.confirm?.title ?? `${pending.label}?`}
+                {(pending.confirm || undefined)?.title ?? `${pending.label}?`}
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {pending.confirm?.description ??
+                {(pending.confirm || undefined)?.description ??
                   "This action cannot be undone."}
               </p>
             </div>
@@ -234,7 +234,7 @@ export function ActionSheet({
               onClick={confirm}
               className="h-12 flex-1 rounded-2xl bg-destructive text-sm font-semibold text-white active:opacity-80"
             >
-              {pending.confirm?.confirmLabel ?? pending.label}
+              {(pending.confirm || undefined)?.confirmLabel ?? pending.label}
             </button>
           </div>
         </div>

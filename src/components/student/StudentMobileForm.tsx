@@ -45,6 +45,7 @@ import {
   RELIGION_OPTIONS,
   STUDENT_STATUS_OPTIONS,
 } from "@/constants/students.constants";
+import { SALUTATION_OPTIONS } from "@/constants/person.constants";
 
 const STEPS: ReadonlyArray<FormStep<StudentFormValues>> = [
   {
@@ -79,6 +80,7 @@ export interface StudentMobileFormProps {
   onCancel?: () => void;
   banner?: React.ReactNode;
   nextNumbers?: StudentNextNumbers | null;
+  pincodeLookup?: { isLooking: boolean; lookupError?: string };
 }
 
 // ─── Parent card ──────────────────────────────────────────────────────────────
@@ -123,6 +125,13 @@ function ParentCard({
         label="Relation"
         required
         options={PARENT_RELATION_OPTIONS}
+      />
+      <ControlledSelectField
+        control={control}
+        name={`parents.${index}.salutation`}
+        label="Salutation"
+        placeholder="Mr. / Mrs. / Miss"
+        options={SALUTATION_OPTIONS}
       />
       <MobileTextField
         label="First name"
@@ -342,6 +351,7 @@ export function StudentMobileForm({
   onCancel,
   banner,
   nextNumbers,
+  pincodeLookup,
 }: StudentMobileFormProps) {
   const { control, register, watch, formState } = form;
   const errors = formState.errors;
@@ -612,6 +622,7 @@ export function StudentMobileForm({
             onClick={() =>
               parentsArray.append({
                 relation: parentsArray.fields.length === 0 ? "FATHER" : "MOTHER",
+                salutation: parentsArray.fields.length === 0 ? "Mr." : "Mrs.",
                 first_name: "",
                 phone_number: "",
                 dial_code: "+91",
@@ -638,17 +649,18 @@ export function StudentMobileForm({
               {...register("address.address")}
             />
             <FieldRow>
-              <MobileTextField label="City" {...register("address.city")} />
-              <MobileTextField label="State" {...register("address.state")} />
-            </FieldRow>
-            <FieldRow>
               <MobileTextField
-                label="Pincode"
+                label={pincodeLookup?.isLooking ? "Pincode · looking up…" : "Pincode"}
                 inputMode="numeric"
                 maxLength={6}
+                error={formState.errors.address?.pincode?.message ?? pincodeLookup?.lookupError}
                 {...register("address.pincode")}
               />
               <MobileTextField label="Country" {...register("address.country")} />
+            </FieldRow>
+            <FieldRow>
+              <MobileTextField label="City" {...register("address.city")} />
+              <MobileTextField label="State" {...register("address.state")} />
             </FieldRow>
           </FormGroup>
           <FormGroup title="Previous school">

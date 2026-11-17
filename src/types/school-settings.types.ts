@@ -15,6 +15,8 @@ export interface SchoolSettings {
   admission_include_year: boolean;
   admission_number_digits: number;
   admission_start_number: number;
+  id_card_template: string | null;
+  pickup_card_template: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +64,8 @@ export interface UpdateSchoolSettingsPayload {
   admission_include_year?: boolean;
   admission_number_digits?: number;
   admission_start_number?: number;
+  id_card_template?: string;
+  pickup_card_template?: string;
 }
 
 export interface CreateSchoolTimingPayload {

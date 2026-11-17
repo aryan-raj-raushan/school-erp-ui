@@ -12,14 +12,19 @@ import {
   PhotoHero,
   StepHeader,
   StepPanel,
+  stripUrlProtocol,
+  withUrlProtocol,
 } from "@/components/ui";
 import { useStepper } from "@/hooks/useStepper";
 import type { UpdateSchoolProfilePayload } from "@/services/school-profile.service";
+import type { SchoolProfileErrors, SchoolProfileField } from "@/hooks/useSchoolProfile";
+import { SALUTATION_OPTIONS } from "@/constants/person.constants";
 import {
   BOARD_TYPE_OPTIONS,
   MARKING_SYSTEM_OPTIONS,
   TIMEZONE_OPTIONS,
 } from "@/constants/school-profile.constants";
+import { errorMessage } from '@/lib/api-error';
 
 const STEPS = [
   { id: "basics", label: "School" },
@@ -31,10 +36,15 @@ const STEPS = [
 export interface SchoolProfileMobileFormProps {
   schoolCode: string;
   form: UpdateSchoolProfilePayload;
+  errors: SchoolProfileErrors;
   updateField: <K extends keyof UpdateSchoolProfilePayload>(
     key: K,
     value: UpdateSchoolProfilePayload[K],
   ) => void;
+  touchField: (key: SchoolProfileField) => void;
+  updatePincode: (value: string) => void;
+  isLookingUpPincode: boolean;
+  pincodeLookupError?: string;
   isSaving: boolean;
   onSave: () => Promise<unknown> | unknown;
   uploadLogo: (file: File) => Promise<void>;
@@ -43,7 +53,12 @@ export interface SchoolProfileMobileFormProps {
 export function SchoolProfileMobileForm({
   schoolCode,
   form,
+  errors,
   updateField,
+  touchField,
+  updatePincode,
+  isLookingUpPincode,
+  pincodeLookupError,
   isSaving,
   onSave,
   uploadLogo,
@@ -58,8 +73,8 @@ export function SchoolProfileMobileForm({
     setIsUploading(true);
     try {
       await uploadLogo(file);
-    } catch {
-      toast.error("Failed to upload logo");
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to upload logo"));
     } finally {
       setIsUploading(false);
     }
@@ -96,9 +111,12 @@ export function SchoolProfileMobileForm({
           <MobileTextField
             label="School name"
             autoCapitalize="words"
+            required
             placeholder="Delhi Public School"
             value={form.name ?? ""}
+            error={errors.name}
             onChange={(e) => updateField("name", e.target.value)}
+            onBlur={() => touchField("name")}
           />
           <FieldRow>
             <MobileTextField
@@ -113,6 +131,8 @@ export function SchoolProfileMobileForm({
               inputMode="numeric"
               placeholder="1995"
               value={form.established_year ?? ""}
+              error={errors.established_year}
+              onBlur={() => touchField("established_year")}
               onChange={(e) =>
                 updateField(
                   "established_year",
@@ -180,24 +200,30 @@ export function SchoolProfileMobileForm({
             autoCapitalize="none"
             placeholder="info@school.edu.in"
             value={form.email ?? ""}
+            error={errors.email}
             onChange={(e) => updateField("email", e.target.value)}
+            onBlur={() => touchField("email")}
           />
           <MobileTextField
             label="Contact number"
             type="tel"
-            inputMode="tel"
-            placeholder="9876543210"
+            prefix={form.dial_code || "+91"}
+            placeholder="10-digit mobile number"
             value={form.contact_number ?? ""}
+            error={errors.contact_number}
             onChange={(e) => updateField("contact_number", e.target.value)}
+            onBlur={() => touchField("contact_number")}
           />
           <MobileTextField
             label="Website"
-            type="url"
+            prefix="https://"
             inputMode="url"
             autoCapitalize="none"
-            placeholder="https://school.edu.in"
-            value={form.website ?? ""}
-            onChange={(e) => updateField("website", e.target.value)}
+            placeholder="school.edu.in"
+            value={stripUrlProtocol(form.website)}
+            error={errors.website}
+            onChange={(e) => updateField("website", withUrlProtocol(e.target.value.replace(/\s/g, "")))}
+            onBlur={() => touchField("website")}
           />
         </FormGroup>
         <FormGroup title="Address">
@@ -206,6 +232,16 @@ export function SchoolProfileMobileForm({
             placeholder="123, MG Road"
             value={form.address ?? ""}
             onChange={(e) => updateField("address", e.target.value)}
+          />
+          <MobileTextField
+            label={isLookingUpPincode ? "Pincode · looking up…" : "Pincode"}
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="110001"
+            value={form.pincode ?? ""}
+            error={errors.pincode ?? pincodeLookupError}
+            onChange={(e) => updatePincode(e.target.value)}
+            onBlur={() => touchField("pincode")}
           />
           <FieldRow>
             <MobileTextField
@@ -219,29 +255,6 @@ export function SchoolProfileMobileForm({
               onChange={(e) => updateField("state", e.target.value)}
             />
           </FieldRow>
-          <MobileTextField
-            label="Pincode"
-            inputMode="numeric"
-            placeholder="110001"
-            value={form.pincode ?? ""}
-            onChange={(e) => updateField("pincode", e.target.value)}
-          />
-          <FieldRow>
-            <MobileTextField
-              label="Latitude"
-              type="number"
-              inputMode="decimal"
-              value={form.lat ?? ""}
-              onChange={(e) => updateField("lat", e.target.value)}
-            />
-            <MobileTextField
-              label="Longitude"
-              type="number"
-              inputMode="decimal"
-              value={form.lng ?? ""}
-              onChange={(e) => updateField("lng", e.target.value)}
-            />
-          </FieldRow>
         </FormGroup>
       </StepPanel>
 
@@ -252,10 +265,17 @@ export function SchoolProfileMobileForm({
           description="Who leads the school."
         />
         <FormGroup>
+          <MobileSelectField
+            label="Salutation"
+            placeholder="Mr. / Mrs. / Miss"
+            value={form.principal_salutation ?? ""}
+            onChange={(value) => updateField("principal_salutation", value)}
+            options={SALUTATION_OPTIONS}
+          />
           <MobileTextField
             label="Principal name"
             autoCapitalize="words"
-            placeholder="Dr. Rajesh Kumar"
+            placeholder="Rajesh Kumar"
             value={form.principal_name ?? ""}
             onChange={(e) => updateField("principal_name", e.target.value)}
           />
@@ -266,15 +286,18 @@ export function SchoolProfileMobileForm({
             autoCapitalize="none"
             placeholder="principal@school.edu.in"
             value={form.principal_email ?? ""}
+            error={errors.principal_email}
             onChange={(e) => updateField("principal_email", e.target.value)}
+            onBlur={() => touchField("principal_email")}
           />
           <MobileTextField
             label="Principal phone"
             type="tel"
-            inputMode="tel"
-            placeholder="9876543210"
+            placeholder="10-digit mobile number"
             value={form.principal_phone ?? ""}
+            error={errors.principal_phone}
             onChange={(e) => updateField("principal_phone", e.target.value)}
+            onBlur={() => touchField("principal_phone")}
           />
         </FormGroup>
       </StepPanel>

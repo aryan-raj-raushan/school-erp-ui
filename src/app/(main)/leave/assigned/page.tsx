@@ -29,6 +29,7 @@ import {
 import { useStaffsPage } from "@/hooks/useStaffsPage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LeaveAssignSheet } from "@/components/leave/LeaveAssignSheet";
+import { confirmAction } from '@/components/ui/confirm-dialog';
 
 // ─── Assignments DataTable Component ──────────────────────────────────────────
 interface AssignmentsDataTableProps {
@@ -125,7 +126,7 @@ function AssignmentsDataTable({
           <Button
             size="icon-sm"
             variant="destructive"
-            onClick={() => onRevoke(row.original.id)}
+            onClick={() => void confirmAction({ title: 'Revoke this leave assignment?', description: 'The staff member will lose this leave allocation.', confirmLabel: 'Revoke', destructive: true }).then((ok) => ok && onRevoke(row.original.id))}
             title={LEAVE_ASSIGNED_PAGE.buttons.revoke}
           >
             <Trash2 size={14} />

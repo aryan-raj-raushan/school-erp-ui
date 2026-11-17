@@ -8,6 +8,8 @@ export interface CompanyUser {
   last_name: string | null;
   email: string;
   role: Role;
+  company_role_id: string | null;
+  company_role_name?: string | null;
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;
@@ -41,10 +43,13 @@ export interface CreateCompanyUserPayload {
   email: string;
   password: string;
   role: Role;
+  company_role_id?: string | null;
 }
 
 export type UpdateCompanyUserPayload = Partial<
-  Pick<CreateCompanyUserPayload, 'first_name' | 'last_name' | 'role'> & { is_active: boolean }
+  Pick<CreateCompanyUserPayload, 'first_name' | 'last_name' | 'email' | 'role' | 'company_role_id'> & {
+    is_active: boolean;
+  }
 >;
 
 export const CompanyUsersService = {

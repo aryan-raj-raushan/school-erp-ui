@@ -9,6 +9,7 @@ import {
   optionalEmailSchema,
   optionalAadhaarSchema,
 } from './common.validation';
+import { SALUTATIONS } from '@/constants/person.constants';
 
 export const studentAcademicInfoSchema = z.object({
   academic_year_id: z.string().min(1, 'Academic year is required'),
@@ -64,6 +65,7 @@ export const studentParentSchema = z
     relation: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'GRANDPARENT', 'SIBLING', 'OTHER'], {
       message: 'Relation is required',
     }),
+    salutation: z.enum(SALUTATIONS).optional().or(z.literal('')),
     first_name: requiredNameSchema(100),
     last_name: optionalNameSchema(100),
     email: optionalEmailSchema,

@@ -11,6 +11,7 @@ export function useLoginPage() {
   const { loginUnified, isLoading } = useAuth();
 
   const form = useForm<UnifiedLoginFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(unifiedLoginSchema),
     defaultValues: { identifier: '', dial_code: '+91', password: '' },
   });

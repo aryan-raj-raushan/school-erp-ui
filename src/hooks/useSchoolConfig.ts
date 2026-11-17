@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { SchoolSettingsService } from '@/services/school-settings.service';
 import { SCHOOL_CONFIG_PAGE } from '@/constants/school-settings.constants';
 import type { SchoolSettings, UpdateSchoolSettingsPayload } from '@/types/school-settings.types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useSchoolConfig() {
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
@@ -29,8 +30,8 @@ export function useSchoolConfig() {
         admission_number_digits: data.admission_number_digits,
         admission_start_number: data.admission_start_number,
       });
-    } catch {
-      toast.error('Failed to load school configuration');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load school configuration'));
     } finally {
       setIsLoading(false);
     }

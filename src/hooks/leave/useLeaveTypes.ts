@@ -71,6 +71,7 @@ export function useLeaveTypeDetail(id?: string) {
   const [isEditing, setIsEditing] = useState(isNew);
 
   const form = useForm<LeaveTypeFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(leaveTypeSchema),
     defaultValues: {
       leave_name: '',

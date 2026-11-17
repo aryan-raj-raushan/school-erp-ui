@@ -11,6 +11,7 @@ import {
   type CreateSubscriptionFormValues,
 } from '@/lib/validations/subscriptions.validation';
 import type { Subscription, PaginationMeta, SubscriptionPlan } from '@/types';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 export type { CreateSubscriptionFormValues as SubscriptionFormValues };
 
@@ -79,6 +80,7 @@ export function useSubscriptions(schoolId?: string) {
       payment_methods_allowed: values.payment_methods_allowed,
     };
     try {
+      if (!(await confirmCreate('this subscription'))) return;
       const sub = await SubscriptionsService.create(payload);
       toast.success(`Subscription "${sub.plan_name}" created`);
       await fetchSubscriptions();

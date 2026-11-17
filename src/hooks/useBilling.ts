@@ -13,6 +13,7 @@ import {
 import { SubscriptionsService } from '@/services/subscriptions.service';
 import { PaymentsService } from '@/services/payments.service';
 import type { Invoice, InvoiceWithLineItems, PaginationMeta, Subscription, OneTimeCharge, OneTimeChargeType, InvoicePayment } from '@/types';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 interface GenerateInvoiceFormValues {
   subscription_id: string;
@@ -55,8 +56,8 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
 
-  const generateForm = useForm<GenerateInvoiceFormValues>();
-  const chargeForm = useForm<OneTimeChargeFormValues>();
+  const generateForm = useForm<GenerateInvoiceFormValues>({ mode: 'onTouched' });
+  const chargeForm = useForm<OneTimeChargeFormValues>({ mode: 'onTouched' });
 
   const fetchInvoices = useCallback(async () => {
     setIsLoading(true);
@@ -114,6 +115,7 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
       ...(validExtraItems.length > 0 && { extra_items: validExtraItems }),
     };
     try {
+      if (!(await confirmCreate('this invoice'))) return;
       const invoice = await InvoicesService.create(payload);
       toast.success(`Invoice ${invoice.invoice_number} generated`);
       await fetchInvoices();
@@ -160,6 +162,7 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
           quantity,
           ...(values.description && { description: values.description }),
         };
+        if (!(await confirmCreate('this one-time charge'))) return;
         await InvoicesService.createOneTimeCharge(payload);
         toast.success('One-time charge added');
       }

@@ -16,6 +16,7 @@ import {
   DataTable,
   FormField,
   PhoneField,
+  WebsiteField,
   Badge,
   type ColumnDef,
   ResponsiveSelect,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui';
 import { DatabaseBackup, KeyRound, LogIn, Pencil, Trash2 } from 'lucide-react';
 import { CredentialsDialog } from '@/components/shared/CredentialsDialog';
+import { DeleteSchoolDialog } from '@/components/platform/DeleteSchoolDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SchoolMobileForm } from '@/components/platform/SchoolMobileForm';
 
@@ -44,8 +46,10 @@ export default function SchoolsPage() {
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     editingSchool, openEditModal, closeEditModal, editForm, handleEditSubmit, isUpdating,
     deleteSchool, loginAsSchool, resetAdminPassword, downloadBackup,
+    deletingSchool, closeDeleteDialog, handleSchoolDeleted,
     issuedCredentials, clearIssuedCredentials,
     updateFilters,
+    createPincode, editPincode,
   } = useSchools();
 
   const user = useAuthStore((s) => s.user);
@@ -122,7 +126,7 @@ export default function SchoolsPage() {
                 icon: <Trash2 size={14} />,
                 variant: 'destructive',
                 hidden: !isSuperAdmin,
-                confirm: { description: `Delete ${row.original.name}? This cannot be undone.` },
+                confirm: false,
                 onClick: () => deleteSchool(row.original as any),
               },
             ]}
@@ -145,6 +149,7 @@ export default function SchoolsPage() {
     return (
       <SchoolMobileForm
         form={createForm}
+        pincodeLookup={createPincode}
         title={CREATE_SCHOOL_FORM.title}
         submitLabel={CREATE_SCHOOL_FORM.submit.idle}
         isEditing={false}
@@ -159,6 +164,7 @@ export default function SchoolsPage() {
     return (
       <SchoolMobileForm
         form={editForm}
+        pincodeLookup={editPincode}
         title={`Edit — ${editingSchool.name}`}
         submitLabel="Save changes"
         isEditing
@@ -173,6 +179,15 @@ export default function SchoolsPage() {
   return (
     <PageCol>
       {credentialsDialog}
+      {deletingSchool && (
+        <DeleteSchoolDialog
+          key={deletingSchool.id}
+          school={deletingSchool}
+          onClose={closeDeleteDialog}
+          onDeleted={handleSchoolDeleted}
+          onDownloadBackup={() => downloadBackup(deletingSchool)}
+        />
+      )}
       <PageHeader
         title={SCHOOLS_PAGE.title}
         subtitle={pagination ? `${pagination.total} schools` : SCHOOLS_PAGE.description}
@@ -237,9 +252,7 @@ export default function SchoolsPage() {
                     phoneProps={createForm.register('contact_number')}
                     phoneError={createForm.formState.errors.contact_number?.message ?? createForm.formState.errors.dial_code?.message}
                   />
-                  <FormField label={CREATE_SCHOOL_FORM.labels.website} error={createForm.formState.errors.website?.message}>
-                    <Input placeholder={CREATE_SCHOOL_FORM.placeholders.website} {...createForm.register('website')} />
-                  </FormField>
+                  <WebsiteField control={createForm.control} name="website" label={CREATE_SCHOOL_FORM.labels.website} />
                 </Div>
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.location}</P>
@@ -247,14 +260,18 @@ export default function SchoolsPage() {
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.address} {...createForm.register('address')} />
                   </FormField>
                   <Div type="grid" cols={3} gap="md">
+                    <FormField
+                      label={CREATE_SCHOOL_FORM.labels.pincode}
+                      error={createForm.formState.errors.pincode?.message ?? createPincode.lookupError}
+                      hint={createPincode.isLooking ? 'Looking up…' : 'Fills city & state'}
+                    >
+                      <Input inputMode="numeric" maxLength={6} placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...createForm.register('pincode')} />
+                    </FormField>
                     <FormField label={CREATE_SCHOOL_FORM.labels.city} error={createForm.formState.errors.city?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.city} {...createForm.register('city')} />
                     </FormField>
                     <FormField label={CREATE_SCHOOL_FORM.labels.state} error={createForm.formState.errors.state?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.state} {...createForm.register('state')} />
-                    </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.pincode} error={createForm.formState.errors.pincode?.message}>
-                      <Input inputMode="numeric" maxLength={6} placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...createForm.register('pincode')} />
                     </FormField>
                   </Div>
                 </Div>
@@ -324,9 +341,7 @@ export default function SchoolsPage() {
                     phoneProps={editForm.register('contact_number')}
                     phoneError={editForm.formState.errors.contact_number?.message ?? editForm.formState.errors.dial_code?.message}
                   />
-                  <FormField label={CREATE_SCHOOL_FORM.labels.website} error={editForm.formState.errors.website?.message}>
-                    <Input placeholder={CREATE_SCHOOL_FORM.placeholders.website} {...editForm.register('website')} />
-                  </FormField>
+                  <WebsiteField control={editForm.control} name="website" label={CREATE_SCHOOL_FORM.labels.website} />
                 </Div>
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.location}</P>
@@ -334,14 +349,18 @@ export default function SchoolsPage() {
                     <Input placeholder={CREATE_SCHOOL_FORM.placeholders.address} {...editForm.register('address')} />
                   </FormField>
                   <Div type="grid" cols={3} gap="md">
+                    <FormField
+                      label={CREATE_SCHOOL_FORM.labels.pincode}
+                      error={editForm.formState.errors.pincode?.message ?? editPincode.lookupError}
+                      hint={editPincode.isLooking ? 'Looking up…' : 'Fills city & state'}
+                    >
+                      <Input inputMode="numeric" maxLength={6} placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...editForm.register('pincode')} />
+                    </FormField>
                     <FormField label={CREATE_SCHOOL_FORM.labels.city} error={editForm.formState.errors.city?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.city} {...editForm.register('city')} />
                     </FormField>
                     <FormField label={CREATE_SCHOOL_FORM.labels.state} error={editForm.formState.errors.state?.message}>
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.state} {...editForm.register('state')} />
-                    </FormField>
-                    <FormField label={CREATE_SCHOOL_FORM.labels.pincode} error={editForm.formState.errors.pincode?.message}>
-                      <Input inputMode="numeric" maxLength={6} placeholder={CREATE_SCHOOL_FORM.placeholders.pincode} {...editForm.register('pincode')} />
                     </FormField>
                   </Div>
                 </Div>

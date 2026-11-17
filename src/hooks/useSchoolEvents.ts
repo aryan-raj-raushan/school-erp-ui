@@ -9,6 +9,7 @@ import { RolesService, type Role } from '@/services/roles.service';
 import { schoolEventSchema, type SchoolEventFormValues } from '@/lib/validations/settings/school-event.validation';
 import type { SchoolEvent, SchoolEventFilters } from '@/types/setting/school-events.types';
 import type { PaginationMeta } from '@/types';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 export function useSchoolEvents(initialFilters: SchoolEventFilters = {}) {
   const [events, setEvents] = useState<SchoolEvent[]>([]);
@@ -71,6 +72,7 @@ export function useSchoolEventDetail(id?: string) {
   const [isEditing, setIsEditing] = useState(isNew);
 
   const form = useForm<SchoolEventFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schoolEventSchema),
     defaultValues: {
       type: 'EVENT',
@@ -117,6 +119,7 @@ export function useSchoolEventDetail(id?: string) {
         exempt_role_ids: values.exempt_role_ids && values.exempt_role_ids.length > 0 ? values.exempt_role_ids : [],
       };
       if (isNew) {
+        if (!(await confirmCreate(`"${values.name}"`))) return null;
         const created = await SchoolEventsService.create(payload);
         toast.success(`${created.name} created`);
         return created;

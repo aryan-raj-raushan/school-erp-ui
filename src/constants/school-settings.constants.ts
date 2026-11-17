@@ -31,7 +31,7 @@ export const CONFLICT_RESOLUTION_OPTIONS: { value: ConflictResolutionMode; label
 ];
 
 export const TIMING_TYPE_OPTIONS: { value: TimingType; label: string }[] = [
-  { value: 'DEFAULT', label: 'Default' },
+  { value: 'DEFAULT', label: 'Regular' },
   { value: 'SUMMER', label: 'Summer' },
   { value: 'WINTER', label: 'Winter' },
   { value: 'EXAM', label: 'Exam Period' },
@@ -41,7 +41,7 @@ export const TIMING_TYPE_OPTIONS: { value: TimingType; label: string }[] = [
 ];
 
 export const TIMING_TYPE_BADGE: Record<TimingType, { label: string; variant: string }> = {
-  DEFAULT: { label: 'Default', variant: 'secondary' },
+  DEFAULT: { label: 'Regular', variant: 'secondary' },
   SUMMER: { label: 'Summer', variant: 'warning' },
   WINTER: { label: 'Winter', variant: 'info' },
   EXAM: { label: 'Exam', variant: 'destructive' },

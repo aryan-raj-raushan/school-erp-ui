@@ -14,6 +14,7 @@ import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES, DAYS_OF_WEEK, MAX_PERIODS_OPTIONS } from '@/constants';
 import type { Class } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export interface GridCell {
   subject_id: string;
@@ -71,7 +72,7 @@ export function useCreateTimetable() {
       setClasses(clsRes.items);
       setStaff(staffRes.items.map((s: any) => ({ id: s.id, name: `${s.first_name} ${s.last_name}` })));
       setSubjects(subRes.items);
-    } catch { toast.error('Failed to load form data'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load form data')); }
     finally { setIsLoadingData(false); }
   }, []);
 

@@ -32,6 +32,7 @@ export function useLeaveAssigned(
   const [isLoadingLeaveTypes, setIsLoadingLeaveTypes] = useState(false);
 
   const form = useForm<AssignLeaveFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(assignLeaveSchema),
     defaultValues: { leave_type_id: '', academic_year_id: '' },
   });

@@ -14,6 +14,7 @@ import {
   ListCard,
   QuickActions,
 } from "@/components/ui/dashboard";
+import { PunchInCard } from "@/components/attendance/PunchInCard";
 
 export function TeacherDashboard() {
   const vm = useTeacherDashboardPage();
@@ -27,6 +28,8 @@ export function TeacherDashboard() {
         chips={vm.chips}
         stat={vm.isLoading ? null : vm.heroStat}
       />
+
+      <PunchInCard />
 
       {vm.error && <DashboardError message="Couldn't load your dashboard. Please try again." />}
 

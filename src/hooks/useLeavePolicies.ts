@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { LeavePoliciesService, type CreateLeavePolicyPayload } from '@/services/leave.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import type { LeavePolicy, LeaveType, AcademicYear } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useLeavePolicies() {
   const [policies, setPolicies] = useState<LeavePolicy[]>([]);
@@ -29,8 +30,8 @@ export function useLeavePolicies() {
     try {
       const data = await LeavePoliciesService.list();
       setPolicies(data);
-    } catch {
-      toast.error('Failed to load leave policies');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load leave policies'));
     } finally {
       setIsLoading(false);
     }
@@ -70,8 +71,8 @@ export function useLeavePolicies() {
         toast.success('Policy created');
       }
       closeDialog();
-    } catch {
-      toast.error('Failed to save policy');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to save policy'));
     } finally {
       setIsSaving(false);
     }
@@ -88,8 +89,8 @@ export function useLeavePolicies() {
         })),
       );
       toast.success('Leave type updated');
-    } catch {
-      toast.error('Failed to update leave type');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to update leave type'));
     }
   }, []);
 
@@ -97,8 +98,8 @@ export function useLeavePolicies() {
     try {
       await LeavePoliciesService.provision(policyId, staffIds, academicYearId);
       toast.success('Leave balances provisioned');
-    } catch {
-      toast.error('Failed to provision balances');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to provision balances'));
     }
   }, []);
 

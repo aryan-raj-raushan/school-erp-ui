@@ -24,6 +24,7 @@ import {
 } from "@/components/ui";
 import { Trash2, Pencil } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 export default function ClassesPage() {
   const isMobile = useIsMobile();
@@ -109,7 +110,7 @@ export default function ClassesPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => removeClass(cls.id)}
+                        onClick={() => void confirmDelete(`class ${cls.name}`, () => removeClass(cls.id), 'The class and its sections will be removed.')}
                       >
                         <Icon icon={Trash2} type="sm-danger" />
                       </Button>

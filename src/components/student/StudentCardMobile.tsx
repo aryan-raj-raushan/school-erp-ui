@@ -71,7 +71,7 @@ export function StudentCardMobile() {
 
   function pickTemplate(id: (typeof CARD_TEMPLATES)[number]["id"]) {
     void haptic("light");
-    setSelectedTemplate(id);
+    void setSelectedTemplate(id);
   }
 
   return (

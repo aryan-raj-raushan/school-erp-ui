@@ -21,6 +21,7 @@ import {
   PageHeader,
   ResponsiveSelect,
 } from '@/components/ui';
+import { SectionPicker } from '@/components/settings/SectionPicker';
 
 function EditClassPageInner() {
   const isMobile = useIsMobile();
@@ -30,7 +31,7 @@ function EditClassPageInner() {
   const {
     form, years, isLoadingData, isSubmitting,
     allSectionNames, watchedSections,
-    handleSubmit, handleBack, toggleSection, toggleIsActive,
+    handleSubmit, handleBack, toggleSection, setSections, toggleIsActive,
   } = useEditClass(id);
   const { classTypeItems, isClassTypesLoading, addClassType, updateClassType, deleteClassType } = useClassTypeCrudSelect();
 
@@ -121,21 +122,14 @@ function EditClassPageInner() {
               </FormField>
             </Div>
 
-            <FormField label={CLASSES_PAGE.form.sections} error={form.formState.errors.sections?.message}>
-              <Div type="row" gap="sm" wrap>
-                {allSectionNames.map((name) => (
-                  <Div key={name} type="row" align="center" gap="xs">
-                    <input
-                      type="checkbox"
-                      id={`sec-${name}`}
-                      checked={watchedSections.includes(name)}
-                      onChange={() => toggleSection(name)}
-                    />
-                    <CheckboxLabel htmlFor={`sec-${name}`}>{name}</CheckboxLabel>
-                  </Div>
-                ))}
-              </Div>
-            </FormField>
+            <SectionPicker
+              label={CLASSES_PAGE.form.sections}
+              allNames={allSectionNames}
+              selected={watchedSections}
+              onToggle={toggleSection}
+              onSetAll={setSections}
+              error={form.formState.errors.sections?.message}
+            />
 
             <FormField label={CLASSES_PAGE.form.description} error={form.formState.errors.description?.message}>
               <Textarea placeholder={CLASSES_PAGE.placeholders.description} {...form.register('description')} />

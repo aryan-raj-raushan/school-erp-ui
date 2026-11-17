@@ -34,6 +34,7 @@ import type {
   Section,
   Student,
 } from '@/types';
+import { confirmAction } from '@/components/ui/confirm-dialog';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -93,10 +94,10 @@ export function useExams() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
-  const addForm = useForm<ExamFormValues>({ resolver: zodResolver(examSchema) });
-  const editForm = useForm<ExamFormValues>({ resolver: zodResolver(examSchema) });
-  const policyForm = useForm<PolicyFormValues>({ resolver: zodResolver(policySchema) });
-  const roomForm = useForm<RoomFormValues>({ resolver: zodResolver(roomSchema) });
+  const addForm = useForm<ExamFormValues>({ mode: 'onTouched', resolver: zodResolver(examSchema) });
+  const editForm = useForm<ExamFormValues>({ mode: 'onTouched', resolver: zodResolver(examSchema) });
+  const policyForm = useForm<PolicyFormValues>({ mode: 'onTouched', resolver: zodResolver(policySchema) });
+  const roomForm = useForm<RoomFormValues>({ mode: 'onTouched', resolver: zodResolver(roomSchema) });
 
   useEffect(() => {
     if (currentYear && !selectedAcademicYearId) {
@@ -183,7 +184,7 @@ export function useExams() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this exam?')) return;
+    if (!(await confirmAction({ title: 'Delete exam?', description: 'This exam and its setup will be removed.', confirmLabel: 'Delete', destructive: true }))) return;
     try {
       await ExamsService.remove(id);
       toast.success('Exam deleted');
@@ -305,7 +306,7 @@ export function useExamTimetable() {
   const [showModal, setShowModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ExamTimetableEntry | null>(null);
 
-  const form = useForm<TimetableFormValues>({ resolver: zodResolver(timetableSchema) });
+  const form = useForm<TimetableFormValues>({ mode: 'onTouched', resolver: zodResolver(timetableSchema) });
 
   useEffect(() => {
     if (currentYear && !selectedAcademicYearId) {

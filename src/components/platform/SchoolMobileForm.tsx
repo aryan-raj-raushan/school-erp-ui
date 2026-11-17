@@ -11,6 +11,8 @@ import {
   MultiStepForm,
   StepHeader,
   StepPanel,
+  stripUrlProtocol,
+  withUrlProtocol,
 } from "@/components/ui";
 import { useMultiStepForm, type FormStep } from "@/hooks/useMultiStepForm";
 import { BOARD_TYPES, CREATE_SCHOOL_FORM } from "@/constants";
@@ -27,6 +29,7 @@ export interface SchoolMobileFormProps<T extends FieldValues> {
   isSubmitting: boolean;
   onSubmit: () => Promise<unknown> | unknown;
   onCancel: () => void;
+  pincodeLookup?: { isLooking: boolean; lookupError?: string };
 }
 
 export function SchoolMobileForm<T extends FieldValues>({
@@ -38,6 +41,7 @@ export function SchoolMobileForm<T extends FieldValues>({
   isSubmitting,
   onSubmit,
   onCancel,
+  pincodeLookup,
 }: SchoolMobileFormProps<T>) {
   const n = (name: string) => name as Path<T>;
   const err = (name: string) =>
@@ -134,13 +138,22 @@ export function SchoolMobileForm<T extends FieldValues>({
             error={err("contact_number") ?? err("dial_code")}
             {...register(n("contact_number"))}
           />
-          <MobileTextField
-            label={L.website}
-            autoCapitalize="none"
-            inputMode="url"
-            placeholder={P.website}
-            error={err("website")}
-            {...register(n("website"))}
+          <Controller
+            control={form.control}
+            name={n("website")}
+            render={({ field, fieldState }) => (
+              <MobileTextField
+                label={L.website}
+                prefix="https://"
+                autoCapitalize="none"
+                inputMode="url"
+                placeholder="school.edu.in"
+                error={fieldState.error?.message}
+                value={stripUrlProtocol(field.value as string | undefined)}
+                onChange={(e) => field.onChange(withUrlProtocol(e.target.value.replace(/\s/g, "")))}
+                onBlur={field.onBlur}
+              />
+            )}
           />
         </FormGroup>
       </StepPanel>
@@ -149,16 +162,18 @@ export function SchoolMobileForm<T extends FieldValues>({
         <StepHeader icon={<MapPin size={22} />} title={CREATE_SCHOOL_FORM.sections.location} />
         <FormGroup>
           <MobileTextField label={L.address} placeholder={P.address} {...register(n("address"))} />
+          <MobileTextField
+            label={pincodeLookup?.isLooking ? `${L.pincode} · looking up…` : L.pincode}
+            inputMode="numeric"
+            maxLength={6}
+            placeholder={P.pincode}
+            error={err("pincode") ?? pincodeLookup?.lookupError}
+            {...register(n("pincode"))}
+          />
           <FieldRow>
             <MobileTextField label={L.city} placeholder={P.city} {...register(n("city"))} />
             <MobileTextField label={L.state} placeholder={P.state} {...register(n("state"))} />
           </FieldRow>
-          <MobileTextField
-            label={L.pincode}
-            inputMode="numeric"
-            placeholder={P.pincode}
-            {...register(n("pincode"))}
-          />
         </FormGroup>
       </StepPanel>
 

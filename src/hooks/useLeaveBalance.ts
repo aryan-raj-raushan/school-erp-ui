@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { TeacherLeaveService } from '@/services/leave.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import type { LeaveBalance, AcademicYear } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useLeaveBalance() {
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
@@ -29,8 +30,8 @@ export function useLeaveBalance() {
     try {
       const data = await TeacherLeaveService.staffSummary(academicYearId);
       setBalances(data);
-    } catch {
-      toast.error('Failed to load leave balances');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load leave balances'));
     } finally {
       setIsLoading(false);
     }

@@ -21,8 +21,11 @@ import {
   DatePicker,
   Switch,
   type ColumnDef,
+  Badge,
 } from "@/components/ui";
+import { MapPin } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { ATTENDANCE_MODE_LABEL, formatMarkedTime, mapLink } from "@/lib/attendance-mode";
 
 type StaffAttendanceRow = {
   id: string;
@@ -137,13 +140,15 @@ export default function StaffAttendancePage() {
         header: "Status",
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
+          const locked = !!entry.lockReason;
           return (
-            <Div type="row" gap="xs">
+            <Div type="row" gap="xs" title={entry.lockReason ?? undefined}>
               <Button
                 size="sm"
                 variant={
                   entry.status === "PRESENT" ? "success" : "outline"
                 }
+                disabled={locked}
                 onClick={() => setStatus(row.original.id, "PRESENT")}
               >
                 P
@@ -153,6 +158,7 @@ export default function StaffAttendancePage() {
                 variant={
                   entry.status === "ABSENT" ? "destructive" : "outline"
                 }
+                disabled={locked}
                 onClick={() => setStatus(row.original.id, "ABSENT")}
               >
                 A
@@ -162,12 +168,44 @@ export default function StaffAttendancePage() {
         },
       },
       {
+        id: "mode",
+        header: "Mode",
+        cell: ({ row }) => {
+          const record = attendanceMap[row.original.id]?.record;
+          if (!record) return <P color="muted" className="text-xs">—</P>;
+          return (
+            <Div type="row" gap="xs" align="center" className="flex-wrap">
+              <Badge variant={record.mode === "RFID" ? "info" : record.mode === "APP" ? "success" : "default"}>
+                {record.mode === "APP" ? "Punched in from app" : ATTENDANCE_MODE_LABEL[record.mode]}
+              </Badge>
+              {record.mode === "APP" && record.latitude && record.longitude && (
+                <a
+                  href={mapLink(record.latitude, record.longitude)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+                >
+                  <MapPin size={12} /> Location
+                  {record.location_accuracy_m != null ? ` (±${record.location_accuracy_m} m)` : ""}
+                </a>
+              )}
+            </Div>
+          );
+        },
+      },
+      {
+        id: "markedAt",
+        header: "Entry Time",
+        cell: ({ row }) => formatMarkedTime(attendanceMap[row.original.id]?.record?.marked_at),
+      },
+      {
         id: "isLate",
         header: "Late",
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
             <Switch
+              disabled={!!entry.lockReason}
               checked={entry.is_late ?? false}
               onCheckedChange={(checked) => setLate(row.original.id, checked)}
             />
@@ -181,7 +219,8 @@ export default function StaffAttendancePage() {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
             <Input
-              placeholder="Optional remarks"
+              placeholder={entry.lockReason ?? "Optional remarks"}
+              disabled={!!entry.lockReason}
               value={entry.remarks ?? ""}
               onChange={(e) => setRemarks(row.original.id, e.target.value)}
               className="h-8 max-w-xs border-transparent bg-muted/40 text-xs placeholder:text-muted-foreground/70 hover:bg-muted/60 focus:border-input focus:bg-background"

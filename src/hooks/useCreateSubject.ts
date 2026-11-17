@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { SubjectsService } from '@/services/subjects.service';
 import { ROUTES } from '@/constants';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const createSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -24,6 +25,7 @@ export function useCreateSubject() {
   const router = useRouter();
 
   const form = useForm<CreateSubjectFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(createSubjectSchema) as any,
     defaultValues: { display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
   });
@@ -33,6 +35,7 @@ export function useCreateSubject() {
 
   async function createSubject(values: CreateSubjectFormValues) {
     try {
+      if (!(await confirmCreate(`subject ${values.name}`))) return;
       const subject = await SubjectsService.create({
         name: values.name,
         code: values.code || undefined,

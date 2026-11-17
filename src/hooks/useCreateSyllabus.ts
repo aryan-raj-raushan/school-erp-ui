@@ -11,6 +11,7 @@ import { UploadsService } from '@/services/uploads.service';
 import { ClassesService } from '@/services/classes.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export interface PendingAttachment {
   id: string;
@@ -47,6 +48,7 @@ export function useCreateSyllabus() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CreateSyllabusFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schema) as any,
     defaultValues: { is_enabled: true, content: '' },
   });
@@ -56,7 +58,7 @@ export function useCreateSyllabus() {
     try {
       const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
-    } catch { toast.error('Failed to load form data'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load form data')); }
     finally { setIsLoadingData(false); }
   }, []);
 
@@ -94,9 +96,9 @@ export function useCreateSyllabus() {
         setAttachments((prev) =>
           prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url, s3Key: result.s3Key } : a),
         );
-      } catch {
+      } catch (err) {
         setAttachments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'error' } : a));
-        toast.error(`Failed to upload ${file.name}`);
+        toast.error(errorMessage(err, `Failed to upload ${file.name}`));
       }
     }
   }

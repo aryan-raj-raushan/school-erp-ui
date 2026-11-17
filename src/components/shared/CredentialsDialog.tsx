@@ -6,6 +6,7 @@ import { Modal, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "./WhatsAppButton";
 import { credentialsMessage } from "@/lib/whatsapp";
+import { errorMessage } from '@/lib/api-error';
 
 export interface IssuedCredential {
   name: string;
@@ -28,8 +29,8 @@ export function CredentialsDialog({ title, credentials, onClose }: CredentialsDi
     try {
       await navigator.clipboard.writeText(text);
       toast.success(success);
-    } catch {
-      toast.error("Could not copy — please note the password manually");
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not copy — please note the password manually"));
     }
   };
 

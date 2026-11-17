@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { SchoolSettingsService } from '@/services/school-settings.service';
 import { TIMINGS_PAGE } from '@/constants/school-settings.constants';
 import type { SchoolTiming, CreateSchoolTimingPayload, UpdateSchoolTimingPayload } from '@/types/school-settings.types';
+import { errorMessage } from '@/lib/api-error';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const OPTIONAL_TIME_FIELDS = [
   'late_cutoff_time',
@@ -23,10 +25,6 @@ function toTimingPayload(form: CreateSchoolTimingPayload): CreateSchoolTimingPay
   return payload;
 }
 
-function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error && err.message ? err.message : fallback;
-}
-
 export function useSchoolTimings() {
   const [timings, setTimings] = useState<SchoolTiming[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,8 +37,8 @@ export function useSchoolTimings() {
     try {
       const data = await SchoolSettingsService.getTimings();
       setTimings(data);
-    } catch {
-      toast.error('Failed to load timing schedules');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load timing schedules'));
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +66,7 @@ export function useSchoolTimings() {
   const create = useCallback(async (payload: CreateSchoolTimingPayload) => {
     setIsSubmitting(true);
     try {
+      if (!(await confirmCreate(`timing schedule "${payload.name}"`))) return;
       const created = await SchoolSettingsService.createTiming(payload);
       setTimings((prev) => [...prev, created]);
       toast.success(`${TIMINGS_PAGE.title} — schedule created`);

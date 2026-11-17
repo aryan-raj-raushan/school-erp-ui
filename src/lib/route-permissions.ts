@@ -4,6 +4,7 @@ import {
   SUPER_ADMIN_NAV_MAIN,
   SALES_NAV_MAIN,
   OPERATOR_NAV_MAIN,
+  CUSTOM_ROLE_NAV_MAIN,
 } from '@/constants/layout/app-sidebar.constants';
 import type { NavItemConfig } from '@/types/layout/app-sidebar';
 
@@ -18,6 +19,7 @@ export function selectNavMain(
   context: AuthContext | null,
 ): NavItemConfig[] {
   if (context !== AuthContext.COMPANY) return SCHOOL_NAV_MAIN;
+  if (user?.company_role_id) return CUSTOM_ROLE_NAV_MAIN;
   if (user?.role === Role.SALES) return SALES_NAV_MAIN;
   if (user?.role === Role.OPERATOR) return OPERATOR_NAV_MAIN;
   return SUPER_ADMIN_NAV_MAIN;

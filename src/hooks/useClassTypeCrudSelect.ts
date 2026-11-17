@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ClassTypesService, type ClassTypeItem } from '@/services/class-types.service';
 import type { CrudDropdownItem } from '@/components/ui/crud-dropdown';
+import { errorMessage } from '@/lib/api-error';
 
 export function useClassTypeCrudSelect() {
   const [classTypesList, setClassTypesList] = useState<ClassTypeItem[]>([]);
@@ -14,8 +15,8 @@ export function useClassTypeCrudSelect() {
     try {
       const result = await ClassTypesService.list({ limit: 100 });
       setClassTypesList(result.items);
-    } catch {
-      toast.error('Failed to load class types');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load class types'));
     } finally {
       setIsLoading(false);
     }
@@ -28,8 +29,8 @@ export function useClassTypeCrudSelect() {
       await ClassTypesService.create({ name });
       await fetchClassTypes();
       toast.success(`${name} added`);
-    } catch {
-      toast.error('Failed to add class type');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to add class type'));
     }
   }
 
@@ -38,8 +39,8 @@ export function useClassTypeCrudSelect() {
       await ClassTypesService.update(id, { name });
       await fetchClassTypes();
       toast.success('Class type updated');
-    } catch {
-      toast.error('Failed to update class type');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to update class type'));
     }
   }
 
@@ -48,8 +49,8 @@ export function useClassTypeCrudSelect() {
       await ClassTypesService.remove(id);
       await fetchClassTypes();
       toast.success('Class type deleted');
-    } catch {
-      toast.error('Failed to delete class type');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to delete class type'));
     }
   }
 

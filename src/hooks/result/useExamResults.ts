@@ -61,6 +61,7 @@ export function useExamResults() {
 
   // ── Filter form ───────────────────────────────────────────────────────────
   const filterForm = useForm<MarkFilterFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(markFilterSchema),
     defaultValues: {
       academic_year_id: "",

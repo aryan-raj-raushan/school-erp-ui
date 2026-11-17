@@ -26,6 +26,8 @@ export interface RosterEntry<S extends string> {
   status?: S;
   remarks?: string;
   isLate?: boolean;
+  /** Recorded by a device or the app — shown but not editable. */
+  locked?: boolean;
 }
 
 export interface RosterStat {
@@ -240,7 +242,7 @@ export function AttendanceRoster<S extends string>({
                     member={member}
                     entry={entry}
                     locked={isLocked}
-                    systemLocked={Boolean(entry.status && lockedStatuses.includes(entry.status))}
+                    systemLocked={Boolean(entry.locked || (entry.status && lockedStatuses.includes(entry.status)))}
                     statusOptions={statusOptions}
                     onStatusChange={(status) => onStatusChange(member.id, status)}
                     onLateChange={(late) => onLateChange(member.id, late)}

@@ -39,6 +39,7 @@ import {
   RESULT_ROUTES,
 } from '@/constants/result.constants';
 import type { ReportCardItem, ReportCardFilters } from '@/types/result.types';
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 type PersistedReportCardFilters = {
   academic_year_id?: string;
@@ -539,7 +540,7 @@ function ReportCardsContent() {
                 size="icon-sm"
                 variant="destructive"
                 title="Delete"
-                onClick={() => removeReportCard(rc.id)}
+                onClick={() => void confirmDelete('this report card', () => removeReportCard(rc.id))}
               >
                 <Trash2 size={14} />
               </Button>

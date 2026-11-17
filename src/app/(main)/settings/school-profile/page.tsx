@@ -13,6 +13,8 @@ import {
   PageCol,
   ResponsiveSelect,
   PageHeaderConfig,
+  PhoneInput,
+  WebsiteInput,
 } from '@/components/ui';
 import {
   SCHOOL_PROFILE_PAGE,
@@ -20,12 +22,26 @@ import {
   MARKING_SYSTEM_OPTIONS,
   TIMEZONE_OPTIONS,
 } from '@/constants/school-profile.constants';
+import { SALUTATION_OPTIONS } from '@/constants/person.constants';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SchoolProfileMobileForm } from '@/components/settings/SchoolProfileMobileForm';
 
 export default function SchoolProfilePage() {
   const isMobile = useIsMobile();
-  const { school, form, isLoading, isSaving, updateField, save, uploadLogo } = useSchoolProfile();
+  const {
+    school,
+    form,
+    errors,
+    isLoading,
+    isSaving,
+    updateField,
+    touchField,
+    updatePincode,
+    isLookingUpPincode,
+    pincodeLookupError,
+    save,
+    uploadLogo,
+  } = useSchoolProfile();
 
   if (isLoading) {
     return (
@@ -42,7 +58,12 @@ export default function SchoolProfilePage() {
       <SchoolProfileMobileForm
         schoolCode={school?.code ?? ''}
         form={form}
+        errors={errors}
         updateField={updateField}
+        touchField={touchField}
+        updatePincode={updatePincode}
+        isLookingUpPincode={isLookingUpPincode}
+        pincodeLookupError={pincodeLookupError}
         isSaving={isSaving}
         onSave={save}
         uploadLogo={uploadLogo}
@@ -71,10 +92,12 @@ export default function SchoolProfilePage() {
         <Div variant="card" type="col" gap="md" padding="p-6">
           <H3>{SCHOOL_PROFILE_PAGE.sections.basic}</H3>
           <Div type="grid" cols={2} gap="md">
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.name}>
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.name} required error={errors.name}>
               <Input
                 value={form.name ?? ''}
+                error={errors.name}
                 onChange={(e) => updateField('name', e.target.value)}
+                onBlur={() => touchField('name')}
                 placeholder="Delhi Public School"
               />
             </FormField>
@@ -95,11 +118,13 @@ export default function SchoolProfilePage() {
                 placeholder="530/2022"
               />
             </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.established_year}>
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.established_year} error={errors.established_year}>
               <Input
                 type="number"
                 value={form.established_year ?? ''}
-                onChange={(e) => updateField('established_year', Number(e.target.value))}
+                error={errors.established_year}
+                onChange={(e) => updateField('established_year', e.target.value ? Number(e.target.value) : undefined)}
+                onBlur={() => touchField('established_year')}
                 placeholder="1995"
               />
             </FormField>
@@ -140,28 +165,31 @@ export default function SchoolProfilePage() {
         <Div variant="card" type="col" gap="md" padding="p-6">
           <H3>{SCHOOL_PROFILE_PAGE.sections.contact}</H3>
           <Div type="grid" cols={2} gap="md">
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.email}>
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.email} error={errors.email}>
               <Input
                 type="email"
                 value={form.email ?? ''}
+                error={errors.email}
                 onChange={(e) => updateField('email', e.target.value)}
+                onBlur={() => touchField('email')}
                 placeholder="info@school.edu.in"
               />
             </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.contact_number}>
-              <Input
-                value={form.contact_number ?? ''}
-                onChange={(e) => updateField('contact_number', e.target.value)}
-                placeholder="9876543210"
-              />
-            </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.website}>
-              <Input
-                value={form.website ?? ''}
-                onChange={(e) => updateField('website', e.target.value)}
-                placeholder="https://school.edu.in"
-              />
-            </FormField>
+            <PhoneInput
+              label={SCHOOL_PROFILE_PAGE.fields.contact_number}
+              value={form.contact_number}
+              dialCode={form.dial_code || '+91'}
+              error={errors.contact_number}
+              onChange={(value) => updateField('contact_number', value)}
+              onBlur={() => touchField('contact_number')}
+            />
+            <WebsiteInput
+              label={SCHOOL_PROFILE_PAGE.fields.website}
+              value={form.website}
+              error={errors.website}
+              onChange={(value) => updateField('website', value)}
+              onBlur={() => touchField('website')}
+            />
             <FormField label={SCHOOL_PROFILE_PAGE.fields.logo_url}>
               <ImageUpload
                 currentUrl={form.logo_url}
@@ -178,11 +206,26 @@ export default function SchoolProfilePage() {
         <Div variant="card" type="col" gap="md" padding="p-6">
           <H3>{SCHOOL_PROFILE_PAGE.sections.location}</H3>
           <Div type="grid" cols={2} gap="md">
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.address}>
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.address} className="col-span-full">
               <Input
                 value={form.address ?? ''}
                 onChange={(e) => updateField('address', e.target.value)}
                 placeholder="123, MG Road"
+              />
+            </FormField>
+            <FormField
+              label={SCHOOL_PROFILE_PAGE.fields.pincode}
+              error={errors.pincode ?? pincodeLookupError}
+              hint={isLookingUpPincode ? SCHOOL_PROFILE_PAGE.pincodeLookingUp : SCHOOL_PROFILE_PAGE.pincodeHint}
+            >
+              <Input
+                inputMode="numeric"
+                maxLength={6}
+                value={form.pincode ?? ''}
+                error={errors.pincode}
+                onChange={(e) => updatePincode(e.target.value)}
+                onBlur={() => touchField('pincode')}
+                placeholder="110001"
               />
             </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.city}>
@@ -199,29 +242,6 @@ export default function SchoolProfilePage() {
                 placeholder="Delhi"
               />
             </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.pincode}>
-              <Input
-                value={form.pincode ?? ''}
-                onChange={(e) => updateField('pincode', e.target.value)}
-                placeholder="110001"
-              />
-            </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.lat}>
-              <Input
-                type="number"
-                value={form.lat ?? ''}
-                onChange={(e) => updateField('lat', e.target.value)}
-                placeholder="28.6139"
-              />
-            </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.lng}>
-              <Input
-                type="number"
-                value={form.lng ?? ''}
-                onChange={(e) => updateField('lng', e.target.value)}
-                placeholder="77.2090"
-              />
-            </FormField>
           </Div>
         </Div>
 
@@ -229,28 +249,38 @@ export default function SchoolProfilePage() {
         <Div variant="card" type="col" gap="md" padding="p-6">
           <H3>{SCHOOL_PROFILE_PAGE.sections.principal}</H3>
           <Div type="grid" cols={2} gap="md">
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.principal_salutation}>
+              <ResponsiveSelect
+                value={form.principal_salutation ?? ''}
+                onChange={(e) => updateField('principal_salutation', e.target.value)}
+                customPlaceholder="Mr. / Mrs. / Miss"
+                options={SALUTATION_OPTIONS}
+              />
+            </FormField>
             <FormField label={SCHOOL_PROFILE_PAGE.fields.principal_name}>
               <Input
                 value={form.principal_name ?? ''}
                 onChange={(e) => updateField('principal_name', e.target.value)}
-                placeholder="Dr. Rajesh Kumar"
+                placeholder="Rajesh Kumar"
               />
             </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.principal_email}>
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.principal_email} error={errors.principal_email}>
               <Input
                 type="email"
                 value={form.principal_email ?? ''}
+                error={errors.principal_email}
                 onChange={(e) => updateField('principal_email', e.target.value)}
+                onBlur={() => touchField('principal_email')}
                 placeholder="principal@school.edu.in"
               />
             </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.principal_phone}>
-              <Input
-                value={form.principal_phone ?? ''}
-                onChange={(e) => updateField('principal_phone', e.target.value)}
-                placeholder="9876543210"
-              />
-            </FormField>
+            <PhoneInput
+              label={SCHOOL_PROFILE_PAGE.fields.principal_phone}
+              value={form.principal_phone}
+              error={errors.principal_phone}
+              onChange={(value) => updateField('principal_phone', value)}
+              onBlur={() => touchField('principal_phone')}
+            />
           </Div>
         </Div>
 

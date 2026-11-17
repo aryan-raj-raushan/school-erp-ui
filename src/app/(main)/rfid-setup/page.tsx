@@ -15,6 +15,8 @@ import { useAssignRfidModal } from "@/hooks/useAssignRfidModal";
 import type { RfidScanEvent } from "@/services/rfid.service";
 import { PageHeader, BottomSheet, MobileSelectField, SegmentedControl } from "@/components/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatPersonName } from "@/constants/person.constants";
+import { confirmAction } from "@/components/ui/confirm-dialog";
 
 function AssignModal({
   event,
@@ -30,8 +32,8 @@ function AssignModal({
   const [assigning, setAssigning] = useState(false);
 
   const {
-    years, classes, sections, studentList, staffList,
-    yearId, setYearId,
+    academicYear, isLoadingOverview, loadError,
+    classes, sections, studentList, isLoadingStudents, staffList,
     classId, setClassId,
     sectionId, setSectionId,
     studentId, setStudentId,
@@ -51,6 +53,32 @@ function AssignModal({
   }
 
   const canAssign = tab === "student" ? !!studentId : !!staffId;
+  const classOptions = classes.map((c) => ({ value: c.id, label: `${c.name} · ${c.unassigned} without card` }));
+  const sectionOptions = sections.map((sec) => ({ value: sec.id, label: `${sec.name} · ${sec.unassigned} without card` }));
+  const studentOptions = studentList.map((st) => ({
+    value: st.id,
+    label: `${st.first_name} ${st.last_name ?? ""}${st.roll_number ? ` — Roll ${st.roll_number}` : ""}`.trim(),
+  }));
+  const staffOptions = staffList.map((st) => ({
+    value: st.id,
+    label: `${formatPersonName(st)}${st.employee_code ? ` (${st.employee_code})` : ""}`,
+  }));
+  const studentPlaceholder = !classId
+    ? "Select a class first"
+    : isLoadingStudents
+      ? "Loading…"
+      : studentOptions.length
+        ? "Select student"
+        : "Everyone here already has a card";
+  const yearNotice = loadError ? (
+    <P className="text-sm text-destructive">{loadError}</P>
+  ) : (
+    <P color="muted" className="text-xs">
+      {isLoadingOverview
+        ? "Loading…"
+        : `Academic year: ${academicYear?.name ?? "—"} (current). Only students and staff without a card are listed.`}
+    </P>
+  );
 
   if (isMobile) {
     return (
@@ -84,53 +112,44 @@ function AssignModal({
               { value: "staff", label: "Staff" },
             ]}
           />
+          {yearNotice}
           {tab === "student" ? (
             <>
               <MobileSelectField
-                label="Academic year"
-                placeholder="Select academic year"
-                value={yearId}
-                onChange={setYearId}
-                options={years.map((y) => ({ value: y.id, label: `${y.name}${y.is_current ? " (Current)" : ""}` }))}
-              />
-              <MobileSelectField
                 label="Class"
-                placeholder="Select class"
-                disabled={!yearId}
+                placeholder={classOptions.length || isLoadingOverview ? "Select class" : "Every student already has a card"}
+                disabled={!classOptions.length}
                 value={classId}
                 onChange={setClassId}
-                options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                options={classOptions}
               />
-              <MobileSelectField
-                label="Section"
-                placeholder="Select section"
-                disabled={!classId}
-                value={sectionId}
-                onChange={setSectionId}
-                options={sections.map((sec) => ({ value: sec.id, label: sec.name }))}
-              />
+              {sectionOptions.length > 0 && (
+                <MobileSelectField
+                  label="Section"
+                  placeholder="All sections"
+                  disabled={!classId}
+                  value={sectionId}
+                  onChange={setSectionId}
+                  options={sectionOptions}
+                />
+              )}
               <MobileSelectField
                 label="Student"
-                placeholder="Select student"
-                disabled={!classId}
+                placeholder={studentPlaceholder}
+                disabled={!classId || !studentOptions.length}
                 value={studentId}
                 onChange={setStudentId}
-                options={studentList.map((st) => ({
-                  value: st.id,
-                  label: `${st.first_name} ${st.last_name ?? ""}`.trim(),
-                }))}
+                options={studentOptions}
               />
             </>
           ) : (
             <MobileSelectField
               label="Staff member"
-              placeholder="Select staff"
+              placeholder={staffOptions.length || isLoadingOverview ? "Select staff" : "Every staff member already has a card"}
+              disabled={!staffOptions.length}
               value={staffId}
               onChange={setStaffId}
-              options={staffList.map((st) => ({
-                value: st.id,
-                label: `${st.first_name} ${st.last_name ?? ""}${st.employee_code ? ` (${st.employee_code})` : ""}`.trim(),
-              }))}
+              options={staffOptions}
             />
           )}
         </Div>
@@ -161,50 +180,39 @@ function AssignModal({
             ))}
           </Div>
 
+          {yearNotice}
+
           {tab === "student" && (
             <Div type="col" gap="sm">
-              <FormField label="Academic Year">
-                <ResponsiveSelect
-                  value={yearId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYearId(e.target.value)}
-                  customPlaceholder="Select academic year"
-                  options={years.map((y) => ({
-                    value: y.id,
-                    label: `${y.name}${y.is_current ? " (Current)" : ""}`,
-                  }))}
-                />
-              </FormField>
-
               <FormField label="Class">
                 <ResponsiveSelect
                   value={classId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setClassId(e.target.value)}
-                  disabled={!yearId}
-                  customPlaceholder="Select class"
-                  options={classes.map((c) => ({ value: c.id, label: c.name }))}
+                  disabled={!classOptions.length}
+                  customPlaceholder={classOptions.length || isLoadingOverview ? "Select class" : "Every student already has a card"}
+                  options={classOptions}
                 />
               </FormField>
 
-              <FormField label="Section">
-                <ResponsiveSelect
-                  value={sectionId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSectionId(e.target.value)}
-                  disabled={!classId}
-                  customPlaceholder="Select section"
-                  options={sections.map((s) => ({ value: s.id, label: s.name }))}
-                />
-              </FormField>
+              {sectionOptions.length > 0 && (
+                <FormField label="Section">
+                  <ResponsiveSelect
+                    value={sectionId}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSectionId(e.target.value)}
+                    disabled={!classId}
+                    customPlaceholder="All sections"
+                    options={sectionOptions}
+                  />
+                </FormField>
+              )}
 
               <FormField label="Student">
                 <ResponsiveSelect
                   value={studentId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStudentId(e.target.value)}
-                  disabled={!classId}
-                  customPlaceholder="Select student"
-                  options={studentList.map((s) => ({
-                    value: s.id,
-                    label: `${s.first_name} ${s.last_name ?? ""}`,
-                  }))}
+                  disabled={!classId || !studentOptions.length}
+                  customPlaceholder={studentPlaceholder}
+                  options={studentOptions}
                 />
               </FormField>
             </Div>
@@ -215,11 +223,9 @@ function AssignModal({
               <ResponsiveSelect
                 value={staffId}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStaffId(e.target.value)}
-                customPlaceholder="Select staff"
-                options={staffList.map((s) => ({
-                  value: s.id,
-                  label: `${s.first_name} ${s.last_name ?? ""}${s.employee_code ? ` (${s.employee_code})` : ""}`,
-                }))}
+                disabled={!staffOptions.length}
+                customPlaceholder={staffOptions.length || isLoadingOverview ? "Select staff" : "Every staff member already has a card"}
+                options={staffOptions}
               />
             </FormField>
           )}
@@ -261,6 +267,13 @@ export default function RfidSetupPage() {
 
   async function handleUnassign(event: RfidScanEvent) {
     if (!event.personType || !event.personId) return;
+    const confirmed = await confirmAction({
+      title: "Unassign this smart card?",
+      description: `Card ${event.r} will no longer mark attendance for ${event.personName ?? "this person"}.`,
+      confirmLabel: "Unassign",
+      destructive: true,
+    });
+    if (!confirmed) return;
     await unassignCard(event.personType, event.personId);
   }
 

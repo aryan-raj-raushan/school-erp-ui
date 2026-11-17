@@ -14,6 +14,7 @@ import { ClassSubjectTeacherService } from '@/services/class-subject-teacher.ser
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export interface StudyMaterialSubjectOption {
   id: string;
@@ -47,6 +48,7 @@ export function useCreateStudyMaterial() {
   const { isNative, pickDocument } = usePlatformFilePicker();
 
   const form = useForm<CreateStudyMaterialFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schema),
     defaultValues: { content_type: 'file' },
   });
@@ -90,8 +92,8 @@ export function useCreateStudyMaterial() {
         mappings.forEach((m) => unique.set(m.subject_id, { id: m.subject_id, name: m.subject_name }));
         setSubjects(Array.from(unique.values()));
       })
-      .catch(() => {
-        toast.error('Failed to load subjects for this class');
+      .catch((err) => {
+        toast.error(errorMessage(err, 'Failed to load subjects for this class'));
         setSubjects([]);
       })
       .finally(() => setIsLoadingSubjects(false));

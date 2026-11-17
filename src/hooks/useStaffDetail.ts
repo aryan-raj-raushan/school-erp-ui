@@ -8,12 +8,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { StaffService } from '@/services/staff.service';
 import { RolesService, type Role } from '@/services/roles.service';
-import { ROUTES, REGEX } from '@/constants';
+import { ROUTES, REGEX, formatPersonName } from '@/constants';
 import { FORM_STORAGE_KEYS } from '@/constants/form-storage-keys.constants';
 import { useSavedForm } from '@/hooks/useSavedForm';
 import type { Staff } from '@/types';
 import type { IssuedCredential } from '@/components/shared/CredentialsDialog';
 import { createStaffSchema, updateStaffSchema, type StaffFormValues } from '@/lib/validations/staff.validation';
+import { errorMessage } from '@/lib/api-error';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 export type { StaffFormValues };
 
@@ -47,6 +49,7 @@ export function useStaffDetail(id: string | undefined) {
   const { isNative, pickImage } = usePlatformFilePicker();
 
   const form = useForm<StaffFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(isNew ? createStaffSchema : updateStaffSchema) as any,
     defaultValues: { dial_code: '+91', is_active: true },
   });
@@ -130,8 +133,8 @@ export function useStaffDetail(id: string | undefined) {
       setProfileImageUrl(url);
       await StaffService.update(staffId, { profile_image: url });
       toast.success('Profile photo updated');
-    } catch {
-      toast.error('Failed to upload photo');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to upload photo'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -176,6 +179,7 @@ export function useStaffDetail(id: string | undefined) {
       const payload = {
         ...rest,
         email: values.email || undefined,
+        salutation: values.salutation || undefined,
         last_name: values.last_name || undefined,
         gender: values.gender || undefined,
         date_of_birth: values.date_of_birth || undefined,
@@ -200,6 +204,7 @@ export function useStaffDetail(id: string | undefined) {
       };
 
       if (isNew) {
+        if (!(await confirmCreate(`employee ${values.first_name}`))) return;
         const { staff: created, login_credentials } = await StaffService.create(payload);
         const pendingFile = (imageInputRef as any)._pendingFile as File | undefined;
         if (pendingFile) {
@@ -235,6 +240,7 @@ export function useStaffDetail(id: string | undefined) {
     const toDate = (v: unknown) =>
       v ? (typeof v === 'string' ? v.split('T')[0] : new Date(v as string).toISOString().split('T')[0]) : '';
     form.reset({
+      salutation: (data.salutation as StaffFormValues['salutation']) ?? '',
       first_name: data.first_name,
       last_name: data.last_name ?? '',
       dial_code: data.dial_code ?? '+91',
@@ -270,7 +276,7 @@ export function useStaffDetail(id: string | undefined) {
 
   const roles = allRoles.filter((r) => r.is_active);
 
-  const fullName = staff ? `${staff.first_name ?? ''} ${staff.last_name ?? ''}`.trim() : 'New Employee';
+  const fullName = staff ? formatPersonName(staff) : 'New Employee';
   const reportingToName = (() => {
     const m = staffMembers.find((s) => s.id === staff?.reporting_to_id);
     return m ? `${m.first_name ?? ''} ${m.last_name ?? ''}`.trim() : (staff?.reporting_to_id ?? undefined);

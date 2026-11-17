@@ -30,7 +30,7 @@ import {
   Plus,
   FileSpreadsheet,
 } from "lucide-react";
-import { STAFF_STATUS_OPTIONS, STAFF_PAGE } from "@/constants";
+import { STAFF_STATUS_OPTIONS, STAFF_PAGE, formatPersonName } from "@/constants";
 import { StaffMobileList } from "@/components/staff/StaffMobileList";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import { useBulkImport } from "@/hooks/useBulkImport";
@@ -174,7 +174,7 @@ function StaffsDesktop() {
                 className="w-8 h-8 rounded-full object-cover"
               />
             )}
-            {row.original.first_name} {row.original.last_name ?? ""}
+            {formatPersonName(row.original)}
           </Div>
         ),
       },

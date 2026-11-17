@@ -14,6 +14,7 @@ import {
   EmptyState,
   ResponsiveSelect,
   ResponsiveModalContainer,
+  TimeField,
 } from '@/components/ui';
 import {
   STAFF_SHIFTS_PAGE,
@@ -25,6 +26,7 @@ import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ShiftsMobile } from '@/components/hr/ShiftsMobile';
 import type { CreateStaffShiftPayload, ShiftType } from '@/types/staff-shifts.types';
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 const EMPTY_FORM: CreateStaffShiftPayload = {
   staff_id: '',
@@ -139,7 +141,7 @@ export default function StaffShiftsPage() {
               </Div>
               <Div type="row" gap="xs">
                 <Button size="xs" variant="outline" onClick={() => handleOpenEdit(shift)}>Edit</Button>
-                <Button size="xs" variant="destructive" onClick={() => remove(shift.id)}>Delete</Button>
+                <Button size="xs" variant="destructive" onClick={() => void confirmDelete('this shift', () => remove(shift.id))}>Delete</Button>
               </Div>
             </Div>
           ))}
@@ -175,10 +177,10 @@ export default function StaffShiftsPage() {
                   />
                 </FormField>
                 <FormField label="Start Time">
-                  <Input type="time" value={form.shift_start} onChange={(e) => updateForm('shift_start', e.target.value)} />
+                  <TimeField value={form.shift_start} onChange={(value) => updateForm('shift_start', value)} />
                 </FormField>
                 <FormField label="End Time">
-                  <Input type="time" value={form.shift_end} onChange={(e) => updateForm('shift_end', e.target.value)} />
+                  <TimeField value={form.shift_end} onChange={(value) => updateForm('shift_end', value)} />
                 </FormField>
                 <FormField label="Grace Period (min)">
                   <Input type="number" value={form.grace_period_minutes ?? ''} onChange={(e) => updateForm('grace_period_minutes', Number(e.target.value))} />

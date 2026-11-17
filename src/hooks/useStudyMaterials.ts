@@ -44,6 +44,7 @@ export function useStudyMaterials() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<MaterialFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(matSchema),
     defaultValues: { content_type: 'file' },
   });

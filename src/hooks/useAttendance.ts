@@ -7,7 +7,8 @@ import { ClassesService, SectionsService } from "@/services/classes.service";
 import { StudentsService } from "@/services/students.service";
 import { SchoolEventsService } from "@/services/school-events.service";
 import { useAcademicYears } from "./useAcademicYears";
-import type { AttendanceStatus, Student, Section, Class } from "@/types";
+import type { AttendanceRecord, AttendanceStatus, Student, Section, Class } from "@/types";
+import { attendanceLockReason, localDateISO } from "@/lib/attendance-mode";
 import type { SchoolEvent } from "@/types/setting/school-events.types";
 import type { AttendanceSession } from "@/constants/attendance.constants";
 
@@ -18,11 +19,14 @@ type AttendanceMap = Record<
     remarks: string;
     isLate: boolean;
     existingId?: string;
+    mode?: AttendanceRecord["mode"];
+    markedAt?: string | null;
+    lockReason?: string | null;
   }
 >;
 
 function todayISO() {
-  return new Date().toISOString().split("T")[0];
+  return localDateISO();
 }
 
 export function useAttendance() {
@@ -124,6 +128,9 @@ export function useAttendance() {
             remarks: r.remarks ?? "",
             isLate: r.is_late,
             existingId: r.id,
+            mode: r.mode,
+            markedAt: r.marked_at,
+            lockReason: attendanceLockReason(r.mode, r.date),
           };
         }
       });
@@ -138,6 +145,7 @@ export function useAttendance() {
   }, [selectedClassSectionId, date]);
 
   function setStudentLate(studentId: string, isLate: boolean) {
+    if (attendanceMap[studentId]?.lockReason) return;
     setAttendanceMap((prev) => ({
       ...prev,
       [studentId]: {
@@ -169,6 +177,7 @@ export function useAttendance() {
   }
 
   function setStudentStatus(studentId: string, status: AttendanceStatus) {
+    if (attendanceMap[studentId]?.lockReason) return;
     setAttendanceMap((prev) => ({
       ...prev,
       [studentId]: { ...prev[studentId], status },
@@ -176,6 +185,7 @@ export function useAttendance() {
   }
 
   function setStudentRemarks(studentId: string, remarks: string) {
+    if (attendanceMap[studentId]?.lockReason) return;
     setAttendanceMap((prev) => ({
       ...prev,
       [studentId]: { ...prev[studentId], remarks },
@@ -186,7 +196,7 @@ export function useAttendance() {
     setAttendanceMap((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((id) => {
-        if (next[id].status !== 'LEAVE' && next[id].status !== 'HOLIDAY') {
+        if (next[id].status !== 'LEAVE' && next[id].status !== 'HOLIDAY' && !next[id].lockReason) {
           next[id] = { ...next[id], status };
         }
       });
@@ -215,7 +225,7 @@ export function useAttendance() {
       const entries = students
         .filter((s) => {
           const st = attendanceMap[s.id]?.status;
-          return st !== 'LEAVE' && st !== 'HOLIDAY';
+          return st !== 'LEAVE' && st !== 'HOLIDAY' && !attendanceMap[s.id]?.lockReason;
         })
         .map((s) => ({
           student_id: s.id,
@@ -226,6 +236,10 @@ export function useAttendance() {
           }),
         }));
 
+      if (!entries.length) {
+        toast.info("Every student here is already marked by smart card — nothing to save");
+        return;
+      }
       await AttendanceService.mark({
         date,
         session,

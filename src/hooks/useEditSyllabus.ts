@@ -12,6 +12,7 @@ import { ClassesService } from '@/services/classes.service';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
 import type { PendingAttachment } from './useCreateSyllabus';
+import { errorMessage } from '@/lib/api-error';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 const ALLOWED_EXT_MAP: Record<string, string> = {
@@ -47,6 +48,7 @@ export function useEditSyllabus(id: string) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<EditSyllabusFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schema) as any,
     defaultValues: { is_enabled: true, content: '' },
   });
@@ -66,8 +68,8 @@ export function useEditSyllabus(id: string) {
         content: syllabus.content ?? '',
         is_enabled: syllabus.is_enabled,
       });
-    } catch {
-      toast.error('Failed to load syllabus');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load syllabus'));
       router.push(ROUTES.syllabus);
     } finally { setIsLoadingData(false); }
   }, [id, form, router]);
@@ -98,9 +100,9 @@ export function useEditSyllabus(id: string) {
         setNewAttachments((prev) =>
           prev.map((a) => a.id === pendingId ? { ...a, status: 'done', url: result.url, s3Key: result.s3Key } : a),
         );
-      } catch {
+      } catch (err) {
         setNewAttachments((prev) => prev.map((a) => a.id === pendingId ? { ...a, status: 'error' } : a));
-        toast.error(`Failed to upload ${file.name}`);
+        toast.error(errorMessage(err, `Failed to upload ${file.name}`));
       }
     }
   }

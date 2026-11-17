@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import { PageHeader } from "@/components/ui/page-header";
 import { HALL_DETAILS_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 function HallDetailsContent() {
   const router = useRouter();
@@ -68,7 +69,7 @@ function HallDetailsContent() {
               size="icon-sm"
               variant="destructive"
               title="Delete"
-              onClick={() => remove(row.original.id)}
+              onClick={() => void confirmDelete('this hall', () => remove(row.original.id))}
             >
               <Trash2 size={14} />
             </Button>

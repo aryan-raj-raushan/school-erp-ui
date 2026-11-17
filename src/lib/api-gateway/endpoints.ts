@@ -19,6 +19,7 @@ export const ENDPOINTS = {
   schools: {
     list: "/schools",
     byId: (id: string) => `/schools/${id}`,
+    deletionSummary: (id: string) => `/schools/${id}/deletion-summary`,
     admin: (id: string) => `/schools/${id}/admin`,
     resetAdminPassword: (id: string) => `/schools/${id}/admin/reset-password`,
     profile: "/schools/profile",
@@ -32,6 +33,11 @@ export const ENDPOINTS = {
     byId: (id: string) => `/company-users/${id}`,
     schools: (id: string) => `/company-users/${id}/schools`,
     schoolById: (id: string, schoolId: string) => `/company-users/${id}/schools/${schoolId}`,
+  },
+  companyRoles: {
+    list: "/company-roles",
+    byId: (id: string) => `/company-roles/${id}`,
+    permissions: "/company-roles/permissions",
   },
   schoolSettings: {
     settings: "/school-settings",
@@ -71,6 +77,7 @@ export const ENDPOINTS = {
   },
   masterData: {
     subjects: "/master-data/subjects",
+    pincode: (pincode: string) => `/master-data/pincode/${pincode}`,
   },
   schoolEvents: {
     list: "/school-events",
@@ -161,6 +168,8 @@ export const ENDPOINTS = {
     staff: "/staff-attendance/staff",
     daily: "/staff-attendance/daily",
     export: "/staff-attendance/export",
+    myToday: "/staff-attendance/me/today",
+    punchIn: "/staff-attendance/me/punch-in",
   },
   staff: {
     list: "/staff",
@@ -337,6 +346,7 @@ export const ENDPOINTS = {
     document: (id: string, docId: string) =>
       `/students/${id}/documents/${docId}`,
     idCard: (id: string) => `/students/${id}/id-card`,
+    bulkCards: "/students/cards/bulk",
     pickupCard: (id: string) => `/students/${id}/pickup-card`,
     guardiansAll: "/students/guardians/all",
     guardians: (studentId: string) => `/students/${studentId}/guardians`,
@@ -390,6 +400,8 @@ export const ENDPOINTS = {
     webhook: "/rfid/webhook",
     events: "/rfid/events",
     search: "/rfid/search",
+    assignable: "/rfid/assignable",
+    assignableStudents: "/rfid/assignable/students",
     assign: "/rfid/assign",
     unassign: "/rfid/unassign",
   },

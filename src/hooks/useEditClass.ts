@@ -10,6 +10,7 @@ import { ClassesService, SectionsService } from '@/services/classes.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ALL_SECTION_NAMES, ROUTES } from '@/constants';
 import type { AcademicYear, Section } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 const optionalPositiveInt = z.preprocess(
   (v) => (v === '' || v == null ? undefined : Number(v)),
@@ -23,7 +24,7 @@ const editClassSchema = z.object({
   class_sequence: optionalPositiveInt,
   no_of_sessions: optionalPositiveInt,
   class_code: z.string().max(50).optional(),
-  sections: z.array(z.string()).min(1, 'Select at least one section'),
+  sections: z.array(z.string()),
   description: z.string().max(255).optional(),
   is_active: z.boolean(),
 });
@@ -37,6 +38,7 @@ export function useEditClass(classId: string) {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<EditClassFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(editClassSchema) as any,
     defaultValues: { sections: [], is_active: true },
   });
@@ -62,8 +64,8 @@ export function useEditClass(classId: string) {
         description: cls.description ?? '',
         is_active: cls.is_active,
       });
-    } catch {
-      toast.error('Failed to load class');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load class'));
       router.push(ROUTES.classes);
     } finally {
       setIsLoadingData(false);
@@ -79,6 +81,10 @@ export function useEditClass(classId: string) {
     } else {
       form.setValue('sections', [...current, name], { shouldValidate: true });
     }
+  }
+
+  function setSections(names: string[]) {
+    form.setValue('sections', names, { shouldValidate: true, shouldDirty: true });
   }
 
   function toggleIsActive() {
@@ -128,6 +134,7 @@ export function useEditClass(classId: string) {
     watchedSections: form.watch('sections') ?? [],
     handleSubmit: form.handleSubmit(updateClass),
     toggleSection,
+    setSections,
     toggleIsActive,
     handleBack,
   };

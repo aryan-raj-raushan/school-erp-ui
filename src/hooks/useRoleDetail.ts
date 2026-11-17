@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { RolesService } from '@/services/roles.service';
 import { PermissionsService, type GroupedPermissions } from '@/services/permissions.service';
 import { ROUTES } from '@/constants';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -30,6 +31,7 @@ export function useRoleDetail(id: string | undefined) {
   const [roleName, setRoleName] = useState('');
 
   const form = useForm<RoleFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schema) as any,
     defaultValues: { is_active: true },
   });
@@ -104,6 +106,7 @@ export function useRoleDetail(id: string | undefined) {
   async function onSubmit(values: RoleFormValues) {
     try {
       if (isNew) {
+        if (!(await confirmCreate(`role ${values.name}`))) return;
         const role = await RolesService.create({
           name: values.name,
           description: values.description || undefined,

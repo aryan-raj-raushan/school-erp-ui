@@ -97,6 +97,7 @@ export function useAdmissionSourceDetail(id?: string) {
   const [isEditing, setIsEditing] = useState(isNew);
 
   const form = useForm<AdmissionSourceFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(admissionSourceSchema),
     defaultValues: { is_enabled: true },
   });
@@ -281,6 +282,7 @@ export function useAdmissionEnquiryDetail(id?: string) {
   }, []);
 
   const form = useForm<AdmissionEnquiryFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(admissionEnquirySchema),
     defaultValues: {
       dial_code: "+91",
@@ -296,6 +298,7 @@ export function useAdmissionEnquiryDetail(id?: string) {
   });
 
   const historyForm = useForm<EnquiryHistoryFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(enquiryHistorySchema),
     defaultValues: {
       action: "NEXT_FOLLOW_UP_UPDATE",

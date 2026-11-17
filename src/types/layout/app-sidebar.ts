@@ -1,12 +1,13 @@
 import { LucideIcon } from "lucide-react";
 import { Role } from "..";
 import { type AppPermission } from "@/constants/permissions.registry";
+import type { PlatformPermissionSlug } from "@/constants/platform-permissions.constants";
 
 export interface NavSubItemConfig {
   title: string;
   url: string;
   /** User must have at least one of these permissions to see this sub-item */
-  permissions?: AppPermission[];
+  permissions?: (AppPermission | PlatformPermissionSlug)[];
 }
 
 export interface NavItemConfig {
@@ -16,6 +17,6 @@ export interface NavItemConfig {
   /** Filter by enum role (legacy) */
   roles?: Role[];
   /** Filter by dynamic permission — user must have at least one */
-  permissions?: AppPermission[];
+  permissions?: (AppPermission | PlatformPermissionSlug)[];
   items?: NavSubItemConfig[];
 }

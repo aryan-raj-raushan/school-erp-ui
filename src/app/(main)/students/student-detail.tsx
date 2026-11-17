@@ -59,6 +59,7 @@ import { CredentialsDialog } from "@/components/shared/CredentialsDialog";
 import { DocumentViewButton } from "@/components/shared/DocumentViewButton";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { SALUTATION_OPTIONS } from "@/constants/person.constants";
 
 // ─── Section Wrapper ───────────────────────────────────────────────────────────
 
@@ -145,6 +146,7 @@ export function StudentDetail({ id }: { id: string }) {
     nextNumbers,
     issuedCredentials,
     closeCredentials,
+    pincodeLookup,
   } = useStudentDetail(id);
 
   const { years, currentYear } = useAcademicYears();
@@ -185,6 +187,7 @@ export function StudentDetail({ id }: { id: string }) {
     if (isNew && parentsArray.fields.length === 0) {
       parentsArray.append({
         relation: "FATHER",
+        salutation: "Mr.",
         first_name: "",
         phone_number: "",
         dial_code: "+91",
@@ -324,6 +327,7 @@ export function StudentDetail({ id }: { id: string }) {
       {credentialsDialog}
       <StudentMobileForm
         form={form}
+        pincodeLookup={pincodeLookup}
         nextNumbers={nextNumbers}
         parentsArray={parentsArray}
         documentsArray={documentsArray}
@@ -703,6 +707,19 @@ export function StudentDetail({ id }: { id: string }) {
                     disabled={isReadOnly}
                   />
                 </FormField>
+                <FormField
+                  label={STUDENT_PAGE.labels.pincode}
+                  error={errors.address?.pincode?.message ?? pincodeLookup.lookupError}
+                  hint={pincodeLookup.isLooking ? "Looking up pincode…" : "City and state fill in automatically"}
+                >
+                  <Input
+                    {...register("address.pincode")}
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Pincode"
+                    disabled={isReadOnly}
+                  />
+                </FormField>
                 <FormField label={STUDENT_PAGE.labels.city}>
                   <Input
                     {...register("address.city")}
@@ -714,13 +731,6 @@ export function StudentDetail({ id }: { id: string }) {
                   <Input
                     {...register("address.state")}
                     placeholder="State"
-                    disabled={isReadOnly}
-                  />
-                </FormField>
-                <FormField label={STUDENT_PAGE.labels.pincode}>
-                  <Input
-                    {...register("address.pincode")}
-                    placeholder="Pincode"
                     disabled={isReadOnly}
                   />
                 </FormField>
@@ -825,6 +835,14 @@ export function StudentDetail({ id }: { id: string }) {
                           options={PARENT_RELATION_OPTIONS}
                         />
                       </FormField>
+                      <FormField label="Salutation">
+                        <ResponsiveSelect
+                          {...register(`parents.${index}.salutation`)}
+                          disabled={isReadOnly}
+                          customPlaceholder="Mr. / Mrs. / Miss"
+                          options={SALUTATION_OPTIONS}
+                        />
+                      </FormField>
                       <FormField
                         label={STUDENT_PAGE.labels.parentFirstName}
                         required
@@ -863,13 +881,12 @@ export function StudentDetail({ id }: { id: string }) {
                           />
                         )}
                       </Div>
-                      <FormField label={STUDENT_PAGE.labels.alternatePhone}>
-                        <Input
-                          {...register(`parents.${index}.alternate_phone`)}
-                          placeholder="Alternate phone"
-                          disabled={isReadOnly}
-                        />
-                      </FormField>
+                      <PhoneField
+                        label={STUDENT_PAGE.labels.alternatePhone}
+                        phoneProps={register(`parents.${index}.alternate_phone`)}
+                        phoneError={errors.parents?.[index]?.alternate_phone?.message}
+                        disabled={isReadOnly}
+                      />
                       <FormField
                         label={STUDENT_PAGE.labels.parentEmail}
                         error={errors.parents?.[index]?.email?.message}
@@ -998,6 +1015,7 @@ export function StudentDetail({ id }: { id: string }) {
                     onClick={() =>
                       parentsArray.append({
                         relation: "FATHER",
+                        salutation: "Mr.",
                         first_name: "",
                         phone_number: "",
                         dial_code: "+91",

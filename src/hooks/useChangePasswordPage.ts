@@ -19,6 +19,7 @@ export function useChangePasswordPage() {
   const isParent = searchParams.get('ctx') === 'parent';
 
   const form = useForm<ChangePasswordFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
       change_token: changeToken,

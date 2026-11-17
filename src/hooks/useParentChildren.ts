@@ -9,6 +9,7 @@ import { AuthService } from '@/services/auth.service';
 import { ParentPortalService } from '@/services/parent-portal.service';
 import { useAuthStore } from '@/store/auth.store';
 import { useParentStore } from '@/store/parent.store';
+import { errorMessage } from '@/lib/api-error';
 
 export function useParentChildren() {
   const router = useRouter();
@@ -25,8 +26,8 @@ export function useParentChildren() {
       setChildren(list);
       const current = list.find((c) => c.is_current) ?? list[0];
       if (current) setActiveStudentId(current.student_id);
-    } catch {
-      toast.error('Failed to load linked children');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load linked children'));
     } finally {
       setIsLoading(false);
     }
@@ -60,8 +61,8 @@ export function useParentChildren() {
       await refresh();
       router.replace(ROUTES.parentPortal);
       router.refresh();
-    } catch {
-      toast.error('Failed to switch student');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to switch student'));
     } finally {
       setIsSwitching(false);
     }

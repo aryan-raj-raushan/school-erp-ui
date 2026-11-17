@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TeacherLeaveService, type ReviewLeavePayload } from '@/services/leave.service';
 import type { TeacherLeaveRequest } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useTeacherLeave() {
   const [requests, setRequests] = useState<TeacherLeaveRequest[]>([]);
@@ -17,8 +18,8 @@ export function useTeacherLeave() {
     try {
       const data = await TeacherLeaveService.allRequests();
       setRequests(data);
-    } catch {
-      toast.error('Failed to load teacher leave requests');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load teacher leave requests'));
     } finally {
       setIsLoading(false);
     }
@@ -47,8 +48,8 @@ export function useTeacherLeave() {
       setRequests((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       toast.success(`Leave request ${status.toLowerCase()}`);
       closeReview();
-    } catch {
-      toast.error('Failed to review leave request');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to review leave request'));
     } finally {
       setIsReviewing(false);
     }

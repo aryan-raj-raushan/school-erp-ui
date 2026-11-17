@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClassMobileForm } from '@/components/settings/ClassMobileForm';
+import { SectionPicker } from '@/components/settings/SectionPicker';
 
 
 export default function NewClassPage() {
@@ -25,7 +26,7 @@ export default function NewClassPage() {
   const {
     form, years, isLoadingData, isSubmitting,
     allSectionNames, watchedSections,
-    handleSubmit, handleBack, toggleSection, toggleIsActive,
+    handleSubmit, handleBack, toggleSection, setSections, toggleIsActive,
   } = useCreateClass();
   const { classTypeItems, isClassTypesLoading, addClassType, updateClassType, deleteClassType } = useClassTypeCrudSelect();
 
@@ -119,21 +120,14 @@ export default function NewClassPage() {
               </FormField>
             </Div>
 
-            <FormField label={CLASSES_PAGE.form.sections} error={form.formState.errors.sections?.message}>
-              <Div type="row" gap="sm" wrap>
-                {allSectionNames.map((name) => (
-                  <Div key={name} type="row" align="center" gap="xs">
-                    <input
-                      type="checkbox"
-                      id={`sec-${name}`}
-                      checked={watchedSections.includes(name)}
-                      onChange={() => toggleSection(name)}
-                    />
-                    <CheckboxLabel htmlFor={`sec-${name}`}>{name}</CheckboxLabel>
-                  </Div>
-                ))}
-              </Div>
-            </FormField>
+            <SectionPicker
+              label={CLASSES_PAGE.form.sections}
+              allNames={allSectionNames}
+              selected={watchedSections}
+              onToggle={toggleSection}
+              onSetAll={setSections}
+              error={form.formState.errors.sections?.message}
+            />
 
             <FormField label={CLASSES_PAGE.form.description} error={form.formState.errors.description?.message}>
               <Textarea placeholder={CLASSES_PAGE.placeholders.description} {...form.register('description')} />

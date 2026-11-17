@@ -32,6 +32,7 @@ import {
   SetupTab, BuilderItem, FEE_SETUP_TABS,
   EMPTY_FEE_TYPE, EMPTY_ROUTE, EMPTY_LATE_RULE,
 } from '@/constants/fee-setup.constants';
+import { errorMessage } from '@/lib/api-error';
 
 export function useFeesSetup() {
   // Lookup data
@@ -98,8 +99,8 @@ export function useFeesSetup() {
       setAcademicYears(yrs.items ?? []);
       setClasses(cls.items ?? []);
       setIncomeHeads(heads.items ?? []);
-    } catch {
-      toast.error('Failed to load lookup data');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load lookup data'));
     }
   }, []);
 
@@ -108,7 +109,7 @@ export function useFeesSetup() {
     try {
       const res = await feeTypeService.list({ fee_category: 'Class', limit: 100 });
       setClassFeeTypes((res as any).data ?? res);
-    } catch { toast.error('Failed to load class fee types'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load class fee types')); }
     finally { setLoadingFeeTypes(false); }
   }, []);
 
@@ -117,7 +118,7 @@ export function useFeesSetup() {
     try {
       const res = await feeTypeService.list({ fee_category: 'Transport', limit: 100 });
       setTransportFeeTypes((res as any).data ?? res);
-    } catch { toast.error('Failed to load transport fee types'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load transport fee types')); }
     finally { setLoadingFeeTypes(false); }
   }, []);
 
@@ -126,7 +127,7 @@ export function useFeesSetup() {
     try {
       const res = await feePlanService.list();
       setFeePlans((res as any).data ?? res);
-    } catch { toast.error('Failed to load fee plans'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load fee plans')); }
     finally { setLoadingPlans(false); }
   }, []);
 
@@ -136,7 +137,7 @@ export function useFeesSetup() {
     try {
       const res = await feeClassStructureService.get(filter);
       setClassStructure((res as any).data ?? res);
-    } catch { toast.error('Failed to load class fee structure'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load class fee structure')); }
     finally { setLoadingStructure(false); }
   }, []);
 
@@ -145,7 +146,7 @@ export function useFeesSetup() {
     try {
       const res = await transportRouteService.list();
       setTransportRoutes((res as any).data ?? res);
-    } catch { toast.error('Failed to load transport routes'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load transport routes')); }
     finally { setLoadingRoutes(false); }
   }, []);
 
@@ -154,7 +155,7 @@ export function useFeesSetup() {
     try {
       const res = await transportRouteService.getFees(routeId, academicYearId);
       setRouteFees((res as any).data ?? res);
-    } catch { toast.error('Failed to load route fees'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load route fees')); }
   }, []);
 
   const fetchLateRules = useCallback(async (academicYearId?: string) => {
@@ -162,7 +163,7 @@ export function useFeesSetup() {
     try {
       const res = await feeLateRuleService.list(academicYearId);
       setLateRules((res as any).data ?? res);
-    } catch { toast.error('Failed to load late rules'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load late rules')); }
     finally { setLoadingLateRules(false); }
   }, []);
 
@@ -216,7 +217,7 @@ export function useFeesSetup() {
       toast.success('Fee type created');
       if (payload.fee_category === 'Transport') fetchTransportFeeTypes();
       else fetchClassFeeTypes();
-    } catch { toast.error('Failed to create fee type'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to create fee type')); }
   };
 
   const updateFeeType = async (id: string, payload: UpdateFeeTypePayload) => {
@@ -225,7 +226,7 @@ export function useFeesSetup() {
       toast.success('Fee type updated');
       fetchClassFeeTypes();
       fetchTransportFeeTypes();
-    } catch { toast.error('Failed to update fee type'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to update fee type')); }
   };
 
   const deleteFeeType = async (id: string) => {
@@ -234,7 +235,7 @@ export function useFeesSetup() {
       toast.success('Fee type deleted');
       fetchClassFeeTypes();
       fetchTransportFeeTypes();
-    } catch { toast.error('Failed to delete fee type'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to delete fee type')); }
   };
 
   // Fee plan actions
@@ -243,7 +244,7 @@ export function useFeesSetup() {
       await feePlanService.update(id, { is_active });
       toast.success(is_active ? 'Plan activated' : 'Plan deactivated');
       fetchFeePlans();
-    } catch { toast.error('Failed to update fee plan'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to update fee plan')); }
   };
 
   // Class structure actions
@@ -252,7 +253,7 @@ export function useFeesSetup() {
       await feeClassStructureService.upsert(payload);
       toast.success('Class fee structure saved');
       fetchClassStructure(structureFilter);
-    } catch { toast.error('Failed to save class fee structure'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to save class fee structure')); }
   };
 
   const handleLoadStructure = () => {
@@ -342,7 +343,7 @@ export function useFeesSetup() {
       await transportRouteService.create(payload);
       toast.success('Transport route created');
       fetchTransportRoutes();
-    } catch { toast.error('Failed to create transport route'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to create transport route')); }
   };
 
   const deleteTransportRoute = async (id: string) => {
@@ -350,7 +351,7 @@ export function useFeesSetup() {
       await transportRouteService.delete(id);
       toast.success('Transport route deleted');
       fetchTransportRoutes();
-    } catch { toast.error('Failed to delete transport route'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to delete transport route')); }
   };
 
   const saveRouteFees = async (routeId: string, payload: UpsertRouteFeePayload) => {
@@ -358,7 +359,7 @@ export function useFeesSetup() {
       await transportRouteService.upsertFees(routeId, payload);
       toast.success('Route fees saved');
       fetchRouteFees(routeId, payload.academic_year_id);
-    } catch { toast.error('Failed to save route fees'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to save route fees')); }
   };
 
   const openAddRoute = () => {
@@ -385,7 +386,7 @@ export function useFeesSetup() {
       await feeLateRuleService.create(payload);
       toast.success('Late rule created');
       fetchLateRules();
-    } catch { toast.error('Failed to create late rule'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to create late rule')); }
   };
 
   const deleteLateRule = async (id: string) => {
@@ -393,7 +394,7 @@ export function useFeesSetup() {
       await feeLateRuleService.delete(id);
       toast.success('Late rule deleted');
       fetchLateRules();
-    } catch { toast.error('Failed to delete late rule'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to delete late rule')); }
   };
 
   const handleSaveLateRule = async () => {

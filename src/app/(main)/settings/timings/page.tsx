@@ -12,6 +12,7 @@ import {
   EmptyState,
   ResponsiveModalContainer,
   ResponsiveSelect,
+  TimeField,
   PageHeaderConfig,
   Span,
 } from '@/components/ui';
@@ -28,6 +29,7 @@ import { Clock, CalendarRange, Pencil, Trash2 } from 'lucide-react';
 import type { SchoolTiming, CreateSchoolTimingPayload } from '@/types/school-settings.types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { TimingsMobile } from '@/components/settings/TimingsMobile';
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 function fmtTime(t: string | null | undefined) {
   if (!t) return null;
@@ -236,7 +238,7 @@ export default function TimingsPage() {
               <Pencil size={14} />
             </Button>
             <Button
-              onClick={(e) => { e.stopPropagation(); remove(t.id); }}
+              onClick={(e) => { e.stopPropagation(); void confirmDelete('this timing schedule', () => remove(t.id)); }}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Delete"
               variant={'ghost'}
@@ -325,31 +327,31 @@ export default function TimingsPage() {
                   />
                 </FormField>
                 <FormField label="Start Time">
-                  <Input type="time" value={form.school_start_time} onChange={(e) => updateForm('school_start_time', e.target.value)} />
+                  <TimeField value={form.school_start_time} onChange={(value) => updateForm('school_start_time', value)} />
                 </FormField>
                 <FormField label="End Time">
-                  <Input type="time" value={form.school_end_time} onChange={(e) => updateForm('school_end_time', e.target.value)} />
+                  <TimeField value={form.school_end_time} onChange={(value) => updateForm('school_end_time', value)} />
                 </FormField>
                 <FormField label="Grace Period (min)">
                   <Input type="number" value={form.grace_period_minutes ?? ''} onChange={(e) => updateForm('grace_period_minutes', Number(e.target.value))} />
                 </FormField>
                 <FormField label="Late Cutoff">
-                  <Input type="time" value={form.late_cutoff_time ?? ''} onChange={(e) => updateForm('late_cutoff_time', e.target.value)} />
+                  <TimeField value={form.late_cutoff_time} onChange={(value) => updateForm('late_cutoff_time', value)} />
                 </FormField>
                 <FormField label="Half Day Cutoff">
-                  <Input type="time" value={form.half_day_cutoff_time ?? ''} onChange={(e) => updateForm('half_day_cutoff_time', e.target.value)} />
+                  <TimeField value={form.half_day_cutoff_time} onChange={(value) => updateForm('half_day_cutoff_time', value)} />
                 </FormField>
                 <FormField label="Absent Cutoff">
-                  <Input type="time" value={form.absent_cutoff_time ?? ''} onChange={(e) => updateForm('absent_cutoff_time', e.target.value)} />
+                  <TimeField value={form.absent_cutoff_time} onChange={(value) => updateForm('absent_cutoff_time', value)} />
                 </FormField>
                 <FormField label="Period Duration (min)">
                   <Input type="number" value={form.period_duration_minutes ?? ''} onChange={(e) => updateForm('period_duration_minutes', Number(e.target.value))} />
                 </FormField>
                 <FormField label="Lunch Start">
-                  <Input type="time" value={form.lunch_start_time ?? ''} onChange={(e) => updateForm('lunch_start_time', e.target.value)} />
+                  <TimeField value={form.lunch_start_time} onChange={(value) => updateForm('lunch_start_time', value)} />
                 </FormField>
                 <FormField label="Lunch End">
-                  <Input type="time" value={form.lunch_end_time ?? ''} onChange={(e) => updateForm('lunch_end_time', e.target.value)} />
+                  <TimeField value={form.lunch_end_time} onChange={(value) => updateForm('lunch_end_time', value)} />
                 </FormField>
                 <FormField label="Effective From">
                   <Input type="date" value={form.effective_from} onChange={(e) => updateForm('effective_from', e.target.value)} />

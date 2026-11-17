@@ -13,6 +13,7 @@ import { haptic } from "@/lib/haptics";
 import { BottomSheet } from "./action-sheet";
 import { Switch } from "./switch";
 import { ListAvatar } from "./mobile-list";
+import { normalizePhoneInput } from "./phone-field";
 
 const fieldShell =
   "rounded-2xl border bg-white px-4 transition-colors dark:bg-neutral-900";
@@ -51,16 +52,23 @@ export interface MobileTextFieldProps
  * and the whole box is the tap target. Works with `register()` spreads.
  */
 export const MobileTextField = React.forwardRef<HTMLInputElement, MobileTextFieldProps>(
-  ({ label, error, prefix, required, className, onFocus, onBlur, ...props }, ref) => {
+  ({ label, error, prefix, required, className, onFocus, onBlur, onChange, type, ...props }, ref) => {
     const [focused, setFocused] = React.useState(false);
+    const isPhone = type === "tel";
+    const shownPrefix = prefix ?? (isPhone ? "+91" : undefined);
     return (
       <div data-invalid={error ? "true" : undefined} className={className}>
         <label className={cn("block py-2", fieldShell, fieldBorder(error, focused))}>
           <FieldLabel label={label} required={required} />
           <span className="flex items-center gap-2">
-            {prefix && <span className="text-base text-muted-foreground">{prefix}</span>}
+            {shownPrefix && (
+              <span className="shrink-0 border-r border-border pr-2 text-base text-muted-foreground">
+                {shownPrefix}
+              </span>
+            )}
             <input
               ref={ref}
+              type={type}
               required={false}
               autoComplete="off"
               className="h-7 w-full min-w-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
@@ -72,6 +80,11 @@ export const MobileTextField = React.forwardRef<HTMLInputElement, MobileTextFiel
                 setFocused(false);
                 onBlur?.(e);
               }}
+              onChange={(e) => {
+                if (isPhone) e.target.value = normalizePhoneInput(e.target.value);
+                onChange?.(e);
+              }}
+              {...(isPhone ? { inputMode: "numeric" as const, maxLength: 10 } : {})}
               {...props}
             />
           </span>

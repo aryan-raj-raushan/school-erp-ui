@@ -56,7 +56,12 @@ export function StudentAttendanceMobile({
         id: s.id,
         marker: s.roll_number,
         name: `${s.first_name} ${s.last_name ?? ""}`.trim(),
-        subtitle: s.admission_number,
+        subtitle: [
+          s.admission_number,
+          attendanceMap[s.id]?.locked ? "Smart card" : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       }))}
       entries={attendanceMap}
       statusOptions={STATUS_OPTIONS}

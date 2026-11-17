@@ -23,6 +23,10 @@ import type { IssuedCredential } from "@/components/shared/CredentialsDialog";
 import { STUDENT_ROUTES } from "@/constants/students.constants";
 import { FORM_STORAGE_KEYS } from "@/constants/form-storage-keys.constants";
 import { useSavedForm } from "@/hooks/useSavedForm";
+import { errorMessage } from '@/lib/api-error';
+import { defaultSalutationForRelation } from "@/constants/person.constants";
+import { usePincodeAutofill } from '@/hooks/usePincodeLookup';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 export function useStudentDetail(id?: string) {
   const router = useRouter();
@@ -45,6 +49,7 @@ export function useStudentDetail(id?: string) {
   const { isNative, pickImage } = usePlatformFilePicker();
 
   const form = useForm<StudentFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(studentFormSchema),
     defaultValues: {
       dial_code: "+91",
@@ -188,6 +193,7 @@ export function useStudentDetail(id?: string) {
         parents: data.parents.map((p:any) => ({
           id: p.id,
           relation: p.relation,
+          salutation: p.salutation ?? defaultSalutationForRelation(p.relation),
           first_name: p.first_name,
           last_name: p.last_name ?? "",
           email: p.email ?? "",
@@ -263,6 +269,7 @@ export function useStudentDetail(id?: string) {
           ? [
               {
                 relation: enquiry.father_name ? "FATHER" : "MOTHER",
+                salutation: enquiry.father_name ? "Mr." : "Mrs.",
                 first_name: parentFirst || parentName,
                 last_name: parentRest.join(" "),
                 email: enquiry.email ?? "",
@@ -302,8 +309,8 @@ export function useStudentDetail(id?: string) {
         await StudentsService.update(studentId, { profile_image: url });
         toast.success('Profile photo updated');
       }
-    } catch {
-      toast.error('Failed to upload photo');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to upload photo'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -387,6 +394,7 @@ export function useStudentDetail(id?: string) {
       };
 
       if (isNew) {
+        if (!(await confirmCreate(`student ${values.first_name}`))) return;
         const created = await StudentsService.create(payload as any);
         if (!created?.student?.id) {
           throw new Error("Server did not return the created student — please try again.");
@@ -454,12 +462,19 @@ export function useStudentDetail(id?: string) {
       await StudentsService.deleteDocument(id, docId);
       toast.success("Document removed");
       await fetchStudent();
-    } catch {
-      toast.error("Failed to remove document");
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to remove document"));
     }
   }
 
+  const pincodeLookup = usePincodeAutofill(form, {
+    pincode: 'address.pincode',
+    city: 'address.city',
+    state: 'address.state',
+  });
+
   return {
+    pincodeLookup,
     student,
     isLoading,
     isEditing,

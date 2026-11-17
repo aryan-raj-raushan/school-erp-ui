@@ -18,7 +18,49 @@ export type PersonResult = {
   rfidCardNumber: string | null;
 };
 
+export type AssignableClass = {
+  id: string;
+  name: string;
+  unassigned: number;
+  sections: { id: string; name: string; unassigned: number }[];
+};
+
+export type AssignableStaff = {
+  id: string;
+  salutation: string | null;
+  first_name: string;
+  last_name: string | null;
+  employee_code: string | null;
+  role: string;
+};
+
+export type AssignableStudent = {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  roll_number: string | null;
+  admission_number: string | null;
+};
+
+export type AssignableOverview = {
+  academic_year: { id: string; name: string };
+  classes: AssignableClass[];
+  staff: AssignableStaff[];
+};
+
 export const RfidService = {
+  async getAssignable(): Promise<AssignableOverview> {
+    const res = await apiGateway.get<AssignableOverview>(ENDPOINTS.rfid.assignable);
+    return res.data;
+  },
+
+  async getAssignableStudents(classId: string, sectionId?: string): Promise<AssignableStudent[]> {
+    const res = await apiGateway.get<{ students: AssignableStudent[] }>(ENDPOINTS.rfid.assignableStudents, {
+      params: { class_id: classId, ...(sectionId ? { section_id: sectionId } : {}) },
+    });
+    return res.data.students ?? [];
+  },
+
   async getEvents(): Promise<RfidScanEvent[]> {
     const res = await apiGateway.get<{ events: RfidScanEvent[] }>(ENDPOINTS.rfid.events);
     return res.data.events ?? [];

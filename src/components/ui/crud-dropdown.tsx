@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Pencil, Trash2, Plus, Check, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { inputBase } from './form';
+import { confirmAction } from "./confirm-dialog";
 
 export interface CrudDropdownItem {
   id: string;
@@ -79,6 +80,7 @@ export function CrudDropdown({
 
   async function handleDelete(id: string, name: string, e: React.MouseEvent) {
     e.stopPropagation();
+    if (!(await confirmAction({ title: `Delete "${name}"?`, description: "This cannot be undone.", confirmLabel: "Delete", destructive: true }))) return;
     setIsSaving(true);
     try {
       await onDelete(id);

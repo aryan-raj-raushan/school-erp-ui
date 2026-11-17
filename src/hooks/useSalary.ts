@@ -14,6 +14,7 @@ import { StaffService } from '@/services/staff.service';
 import type { Staff } from '@/types';
 import { FinanceService } from '@/services/finance.service';
 import type { FinanceAccount, FinanceHead } from '@/services/finance.service';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 export type SalaryTab = 'heads' | 'templates' | 'assignments' | 'transactions' | 'process' | 'payslip';
 
@@ -293,6 +294,7 @@ export function useSalary() {
     if (!txnForm.total_amount || txnForm.total_amount <= 0) { toast.error('Enter valid amount'); return; }
     setSubmitting(true);
     try {
+      if (!(await confirmCreate('this salary payment'))) return;
       await SalaryService.createTransaction(txnForm);
       toast.success('Salary transaction created');
       setTxnForm({ employee_id: '', salary_month: '', total_amount: 0, deduction_amount: 0, payment_mode: 'CASH', payment_release_date: new Date().toISOString().split('T')[0], from_account_id: '', expense_head_id: '', remarks: '' });

@@ -45,6 +45,7 @@ export function useLeaveApplications(
   const [isLoadingEmployeeLeaves, setIsLoadingEmployeeLeaves] = useState(false);
 
   const applyForm = useForm<ApplyLeaveFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(applyLeaveSchema),
     defaultValues: {
       leave_type_id: '',
@@ -56,6 +57,7 @@ export function useLeaveApplications(
   });
 
   const reviewForm = useForm<ReviewLeaveFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(reviewLeaveSchema),
     defaultValues: { status: 'APPROVED', remarks: '' },
   });

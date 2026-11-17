@@ -14,6 +14,7 @@ import { ClassSubjectTeacherService } from '@/services/class-subject-teacher.ser
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export interface HomeworkSubjectOption {
   id: string;
@@ -65,6 +66,7 @@ export function useCreateHomework() {
   const { isNative, pickDocument } = usePlatformFilePicker();
 
   const form = useForm<CreateHomeworkFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schema) as any,
     defaultValues: {
       status: 'ACTIVE',
@@ -87,7 +89,7 @@ export function useCreateHomework() {
     try {
       const clsRes = await ClassesService.list({ limit: 100 });
       setClasses(clsRes.items);
-    } catch { toast.error('Failed to load form data'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load form data')); }
     finally { setIsLoadingData(false); }
   }, []);
 
@@ -109,8 +111,8 @@ export function useCreateHomework() {
       const unique = new Map<string, HomeworkSubjectOption>();
       mappings.forEach((m) => unique.set(m.subject_id, { id: m.subject_id, name: m.subject_name }));
       setSubjects(Array.from(unique.values()));
-    } catch {
-      toast.error('Failed to load subjects for this class');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load subjects for this class'));
       setSubjects([]);
     } finally {
       setIsLoadingSubjects(false);
@@ -151,9 +153,9 @@ export function useCreateHomework() {
       setAttachments((prev) =>
         prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url } : a),
       );
-    } catch {
+    } catch (err) {
       setAttachments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'error' } : a));
-      toast.error(`Failed to upload ${file.name}`);
+      toast.error(errorMessage(err, `Failed to upload ${file.name}`));
     }
   }
 

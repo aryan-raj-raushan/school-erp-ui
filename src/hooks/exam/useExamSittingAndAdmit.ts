@@ -20,6 +20,7 @@ import type {
 } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SITTING_PLAN_PAGE, ADMIT_CARD_PAGE } from "@/constants/exam.constants";
+import { errorMessage } from '@/lib/api-error';
 
 // ── Sitting Plan List (legacy, used by other hooks) ───────────────────────────
 
@@ -97,8 +98,8 @@ export function useSittingPlanGrid(examIds: string[], academicYearId: string) {
         });
       });
       setOccupancy(occ);
-    } catch {
-      toast.error("Failed to load rooms");
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to load rooms"));
     } finally {
       setIsLoading(false);
     }
@@ -283,7 +284,7 @@ export function useRoomSittingPlan(
           dispatch({ type: "INIT", seated, unassigned });
         });
       })
-      .catch(() => toast.error("Failed to load room data"))
+      .catch((err) => toast.error(errorMessage(err, "Failed to load room data")))
       .finally(() => setIsLoading(false));
   }, [hallDetailId, examId, academicYearId]);
 

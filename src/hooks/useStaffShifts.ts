@@ -7,6 +7,7 @@ import { StaffService } from '@/services/staff.service';
 import { STAFF_SHIFTS_PAGE } from '@/constants/staff-shifts.constants';
 import type { StaffShift, CreateStaffShiftPayload, UpdateStaffShiftPayload } from '@/types/staff-shifts.types';
 import type { Staff } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useStaffShifts() {
   const [shifts, setShifts] = useState<StaffShift[]>([]);
@@ -25,8 +26,8 @@ export function useStaffShifts() {
       ]);
       setShifts(shiftData);
       setStaff(staffResponse.items);
-    } catch {
-      toast.error('Failed to load staff shifts');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load staff shifts'));
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +67,8 @@ export function useStaffShifts() {
       setShifts((prev) => [...prev, created]);
       toast.success(`${STAFF_SHIFTS_PAGE.title} — shift assigned`);
       closeDialog();
-    } catch {
-      toast.error('Failed to assign shift');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to assign shift'));
     } finally {
       setIsSubmitting(false);
     }
@@ -80,8 +81,8 @@ export function useStaffShifts() {
       setShifts((prev) => prev.map((s) => (s.id === id ? updated : s)));
       toast.success('Shift updated');
       closeDialog();
-    } catch {
-      toast.error('Failed to update shift');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to update shift'));
     } finally {
       setIsSubmitting(false);
     }
@@ -92,8 +93,8 @@ export function useStaffShifts() {
       await StaffShiftsService.delete(id);
       setShifts((prev) => prev.filter((s) => s.id !== id));
       toast.success('Shift deleted');
-    } catch {
-      toast.error('Failed to delete shift');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to delete shift'));
     }
   }, []);
 

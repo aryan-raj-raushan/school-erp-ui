@@ -83,7 +83,6 @@ export function useExams(initialFilters: ExamFilters = {}) {
   }
 
   async function remove(id: string) {
-    if (!confirm(EXAMS_PAGE.confirmDelete)) return;
     try {
       await ExamsService.remove(id);
       toast.success(EXAMS_PAGE.toasts.deleteSuccess);
@@ -132,6 +131,7 @@ export function useExamDetail(id: string) {
   const [overlapWarning, setOverlapWarning] = useState<string | null>(null);
 
   const form = useForm<ExamFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(examSchema),
     defaultValues: {
       academic_year_id: "",

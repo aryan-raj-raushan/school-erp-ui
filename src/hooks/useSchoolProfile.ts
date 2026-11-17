@@ -5,8 +5,11 @@ import { toast } from 'sonner';
 import { SchoolProfileService, type UpdateSchoolProfilePayload } from '@/services/school-profile.service';
 import { UploadsService } from '@/services/uploads.service';
 import { SCHOOL_PROFILE_PAGE } from '@/constants/school-profile.constants';
+import { REGEX } from '@/constants/regex.constants';
 import { useSchoolBrandStore } from '@/store/school.store';
+import { usePincodeLookup } from '@/hooks/usePincodeLookup';
 import type { School } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 // Strip empty strings, null and undefined so backend enum/regex validators don't fail on blank fields.
 function sanitizePayload(payload: UpdateSchoolProfilePayload): UpdateSchoolProfilePayload {
@@ -15,10 +18,54 @@ function sanitizePayload(payload: UpdateSchoolProfilePayload): UpdateSchoolProfi
   ) as UpdateSchoolProfilePayload;
 }
 
+export type SchoolProfileField = keyof UpdateSchoolProfilePayload;
+export type SchoolProfileErrors = Partial<Record<SchoolProfileField, string>>;
+
+const WEBSITE_PATTERN = /^https?:\/\/[^\s/$.?#][^\s]*\.[a-z]{2,}(\/\S*)?$/i;
+const CURRENT_YEAR = new Date().getFullYear();
+
+function validateField(key: SchoolProfileField, form: UpdateSchoolProfilePayload): string | undefined {
+  const raw = form[key];
+  const value = typeof raw === 'string' ? raw.trim() : raw;
+  switch (key) {
+    case 'name':
+      return value ? undefined : 'School name is required';
+    case 'email':
+    case 'principal_email':
+      return value && !REGEX.email.test(String(value)) ? 'Enter a valid email address, e.g. name@school.edu.in' : undefined;
+    case 'contact_number':
+    case 'principal_phone':
+      return value && !REGEX.phoneIn.test(String(value)) ? 'Enter a 10-digit mobile number starting with 6-9' : undefined;
+    case 'website':
+      return value && !WEBSITE_PATTERN.test(String(value)) ? 'Enter a valid website, e.g. school.edu.in' : undefined;
+    case 'pincode':
+      return value && !REGEX.pincodeIn.test(String(value)) ? 'Pincode must be 6 digits and cannot start with 0' : undefined;
+    case 'established_year':
+      if (value === undefined || value === null || value === '') return undefined;
+      return Number(value) < 1800 || Number(value) > CURRENT_YEAR
+        ? `Year must be between 1800 and ${CURRENT_YEAR}`
+        : undefined;
+    default:
+      return undefined;
+  }
+}
+
+const VALIDATED_FIELDS: SchoolProfileField[] = [
+  'name',
+  'email',
+  'contact_number',
+  'website',
+  'pincode',
+  'established_year',
+  'principal_email',
+  'principal_phone',
+];
+
 export function useSchoolProfile() {
   const [school, setSchool] = useState<School | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<SchoolProfileErrors>({});
 
   const [form, setForm] = useState<UpdateSchoolProfilePayload>({});
   const setBrand = useSchoolBrandStore((s) => s.setBrand);
@@ -26,6 +73,10 @@ export function useSchoolProfile() {
   const syncBrand = useCallback((data: School) => {
     setBrand({ name: data.name, logo_url: data.logo_url ?? null });
   }, [setBrand]);
+
+  const pincode = usePincodeLookup((details) => {
+    setForm((prev) => ({ ...prev, city: details.city, state: details.state, country: details.country }));
+  });
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -51,14 +102,13 @@ export function useSchoolProfile() {
         country: data.country ?? 'India',
         pincode: data.pincode ?? '',
         logo_url: data.logo_url ?? '',
-        lat: data.lat != null ? String(data.lat) : '',
-        lng: data.lng != null ? String(data.lng) : '',
+        principal_salutation: data.principal_salutation ?? '',
         principal_name: data.principal_name ?? '',
         principal_email: data.principal_email ?? '',
         principal_phone: data.principal_phone ?? '',
       });
-    } catch {
-      toast.error('Failed to load school profile');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load school profile'));
     } finally {
       setIsLoading(false);
     }
@@ -73,17 +123,43 @@ export function useSchoolProfile() {
     value: UpdateSchoolProfilePayload[K],
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
   }, []);
 
+  const touchField = useCallback((key: SchoolProfileField) => {
+    setErrors((prev) => ({ ...prev, [key]: validateField(key, form) }));
+    if (key === 'pincode' && !validateField('pincode', form) && form.pincode) {
+      void pincode.lookup(String(form.pincode));
+    }
+  }, [form, pincode]);
+
+  const updatePincode = useCallback((value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 6);
+    updateField('pincode', digits);
+    if (digits.length === 6) void pincode.lookup(digits);
+  }, [updateField, pincode]);
+
   const save = useCallback(async () => {
+    const nextErrors: SchoolProfileErrors = {};
+    VALIDATED_FIELDS.forEach((key) => {
+      const message = validateField(key, form);
+      if (message) nextErrors[key] = message;
+    });
+    setErrors(nextErrors);
+    const firstError = Object.values(nextErrors).find(Boolean);
+    if (firstError) {
+      toast.error(`Fix the highlighted fields: ${firstError}`);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const updated = await SchoolProfileService.update(sanitizePayload(form));
       setSchool(updated);
       syncBrand(updated);
       toast.success(SCHOOL_PROFILE_PAGE.saved);
-    } catch {
-      toast.error('Failed to update school profile');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to update school profile'));
     } finally {
       setIsSaving(false);
     }
@@ -106,9 +182,14 @@ export function useSchoolProfile() {
   return {
     school,
     form,
+    errors,
     isLoading,
     isSaving,
     updateField,
+    touchField,
+    updatePincode,
+    isLookingUpPincode: pincode.isLooking,
+    pincodeLookupError: pincode.lookupError,
     save,
     uploadLogo,
   };

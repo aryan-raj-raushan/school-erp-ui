@@ -101,6 +101,7 @@ export function useHallDetailForm(id: string) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<HallDetailFormInput, unknown, HallDetailFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(hallDetailSchema),
     defaultValues: {
       room_name: "",

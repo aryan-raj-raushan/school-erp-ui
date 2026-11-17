@@ -12,6 +12,7 @@ import {
   ResponsiveSelect,
 } from '@/components/ui';
 import { Pencil, Trash2 } from 'lucide-react';
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 type SyllabusRow = {
   id: string;
@@ -57,7 +58,7 @@ export default function SyllabusPage() {
             <Button size="sm" variant="ghost" onClick={() => navigateToEdit(row.original.id)}>
               <Icon icon={Pencil} type="sm" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => removeSyllabus(row.original.id)}>
+            <Button size="sm" variant="ghost" onClick={() => void confirmDelete('this syllabus', () => removeSyllabus(row.original.id))}>
               <Icon icon={Trash2} type="sm-danger" />
             </Button>
           </Div>

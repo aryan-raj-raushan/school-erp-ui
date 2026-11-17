@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { StudentMovementsService, type CreateMovementPayload } from '@/services/student-movements.service';
 import type { StudentMovement } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useStudentMovements() {
   const [movements, setMovements] = useState<StudentMovement[]>([]);
@@ -20,8 +21,8 @@ export function useStudentMovements() {
     try {
       const data = await StudentMovementsService.byStudent(studentId, date || undefined);
       setMovements(data);
-    } catch {
-      toast.error('Failed to load movements');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load movements'));
     } finally {
       setIsLoading(false);
     }
@@ -34,8 +35,8 @@ export function useStudentMovements() {
       setMovements((prev) => [created, ...prev]);
       setIsDialogOpen(false);
       toast.success('Movement logged');
-    } catch {
-      toast.error('Failed to log movement');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to log movement'));
     } finally {
       setIsSubmitting(false);
     }
@@ -46,8 +47,8 @@ export function useStudentMovements() {
       await StudentMovementsService.remove(id);
       setMovements((prev) => prev.filter((m) => m.id !== id));
       toast.success('Deleted');
-    } catch {
-      toast.error('Failed to delete');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to delete'));
     }
   }, []);
 

@@ -1,6 +1,6 @@
 export const TEAM_PAGE = {
   title: 'Team',
-  description: 'Manage Sales, Operator, Support and Admin staff logins',
+  description: 'Manage team logins, their roles and what each role can access',
   addButton: 'Add Team Member',
   empty: 'No team members yet',
   table: {
@@ -22,7 +22,7 @@ export const TEAM_PAGE = {
   },
   schoolsModal: {
     title: 'Assigned Schools',
-    hint: 'Sales Executives and Operators only see schools assigned to them here.',
+    hint: 'Sales Executives, Operators and custom-role members only see schools assigned to them here.',
     assign: 'Assign School',
     empty: 'No schools assigned yet',
     remove: 'Remove',

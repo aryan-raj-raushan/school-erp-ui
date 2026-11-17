@@ -17,7 +17,16 @@ export type StaffAttendanceRecord = {
   is_late: boolean;
   remarks: string | null;
   marked_by: string;
+  mode: AttendanceMode;
+  marked_at: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  location_accuracy_m: number | null;
 };
+
+export type AttendanceMode = 'MANUAL' | 'RFID' | 'APP';
+
+export type PunchInLocation = { latitude: number; longitude: number; accuracy?: number };
 
 export type MarkStaffAttendanceEntry = {
   staff_id: string;
@@ -39,8 +48,25 @@ export const StaffAttendanceService = {
     return res.data ?? [];
   },
 
-  async mark(date: string, entries: MarkStaffAttendanceEntry[]): Promise<void> {
-    await apiGateway.post(ENDPOINTS.staffAttendance.base, { date, entries });
+  async mark(
+    date: string,
+    entries: MarkStaffAttendanceEntry[],
+  ): Promise<{ locked: { staff_id: string; reason: string }[] }> {
+    const res = await apiGateway.post<{ locked: { staff_id: string; reason: string }[] }>(
+      ENDPOINTS.staffAttendance.base,
+      { date, entries },
+    );
+    return { locked: res.data?.locked ?? [] };
+  },
+
+  async getMyToday(): Promise<StaffAttendanceRecord | null> {
+    const res = await apiGateway.get<StaffAttendanceRecord | null>(ENDPOINTS.staffAttendance.myToday);
+    return res.data ?? null;
+  },
+
+  async punchIn(location: PunchInLocation): Promise<StaffAttendanceRecord> {
+    const res = await apiGateway.post<StaffAttendanceRecord>(ENDPOINTS.staffAttendance.punchIn, location);
+    return res.data;
   },
 
   async getDateRange(startDate: string, endDate: string): Promise<StaffAttendanceRecord[]> {

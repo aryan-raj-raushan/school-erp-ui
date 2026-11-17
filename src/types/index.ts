@@ -49,6 +49,8 @@ export interface UserProfile {
   student_id?: string;
   profile_image?: string | null;
   custom_role_id?: string | null;
+  company_role_id?: string | null;
+  company_role_name?: string | null;
   /** Resolved permission slugs from /auth/me — populated for school users */
   permissions?: string[];
   /** null until a new staff member or parent confirms their details after first login */
@@ -87,6 +89,7 @@ export interface School {
   udise_code?: string | null;
   affiliation_number?: string | null;
   established_year?: number | null;
+  principal_salutation?: string | null;
   principal_name?: string | null;
   principal_email?: string | null;
   principal_phone?: string | null;
@@ -228,6 +231,7 @@ export interface Staff {
   id: string;
   school_id: string;
   user_id?: string | null;
+  salutation?: string | null;
   first_name: string;
   last_name?: string | null;
   email?: string | null;
@@ -302,6 +306,8 @@ export interface AttendanceRecord {
   remarks?: string | null;
   marked_by?: string | null;
   marked_by_username?: string | null;
+  mode?: 'MANUAL' | 'RFID' | 'APP';
+  marked_at?: string | null;
   created_at: string;
   updated_at?: string | null;
 }

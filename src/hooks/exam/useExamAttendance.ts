@@ -16,6 +16,7 @@ import type {
 } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { ATTENDANCE_PAGE } from "@/constants/exam.constants";
+import { errorMessage } from '@/lib/api-error';
 
 // ── List Hook ─────────────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ export function useMarkAttendance({
       limit: 500,
     })
       .then((r) => setStudents(r.items))
-      .catch(() => toast.error("Failed to load students"));
+      .catch((err) => toast.error(errorMessage(err, "Failed to load students")));
   }, [classId, sectionId, academicYearId]);
 
   // Load schedules when exam or class changes, sorted so subject columns
@@ -125,7 +126,7 @@ export function useMarkAttendance({
         );
         setSchedules(sorted);
       })
-      .catch(() => toast.error("Failed to load schedules"))
+      .catch((err) => toast.error(errorMessage(err, "Failed to load schedules")))
       .finally(() => setIsLoadingSchedules(false));
   }, [examId, classId]);
 

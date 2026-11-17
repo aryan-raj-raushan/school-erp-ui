@@ -10,6 +10,7 @@ export function useSignupPage() {
   const { signup, isLoading } = useAuth();
 
   const form = useForm<SchoolSignupFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schoolSignupSchema) as any,
     defaultValues: {
       school_name: '',

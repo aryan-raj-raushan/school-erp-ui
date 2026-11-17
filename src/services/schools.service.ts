@@ -53,6 +53,24 @@ export interface SchoolAdmin {
   phone_number: string | null;
 }
 
+export interface SchoolDeletionSummary {
+  id: string;
+  name: string;
+  code: string | null;
+  students: number;
+  staff: number;
+  parents: number;
+  last_backup_at: string | null;
+}
+
+export interface SchoolDeletionResult {
+  id: string;
+  name: string;
+  rows_deleted: number;
+  files_deleted: number;
+  files_failed: number;
+}
+
 export const SchoolsService = {
   async list(filters: SchoolFilters = {}): Promise<PaginatedSchools> {
     const res = await apiGateway.get<School[]>(ENDPOINTS.schools.list, { params: filters });
@@ -84,7 +102,13 @@ export const SchoolsService = {
     return res.data;
   },
 
-  async remove(id: string): Promise<void> {
-    await apiGateway.delete(ENDPOINTS.schools.byId(id));
+  async deletionSummary(id: string): Promise<SchoolDeletionSummary> {
+    const res = await apiGateway.get<SchoolDeletionSummary>(ENDPOINTS.schools.deletionSummary(id));
+    return res.data;
+  },
+
+  async remove(id: string, confirmation: { confirm_name: string; backup_confirmed: boolean }): Promise<SchoolDeletionResult> {
+    const res = await apiGateway.delete<SchoolDeletionResult>(ENDPOINTS.schools.byId(id), confirmation, { timeout: 300_000 });
+    return res.data;
   },
 };

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import { Pencil, Trash2 } from "lucide-react";
 import type { Subject } from "@/services/subjects.service";
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 export default function SubjectsPage() {
   const {
@@ -73,7 +74,7 @@ export default function SubjectsPage() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => removeSubject(row.original.id)}
+              onClick={() => void confirmDelete(`subject ${row.original.name}`, () => removeSubject(row.original.id))}
             >
               <Icon icon={Trash2} type="sm-danger" />
             </Button>

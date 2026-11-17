@@ -103,6 +103,7 @@ export interface StudentParent {
   id: string;
   student_id: string;
   relation: ParentRelation;
+  salutation?: string | null;
   first_name: string;
   last_name: string | null;
   email: string | null;
@@ -252,5 +253,10 @@ export interface StudentIdCardData {
 
 export interface PickupCardData {
   student: StudentIdCardData;
+  parents: StudentParent[];
+}
+
+export interface BulkCardItem {
+  id_card: StudentIdCardData;
   parents: StudentParent[];
 }

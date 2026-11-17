@@ -6,6 +6,8 @@ import {
   type SegmentOption,
 } from "@/components/ui";
 import type { StaffMember } from "@/services/staff-attendance.service";
+import type { StaffAttendanceEntryState } from "@/hooks/useStaffAttendance";
+import { ATTENDANCE_MODE_LABEL, formatMarkedTime } from "@/lib/attendance-mode";
 
 type StaffStatus = "PRESENT" | "ABSENT";
 
@@ -16,7 +18,7 @@ const STATUS_OPTIONS: ReadonlyArray<SegmentOption<StaffStatus>> = [
 
 export interface StaffAttendanceMobileProps {
   staff: StaffMember[];
-  attendanceMap: Record<string, { status?: StaffStatus; is_late: boolean; remarks: string } | undefined>;
+  attendanceMap: Record<string, StaffAttendanceEntryState | undefined>;
   isLoading: boolean;
   isSaving: boolean;
   summary?: string;
@@ -40,7 +42,7 @@ export function StaffAttendanceMobile({
   const entries = Object.fromEntries(
     Object.entries(attendanceMap).map(([id, entry]) => [
       id,
-      entry && { status: entry.status, isLate: entry.is_late, remarks: entry.remarks },
+      entry && { status: entry.status, isLate: entry.is_late, remarks: entry.remarks, locked: !!entry.lockReason },
     ]),
   );
   const count = (status: StaffStatus) =>
@@ -53,7 +55,14 @@ export function StaffAttendanceMobile({
         id: s.id,
         marker: s.employee_code,
         name: `${s.first_name} ${s.last_name ?? ""}`.trim(),
-        subtitle: s.role?.replace(/_/g, " "),
+        subtitle: [
+          s.role?.replace(/_/g, " "),
+          attendanceMap[s.id]?.record
+            ? `${ATTENDANCE_MODE_LABEL[attendanceMap[s.id]!.record!.mode]} · ${formatMarkedTime(attendanceMap[s.id]!.record!.marked_at)}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       }))}
       entries={entries}
       statusOptions={STATUS_OPTIONS}

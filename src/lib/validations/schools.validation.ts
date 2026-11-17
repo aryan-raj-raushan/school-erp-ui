@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { REGEX, BOARD_TYPES } from '@/constants';
 
 const optionalEmail = z.union([z.string().regex(REGEX.email, 'Invalid email'), z.literal('')]).optional();
-const optionalUrl = z.union([z.string().regex(REGEX.url, 'Invalid URL'), z.literal('')]).optional();
+const optionalUrl = z.union([z.string().regex(REGEX.url, 'Enter a valid website, e.g. school.edu.in'), z.literal('')]).optional();
 const optionalPhone = z.union([z.string().regex(REGEX.phoneIn, 'Enter a valid 10-digit mobile number'), z.literal('')]).optional();
 const optionalText = (max: number) => z.string().trim().max(max, `Must be at most ${max} characters`).optional();
 

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 import { useMultiStepForm, type FormStep } from "@/hooks/useMultiStepForm";
 import type { StaffFormValues } from "@/lib/validations/staff.validation";
-import { BLOOD_GROUPS } from "@/constants";
+import { BLOOD_GROUPS, SALUTATION_OPTIONS } from "@/constants";
 import type { Staff } from "@/types";
 
 const GENDER_OPTIONS = [
@@ -30,7 +30,7 @@ const BASE_STEPS: ReadonlyArray<FormStep<StaffFormValues>> = [
   {
     id: "personal",
     label: "Personal",
-    fields: ["first_name", "last_name", "gender", "date_of_birth", "blood_group"],
+    fields: ["salutation", "first_name", "last_name", "gender", "date_of_birth", "blood_group"],
   },
   {
     id: "contact",
@@ -121,6 +121,13 @@ export function StaffMobileForm({
         />
         <PhotoHero {...photo} name={`${firstName} ${lastName}`.trim()} />
         <FormGroup title="Name">
+          <ControlledSelectField
+            control={control}
+            name="salutation"
+            label="Salutation"
+            placeholder="Mr. / Mrs. / Miss"
+            options={SALUTATION_OPTIONS}
+          />
           <MobileTextField
             label="First name"
             required

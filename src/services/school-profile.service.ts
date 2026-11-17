@@ -16,12 +16,11 @@ export interface UpdateSchoolProfilePayload {
   logo_url?: string;
   board_type?: string;
   marking_system?: string;
-  lat?: string;
-  lng?: string;
   timezone?: string;
   udise_code?: string;
   affiliation_number?: string;
   established_year?: number;
+  principal_salutation?: string;
   principal_name?: string;
   principal_email?: string;
   principal_phone?: string;

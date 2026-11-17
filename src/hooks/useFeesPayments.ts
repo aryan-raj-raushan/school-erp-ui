@@ -19,6 +19,8 @@ import { StudentsService as StudentProfilesService } from '@/services/students-v
 import type { Student } from '@/types';
 import type { StudentParent } from '@/types/students.types';
 import { type PaymentsTab } from '@/constants/fee-payments.constants';
+import { errorMessage } from '@/lib/api-error';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 interface FinanceAccount {
   id: string;
@@ -130,7 +132,7 @@ export function useFeesPayments() {
     try {
       const res = await StudentsService.list({ academic_year_id: academicYearId, class_id: classId, limit: 200 });
       setClassStudents(res.items);
-    } catch { toast.error('Failed to load students'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load students')); }
     finally { setLoadingClassStudents(false); }
   }, []);
 
@@ -157,7 +159,7 @@ export function useFeesPayments() {
 
     if (billsRes.status === 'fulfilled') {
       setStudentBills((billsRes.value as any).data ?? billsRes.value);
-    } else { toast.error('Failed to load student bills'); }
+    } else { toast.error(errorMessage(billsRes.reason, 'Failed to load student bills')); }
 
     if (parentsRes.status === 'fulfilled') {
       setStudentParents(parentsRes.value.parents ?? []);
@@ -189,7 +191,7 @@ export function useFeesPayments() {
       const data = (res as any).data ?? res;
       toast.success(`${data.created} bills generated, ${data.skipped} skipped`);
       onSuccess?.();
-    } catch { toast.error('Failed to generate bills'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to generate bills')); }
     finally { setGeneratingBills(false); }
   }, []);
 
@@ -202,7 +204,7 @@ export function useFeesPayments() {
       const res = await feeBillService.payments(billId);
       const data = (res as any).data ?? res;
       setBillPaymentsMap(prev => ({ ...prev, [billId]: data }));
-    } catch { toast.error('Failed to load payment history'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load payment history')); }
     finally { setLoadingPaymentsFor(null); }
   }, [expandedBillId, billPaymentsMap]);
 
@@ -215,7 +217,7 @@ export function useFeesPayments() {
       }));
       toast.success('Payment deleted');
       onSuccess?.();
-    } catch { toast.error('Failed to delete payment'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to delete payment')); }
   }, []);
 
   const fetchFinanceAccounts = useCallback(async () => {
@@ -233,7 +235,7 @@ export function useFeesPayments() {
     try {
       const res = await feeBillService.studentBills(studentId, academicYearId);
       setStudentBills((res as any).data ?? res);
-    } catch { toast.error('Failed to load student bills'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load student bills')); }
     finally { setLoadingStudentBills(false); }
   }, []);
 
@@ -241,7 +243,7 @@ export function useFeesPayments() {
     try {
       const res = await feeBillService.payments(billId);
       setBillPayments((res as any).data ?? res);
-    } catch { toast.error('Failed to load payment history'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load payment history')); }
   }, []);
 
   const fetchFinanceAccountsMemo = useCallback(async () => {
@@ -253,22 +255,24 @@ export function useFeesPayments() {
       await feeBillService.pay(billId, payload);
       toast.success('Payment recorded successfully');
       onSuccess?.();
-    } catch { toast.error('Failed to record payment'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to record payment')); }
   };
 
   const createManualBill = async (payload: CreateFeeBillPayload) => {
     try {
+      if (!(await confirmCreate('this fee bill'))) return;
       await feeBillService.create(payload);
       toast.success('Fee bill created successfully');
-    } catch { toast.error('Failed to create fee bill'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to create fee bill')); }
   };
 
   const generateClassBills = async (payload: BulkCreateFeeBillPayload) => {
     try {
+      if (!(await confirmCreate('fee bills for the whole class'))) return;
       const res = await feeBillService.generateClass(payload);
       const created = (res as any).data?.created ?? 0;
       toast.success(`${created} bills generated successfully`);
-    } catch { toast.error('Failed to generate class bills'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to generate class bills')); }
   };
 
   const fetchMonthlyDues = useCallback(async (params: FilterMonthlyDuesParams) => {
@@ -277,7 +281,7 @@ export function useFeesPayments() {
     try {
       const res = await monthlyDuesService.get(params);
       setMonthlyDues((res as any).data ?? res);
-    } catch { toast.error('Failed to load monthly dues'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load monthly dues')); }
     finally { setLoadingMonthlyDues(false); }
   }, []);
 
@@ -287,7 +291,7 @@ export function useFeesPayments() {
     try {
       const res = await feeClassStructureService.get(params);
       setStructureView((res as any).data ?? res);
-    } catch { toast.error('Failed to load structure view'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load structure view')); }
     finally { setLoadingStructureView(false); }
   }, []);
 
@@ -295,14 +299,14 @@ export function useFeesPayments() {
     try {
       const res = await feePlanService.list();
       setFeePlans((res as any).data ?? res);
-    } catch { toast.error('Failed to load fee plans'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load fee plans')); }
   }, []);
 
   const fetchAllFeeTypes = useCallback(async () => {
     try {
       const res = await feeTypeService.list({ limit: 100 });
       setAllFeeTypes((res as any).data ?? res);
-    } catch { toast.error('Failed to load fee types'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load fee types')); }
   }, []);
 
   const fetchDemandReceipt = useCallback(async (params: GenerateDemandReceiptParams) => {
@@ -311,7 +315,7 @@ export function useFeesPayments() {
     try {
       const res = await demandReceiptService.get(params);
       setDemandReceipts((res as any).data ?? res);
-    } catch { toast.error('Failed to load demand receipt'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to load demand receipt')); }
     finally { setLoadingDemandReceipt(false); }
   }, []);
 
@@ -320,7 +324,7 @@ export function useFeesPayments() {
       const res = await feeBulkService.discount(payload);
       const applied = (res as any).data?.applied ?? 0;
       toast.success(`Discount applied to ${applied} bills`);
-    } catch { toast.error('Failed to apply bulk discount'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to apply bulk discount')); }
   };
 
   const applyBulkExtra = async (payload: BulkExtraPayload) => {
@@ -328,7 +332,7 @@ export function useFeesPayments() {
       const res = await feeBulkService.extra(payload);
       const created = (res as any).data?.created ?? 0;
       toast.success(`${created} extra bills created`);
-    } catch { toast.error('Failed to apply bulk extra payment'); }
+    } catch (err) { toast.error(errorMessage(err, 'Failed to apply bulk extra payment')); }
   };
 
   // Init fetch on mount

@@ -13,13 +13,30 @@ export class GatewayError extends Error {
   }
 }
 
-function extractMessage(body: { message?: string; error?: string; errors?: Record<string, string> } | null | undefined, status: number): string {
-  if (body?.errors && typeof body.errors === 'object') {
-    const details = Object.entries(body.errors)
-      .map(([field, msg]) => `${field}: ${msg}`)
-      .join(', ');
-    return details;
+type ErrorBody = { message?: string | string[]; error?: string; errors?: Record<string, string> | string[] };
+
+function humanizeField(path: string): string {
+  const leaf = path.split('.').filter((part) => !/^\d+$/.test(part)).pop() ?? path;
+  const words = leaf.replace(/_/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function describeFieldError(field: string, msg: string): string {
+  const leaf = field.split('.').pop() ?? field;
+  if (/^\d+$/.test(field) || msg.toLowerCase().startsWith(leaf.toLowerCase())) {
+    return msg.charAt(0).toUpperCase() + msg.slice(1);
   }
+  return `${humanizeField(field)}: ${msg}`;
+}
+
+function extractMessage(body: ErrorBody | null | undefined, status: number): string {
+  if (Array.isArray(body?.errors) && body.errors.length) return body.errors.join(', ');
+  if (body?.errors && typeof body.errors === 'object' && Object.keys(body.errors).length) {
+    return Object.entries(body.errors)
+      .map(([field, msg]) => describeFieldError(field, msg))
+      .join(', ');
+  }
+  if (Array.isArray(body?.message)) return body.message.join(', ');
   return body?.message ?? body?.error ?? `Request failed with status ${status}`;
 }
 
@@ -39,7 +56,7 @@ function decodeErrorBody(buffer: ArrayBuffer): unknown {
 export function applyErrorInterceptor(axiosInstance: AxiosInstance): void {
   axiosInstance.interceptors.response.use(
     (response) => response,
-    (error: AxiosError<{ message?: string; error?: string; errors?: Record<string, string> }>) => {
+    (error: AxiosError<ErrorBody>) => {
       if (error.response) {
         const { status } = error.response;
         let body = error.response.data;

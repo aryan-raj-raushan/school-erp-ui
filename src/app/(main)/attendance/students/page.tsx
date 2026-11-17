@@ -25,8 +25,10 @@ import {
   Switch,
   Spinner,
   type ColumnDef,
+  Badge,
 } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
+import { ATTENDANCE_MODE_LABEL, formatMarkedTime } from "@/lib/attendance-mode";
 
 type StudentAttendanceRow = {
   id: string;
@@ -199,13 +201,27 @@ export default function StudentAttendancePage() {
         size: 120,
         cell: ({ row }) => {
           const entry = attendanceMap[row.original.id] ?? {};
-          const readOnly = isHoliday || entry.status === 'LEAVE' || entry.status === 'HOLIDAY';
+          const readOnly = isHoliday || entry.status === 'LEAVE' || entry.status === 'HOLIDAY' || !!entry.lockReason;
           return (
-            <Div type="row" gap="xs">
+            <Div type="row" gap="xs" title={entry.lockReason ?? undefined}>
               <Button size="sm" variant={entry.status === "PRESENT" ? "success" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "PRESENT")}>P</Button>
               <Button size="sm" variant={entry.status === "ABSENT" ? "destructive" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "ABSENT")}>A</Button>
               <Button size="sm" variant={entry.status === "LATE" ? "secondary" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "LATE")}>L</Button>
               <Button size="sm" variant={entry.status === "HALF_DAY" ? "secondary" : "outline"} disabled={readOnly} onClick={() => setStudentStatus(row.original.id, "HALF_DAY")}>HD</Button>
+            </Div>
+          );
+        },
+      },
+      {
+        id: "mode",
+        header: "Mode",
+        cell: ({ row }) => {
+          const entry = attendanceMap[row.original.id] ?? {};
+          if (!entry.mode) return <P color="muted" className="text-xs">—</P>;
+          return (
+            <Div type="col" gap="xs">
+              <Badge variant={entry.mode === "RFID" ? "info" : "default"}>{ATTENDANCE_MODE_LABEL[entry.mode]}</Badge>
+              <P color="muted" className="text-[11px]">{formatMarkedTime(entry.markedAt)}</P>
             </Div>
           );
         },
@@ -218,6 +234,7 @@ export default function StudentAttendancePage() {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
             <Switch
+              disabled={!!entry.lockReason}
               checked={entry.isLate ?? false}
               onCheckedChange={(checked) => setStudentLate(row.original.id, checked)}
             />
@@ -231,7 +248,8 @@ export default function StudentAttendancePage() {
           const entry = attendanceMap[row.original.id] ?? {};
           return (
             <Input
-              placeholder="Optional remarks"
+              placeholder={entry.lockReason ?? "Optional remarks"}
+              disabled={!!entry.lockReason}
               value={entry.remarks ?? ""}
               onChange={(e) =>
                 setStudentRemarks(row.original.id, e.target.value)
@@ -257,7 +275,9 @@ export default function StudentAttendancePage() {
     return (
       <StudentAttendanceMobile
         students={students}
-        attendanceMap={attendanceMap}
+        attendanceMap={Object.fromEntries(
+          Object.entries(attendanceMap).map(([id, entry]) => [id, { ...entry, locked: !!entry.lockReason }]),
+        )}
         isLoading={isLoadingStudents}
         isSaving={isSaving}
         isHoliday={isHoliday}

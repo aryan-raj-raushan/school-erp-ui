@@ -92,6 +92,7 @@ export function useExamGradingBulkForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<{ grades: GradingFormInput[] }, unknown, { grades: GradingFormOutput[] }>({
+    mode: 'onTouched',
     resolver: zodResolver(bulkGradingFormSchema) as any,
     defaultValues: { grades: [{ ...defaultGradeRow }] },
   });
@@ -156,6 +157,7 @@ export function useExamGradingDetail(id: string) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<GradingFormInput, unknown, GradingFormOutput>({
+    mode: 'onTouched',
     resolver: zodResolver(gradingSchema),
     defaultValues: {
       grade_name: "",

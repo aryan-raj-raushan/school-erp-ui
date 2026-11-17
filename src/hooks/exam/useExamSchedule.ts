@@ -11,6 +11,7 @@ import { SubjectsService } from "@/services/subjects.service";
 import type { ExamSchedule, ScheduleFilters } from "@/types/exam.types";
 import type { PaginationMeta } from "@/types";
 import { SCHEDULE_PAGE, EXAM_ROUTES } from "@/constants/exam.constants";
+import { errorMessage } from '@/lib/api-error';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,7 @@ export function useExamScheduleForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ScheduleFormInput, unknown, ScheduleFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
       exam_id: "",
@@ -222,8 +224,8 @@ export function useExamScheduleForm() {
       schedulesField.replace(rows);
       toast.success(`${rows.length} subjects loaded`);
       return rows.length;
-    } catch {
-      toast.error("Failed to load subjects");
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to load subjects"));
       return 0;
     } finally {
       setIsLoadingSubjects(false);
@@ -275,6 +277,7 @@ export function useExamScheduleEdit(id: string | null) {
   const [subSchedules, setSubSchedules] = useState<ExamSchedule[]>([]);
 
   const form = useForm<SingleScheduleInput, unknown, SingleScheduleValues>({
+    mode: 'onTouched',
     resolver: zodResolver(singleScheduleSchema) as any,
     defaultValues: {
       subject_name: "",

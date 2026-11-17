@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ROUTES } from '@/constants';
+import { errorMessage } from '@/lib/api-error';
 
 const editAcademicYearSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
@@ -26,6 +27,7 @@ export function useEditAcademicYear(id: string) {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<EditAcademicYearFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(editAcademicYearSchema) as any,
     defaultValues: { is_enabled: true, is_current: false },
   });
@@ -43,8 +45,8 @@ export function useEditAcademicYear(id: string) {
         is_enabled: year.is_enabled,
         is_current: year.is_current,
       });
-    } catch {
-      toast.error('Failed to load academic year');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load academic year'));
       router.push(ROUTES.academicYears);
     } finally {
       setIsLoadingData(false);

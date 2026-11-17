@@ -13,6 +13,7 @@ import { ClassSubjectTeacherService } from '@/services/class-subject-teacher.ser
 import { useAcademicYears } from './useAcademicYears';
 import { ROUTES } from '@/constants';
 import type { Class, HomeworkAttachment } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export interface HomeworkSubjectOption {
   id: string;
@@ -64,6 +65,7 @@ export function useEditHomework(homeworkId: string) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<EditHomeworkFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(schema) as any,
     defaultValues: {
       status: 'ACTIVE',
@@ -124,8 +126,8 @@ export function useEditHomework(homeworkId: string) {
       const unique = new Map<string, HomeworkSubjectOption>();
       mappings.forEach((m) => unique.set(m.subject_id, { id: m.subject_id, name: m.subject_name }));
       setSubjects(Array.from(unique.values()));
-    } catch {
-      toast.error('Failed to load subjects for this class');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load subjects for this class'));
       setSubjects([]);
     } finally {
       setIsLoadingSubjects(false);
@@ -175,9 +177,9 @@ export function useEditHomework(homeworkId: string) {
         setNewAttachments((prev) =>
           prev.map((a) => a.id === id ? { ...a, status: 'done', url: result.url } : a),
         );
-      } catch {
+      } catch (err) {
         setNewAttachments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'error' } : a));
-        toast.error(`Failed to upload ${file.name}`);
+        toast.error(errorMessage(err, `Failed to upload ${file.name}`));
       }
     }
   }

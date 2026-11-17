@@ -14,6 +14,7 @@ import {
   type CreateSubscriptionPlanFormValues,
 } from '@/lib/validations/subscription-plans.validation';
 import type { PaginationMeta, SubscriptionPlan } from '@/types';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {}) {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -23,6 +24,7 @@ export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const createForm = useForm<CreateSubscriptionPlanFormValues>({
+    mode: 'onTouched',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createSubscriptionPlanSchema) as any,
     defaultValues: { billing_model: 'FLAT', billing_cycle: 'MONTHLY', is_active: true },
@@ -52,6 +54,7 @@ export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {
         : { price_per_student: values.price_per_student }),
     };
     try {
+      if (!(await confirmCreate(`plan "${values.name}"`))) return;
       const plan = await SubscriptionPlansService.create(payload);
       toast.success(`${plan.name} created`);
       await fetchPlans();

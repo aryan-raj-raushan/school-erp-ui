@@ -8,6 +8,7 @@ import { SubjectsService, type Subject } from '@/services/subjects.service';
 import { StaffService } from '@/services/staff.service';
 import { useAcademicYears } from './useAcademicYears';
 import type { Class, Staff } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useClassSubjectTeacherMap() {
   const { years, currentYear } = useAcademicYears();
@@ -39,8 +40,8 @@ export function useClassSubjectTeacherMap() {
       const uniqueById = Array.from(new Map(merged.map((t) => [t.id, t])).values());
       uniqueById.sort((a, b) => a.first_name.localeCompare(b.first_name));
       setTeachers(uniqueById);
-    } catch {
-      toast.error('Failed to load form data');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load form data'));
     }
   }, []);
 
@@ -54,8 +55,8 @@ export function useClassSubjectTeacherMap() {
       const map: Record<string, string> = {};
       mappings.forEach((m) => { map[m.subject_id] = m.teacher_id; });
       setTeacherBySubject(map);
-    } catch {
-      toast.error('Failed to load subject-teacher mapping');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load subject-teacher mapping'));
     } finally {
       setIsLoadingData(false);
     }

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BulkImportService } from "@/services/bulk-import.service";
 import { saveBlob } from "@/lib/save-blob";
-import { checkImportFile, describeImportError, downloadCsv } from "@/lib/bulk-import.utils";
+import { checkImportFile, describeImportError, downloadCsv, pollImportJob } from "@/lib/bulk-import.utils";
 import type {
   BulkEntity,
   ImportJob,
@@ -15,9 +15,6 @@ import type {
 export type BulkImportStep = "upload" | "review" | "importing" | "done";
 export type BulkImportBusy = "template" | "validate" | "report" | "errors" | "import" | null;
 export type BulkImportFilter = "all" | RowStatus;
-
-const POLL_MS = 1000;
-const MAX_POLL_FAILURES = 5;
 
 export interface UseBulkImportOptions {
   title: string;
@@ -145,37 +142,24 @@ export function useBulkImport(entity: BulkEntity, { title, onImported }: UseBulk
   const jobId = job?.job_id;
   useEffect(() => {
     if (step !== "importing" || !jobId) return;
-    let failures = 0;
-    let cancelled = false;
-    const timer = setInterval(async () => {
-      try {
-        const latest = await BulkImportService.getJob(entity, jobId);
-        if (cancelled) return;
-        failures = 0;
-        setJob(latest);
-        if (latest.status === "running") return;
-        clearInterval(timer);
+    return pollImportJob({
+      fetchJob: () => BulkImportService.getJob(entity, jobId),
+      onUpdate: setJob,
+      onFinished: (latest) => {
         setStep("done");
         onImportedRef.current?.();
         if (latest.status === "failed") toast.error(latest.error ?? "The import stopped unexpectedly.");
         else if (latest.failed) toast.warning(`${latest.created} imported, ${latest.failed} failed.`);
         else toast.success(`${latest.created} ${title.toLowerCase()} imported successfully.`);
-      } catch (err) {
-        failures++;
-        if (failures >= MAX_POLL_FAILURES) {
-          clearInterval(timer);
-          setError(
-            `Lost track of the import progress (${describeImportError(err, "network error")}). It may still be running — refresh the list shortly.`,
-          );
-          setStep("done");
-          onImportedRef.current?.();
-        }
-      }
-    }, POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
+      },
+      onLost: (err) => {
+        setError(
+          `Lost track of the import progress for 2 minutes (${describeImportError(err, "network error")}). It may still be running — refresh the list shortly.`,
+        );
+        setStep("done");
+        onImportedRef.current?.();
+      },
+    });
   }, [step, jobId, entity, title]);
 
   const downloadCredentials = useCallback(() => {

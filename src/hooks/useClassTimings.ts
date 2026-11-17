@@ -6,6 +6,7 @@ import { SchoolSettingsService } from '@/services/school-settings.service';
 import { ClassesService } from '@/services/classes.service';
 import type { ClassTimingOverride, SchoolTiming } from '@/types/school-settings.types';
 import type { Class } from '@/types';
+import { errorMessage } from '@/lib/api-error';
 
 export function useClassTimings() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -25,8 +26,8 @@ export function useClassTimings() {
       setClasses(classResponse.items);
       setTimings(timingData);
       setOverrides(overrideData);
-    } catch {
-      toast.error('Failed to load class timings');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load class timings'));
     } finally {
       setIsLoading(false);
     }
@@ -54,8 +55,8 @@ export function useClassTimings() {
           return [...prev, updated];
         });
         toast.success(timingId ? 'Class timing override saved' : 'Class timing reset to school default');
-      } catch {
-        toast.error('Failed to update class timing');
+      } catch (err) {
+        toast.error(errorMessage(err, 'Failed to update class timing'));
       } finally {
         setSavingClassId(null);
       }

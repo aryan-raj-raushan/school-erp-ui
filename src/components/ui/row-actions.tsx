@@ -1,12 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { Eye, MoreVertical, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Eye, MoreVertical } from "lucide-react";
 import { Div } from "./layout";
-import { P, H3 } from "./typography";
 import { Button, buttonVariants } from "./button";
 import {
   DropdownMenu,
@@ -14,9 +10,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "./dropdown-menu";
-import { useBackLayer } from "@/hooks/useBackLayer";
 import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import { ActionSheet, type SheetAction } from "./action-sheet";
+import { ConfirmDialog } from "./confirm-dialog";
 
 export interface RowAction {
   label: string;
@@ -48,6 +44,13 @@ export interface RowActionsProps {
   viewLabel?: string;
 }
 
+const DESTRUCTIVE_LABEL = /^(delete|remove|deactivate|disable|revoke|unassign|cancel)\b/i;
+
+function needsConfirm(action: RowAction): boolean {
+  if (action.confirm === false) return false;
+  return Boolean(action.confirm) || action.variant === "destructive" || DESTRUCTIVE_LABEL.test(action.label);
+}
+
 function resolveConfirmCopy(action: RowAction) {
   const overrides = typeof action.confirm === "object" ? action.confirm : {};
   return {
@@ -58,91 +61,6 @@ function resolveConfirmCopy(action: RowAction) {
     confirmLabel: overrides.confirmLabel ?? action.label,
     cancelLabel: overrides.cancelLabel ?? "Cancel",
   };
-}
-
-interface ConfirmDialogProps {
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  description: string;
-  confirmLabel: string;
-  cancelLabel: string;
-  destructive: boolean;
-}
-
-/** Compact confirmation dialog: bottom sheet on mobile, centered dialog on desktop. */
-function ConfirmDialog({
-  onClose,
-  onConfirm,
-  title,
-  description,
-  confirmLabel,
-  cancelLabel,
-  destructive,
-}: ConfirmDialogProps) {
-  useBackLayer(true, onClose);
-
-  React.useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const body = (
-    <Div gap="md" className="p-5">
-      <Div type="row" align="center" gap="sm">
-        <Div
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-            destructive ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
-          )}
-        >
-          <AlertTriangle size={18} />
-        </Div>
-        <H3 color="default" className="text-base font-semibold">
-          {title}
-        </H3>
-      </Div>
-      <P color="muted" className="-mt-2">
-        {description}
-      </P>
-      <Div type="row" justify="end" gap="sm">
-        <Button variant="outline" size="sm" onClick={onClose}>
-          {cancelLabel}
-        </Button>
-        <Button variant={destructive ? "destructive" : "default"} size="sm" onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
-      </Div>
-    </Div>
-  );
-
-
-  return createPortal(
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center px-4 safe-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-      >
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
-        <motion.div
-          className="relative z-10 w-full max-w-sm rounded-xl border border-border/50 bg-white shadow-lg dark:bg-neutral-900"
-          initial={{ opacity: 0, scale: 0.95, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 8 }}
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {body}
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>,
-    document.body,
-  );
 }
 
 /**
@@ -160,7 +78,7 @@ export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsPr
   const visibleActions = actions.filter((action) => !action.hidden);
 
   function handleSelect(action: RowAction) {
-    if (action.confirm) {
+    if (needsConfirm(action)) {
       setPendingAction(action);
     } else {
       action.onClick();
@@ -178,7 +96,7 @@ export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsPr
 
   if (isMobile) {
     const sheetActions: SheetAction[] = visibleActions.map((action) => {
-      const copy = action.confirm ? resolveConfirmCopy(action) : null;
+      const copy = needsConfirm(action) ? resolveConfirmCopy(action) : null;
       return {
         label: action.label,
         icon: action.icon,
@@ -186,7 +104,9 @@ export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsPr
         onClick: action.onClick,
         confirm: copy
           ? { title: copy.title, description: copy.description, confirmLabel: copy.confirmLabel }
-          : undefined,
+          : action.confirm === false
+            ? false
+            : undefined,
       };
     });
 
@@ -271,7 +191,7 @@ export function RowActions({ actions, onView, viewLabel = "View" }: RowActionsPr
           description={confirmCopy.description}
           confirmLabel={confirmCopy.confirmLabel}
           cancelLabel={confirmCopy.cancelLabel}
-          destructive={pendingAction.variant === "destructive"}
+          destructive={pendingAction.variant === "destructive" || DESTRUCTIVE_LABEL.test(pendingAction.label)}
         />
       )}
     </>

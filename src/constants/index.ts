@@ -23,3 +23,4 @@ export * from './syllabus.constants';
 export * from './timetable.constants';
 export * from './permissions.registry';
 export * from './legal.constants';
+export * from './person.constants';

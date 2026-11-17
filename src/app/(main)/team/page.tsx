@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { TEAM_PAGE, CREATE_TEAM_MEMBER_FORM } from '@/constants';
 import { Role } from '@/types';
 import { useCompanyUsers } from '@/hooks/useCompanyUsers';
 import type { CompanyUser } from '@/services/company-users.service';
-import { Div, P, Button, Input, PageHeader, PageCol, FilterBar, DataTable, ResponsiveModalContainer, FormField, Badge, type ColumnDef, ResponsiveSelect, RowActions, MobileFormSheet, BottomSheet, MobileSelectField, Span } from '@/components/ui';
-import { Building2, Power, PowerOff, Trash2 } from 'lucide-react';
+import { Div, P, Button, Input, PageHeader, PageCol, FilterBar, DataTable, ResponsiveModalContainer, FormField, Badge, type ColumnDef, ResponsiveSelect, RowActions, MobileFormSheet, BottomSheet, MobileSelectField, Span, Tabs } from '@/components/ui';
+import { Building2, Pencil, Power, PowerOff, Trash2 } from 'lucide-react';
+import { CompanyRolesPanel } from '@/components/platform/CompanyRolesPanel';
+import { CUSTOM_ROLE_PREFIX } from '@/lib/validations/company-users.validation';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ASSIGNABLE_ROLE_OPTIONS = [
@@ -20,15 +22,28 @@ function roleLabel(role: string): string {
   return (TEAM_PAGE.roleLabels as Record<string, string>)[role] ?? role;
 }
 
+type TeamTab = 'members' | 'roles';
+
 export default function TeamPage() {
   const isMobile = useIsMobile();
+  const [tab, setTab] = useState<TeamTab>('members');
   const {
     users, pagination, filters, isLoading,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     toggleActive, deleteUser, updateFilters,
     managingSchoolsFor, assignedSchools, allSchools, isSchoolsLoading,
     openSchoolsModal, closeSchoolsModal, assignSchool, unassignSchool,
+    customRoles, loadCustomRoles,
+    editingUser, editForm, openEditModal, closeEditModal, handleEditSubmit, isUpdating,
   } = useCompanyUsers();
+
+  const roleOptions = useMemo(
+    () => [
+      ...ASSIGNABLE_ROLE_OPTIONS,
+      ...customRoles.map((r) => ({ value: `${CUSTOM_ROLE_PREFIX}${r.id}`, label: `${r.name} (custom)` })),
+    ],
+    [customRoles],
+  );
 
   const unassignedSchools = useMemo(
     () => allSchools.filter((s) => !assignedSchools.some((a) => a.school_id === s.id)),
@@ -50,7 +65,11 @@ export default function TeamPage() {
       {
         accessorKey: 'role',
         header: TEAM_PAGE.table.role,
-        cell: ({ row }) => <Badge variant="default">{roleLabel(row.original.role)}</Badge>,
+        cell: ({ row }) => (
+          <Badge variant={row.original.company_role_name ? 'info' : 'default'}>
+            {row.original.company_role_name ?? roleLabel(row.original.role)}
+          </Badge>
+        ),
       },
       {
         accessorKey: 'is_active',
@@ -72,11 +91,18 @@ export default function TeamPage() {
         header: 'Actions',
         cell: ({ row }) => {
           const canManageSchools =
-            row.original.role === Role.SALES || row.original.role === Role.OPERATOR;
+            row.original.role === Role.SALES ||
+            row.original.role === Role.OPERATOR ||
+            !!row.original.company_role_id;
           const isSuperAdmin = row.original.role === Role.SUPER_ADMIN;
           return (
             <RowActions
               actions={[
+                {
+                  label: 'Edit',
+                  icon: <Pencil size={14} />,
+                  onClick: () => openEditModal(row.original),
+                },
                 {
                   label: 'Schools',
                   icon: <Building2 size={14} />,
@@ -105,7 +131,7 @@ export default function TeamPage() {
         },
       },
     ],
-    [toggleActive, deleteUser, openSchoolsModal],
+    [toggleActive, deleteUser, openSchoolsModal, openEditModal],
   );
 
   return (
@@ -113,9 +139,23 @@ export default function TeamPage() {
       <PageHeader
         title={TEAM_PAGE.title}
         subtitle={pagination ? `${pagination.total} team members` : TEAM_PAGE.description}
-        actions={<Button onClick={openCreateModal}>{TEAM_PAGE.addButton}</Button>}
+        actions={tab === 'members' ? <Button onClick={openCreateModal}>{TEAM_PAGE.addButton}</Button> : undefined}
       />
 
+      <Tabs
+        options={[
+          { value: 'members' as TeamTab, label: 'Members' },
+          { value: 'roles' as TeamTab, label: 'Roles & Permissions' },
+        ]}
+        value={tab}
+        onChange={setTab}
+        className="w-full sm:w-80"
+      />
+
+      {tab === 'roles' ? (
+        <CompanyRolesPanel onRolesChanged={() => void loadCustomRoles()} />
+      ) : (
+      <>
       <FilterBar>
         <Input
           width="md"
@@ -132,6 +172,8 @@ export default function TeamPage() {
         emptyText={TEAM_PAGE.empty}
         pagination={pagination ?? undefined}
       />
+      </>
+      )}
 
       {isMobile && (
         <MobileFormSheet
@@ -181,11 +223,11 @@ export default function TeamPage() {
             },
             {
               kind: 'select',
-              name: 'role',
+              name: 'role_choice',
               label: CREATE_TEAM_MEMBER_FORM.labels.role,
               required: true,
               placeholder: 'Select role',
-              options: ASSIGNABLE_ROLE_OPTIONS,
+              options: roleOptions,
             },
           ]}
         />
@@ -210,11 +252,11 @@ export default function TeamPage() {
                 <FormField label={CREATE_TEAM_MEMBER_FORM.labels.password} error={createForm.formState.errors.password?.message}>
                   <Input type="password" placeholder={CREATE_TEAM_MEMBER_FORM.placeholders.password} {...createForm.register('password')} />
                 </FormField>
-                <FormField label={CREATE_TEAM_MEMBER_FORM.labels.role} error={createForm.formState.errors.role?.message}>
+                <FormField label={CREATE_TEAM_MEMBER_FORM.labels.role} error={createForm.formState.errors.role_choice?.message}>
                   <ResponsiveSelect
-                    {...createForm.register('role')}
+                    {...createForm.register('role_choice')}
                     customPlaceholder="Select role"
-                    options={ASSIGNABLE_ROLE_OPTIONS}
+                    options={roleOptions}
                   />
                 </FormField>
               </Div>
@@ -222,6 +264,76 @@ export default function TeamPage() {
             <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
               <Button type="button" variant="outline" onClick={closeCreateModal}>{CREATE_TEAM_MEMBER_FORM.cancel}</Button>
               <Button type="submit" loading={isCreating}>{CREATE_TEAM_MEMBER_FORM.submit.idle}</Button>
+            </Div>
+          </form>
+        </ResponsiveModalContainer>
+      )}
+
+      {isMobile && (
+        <MobileFormSheet
+          isOpen={!!editingUser}
+          onClose={closeEditModal}
+          title={editingUser ? `Edit ${editingUser.first_name}` : 'Edit team member'}
+          form={editForm}
+          onSubmit={handleEditSubmit}
+          isSubmitting={isUpdating}
+          submitLabel="Save changes"
+          cancelLabel={CREATE_TEAM_MEMBER_FORM.cancel}
+          fields={[
+            {
+              kind: 'row',
+              fields: [
+                { kind: 'input', name: 'first_name', label: CREATE_TEAM_MEMBER_FORM.labels.first_name, required: true, autoCapitalize: 'words' },
+                { kind: 'input', name: 'last_name', label: CREATE_TEAM_MEMBER_FORM.labels.last_name, autoCapitalize: 'words' },
+              ],
+            },
+            { kind: 'input', type: 'email', name: 'email', label: CREATE_TEAM_MEMBER_FORM.labels.email, required: true, autoCapitalize: 'none' },
+            ...(editingUser?.role === Role.SUPER_ADMIN
+              ? []
+              : [{ kind: 'select' as const, name: 'role_choice' as const, label: CREATE_TEAM_MEMBER_FORM.labels.role, required: true, placeholder: 'Select role', options: roleOptions }]),
+          ]}
+        />
+      )}
+
+      {!isMobile && editingUser && (
+        <ResponsiveModalContainer isOpen onClose={closeEditModal} title={`Edit ${editingUser.first_name}`}>
+          <form onSubmit={handleEditSubmit}>
+            <Div className="px-4 py-4">
+              <Div type="col" gap="md">
+                <Div type="grid" cols={2} gap="md">
+                  <FormField label={CREATE_TEAM_MEMBER_FORM.labels.first_name} required error={editForm.formState.errors.first_name?.message}>
+                    <Input {...editForm.register('first_name')} />
+                  </FormField>
+                  <FormField label={CREATE_TEAM_MEMBER_FORM.labels.last_name} error={editForm.formState.errors.last_name?.message}>
+                    <Input {...editForm.register('last_name')} />
+                  </FormField>
+                </Div>
+                <FormField label={CREATE_TEAM_MEMBER_FORM.labels.email} required hint="Used to log in" error={editForm.formState.errors.email?.message}>
+                  <Input type="email" {...editForm.register('email')} />
+                </FormField>
+                {editingUser.role === Role.SUPER_ADMIN ? (
+                  <P color="muted" className="text-xs">Super Admin access cannot be changed.</P>
+                ) : (
+                  <>
+                    <FormField
+                      label={CREATE_TEAM_MEMBER_FORM.labels.role}
+                      required
+                      hint="Changing the role signs this member out so the new access applies straight away"
+                      error={editForm.formState.errors.role_choice?.message}
+                    >
+                      <ResponsiveSelect {...editForm.register('role_choice')} customPlaceholder="Select role" options={roleOptions} />
+                    </FormField>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input type="checkbox" className="h-4 w-4 accent-primary" {...editForm.register('is_active')} />
+                      Active (can log in)
+                    </label>
+                  </>
+                )}
+              </Div>
+            </Div>
+            <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
+              <Button type="button" variant="outline" onClick={closeEditModal}>{CREATE_TEAM_MEMBER_FORM.cancel}</Button>
+              <Button type="submit" loading={isUpdating}>Save changes</Button>
             </Div>
           </form>
         </ResponsiveModalContainer>

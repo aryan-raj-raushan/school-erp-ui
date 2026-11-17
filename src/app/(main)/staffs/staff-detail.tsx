@@ -1,9 +1,10 @@
 "use client";
 
+import type * as React from "react";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useStaffDetail, getStaffRoleLabel } from "@/hooks/useStaffDetail";
-import { BLOOD_GROUP_LABEL, GENDER_LABEL, BLOOD_GROUPS } from "@/constants";
+import { BLOOD_GROUP_LABEL, GENDER_LABEL, BLOOD_GROUPS, SALUTATION_OPTIONS } from "@/constants";
 import {
   Div,
   H2,
@@ -171,10 +172,8 @@ export function StaffDetail({ id }: { id: string }) {
         />
       )}
 
-      {/* View mode */}
       {!isEditing && !isNew && staff && (
         <Div type="col" gap="md">
-          {/* Avatar + basic info */}
           <Div
             type="col"
             gap="sm"
@@ -192,118 +191,60 @@ export function StaffDetail({ id }: { id: string }) {
                 <Badge variant="info">
                   {getStaffRoleLabel(staff, roles) ?? ""}
                 </Badge>
-                <Badge variant={staff?.is_active ? "success" : "default"}>
-                  {staff?.is_active ? "Active" : "Inactive"}
+                <Badge variant={staff.is_active ? "success" : "default"}>
+                  {staff.is_active ? "Active" : "Inactive"}
                 </Badge>
               </Div>
             </Div>
           </Div>
 
-          {/* Personal info */}
-          <Div
-            type="col"
-            gap="sm"
-            className="rounded-xl border border-border bg-card p-5"
-          >
-            <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Personal Information
-            </H2>
-            <FormGrid>
-              <InfoRow label="Email" value={staff?.email} />
-              <InfoRow
-                label="Phone"
-                value={
-                  staff?.phone_number
-                    ? `${staff?.dial_code ?? ""} ${staff?.phone_number}`.trim()
-                    : undefined
-                }
-              />
-              <InfoRow
-                label="Gender"
-                value={
-                  staff?.gender
-                    ? GENDER_LABEL[staff.gender] ?? staff.gender
-                    : undefined
-                }
-              />
-              <InfoRow
-                label="Date of Birth"
-                value={formatDate(staff?.date_of_birth)}
-              />
-              <InfoRow
-                label="Blood Group"
-                value={
-                  staff?.blood_group
-                    ? BLOOD_GROUP_LABEL[staff.blood_group] ?? staff.blood_group
-                    : undefined
-                }
-              />
-              <InfoRow label="City" value={staff?.city} />
-              <InfoRow label="Father's Name" value={staff?.father_name} />
-              <InfoRow label="Husband's Name" value={staff?.husband_name} />
-              <InfoRow label="Smart Card" value={staff?.rfid_card_number} />
-              <InfoRow label="Qualification" value={staff?.qualification} />
-            </FormGrid>
-            {staff?.address && (
-              <Div className="mt-2">
-                <InfoRow label="Address" value={staff?.address} />
-              </Div>
-            )}
-            {staff?.permanent_address && (
-              <Div className="mt-1">
-                <InfoRow
-                  label="Permanent Address"
-                  value={staff?.permanent_address}
-                />
-              </Div>
-            )}
-          </Div>
+          <ViewSection title="Personal Information">
+            <ViewField label="Salutation" value={staff.salutation} />
+            <ViewField label="First Name" value={staff.first_name} />
+            <ViewField label="Last Name" value={staff.last_name} />
+            <ViewField
+              label="Phone"
+              value={
+                staff.phone_number
+                  ? `${staff.dial_code ?? "+91"} ${staff.phone_number}`
+                  : undefined
+              }
+            />
+            <ViewField label="Email" value={staff.email} />
+            <ViewField
+              label="Gender"
+              value={staff.gender ? GENDER_LABEL[staff.gender] ?? staff.gender : undefined}
+            />
+            <ViewField label="Date of Birth" value={staff.date_of_birth ? formatDate(staff.date_of_birth) : undefined} />
+            <ViewField
+              label="Blood Group"
+              value={
+                staff.blood_group
+                  ? BLOOD_GROUP_LABEL[staff.blood_group] ?? staff.blood_group
+                  : undefined
+              }
+            />
+            <ViewField label="City" value={staff.city} />
+            <ViewField label="Father's Name" value={staff.father_name} />
+            <ViewField label="Husband's Name" value={staff.husband_name} />
+            <ViewField label="Address" value={staff.address} wide />
+            <ViewField label="Permanent Address" value={staff.permanent_address} wide />
+          </ViewSection>
 
-          {/* Employment info */}
-          <Div
-            type="col"
-            gap="sm"
-            className="rounded-xl border border-border bg-card p-5"
-          >
-            <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Employment
-            </H2>
-            <FormGrid>
-              <InfoRow label="Role" value={getStaffRoleLabel(staff, roles)} />
-              <InfoRow label="Employee Code" value={staff?.employee_code} />
-              <InfoRow
-                label="Joining Date"
-                value={formatDate(staff?.joining_date)}
-              />
-              <InfoRow label="Reporting To" value={reportingToName} />
-            </FormGrid>
-          </Div>
+          <ViewSection title="Employment">
+            <ViewField label="Role" value={getStaffRoleLabel(staff, roles)} />
+            <ViewField label="Reporting To" value={reportingToName} />
+            <ViewField label="Joining Date" value={staff.joining_date ? formatDate(staff.joining_date) : undefined} />
+            <ViewField label="Employee Code" value={staff.employee_code} />
+            <ViewField label="Qualification" value={staff.qualification} />
+            <ViewField label="Smart Card Number" value={staff.rfid_card_number} />
+          </ViewSection>
 
-          {/* Work experience */}
-          {(staff?.previous_employer ||
-            staff?.previous_role ||
-            staff?.total_experience) && (
-            <Div
-              type="col"
-              gap="sm"
-              className="rounded-xl border border-border bg-card p-5"
-            >
-              <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                Work Experience
-              </H2>
-              <FormGrid>
-                <InfoRow
-                  label="Previous Employer"
-                  value={staff?.previous_employer}
-                />
-                <InfoRow label="Previous Role" value={staff?.previous_role} />
-                <InfoRow
-                  label="Total Experience"
-                  value={staff?.total_experience}
-                />
-              </FormGrid>
-            </Div>
-          )}
+          <ViewSection title="Work Experience">
+            <ViewField label="Previous Employer" value={staff.previous_employer} />
+            <ViewField label="Role at Previous Employer" value={staff.previous_role} />
+            <ViewField label="Total Experience" value={staff.total_experience} />
+          </ViewSection>
         </Div>
       )}
 
@@ -331,6 +272,13 @@ export function StaffDetail({ id }: { id: string }) {
               />
 
               <FormGrid>
+                <FormField label="Salutation">
+                  <ResponsiveSelect
+                    {...form.register("salutation")}
+                    customPlaceholder="Mr. / Mrs. / Miss"
+                    options={SALUTATION_OPTIONS}
+                  />
+                </FormField>
                 <FormField
                   label="First Name"
                   required
@@ -575,16 +523,23 @@ export function StaffDetail({ id }: { id: string }) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value?: unknown }) {
-  if (value === null || value === undefined || value === "") return null;
-  const display =
-    value instanceof Date ? value.toLocaleDateString() : String(value);
+function ViewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Div type="col" gap="xs">
-      <P color="muted" className="text-xs">
-        {label}
-      </P>
-      <P className="text-sm">{display}</P>
+    <Div type="col" gap="md" className="rounded-xl border border-border bg-card p-5">
+      <H2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+        {title}
+      </H2>
+      <FormGrid>{children}</FormGrid>
     </Div>
+  );
+}
+
+function ViewField({ label, value, wide }: { label: string; value?: string | null; wide?: boolean }) {
+  return (
+    <FormField label={label} className={wide ? "col-span-full" : undefined}>
+      <P className="min-h-11 rounded-[8px] border border-border/60 bg-muted/30 px-4 py-2.5 text-sm whitespace-pre-wrap">
+        {value?.trim() ? value : "—"}
+      </P>
+    </FormField>
   );
 }

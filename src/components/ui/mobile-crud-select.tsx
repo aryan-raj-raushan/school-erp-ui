@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
 import { BottomSheet } from "./action-sheet";
 import type { CrudDropdownItem } from "./crud-dropdown";
+import { confirmDelete } from "./confirm-dialog";
 
 export interface MobileCrudSelectFieldProps {
   label: string;
@@ -172,7 +173,7 @@ export function MobileCrudSelectField({
                     type="button"
                     aria-label={`Delete ${item.name}`}
                     disabled={isBusy}
-                    onClick={() => void run(() => onDelete(item.id))}
+                    onClick={() => void confirmDelete(`"${item.name}"`, () => run(() => onDelete(item.id)))}
                     className={cn(rowButton, "text-destructive")}
                   >
                     <Trash2 size={18} />

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ParentPortalService, ParentFeeBill } from '@/services/parent-portal.service';
 import { useParentStore } from '@/store/parent.store';
 import { useAuthStore } from '@/store/auth.store';
+import { errorMessage } from '@/lib/api-error';
 
 declare global {
   interface Window {
@@ -80,8 +81,8 @@ export function useParentFees() {
             await ParentPortalService.verifyRazorpayPayment(bill.id, response);
             toast.success('Payment successful');
             await fetchBills();
-          } catch {
-            toast.error('Payment received but confirmation failed — it will reflect shortly.');
+          } catch (err) {
+            toast.error(errorMessage(err, 'Payment received but confirmation failed — it will reflect shortly.'));
           }
         },
         modal: {

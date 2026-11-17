@@ -10,6 +10,8 @@ import { ClassesService } from '@/services/classes.service';
 import { AcademicYearsService } from '@/services/academic-years.service';
 import { ALL_SECTION_NAMES, ROUTES } from '@/constants';
 import type { AcademicYear } from '@/types';
+import { errorMessage } from '@/lib/api-error';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const optionalPositiveInt = z.preprocess(
   (v) => (v === '' || v == null ? undefined : Number(v)),
@@ -23,7 +25,7 @@ const createClassSchema = z.object({
   class_sequence: optionalPositiveInt,
   no_of_sessions: optionalPositiveInt,
   class_code: z.string().max(50).optional(),
-  sections: z.array(z.string()).min(1, 'Select at least one section'),
+  sections: z.array(z.string()),
   description: z.string().max(255).optional(),
   is_active: z.boolean(),
 });
@@ -36,9 +38,10 @@ export function useCreateClass() {
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const form = useForm<CreateClassFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(createClassSchema) as any,
     defaultValues: {
-      sections: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
+      sections: ['A'],
       is_active: true,
     },
   });
@@ -48,8 +51,8 @@ export function useCreateClass() {
     try {
       const yearsRes = await AcademicYearsService.list({ limit: 100 });
       setYears(yearsRes.items);
-    } catch {
-      toast.error('Failed to load form data');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load form data'));
     } finally {
       setIsLoadingData(false);
     }
@@ -66,12 +69,17 @@ export function useCreateClass() {
     }
   }
 
+  function setSections(names: string[]) {
+    form.setValue('sections', names, { shouldValidate: true, shouldDirty: true });
+  }
+
   function toggleIsActive() {
     form.setValue('is_active', !form.getValues('is_active'));
   }
 
   async function createClass(values: CreateClassFormValues) {
     try {
+      if (!(await confirmCreate(`class ${values.name}`))) return;
       const cls = await ClassesService.create({
         name: values.name,
         academic_year_id: values.academic_year_id,
@@ -84,7 +92,11 @@ export function useCreateClass() {
         is_active: values.is_active,
       });
 
-      toast.success(`Class ${cls.name} created with sections ${values.sections.join(', ')}`);
+      toast.success(
+        values.sections.length
+          ? `Class ${cls.name} created with sections ${values.sections.join(', ')}`
+          : `Class ${cls.name} created without sections`,
+      );
       router.push(ROUTES.classes);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create class');
@@ -104,6 +116,7 @@ export function useCreateClass() {
     watchedSections: form.watch('sections') ?? [],
     handleSubmit: form.handleSubmit(createClass),
     toggleSection,
+    setSections,
     toggleIsActive,
     handleBack,
   };

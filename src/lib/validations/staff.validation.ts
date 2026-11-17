@@ -6,8 +6,10 @@ import {
   dialCodeSchema,
   optionalEmailSchema,
 } from './common.validation';
+import { SALUTATIONS } from '@/constants/person.constants';
 
 export const staffBaseSchema = z.object({
+  salutation: z.enum(SALUTATIONS).optional().or(z.literal('')),
   first_name: requiredNameSchema(100),
   last_name: optionalNameSchema(100),
   dial_code: dialCodeSchema,

@@ -13,6 +13,7 @@ import { useHallDetails } from "@/hooks/exam/useExamHall";
 import { EXAM_ROUTES } from "@/constants/exam.constants";
 import { GatewayError } from "@/lib/api-gateway/interceptors/error.interceptor";
 import type { AutoGenerateConflict, ExamTerm, ExamTemplate } from "@/types/exam.types";
+import { errorMessage } from '@/lib/api-error';
 
 export function useAutoGenerateExam() {
   const router = useRouter();
@@ -76,8 +77,8 @@ export function useAutoGenerateExam() {
         ),
       );
       setMappingsByClass(Object.fromEntries(entries));
-    } catch {
-      toast.error("Failed to load subject-teacher mappings");
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to load subject-teacher mappings"));
     } finally {
       setIsLoadingMappings(false);
     }

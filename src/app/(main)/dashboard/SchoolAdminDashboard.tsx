@@ -20,6 +20,7 @@ import {
   MoneyCard,
   QuickActions,
 } from "@/components/ui/dashboard";
+import { PunchInCard } from "@/components/attendance/PunchInCard";
 
 export function SchoolAdminDashboard() {
   const vm = useAdminDashboardPage();
@@ -37,6 +38,8 @@ export function SchoolAdminDashboard() {
         chips={vm.chips}
         stat={vm.hasData ? vm.heroStat : null}
       />
+
+      <PunchInCard />
 
       <SetupChecklist />
 

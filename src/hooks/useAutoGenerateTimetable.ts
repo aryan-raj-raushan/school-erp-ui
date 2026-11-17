@@ -12,6 +12,7 @@ import { ROUTES } from '@/constants';
 import { timeToMinutes, formatDuration } from '@/lib/time.utils';
 import type { Class } from '@/types';
 import type { SchoolTiming } from '@/types/school-settings.types';
+import { errorMessage } from '@/lib/api-error';
 
 function pickDefaultTiming(timings: SchoolTiming[]): SchoolTiming | null {
   const today = new Date().toISOString().slice(0, 10);
@@ -65,8 +66,8 @@ export function useAutoGenerateTimetable() {
       setTimings(timingsRes);
       const defaultTiming = pickDefaultTiming(timingsRes);
       if (defaultTiming) setSchoolTimingId(defaultTiming.id);
-    } catch {
-      toast.error('Failed to load form data');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load form data'));
     } finally {
       setIsLoadingData(false);
     }
@@ -80,8 +81,8 @@ export function useAutoGenerateTimetable() {
     try {
       const res = await ClassSubjectTeacherService.list({ academic_year_id: academicYearId, class_id: classId });
       setMappings(res);
-    } catch {
-      toast.error('Failed to load subject-teacher mapping');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load subject-teacher mapping'));
     } finally {
       setIsLoadingMappings(false);
     }

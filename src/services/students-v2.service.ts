@@ -7,6 +7,7 @@ import type {
   StudentFilters,
   StudentIdCardData,
   PickupCardData,
+  BulkCardItem,
   StudentDocument,
 } from '@/types/students.types';
 import type { PaginationMeta } from '@/types';
@@ -195,6 +196,11 @@ export const StudentsService = {
   async getIdCardData(id: string): Promise<StudentIdCardData> {
     const res = await apiGateway.get<StudentIdCardData>(ENDPOINTS.student.idCard(id));
     return res.data;
+  },
+
+  async getBulkCards(params: { academic_year_id: string; class_id: string; section_id?: string }): Promise<BulkCardItem[]> {
+    const res = await apiGateway.get<{ items: BulkCardItem[] }>(ENDPOINTS.student.bulkCards, { params, timeout: 120_000 });
+    return res.data.items;
   },
 
   async getPickupCardData(id: string): Promise<PickupCardData> {

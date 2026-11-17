@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { UserRoundCheck } from "lucide-react";
-import { Button, FormField, Input, ResponsiveSelect } from "@/components/ui";
+import { Button, FormField, Input, PhoneField, ResponsiveSelect } from "@/components/ui";
 import { BLOOD_GROUP_OPTIONS, GENDER_OPTIONS } from "@/constants";
 import { AuthContext, Role, type UserProfile } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
@@ -47,6 +47,7 @@ function ProfileConfirmForm({ user, context }: { user: UserProfile; context: Aut
   const isParent = context === AuthContext.PARENT;
 
   const form = useForm<ProfileConfirmFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(profileConfirmSchema),
     defaultValues: {
       first_name: user.first_name ?? "",
@@ -102,7 +103,7 @@ function ProfileConfirmForm({ user, context }: { user: UserProfile; context: Aut
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Mobile number" hint="This is your login. Ask the school office to change it.">
-            <Input value={user.phone_number ?? ""} readOnly disabled />
+            <Input value={user.phone_number ? `+91 ${user.phone_number}` : ""} readOnly disabled />
           </FormField>
           <FormField label="Email" error={errors.email?.message}>
             <Input type="email" inputMode="email" autoCapitalize="none" {...form.register("email")} />
@@ -111,9 +112,11 @@ function ProfileConfirmForm({ user, context }: { user: UserProfile; context: Aut
 
         {isParent ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Alternate mobile" error={errors.alternate_phone?.message}>
-              <Input type="tel" inputMode="numeric" maxLength={10} {...form.register("alternate_phone")} />
-            </FormField>
+            <PhoneField
+              label="Alternate mobile"
+              phoneProps={form.register("alternate_phone")}
+              phoneError={errors.alternate_phone?.message}
+            />
             <FormField label="Occupation" error={errors.occupation?.message}>
               <Input {...form.register("occupation")} />
             </FormField>

@@ -7,11 +7,22 @@ import {
   type StaffMember,
   type StaffAttendanceRecord,
 } from '@/services/staff-attendance.service';
+import { errorMessage } from '@/lib/api-error';
+import { attendanceLockReason, localDateISO } from '@/lib/attendance-mode';
 
-type AttendanceMap = Record<string, { status?: 'PRESENT' | 'ABSENT'; is_late: boolean; remarks: string; existingId?: string }>;
+export type StaffAttendanceEntryState = {
+  status?: 'PRESENT' | 'ABSENT';
+  is_late: boolean;
+  remarks: string;
+  existingId?: string;
+  record?: StaffAttendanceRecord;
+  lockReason?: string | null;
+};
+
+type AttendanceMap = Record<string, StaffAttendanceEntryState>;
 
 function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  return localDateISO();
 }
 
 export function useStaffAttendance() {
@@ -27,8 +38,8 @@ export function useStaffAttendance() {
     try {
       const data = await StaffAttendanceService.getStaff();
       setStaff(data);
-    } catch {
-      toast.error('Failed to load staff');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load staff'));
     } finally {
       setIsLoadingStaff(false);
     }
@@ -46,12 +57,14 @@ export function useStaffAttendance() {
             is_late: r.is_late,
             remarks: r.remarks ?? '',
             existingId: r.id,
+            record: r,
+            lockReason: attendanceLockReason(r.mode, r.date),
           };
         });
         return next;
       });
-    } catch {
-      toast.error('Failed to load attendance');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load attendance'));
     } finally {
       setIsLoadingAttendance(false);
     }
@@ -64,15 +77,20 @@ export function useStaffAttendance() {
     fetchAttendance();
   }, [date, fetchAttendance]);
 
+  const isLocked = (staffId: string) => !!attendanceMap[staffId]?.lockReason;
+
   function setStatus(staffId: string, status: 'PRESENT' | 'ABSENT') {
+    if (isLocked(staffId)) return;
     setAttendanceMap((prev) => ({ ...prev, [staffId]: { ...prev[staffId], status, is_late: prev[staffId]?.is_late ?? false, remarks: prev[staffId]?.remarks ?? '' } }));
   }
 
   function setLate(staffId: string, is_late: boolean) {
+    if (isLocked(staffId)) return;
     setAttendanceMap((prev) => ({ ...prev, [staffId]: { ...prev[staffId], is_late, remarks: prev[staffId]?.remarks ?? '' } }));
   }
 
   function setRemarks(staffId: string, remarks: string) {
+    if (isLocked(staffId)) return;
     setAttendanceMap((prev) => ({ ...prev, [staffId]: { ...prev[staffId], remarks, is_late: prev[staffId]?.is_late ?? false } }));
   }
 
@@ -80,6 +98,7 @@ export function useStaffAttendance() {
     setAttendanceMap((prev) => {
       const next = { ...prev };
       staff.forEach((s) => {
+        if (next[s.id]?.lockReason) return;
         next[s.id] = { ...next[s.id], status, is_late: next[s.id]?.is_late ?? false, remarks: next[s.id]?.remarks ?? '' };
       });
       return next;
@@ -87,24 +106,33 @@ export function useStaffAttendance() {
   }
 
   async function saveAttendance() {
-    const unmarked = staff.filter((s) => !attendanceMap[s.id]?.status);
+    const editable = staff.filter((s) => !attendanceMap[s.id]?.lockReason);
+    const unmarked = editable.filter((s) => !attendanceMap[s.id]?.status);
     if (unmarked.length > 0) {
       toast.error(`${unmarked.length} staff not marked`);
       return;
     }
+    if (!editable.length) {
+      toast.info('Everyone is already marked by smart card or the app — nothing to save');
+      return;
+    }
     setIsSaving(true);
     try {
-      const entries = staff.map((s) => ({
+      const entries = editable.map((s) => ({
         staff_id: s.id,
         status: attendanceMap[s.id].status!,
         is_late: attendanceMap[s.id].is_late ?? false,
         ...(attendanceMap[s.id].remarks ? { remarks: attendanceMap[s.id].remarks } : {}),
       }));
-      await StaffAttendanceService.mark(date, entries);
-      toast.success('Staff attendance saved');
+      const { locked } = await StaffAttendanceService.mark(date, entries);
+      if (locked.length) {
+        toast.warning(`Saved. ${locked.length} entr${locked.length === 1 ? 'y was' : 'ies were'} left unchanged: ${locked[0].reason}`);
+      } else {
+        toast.success('Staff attendance saved');
+      }
       await fetchAttendance();
-    } catch {
-      toast.error('Failed to save attendance');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to save attendance'));
     } finally {
       setIsSaving(false);
     }

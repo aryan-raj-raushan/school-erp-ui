@@ -10,6 +10,7 @@ import {
   type AssignRfidDevicePayload,
 } from '@/services/rfid-inventory.service';
 import type { PaginationMeta, RfidDevice, OneTimeChargeType, DiscoveredRfidDevice } from '@/types';
+import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 interface AssignTarget {
   id: string | null;
@@ -34,8 +35,8 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [assigningDevice, setAssigningDevice] = useState<AssignTarget | null>(null);
 
-  const createForm = useForm<CreateRfidDevicePayload>();
-  const assignForm = useForm<AssignFormValues>({ defaultValues: { billable: false } });
+  const createForm = useForm<CreateRfidDevicePayload>({ mode: 'onTouched' });
+  const assignForm = useForm<AssignFormValues>({ mode: 'onTouched', defaultValues: { billable: false } });
 
   const fetchDevices = useCallback(async () => {
     setIsLoading(true);
@@ -66,6 +67,7 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
       const payload = Object.fromEntries(
         Object.entries(values).filter(([, v]) => v !== '' && v != null),
       ) as CreateRfidDevicePayload;
+      if (!(await confirmCreate('this smart-card device'))) return;
       const device = await RfidInventoryService.create(payload);
       toast.success(`${device.device_identifier} added`);
       await fetchDevices();

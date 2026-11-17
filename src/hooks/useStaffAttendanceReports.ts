@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { StaffAttendanceService, type StaffAttendanceRecord, type StaffMember } from '@/services/staff-attendance.service';
 import { toLocalISODate } from '@/lib/time.utils';
 import { saveBlob } from '@/lib/save-blob';
+import { errorMessage } from '@/lib/api-error';
 
 export type StaffReportTab = 'daily' | 'monthly' | 'history';
 
@@ -49,8 +50,8 @@ export function useStaffAttendanceReports() {
     try {
       const data = await StaffAttendanceService.getStaff();
       setStaff(data);
-    } catch {
-      toast.error('Failed to load staff list');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load staff list'));
     }
   }, []);
 
@@ -59,8 +60,8 @@ export function useStaffAttendanceReports() {
     try {
       const data = await StaffAttendanceService.getByDate(date);
       setRecords(data);
-    } catch {
-      toast.error('Failed to load daily attendance report');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load daily attendance report'));
     } finally {
       setIsLoading(false);
     }
@@ -73,8 +74,8 @@ export function useStaffAttendanceReports() {
       const endDate = toLocalISODate(new Date(year, month, 0));
       const data = await StaffAttendanceService.getDateRange(startDate, endDate);
       setMonthlyRecords(data);
-    } catch {
-      toast.error('Failed to load monthly report');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load monthly report'));
     } finally {
       setIsLoading(false);
     }
@@ -94,8 +95,8 @@ export function useStaffAttendanceReports() {
       });
       saveBlob(blob, `staff_attendance_${exportStartDate}_to_${exportEndDate}.xlsx`);
       toast.success('Staff attendance exported successfully');
-    } catch {
-      toast.error('Failed to export attendance');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to export attendance'));
     } finally {
       setIsExporting(false);
     }

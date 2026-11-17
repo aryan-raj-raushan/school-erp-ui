@@ -47,6 +47,7 @@ export function useReportCards(initialFilters: ReportCardFilters = {}) {
 
   // ── Generate modal form ───────────────────────────────────────────────────────
   const generateForm = useForm<GenerateReportCardFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(generateReportCardSchema),
     defaultValues: {
       exam_id: '',

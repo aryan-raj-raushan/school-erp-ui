@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { WorkbookImportService } from "@/services/bulk-import.service";
 import { saveBlob } from "@/lib/save-blob";
-import { checkImportFile, describeImportError, downloadCsv } from "@/lib/bulk-import.utils";
+import { checkImportFile, describeImportError, downloadCsv, pollImportJob } from "@/lib/bulk-import.utils";
 import type {
   BulkEntity,
   WorkbookJob,
@@ -12,9 +12,6 @@ import type {
   WorkbookSheetReport,
 } from "@/types/bulk-import.types";
 import type { BulkImportBusy, BulkImportFilter, BulkImportStep } from "@/hooks/useBulkImport";
-
-const POLL_MS = 1000;
-const MAX_POLL_FAILURES = 5;
 
 function sheetFilter(sheet: WorkbookSheetReport): BulkImportFilter {
   return sheet.summary.error ? "error" : "all";
@@ -137,37 +134,24 @@ export function useWorkbookImport() {
   const jobId = job?.job_id;
   useEffect(() => {
     if (step !== "importing" || !jobId) return;
-    let failures = 0;
-    let cancelled = false;
-    const timer = setInterval(async () => {
-      try {
-        const latest = await WorkbookImportService.getJob(jobId);
-        if (cancelled) return;
-        failures = 0;
-        setJob(latest);
-        if (latest.status === "running") return;
-        clearInterval(timer);
+    return pollImportJob({
+      fetchJob: () => WorkbookImportService.getJob(jobId),
+      onUpdate: setJob,
+      onFinished: (latest) => {
         setStep("done");
         const created = latest.sections.reduce((sum, s) => sum + s.created, 0);
         const failed = latest.sections.reduce((sum, s) => sum + s.failed, 0);
         if (latest.status === "failed") toast.error(latest.error ?? "The import stopped unexpectedly.");
         else if (failed) toast.warning(`${created} records imported, ${failed} failed.`);
         else toast.success(`${created} records imported successfully.`);
-      } catch (err) {
-        failures++;
-        if (failures >= MAX_POLL_FAILURES) {
-          clearInterval(timer);
-          setError(
-            `Lost track of the import progress (${describeImportError(err, "network error")}). It may still be running — check the lists shortly.`,
-          );
-          setStep("done");
-        }
-      }
-    }, POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
+      },
+      onLost: (err) => {
+        setError(
+          `Lost track of the import progress for 2 minutes (${describeImportError(err, "network error")}). It may still be running — check the lists shortly.`,
+        );
+        setStep("done");
+      },
+    });
   }, [step, jobId]);
 
   const sheetLabel = useCallback(

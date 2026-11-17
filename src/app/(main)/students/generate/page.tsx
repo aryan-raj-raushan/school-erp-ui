@@ -8,8 +8,10 @@ import {
   Download,
   CreditCard,
   ChevronDown,
+  FileArchive,
 } from "lucide-react";
-import { useStudentCards, type CardMode } from "@/hooks/useStudentCard";
+import { toast } from "sonner";
+import { useStudentCards, templateLabel, type CardMode } from "@/hooks/useStudentCard";
 import { useStudents } from "@/hooks/useStudentV2";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { PageHeader } from "@/components/ui/page-header";
@@ -38,6 +40,8 @@ import {
 } from "@/components/student/id-cards";
 import { StudentCardMobile } from "@/components/student/StudentCardMobile";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
+import { exportCardsAsZip, waitForPaint } from "@/lib/card-export";
+import { errorMessage } from "@/lib/api-error";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -46,11 +50,15 @@ function GenerateDesktop() {
   const searchParams = useSearchParams();
   const preselectedStudentId = searchParams.get("studentId");
   const printRef = useRef<HTMLDivElement>(null);
+  const bulkAreaRef = useRef<HTMLDivElement>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [printTarget, setPrintTarget] = useState<"single" | "bulk">("single");
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   const {
     selectedStudentId,
     selectedTemplate,
+    savedTemplate,
     setSelectedTemplate,
     cardMode,
     setCardMode,
@@ -58,6 +66,10 @@ function GenerateDesktop() {
     pickupCardData,
     isLoading: isCardLoading,
     loadCardData,
+    bulkItems,
+    isLoadingBulk,
+    loadBulkCards,
+    clearBulkItems,
   } = useStudentCards();
 
   const {
@@ -99,7 +111,67 @@ function GenerateDesktop() {
   const currentTemplate = CARD_TEMPLATES.find((t) => t.id === selectedTemplate);
 
   function handlePrint() {
+    setPrintTarget("single");
     window.print();
+  }
+
+  const selectedClassName = classes.find((c) => c.id === selectedClassId)?.name ?? "";
+  const selectedSectionName = sections.find((s) => s.id === selectedSectionId)?.name ?? "";
+  const bulkScopeLabel = selectedClassName
+    ? `Class ${selectedClassName}${selectedSectionName ? ` - ${selectedSectionName}` : " (all sections)"}`
+    : "";
+  const isBulkBusy = isLoadingBulk || bulkProgress !== null;
+
+  async function loadSelectedClassCards() {
+    if (!selectedAcademicYearId || !selectedClassId) {
+      toast.error("Select an academic year and class first");
+      return null;
+    }
+    const items = await loadBulkCards({
+      academic_year_id: selectedAcademicYearId,
+      class_id: selectedClassId,
+      section_id: selectedSectionId || undefined,
+    });
+    if (items) await waitForPaint();
+    return items;
+  }
+
+  async function handleBulkDownload() {
+    const items = await loadSelectedClassCards();
+    if (!items) return;
+    const nodes = Array.from(bulkAreaRef.current?.querySelectorAll<HTMLElement>("[data-bulk-card]") ?? []);
+    setBulkProgress({ done: 0, total: nodes.length });
+    try {
+      const count = await exportCardsAsZip(
+        nodes.map((node, index) => {
+          const card = items[index].id_card;
+          return {
+            node,
+            fileName: [card.section_name, card.roll_number ?? index + 1, card.first_name, card.last_name]
+              .filter(Boolean)
+              .join("-"),
+          };
+        }),
+        `${bulkScopeLabel}-${cardMode === "student" ? "id-cards" : "pickup-cards"}`,
+        (done, total) => setBulkProgress({ done, total }),
+      );
+      toast.success(`${count} cards downloaded as a ZIP file`);
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not create the ZIP file"));
+    } finally {
+      setBulkProgress(null);
+      clearBulkItems();
+    }
+  }
+
+  async function handleBulkPrint() {
+    const items = await loadSelectedClassCards();
+    if (!items) return;
+    setPrintTarget("bulk");
+    await waitForPaint();
+    window.print();
+    setPrintTarget("single");
+    clearBulkItems();
   }
 
   const cardTabs = [
@@ -171,7 +243,7 @@ function GenerateDesktop() {
   return (
     <>
       {/* Print-only styles */}
-      <style>{`
+      <style>{printTarget === "single" ? `
         @media print {
           body * { visibility: hidden !important; }
           #card-print-area, #card-print-area * { visibility: visible !important; }
@@ -183,6 +255,21 @@ function GenerateDesktop() {
             justify-content: center !important;
             background: white !important;
           }
+        }
+      ` : `
+        @media print {
+          body * { visibility: hidden !important; }
+          #bulk-print-area, #bulk-print-area * { visibility: visible !important; }
+          #bulk-print-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            background: white !important;
+          }
+          #bulk-print-area [data-bulk-card] { break-inside: avoid; page-break-inside: avoid; }
         }
       `}</style>
 
@@ -242,17 +329,91 @@ function GenerateDesktop() {
             </Div>
           </Div>
 
-          <Div type="row" align="center" gap="sm" className="flex-wrap sm:justify-end">
-            <Button variant="outline" size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
-              <Printer size={14} />
-              {STUDENT_PAGE.buttons.printCard}
-            </Button>
-            <Button size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
-              <Download size={14} />
-              {STUDENT_PAGE.buttons.downloadCard}
+          <Div
+            type="row"
+            align="center"
+            justify="between"
+            gap="sm"
+            className="flex-wrap rounded-lg bg-muted/40 px-3 py-2"
+          >
+            <P className="text-xs">
+              {savedTemplate ? (
+                <>
+                  This school uses <Span className="font-semibold">{templateLabel(savedTemplate)}</Span> for{" "}
+                  {cardMode === "student" ? "ID cards" : "pickup cards"}. Want to change it?
+                </>
+              ) : (
+                <>No template saved for this school yet — the one you pick is remembered for every card.</>
+              )}
+            </P>
+            <Button type="button" size="xs" variant="outline" onClick={() => setGalleryOpen(true)}>
+              {savedTemplate ? "Change template" : "Choose template"}
             </Button>
           </Div>
+
+          <Div type="row" align="center" gap="sm" className="flex-wrap sm:justify-between">
+            <Div type="row" align="center" gap="sm" className="flex-wrap">
+              <P color="muted" className="text-[11px] font-semibold uppercase tracking-wider shrink-0">
+                Whole class
+              </P>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkPrint}
+                disabled={!selectedClassId || isBulkBusy}
+                title={selectedClassId ? `Print every card for ${bulkScopeLabel}` : "Select a class first"}
+              >
+                <Printer size={14} />
+                Print all
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBulkDownload}
+                disabled={!selectedClassId || isBulkBusy}
+                loading={isLoadingBulk}
+                title={selectedClassId ? `Download every card for ${bulkScopeLabel}` : "Select a class first"}
+              >
+                <FileArchive size={14} />
+                {bulkProgress ? `Rendering ${bulkProgress.done}/${bulkProgress.total}…` : "Download all (ZIP)"}
+              </Button>
+              {bulkScopeLabel && (
+                <P color="muted" className="text-xs">
+                  {bulkScopeLabel}
+                </P>
+              )}
+            </Div>
+            <Div type="row" align="center" gap="sm" className="flex-wrap sm:justify-end">
+              <Button variant="outline" size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
+                <Printer size={14} />
+                {STUDENT_PAGE.buttons.printCard}
+              </Button>
+              <Button size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
+                <Download size={14} />
+                {STUDENT_PAGE.buttons.downloadCard}
+              </Button>
+            </Div>
+          </Div>
         </Div>
+
+        {bulkItems && (
+          <div
+            id="bulk-print-area"
+            ref={bulkAreaRef}
+            aria-hidden
+            style={{ position: "fixed", left: -100000, top: 0, display: "flex", flexWrap: "wrap", gap: 12 }}
+          >
+            {bulkItems.map((item) => (
+              <div key={item.id_card.id} data-bulk-card className="inline-block bg-white p-1">
+                <CardPreview
+                  template={selectedTemplate}
+                  mode={cardMode}
+                  idCardData={item.id_card}
+                  pickupCardData={{ student: item.id_card, parents: item.parents }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ── Preview ──────────────────────────────────────────────────── */}
         <Div
@@ -310,8 +471,8 @@ function GenerateDesktop() {
                 key={t.id}
                 // type="button"
                 onClick={() => {
-                  setSelectedTemplate(t.id);
                   setGalleryOpen(false);
+                  void setSelectedTemplate(t.id);
                 }}
                 className="text-left rounded-xl border p-2.5 transition-all hover:shadow-md"
                 style={{
@@ -320,7 +481,10 @@ function GenerateDesktop() {
                 }}
               >
                 <TemplateThumb templateId={t.id} mode={cardMode} />
-                <P className="text-xs font-semibold text-foreground mt-2">{t.label}</P>
+                <P className="text-xs font-semibold text-foreground mt-2">
+                  {t.label}
+                  {savedTemplate === t.id && <Span className="ml-1 text-[10px] font-medium text-primary">· School default</Span>}
+                </P>
                 <P className="text-[10.5px] text-muted-foreground mt-0.5 leading-snug">{t.description}</P>
               </Div>
             ))}

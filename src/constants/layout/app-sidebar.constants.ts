@@ -27,6 +27,7 @@ import {
   Contact,
 } from "lucide-react";
 import { PERMISSIONS } from "@/constants/permissions.registry";
+import { PLATFORM_PERMISSIONS, type PlatformPermissionSlug } from "@/constants/platform-permissions.constants";
 import { NavItemConfig } from "@/types/layout/app-sidebar";
 
 export const APP_NAV_USER = {
@@ -75,6 +76,22 @@ export const SUPER_ADMIN_NAV_MAIN: NavItemConfig[] = [
     icon: UsersRound,
   },
 ];
+
+const CUSTOM_ROLE_NAV_PERMISSIONS: Record<string, PlatformPermissionSlug[]> = {
+  "/dashboard": [PLATFORM_PERMISSIONS.dashboard],
+  "/schools": [PLATFORM_PERMISSIONS.schools],
+  "/subscriptions": [PLATFORM_PERMISSIONS.subscriptions, PLATFORM_PERMISSIONS.subscriptionsManage],
+  "/plans": [PLATFORM_PERMISSIONS.plans],
+  "/billing": [PLATFORM_PERMISSIONS.billing, PLATFORM_PERMISSIONS.approvePayments],
+  "/rfid-inventory": [PLATFORM_PERMISSIONS.rfidInventory],
+};
+
+/* ---------------------------------------------------
+Custom platform role — Super Admin modules gated by the role's permissions
+--------------------------------------------------- */
+export const CUSTOM_ROLE_NAV_MAIN: NavItemConfig[] = SUPER_ADMIN_NAV_MAIN.filter(
+  (item) => item.url in CUSTOM_ROLE_NAV_PERMISSIONS,
+).map((item) => ({ ...item, permissions: CUSTOM_ROLE_NAV_PERMISSIONS[item.url] }));
 
 export const SUPER_ADMIN_NAV_SECONDARY: NavItemConfig[] = [
   {

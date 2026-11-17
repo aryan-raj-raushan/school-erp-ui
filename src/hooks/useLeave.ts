@@ -72,6 +72,7 @@ export function useLeavePolicy() {
   const [provisionAcademicYearId, setProvisionAcademicYearId] = useState('');
 
   const form = useForm<PolicyFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(policySchema),
     defaultValues: {
       name: '',
@@ -189,7 +190,7 @@ export function useLeaveManagement() {
   const [reviewType, setReviewType] = useState<'teacher' | 'student'>('teacher');
   const [showReviewModal, setShowReviewModal] = useState(false);
 
-  const reviewForm = useForm<ReviewFormValues>({ resolver: zodResolver(reviewSchema) });
+  const reviewForm = useForm<ReviewFormValues>({ mode: 'onTouched', resolver: zodResolver(reviewSchema) });
 
   useEffect(() => {
     if (currentYear && !selectedAcademicYearId) {
@@ -284,7 +285,7 @@ export function useMyLeave() {
   const [isSaving, setIsSaving] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
 
-  const applyForm = useForm<ApplyLeaveFormValues>({ resolver: zodResolver(applyLeaveSchema) });
+  const applyForm = useForm<ApplyLeaveFormValues>({ mode: 'onTouched', resolver: zodResolver(applyLeaveSchema) });
 
   useEffect(() => {
     if (currentYear && !selectedAcademicYearId) {

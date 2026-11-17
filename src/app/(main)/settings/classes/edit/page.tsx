@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ClassMobileForm } from "@/components/settings/ClassMobileForm";
+import { SectionPicker } from '@/components/settings/SectionPicker';
 
 function EditClassPageInner() {
   const isMobile = useIsMobile();
@@ -36,7 +37,7 @@ function EditClassPageInner() {
     watchedSections,
     handleSubmit,
     handleBack,
-    toggleSection,
+    toggleSection, setSections,
     toggleIsActive,
   } = useEditClass(id);
   const {
@@ -180,26 +181,14 @@ function EditClassPageInner() {
               </FormField>
             </Div>
 
-            <FormField
+            <SectionPicker
               label={CLASSES_PAGE.form.sections}
+              allNames={allSectionNames}
+              selected={watchedSections}
+              onToggle={toggleSection}
+              onSetAll={setSections}
               error={form.formState.errors.sections?.message}
-            >
-              <Div type="row" gap="sm" wrap>
-                {allSectionNames.map((name) => (
-                  <Div key={name} type="row" align="center" gap="xs">
-                    <input
-                      type="checkbox"
-                      id={`sec-${name}`}
-                      checked={watchedSections.includes(name)}
-                      onChange={() => toggleSection(name)}
-                    />
-                    <CheckboxLabel htmlFor={`sec-${name}`}>
-                      {name}
-                    </CheckboxLabel>
-                  </Div>
-                ))}
-              </Div>
-            </FormField>
+            />
 
             <FormField
               label={CLASSES_PAGE.form.description}

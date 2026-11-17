@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { SubjectsService } from '@/services/subjects.service';
 import { ROUTES } from '@/constants';
+import { errorMessage } from '@/lib/api-error';
 
 const editSubjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -26,6 +27,7 @@ export function useEditSubject(id: string) {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const form = useForm<EditSubjectFormValues>({
+    mode: 'onTouched',
     resolver: zodResolver(editSubjectSchema) as any,
     defaultValues: { display_order: 0, total_marks: 100, passing_marks: 0, is_elective: false, is_active: true },
   });
@@ -43,8 +45,8 @@ export function useEditSubject(id: string) {
         is_elective: subject.is_elective,
         is_active: subject.is_active,
       });
-    } catch {
-      toast.error('Failed to load subject');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to load subject'));
       router.push(ROUTES.subjects);
     } finally {
       setIsLoadingData(false);

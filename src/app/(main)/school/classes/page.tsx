@@ -10,6 +10,7 @@ import {
   Badge, Spinner, Icon,
 } from '@/components/ui';
 import { Trash2, Pencil } from 'lucide-react';
+import { confirmDelete } from '@/components/ui/confirm-dialog';
 
 export default function ClassesPage() {
   const { years } = useAcademicYears();
@@ -67,7 +68,7 @@ export default function ClassesPage() {
                         <Button size="sm" variant="ghost" onClick={() => navigateToEdit(cls.id)}>
                           <Icon icon={Pencil} type="sm" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => removeClass(cls.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => void confirmDelete(`class ${cls.name}`, () => removeClass(cls.id), 'The class and its sections will be removed.')}>
                           <Icon icon={Trash2} type="sm-danger" />
                         </Button>
                       </Div>
