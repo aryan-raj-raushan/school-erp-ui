@@ -35,6 +35,8 @@ export * from './date-picker';
 export * from './switch';
 export * from './saved-form-banner';
 export * from './legal-page';
+export * from './legal-links';
+export * from './brand-logo';
 export * from './mobile-nav';
 export * from './action-sheet';
 export * from './mobile-filter-bar';

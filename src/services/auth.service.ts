@@ -179,4 +179,12 @@ export const AuthService = {
     }
     return res.data;
   },
+
+  async loginSocial(token: string): Promise<LoginOrChangeResult> {
+    const res = await apiGateway.post<LoginOrChangeResult>(ENDPOINTS.auth.socialLogin, { token }, { skipAuth: true, skipRefresh: true });
+    if (isLoginResult(res.data)) {
+      TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, res.data.user.context);
+    }
+    return res.data;
+  },
 };

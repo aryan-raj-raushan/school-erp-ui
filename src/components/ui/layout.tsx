@@ -16,7 +16,6 @@ type DivVariant =
   | 'auth-left-panel'
   | 'auth-blob-tl'
   | 'auth-blob-br'
-  | 'auth-panel-logo-box'
   | 'auth-panel-section';
 type DivColor = 'default' | 'green' | 'red' | 'yellow';
 
@@ -76,7 +75,6 @@ const variantMap: Record<DivVariant, string> = {
   'auth-left-panel':      'auth-left-panel hidden lg:flex flex-col justify-between',
   'auth-blob-tl':         'auth-blob-tl',
   'auth-blob-br':         'auth-blob-br',
-  'auth-panel-logo-box':  'auth-panel-logo-box',
   'auth-panel-section':   'auth-panel-section',
 };
 

@@ -17,6 +17,8 @@ export const ROUTES = {
   signup: '/signup',
   changePassword: '/change-password',
   privacyPolicy: '/privacy-policy',
+  termsAndConditions: '/terms-and-conditions',
+  ssoCallback: '/sso-callback',
   unauthorized: '/unauthorized',
   // Super admin routes
   dashboard: '/dashboard',

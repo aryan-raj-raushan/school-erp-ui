@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Loader2 } from 'lucide-react';
 import { Div } from './layout';
 
 /* ─────────────────────────────────────────────
@@ -46,14 +47,14 @@ function MicrosoftIcon() {
 /* ─────────────────────────────────────────────
    SocialButton
    Uses native button + .social-button CSS class.
-   onClick is optional — visual-only when omitted.
 ───────────────────────────────────────────── */
-type SocialProvider = 'google' | 'microsoft';
+export type SocialProvider = 'google' | 'microsoft';
 
 interface SocialButtonProps {
   provider: SocialProvider;
   onClick?: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 const PROVIDER_LABELS: Record<SocialProvider, string> = {
@@ -66,16 +67,17 @@ const PROVIDER_ICONS: Record<SocialProvider, React.ReactNode> = {
   microsoft: <MicrosoftIcon />,
 };
 
-export function SocialButton({ provider, onClick, disabled }: SocialButtonProps) {
+export function SocialButton({ provider, onClick, disabled, loading }: SocialButtonProps) {
   return (
     <button
       type="button"
       className="social-button"
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
+      aria-busy={loading}
       aria-label={PROVIDER_LABELS[provider]}
     >
-      {PROVIDER_ICONS[provider]}
+      {loading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : PROVIDER_ICONS[provider]}
       {PROVIDER_LABELS[provider]}
     </button>
   );
@@ -85,15 +87,25 @@ export function SocialButton({ provider, onClick, disabled }: SocialButtonProps)
    SocialButtonGroup — Google + Microsoft stacked
 ───────────────────────────────────────────── */
 interface SocialButtonGroupProps {
-  onGoogle?: () => void;
-  onMicrosoft?: () => void;
+  onSelect: (provider: SocialProvider) => void;
+  pendingProvider?: SocialProvider | null;
 }
 
-export function SocialButtonGroup({ onGoogle, onMicrosoft }: SocialButtonGroupProps) {
+export function SocialButtonGroup({ onSelect, pendingProvider }: SocialButtonGroupProps) {
   return (
     <Div type="col" gap="sm">
-      <SocialButton provider="google" onClick={onGoogle} />
-      <SocialButton provider="microsoft" onClick={onMicrosoft} />
+      <SocialButton
+        provider="google"
+        onClick={() => onSelect('google')}
+        loading={pendingProvider === 'google'}
+        disabled={Boolean(pendingProvider)}
+      />
+      <SocialButton
+        provider="microsoft"
+        onClick={() => onSelect('microsoft')}
+        loading={pendingProvider === 'microsoft'}
+        disabled={Boolean(pendingProvider)}
+      />
     </Div>
   );
 }

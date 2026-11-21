@@ -3,10 +3,11 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, GraduationCap } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { APP, ROUTES, LEGAL_LINKS, type LegalDocument } from '@/constants';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { Div } from './layout';
+import { BrandLogo } from './brand-logo';
 import { H2, P } from './typography';
 
 /* ─────────────────────────────────────────────
@@ -36,9 +37,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
       <Div type="col" gap="lg" padding="w-full max-w-3xl">
         <Div type="row" align="center" justify="between" gap="sm">
           <Div type="row" align="center" gap="sm">
-            <Div variant="theme-icon">
-              <GraduationCap size={18} />
-            </Div>
+            <BrandLogo size={36} />
             <P color="default" size="base" weight="bold">{APP.name}</P>
           </Div>
           <Link

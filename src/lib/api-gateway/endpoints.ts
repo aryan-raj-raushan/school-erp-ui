@@ -6,6 +6,7 @@ export const ENDPOINTS = {
     parentLogin: "/auth/parent/login",
     schoolSignup: "/auth/school/signup",
     login: "/auth/login",
+    socialLogin: "/auth/social-login",
     changePassword: "/auth/school/change-password",
     parentChangePassword: "/auth/parent/change-password",
     refresh: "/auth/refresh",

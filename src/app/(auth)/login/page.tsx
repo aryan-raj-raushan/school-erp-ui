@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useLoginPage } from '@/hooks/useLoginPage';
-import { ROUTES, LEGAL_LINKS } from '@/constants';
-import { Div, Button, Input, FormField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
+import { useSocialLogin } from '@/hooks/useSocialLogin';
+import { ROUTES } from '@/constants';
+import { Div, Button, Input, FormField, AuthCard, AuthOrSeparator, SocialButtonGroup, LegalLinks } from '@/components/ui';
 
 export default function LoginPage() {
   const login = useLoginPage();
@@ -21,12 +22,17 @@ function UnifiedLoginForm({
   isLoading,
   isPhone,
 }: ReturnType<typeof useLoginPage>) {
+  const social = useSocialLogin();
+
   return (
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Div type="col" gap="md">
-          <SocialButtonGroup />
-
-          <AuthOrSeparator />
+          {social.enabled && (
+            <>
+              <SocialButtonGroup onSelect={social.signInWith} pendingProvider={social.pendingProvider} />
+              <AuthOrSeparator />
+            </>
+          )}
 
           <FormField
             label="Email or Phone Number"
@@ -82,11 +88,7 @@ function UnifiedLoginForm({
             </Link>
           </Div>
 
-          <Div type="row" justify="center">
-            <Link href={ROUTES.privacyPolicy} className="text-xs text-muted-foreground hover:underline">
-              {LEGAL_LINKS.privacyPolicy}
-            </Link>
-          </Div>
+          <LegalLinks />
         </Div>
       </form>
   );

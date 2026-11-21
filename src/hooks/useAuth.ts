@@ -10,6 +10,7 @@ import {
   type LoginSchoolPayload,
   type LoginParentPayload,
   type LoginUnifiedPayload,
+  type LoginOrChangeResult,
   type SchoolSignupPayload,
 } from '@/services/auth.service';
 import { TokenStorage } from '@/lib/api-gateway/token.storage';
@@ -96,23 +97,39 @@ export function useAuth() {
     }
   }
 
+  async function finishLogin(result: LoginOrChangeResult) {
+    if ('must_change_password' in result) {
+      const ctxSuffix = result.context === AuthContext.PARENT ? '&ctx=parent' : '';
+      router.replace(`${ROUTES.changePassword}?token=${result.change_token}${ctxSuffix}`);
+      return result;
+    }
+
+    const profile = await AuthService.getMe();
+    setAuth(profile, result.user.context);
+    hydratePermissions(profile);
+    router.replace(HOME_BY_CONTEXT[result.user.context]);
+    return result;
+  }
+
   async function loginUnified(payload: LoginUnifiedPayload) {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await AuthService.loginUnified(payload);
+      return await finishLogin(await AuthService.loginUnified(payload));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
-      if ('must_change_password' in result) {
-        const ctxSuffix = result.context === AuthContext.PARENT ? '&ctx=parent' : '';
-        router.replace(`${ROUTES.changePassword}?token=${result.change_token}${ctxSuffix}`);
-        return result;
-      }
-
-      const profile = await AuthService.getMe();
-      setAuth(profile, result.user.context);
-      hydratePermissions(profile);
-      router.replace(HOME_BY_CONTEXT[result.user.context]);
-      return result;
+  async function loginSocial(token: string) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      return await finishLogin(await AuthService.loginSocial(token));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
@@ -183,5 +200,5 @@ export function useAuth() {
     }
   }
 
-  return { loginCompany, loginSchool, loginParent, loginUnified, switchSchool, logout, signup, isLoading, error };
+  return { loginCompany, loginSchool, loginParent, loginUnified, loginSocial, switchSchool, logout, signup, isLoading, error };
 }

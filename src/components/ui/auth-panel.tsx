@@ -1,8 +1,8 @@
 import * as React from 'react';
 import Image from 'next/image';
-import { GraduationCap } from 'lucide-react';
 import { APP } from '@/constants';
 import { Div } from './layout';
+import { BrandLogo } from './brand-logo';
 import { P, PanelHeading } from './typography';
 
 /* ─────────────────────────────────────────────
@@ -20,9 +20,7 @@ export function AuthLeftPanel() {
 
       {/* Logo */}
       <Div variant="auth-panel-section" type="row" align="center" gap="sm">
-        <Div variant="auth-panel-logo-box">
-          <GraduationCap size={20} strokeWidth={2} color="rgba(0,0,0,0.72)" />
-        </Div>
+        <BrandLogo size={40} />
         <P color="default" size="base" weight="bold">{APP.name}</P>
       </Div>
 
@@ -79,9 +77,7 @@ export function AuthRightPanel({ children }: { children: React.ReactNode }) {
         }}
       >
         <Div type="col" align="center" gap="sm" padding="mb-4 lg:hidden">
-          <Div variant="theme-icon-lg">
-            <GraduationCap size={22} />
-          </Div>
+          <BrandLogo size={56} />
           <P color="default" size="xl" weight="bold">{APP.name}</P>
         </Div>
 

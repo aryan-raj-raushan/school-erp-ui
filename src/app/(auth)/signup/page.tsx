@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { useSignupPage } from '@/hooks/useSignupPage';
-import { ROUTES, LEGAL_LINKS } from '@/constants';
-import { Div, Button, Input, FormField, PhoneField, AuthCard, AuthOrSeparator, SocialButtonGroup } from '@/components/ui';
+import { ROUTES } from '@/constants';
+import { Div, Button, Input, FormField, PhoneField, AuthCard, LegalLinks } from '@/components/ui';
 
 export default function SignupPage() {
   const { form, onSubmit, isLoading } = useSignupPage();
@@ -14,10 +14,6 @@ export default function SignupPage() {
     <AuthCard title="Create your account" subtitle="Set up your school on the ERP platform">
       <form onSubmit={form.handleSubmit(onSubmit as any)}>
         <Div type="col" gap="sm">
-          <SocialButtonGroup />
-
-          <AuthOrSeparator />
-
           <FormField
             label="School Name"
             htmlFor="school_name"
@@ -105,11 +101,7 @@ export default function SignupPage() {
             </Link>
           </Div>
 
-          <Div type="row" justify="center">
-            <Link href={ROUTES.privacyPolicy} className="text-xs text-muted-foreground hover:underline">
-              {LEGAL_LINKS.privacyPolicy}
-            </Link>
-          </Div>
+          <LegalLinks />
         </Div>
       </form>
     </AuthCard>
