@@ -25,6 +25,8 @@ export function useFeeCollection() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [overdueOnly, setOverdueOnly] = useSessionState('fees-online:overdue-only', false);
   const [reminders, setReminders] = useState<ReminderList | null>(null);
+  const [remindersVersion, setRemindersVersion] = useState(0);
+  const reloadReminders = useCallback(() => setRemindersVersion((v) => v + 1), []);
   const reloadClaims = useCallback(() => setClaimsVersion((v) => v + 1), []);
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export function useFeeCollection() {
     return () => {
       active = false;
     };
-  }, [overdueOnly]);
+  }, [overdueOnly, remindersVersion]);
 
   useEffect(() => {
     FeeCollectionService.getSettings()
@@ -106,5 +108,6 @@ export function useFeeCollection() {
     overdueOnly,
     setOverdueOnly,
     reminders,
+    reloadReminders,
   };
 }

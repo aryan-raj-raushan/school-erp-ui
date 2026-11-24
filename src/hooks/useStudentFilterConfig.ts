@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useStorageFilter } from "@/hooks/useStorageFilter";
+import { ListPageMemory, STUDENTS_LIST_PAGE } from "@/lib/list-page-memory";
 import { STORAGE_FILTER_KEYS } from "@/constants/storage-filter-keys.constants";
 import {
   STUDENT_PAGE,
@@ -76,6 +77,7 @@ function useClassesAndSections(
 export function useStudentFilterConfig(
   filters: StudentFilters,
   updateFilters: (next: Partial<StudentFilters>) => void,
+  rememberPage = false,
 ) {
   const { years } = useAcademicYears();
   const { classes, sections } = useClassesAndSections(
@@ -95,14 +97,16 @@ export function useStudentFilterConfig(
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (Object.values(storedFilters).some(Boolean)) {
-      updateFilters(storedFilters);
+    const savedPage = rememberPage ? ListPageMemory.get(STUDENTS_LIST_PAGE) : 1;
+    if (Object.values(storedFilters).some(Boolean) || savedPage > 1) {
+      updateFilters({ ...storedFilters, page: savedPage });
     }
     // Apply saved filters exactly once, when storage first hydrates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHydrated]);
 
   function onChange(next: Partial<StudentFilters>) {
+    if (rememberPage) ListPageMemory.set(STUDENTS_LIST_PAGE, next.page ?? 1);
     updateFilters(next);
     const persisted: Partial<PersistedStudentFilters> = {};
     PERSISTED_KEYS.forEach((key) => {

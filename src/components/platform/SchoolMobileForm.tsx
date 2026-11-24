@@ -16,6 +16,7 @@ import {
 } from "@/components/ui";
 import { useMultiStepForm, type FormStep } from "@/hooks/useMultiStepForm";
 import { BOARD_TYPES, CREATE_SCHOOL_FORM } from "@/constants";
+import { MARKING_SYSTEM_OPTIONS } from "@/constants/school-profile.constants";
 
 const L = CREATE_SCHOOL_FORM.labels;
 const P = CREATE_SCHOOL_FORM.placeholders;
@@ -48,7 +49,7 @@ export function SchoolMobileForm<T extends FieldValues>({
     (form.formState.errors as Record<string, { message?: string } | undefined>)[name]?.message;
 
   const steps: ReadonlyArray<FormStep<T>> = [
-    { id: "basic", label: "School", fields: ["name", "board_type"].map(n) },
+    { id: "basic", label: "School", fields: ["name", "board_type", "marking_system"].map(n) },
     { id: "contact", label: "Contact", fields: ["email", "dial_code", "contact_number", "website"].map(n) },
     { id: "location", label: "Location", fields: ["address", "city", "state", "pincode"].map(n) },
     {
@@ -116,6 +117,19 @@ export function SchoolMobileForm<T extends FieldValues>({
                 value={(field.value as string | undefined) ?? ""}
                 onChange={field.onChange}
                 options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
+              />
+            )}
+          />
+          <Controller
+            control={form.control}
+            name={n("marking_system")}
+            render={({ field }) => (
+              <MobileSelectField
+                label="Marking system"
+                placeholder="Select system"
+                value={(field.value as string | undefined) ?? ""}
+                onChange={field.onChange}
+                options={[...MARKING_SYSTEM_OPTIONS]}
               />
             )}
           />

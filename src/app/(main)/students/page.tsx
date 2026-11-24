@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudentV2";
 import { useStudentFilterConfig } from "@/hooks/useStudentFilterConfig";
+import { ListPageMemory, STUDENTS_LIST_PAGE } from "@/lib/list-page-memory";
+
+const STUDENTS_PER_PAGE = 20;
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
 import { useBulkImport } from "@/hooks/useBulkImport";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -51,12 +54,12 @@ function StudentsDesktop() {
     deleteStudent,
     toggleEnabled,
     refetch,
-  } = useStudents({ page: 1 });
+  } = useStudents({ page: 1, limit: STUDENTS_PER_PAGE });
   const { hasPermission } = usePermissions();
   const studentImport = useBulkImport("students", { title: "Students", onImported: refetch });
 
   const { filterFields, filterValues, onChange, onClear } =
-    useStudentFilterConfig(filters, updateFilters);
+    useStudentFilterConfig(filters, updateFilters, true);
 
   const columns = useMemo<ColumnDef<StudentListItem>[]>(
     () => [
@@ -231,7 +234,17 @@ function StudentsDesktop() {
         data={students}
         isLoading={isLoading}
         emptyText={STUDENT_PAGE.table.noEntry}
-        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
+        pagination={
+          pagination
+            ? {
+                ...pagination,
+                onPageChange: (page) => {
+                  ListPageMemory.set(STUDENTS_LIST_PAGE, page);
+                  updateFilters({ page });
+                },
+              }
+            : undefined
+        }
         fillViewport
       />
 

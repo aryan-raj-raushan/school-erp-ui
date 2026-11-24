@@ -128,6 +128,13 @@ export function useParentFees() {
           contact: user?.phone_number,
           method: 'upi',
         },
+        config: {
+          display: {
+            blocks: { upi: { name: 'Pay using UPI', instruments: [{ method: 'upi' }] } },
+            sequence: ['block.upi'],
+            preferences: { show_default_blocks: true },
+          },
+        },
         handler: async (response: {
           razorpay_payment_id: string;
           razorpay_order_id: string;

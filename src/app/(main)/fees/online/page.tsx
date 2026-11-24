@@ -55,6 +55,7 @@ export default function OnlineFeePaymentsPage() {
         onChange={(next) => {
           setTab(next);
           if (next === "verify") vm.reloadClaims();
+          if (next === "reminders") vm.reloadReminders();
         }}
         className="w-full max-w-xl"
       />

@@ -5,7 +5,6 @@ import { useParentPortalPage } from "@/hooks/useParentPortalPage";
 import {
   AlertList,
   DashSection,
-  DashboardColumns,
   DashboardError,
   DashboardHero,
   DashboardRoot,
@@ -23,6 +22,7 @@ export default function ParentPortalPage() {
     <div className="px-4 md:px-6">
       <DashboardRoot>
         <DashboardHero
+          compact
           eyebrow={vm.eyebrow}
           greeting={vm.greetingName}
           title={vm.title}
@@ -49,11 +49,11 @@ export default function ParentPortalPage() {
             </DashSection>
 
             <DashSection title="Coming up">
-              <DashboardColumns>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <ListCard title="Recent homework" icon={BookOpen} accent="blue" items={vm.homework} emptyText="No homework assigned recently" />
                 <ListCard title="Upcoming exams" icon={GraduationCap} accent="amber" items={vm.exams} emptyText="No exams scheduled" />
-              </DashboardColumns>
-              <ListCard title="Events & holidays" icon={CalendarDays} accent="pink" items={vm.events} emptyText="Nothing coming up" />
+                <ListCard title="Events & holidays" icon={CalendarDays} accent="pink" items={vm.events} emptyText="Nothing coming up" />
+              </div>
             </DashSection>
           </>
         )}
