@@ -37,6 +37,21 @@ export type AuthLoginTab = (typeof AuthLoginTab)[keyof typeof AuthLoginTab];
 
 // ─── Domain models ─────────────────────────────────────────────────────────────
 
+export interface SchoolSupportContact {
+  name: string | null;
+  dial_code: string;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface SchoolSummary {
+  id: string;
+  name: string;
+  code: string | null;
+  logo_url: string | null;
+  support: SchoolSupportContact | null;
+}
+
 export interface UserProfile {
   id: string;
   first_name: string;
@@ -63,8 +78,11 @@ export interface UserProfile {
   city?: string | null;
   alternate_phone?: string | null;
   occupation?: string | null;
+  school?: SchoolSummary | null;
   created_at: string;
 }
+
+export type SchoolApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface School {
   id: string;
@@ -93,6 +111,12 @@ export interface School {
   principal_name?: string | null;
   principal_email?: string | null;
   principal_phone?: string | null;
+  support_name?: string | null;
+  support_dial_code?: string | null;
+  support_phone?: string | null;
+  support_email?: string | null;
+  approval_status?: SchoolApprovalStatus;
+  approval_note?: string | null;
   is_active: boolean;
   deleted: boolean;
   restriction_level: RestrictionMode;

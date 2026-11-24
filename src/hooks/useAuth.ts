@@ -17,6 +17,7 @@ import { TokenStorage } from '@/lib/api-gateway/token.storage';
 import { ImpersonationStorage } from '@/lib/impersonation.storage';
 import { useAuthStore } from '@/store/auth.store';
 import { useParentStore } from '@/store/parent.store';
+import { PhoneVerificationStorage } from '@/lib/phone-verification.storage';
 
 const HOME_BY_CONTEXT: Record<AuthContext, string> = {
   [AuthContext.COMPANY]: ROUTES.dashboard,
@@ -76,18 +77,7 @@ export function useAuth() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await AuthService.loginParent(payload);
-
-      if ('must_change_password' in result) {
-        router.replace(`${ROUTES.changePassword}?token=${result.change_token}&ctx=parent`);
-        return result;
-      }
-
-      const profile = await AuthService.getMe();
-      setAuth(profile, AuthContext.PARENT);
-      hydratePermissions(profile);
-      router.replace(ROUTES.parentPortal);
-      return result;
+      return await finishLogin(await AuthService.loginParent(payload));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
@@ -98,6 +88,12 @@ export function useAuth() {
   }
 
   async function finishLogin(result: LoginOrChangeResult) {
+    if ('phone_verification_required' in result) {
+      PhoneVerificationStorage.save(result);
+      router.replace(ROUTES.verifyPhone);
+      return result;
+    }
+    PhoneVerificationStorage.clear();
     if ('must_change_password' in result) {
       const ctxSuffix = result.context === AuthContext.PARENT ? '&ctx=parent' : '';
       router.replace(`${ROUTES.changePassword}?token=${result.change_token}${ctxSuffix}`);
@@ -182,15 +178,25 @@ export function useAuth() {
     }
   }
 
+  async function verifyPhone(verificationToken: string, otp: string) {
+    setIsLoading(true);
+    setError(null);
+    try {
+      return await finishLogin(await AuthService.verifyPhoneLogin(verificationToken, otp));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Verification failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function signup(payload: SchoolSignupPayload) {
     setIsLoading(true);
     setError(null);
     try {
-      await AuthService.schoolSignup(payload);
-      const profile = await AuthService.getMe();
-      setAuth(profile, AuthContext.SCHOOL);
-      hydratePermissions(profile);
-      router.replace(ROUTES.schoolDashboard);
+      return await AuthService.schoolSignup(payload);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Signup failed';
       setError(message);
@@ -200,5 +206,5 @@ export function useAuth() {
     }
   }
 
-  return { loginCompany, loginSchool, loginParent, loginUnified, loginSocial, switchSchool, logout, signup, isLoading, error };
+  return { loginCompany, loginSchool, loginParent, loginUnified, loginSocial, verifyPhone, switchSchool, logout, signup, isLoading, error };
 }

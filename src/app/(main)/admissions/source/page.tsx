@@ -155,7 +155,7 @@ function AdmissionSourcesDesktop() {
         data={sources}
         isLoading={isLoading}
         emptyText="No admission sources found"
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
       />
     </PageCol>
   );

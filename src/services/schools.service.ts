@@ -1,6 +1,6 @@
 import { apiGateway } from '@/lib/api-gateway/api-gateway.instance';
 import { ENDPOINTS } from '@/lib/api-gateway/endpoints';
-import type { PaginationMeta, School } from '@/types';
+import type { PaginationMeta, School, SchoolApprovalStatus } from '@/types';
 import type { BoardType } from '@/constants';
 
 export type { School };
@@ -9,6 +9,7 @@ export interface SchoolFilters {
   page?: number;
   limit?: number;
   search?: string;
+  approval_status?: SchoolApprovalStatus;
   [key: string]: unknown;
 }
 
@@ -28,6 +29,11 @@ export interface CreateSchoolPayload {
   pincode?: string;
   website?: string;
   board_type?: BoardType;
+  marking_system?: string;
+  support_name?: string | null;
+  support_dial_code?: string;
+  support_phone?: string | null;
+  support_email?: string | null;
   admin_first_name?: string;
   admin_last_name?: string;
   admin_dial_code?: string;
@@ -94,6 +100,11 @@ export const SchoolsService = {
 
   async update(id: string, payload: UpdateSchoolPayload): Promise<SchoolWithCredentials> {
     const res = await apiGateway.patch<SchoolWithCredentials>(ENDPOINTS.schools.byId(id), payload);
+    return res.data;
+  },
+
+  async setApproval(id: string, status: Exclude<SchoolApprovalStatus, 'PENDING'>, note?: string): Promise<School> {
+    const res = await apiGateway.patch<School>(ENDPOINTS.schools.approval(id), { status, ...(note && { note }) });
     return res.data;
   },
 

@@ -14,6 +14,7 @@ import {
   KpiTile,
   ListCard,
 } from "@/components/ui/dashboard";
+import { SupportContactPanel } from "@/components/layout/SupportContact";
 
 export default function ParentPortalPage() {
   const vm = useParentPortalPage();
@@ -28,6 +29,8 @@ export default function ParentPortalPage() {
           chips={vm.chips}
           stat={vm.isLoading ? null : vm.heroStat}
         />
+
+        <SupportContactPanel />
 
         {vm.error && <DashboardError message="Couldn't load the dashboard. Please try again." />}
 

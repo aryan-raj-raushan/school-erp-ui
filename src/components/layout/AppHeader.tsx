@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GlobalSearch } from "./GlobalSearch";
+import { SupportContactChip } from "./SupportContact";
 
 const SPRING = { type: "spring" as const, stiffness: 280, damping: 26, mass: 0.9 };
 
@@ -125,6 +126,8 @@ export function AppHeader() {
         </Button>
 
         <Div className="flex-1" />
+
+        <SupportContactChip />
 
         {/* User dropdown */}
         <DropdownMenu>

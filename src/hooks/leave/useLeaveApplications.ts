@@ -173,7 +173,7 @@ export function useLeaveApplications(
   }
 
   function updateFilters(next: Partial<LeaveApplicationFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => {

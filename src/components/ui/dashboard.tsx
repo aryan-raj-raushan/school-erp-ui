@@ -43,7 +43,7 @@ export function DashboardRoot({
   onRefresh?: () => Promise<unknown> | void;
 }) {
   const content = (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pt-4 pb-8 md:gap-6 md:pt-6">
+    <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-4 pt-3 pb-6 md:pt-4">
       {children}
     </div>
   );
@@ -58,15 +58,15 @@ export function DashboardSplit({
   aside: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 md:gap-6">
-      <div className="flex min-w-0 flex-col gap-5 md:gap-6 lg:col-span-2">{main}</div>
-      <div className="flex min-w-0 flex-col gap-5 md:gap-6">{aside}</div>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">{main}</div>
+      <div className="flex min-w-0 flex-col gap-4">{aside}</div>
     </div>
   );
 }
 
 export function DashboardColumns({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">{children}</div>;
+  return <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{children}</div>;
 }
 
 export function SectionHeading({
@@ -111,9 +111,8 @@ export function DashSection({
 }
 
 
-function Ring({ percent, children }: { percent: number | null; children: React.ReactNode }) {
-  const size = 84;
-  const stroke = 7;
+function Ring({ percent, children, size = 84 }: { percent: number | null; children: React.ReactNode; size?: number }) {
+  const stroke = size > 70 ? 7 : 6;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, percent ?? 0));
@@ -148,14 +147,15 @@ interface DashboardHeroProps {
   chips?: DashHeroChip[];
   stat?: DashHeroStat | null;
   compact?: boolean;
+  action?: React.ReactNode;
 }
 
-export function DashboardHero({ eyebrow, greeting, title, chips = [], stat, compact }: DashboardHeroProps) {
+export function DashboardHero({ eyebrow, greeting, title, chips = [], stat, compact, action }: DashboardHeroProps) {
   return (
     <div
       className={cn(
         "relative overflow-hidden rounded-3xl",
-        compact ? "px-5 py-4 md:px-6 md:py-4" : "px-5 py-5 md:px-8 md:py-7",
+        compact ? "px-4 py-3 md:px-6 md:py-3.5" : "px-5 py-5 md:px-8 md:py-7",
       )}
       style={{
         background:
@@ -170,10 +170,10 @@ export function DashboardHero({ eyebrow, greeting, title, chips = [], stat, comp
       <div className="relative flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-widest opacity-70">{eyebrow}</p>
-          <p className="mt-1.5 text-sm opacity-80">{greeting}</p>
-          <h1 className="truncate text-2xl font-bold leading-tight md:text-3xl">{title}</h1>
+          <p className={cn("text-sm opacity-80", compact ? "mt-0.5" : "mt-1.5")}>{greeting}</p>
+          <h1 className={cn("truncate font-bold leading-tight", compact ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{title}</h1>
           {chips.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className={cn("flex flex-wrap gap-2", compact ? "mt-2" : "mt-3")}>
               {chips.map((chip) => (
                 <span
                   key={chip.label}
@@ -187,9 +187,11 @@ export function DashboardHero({ eyebrow, greeting, title, chips = [], stat, comp
           )}
         </div>
 
+        {action && <div className="hidden shrink-0 md:block">{action}</div>}
+
         {stat && (
           <div className="flex shrink-0 flex-col items-center gap-1.5 text-center">
-            <Ring percent={stat.percent}>{stat.value}</Ring>
+            <Ring percent={stat.percent} size={compact ? 60 : 84}>{stat.value}</Ring>
             <p className="text-[11px] font-semibold leading-none">{stat.label}</p>
             <p className="max-w-[110px] truncate text-[10px] leading-none opacity-75">{stat.sub}</p>
           </div>
@@ -204,7 +206,7 @@ export function KpiGrid({ children, dense }: { children: React.ReactNode; dense?
   return (
     <div
       className={cn(
-        "grid grid-cols-2 gap-3 md:gap-4",
+        "grid grid-cols-2 gap-3",
         dense ? "sm:grid-cols-3 lg:grid-cols-6" : "lg:grid-cols-4",
       )}
     >
@@ -234,7 +236,7 @@ export function KpiTile({ kpi, loading, dense }: { kpi: DashKpi; loading?: boole
   return (
     <Link
       href={kpi.href}
-      className="group flex min-w-0 flex-col gap-3 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-3.5 transition-all active:scale-[0.98] md:p-5 md:hover:-translate-y-0.5 md:hover:shadow-md"
+      className="group flex min-w-0 flex-col gap-2 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-3 transition-all active:scale-[0.98] md:p-4 md:hover:-translate-y-0.5 md:hover:shadow-md"
     >
       <div className="flex items-center justify-between">
         <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl md:h-10 md:w-10", DASH_ACCENT_CLASSES[kpi.accent])}>
@@ -246,9 +248,9 @@ export function KpiTile({ kpi, loading, dense }: { kpi: DashKpi; loading?: boole
         {loading ? (
           <Skeleton className="h-7 w-16 rounded-lg" />
         ) : (
-          <p className="truncate text-2xl font-bold leading-none tracking-tight md:text-3xl">{kpi.value}</p>
+          <p className="truncate text-2xl font-bold leading-none tracking-tight">{kpi.value}</p>
         )}
-        <p className="mt-1.5 truncate text-[13px] font-medium">{kpi.label}</p>
+        <p className="mt-1 truncate text-[13px] font-medium">{kpi.label}</p>
         <p className="truncate text-[11px] text-muted-foreground">{kpi.sub}</p>
       </div>
     </Link>
@@ -321,7 +323,7 @@ export function DashCard({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-w-0 flex-col gap-4 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-4 md:p-5", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-3 rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm p-4", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold">{title}</h3>

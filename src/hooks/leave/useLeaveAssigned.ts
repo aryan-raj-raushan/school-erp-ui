@@ -95,7 +95,7 @@ export function useLeaveAssigned(
   }
 
   function updateFilters(next: Partial<AssignedLeaveFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   function openAssignModal() {

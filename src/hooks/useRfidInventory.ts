@@ -157,7 +157,7 @@ export function useRfidInventory(initialFilters: RfidDeviceFilters = {}) {
   }
 
   function updateFilters(next: Partial<RfidDeviceFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => { fetchDevices(); }, [fetchDevices]);

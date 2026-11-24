@@ -16,6 +16,7 @@ export const ROUTES = {
   login: '/login',
   signup: '/signup',
   changePassword: '/change-password',
+  verifyPhone: '/verify-phone',
   privacyPolicy: '/privacy-policy',
   termsAndConditions: '/terms-and-conditions',
   ssoCallback: '/sso-callback',

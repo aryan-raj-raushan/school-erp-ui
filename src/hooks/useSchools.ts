@@ -32,6 +32,20 @@ import { confirmCreate } from '@/components/ui/confirm-dialog';
 
 const DEFAULT_DIAL_CODE = '+91';
 
+function supportPayload(values: {
+  support_name?: string;
+  support_dial_code?: string;
+  support_phone?: string;
+  support_email?: string;
+}) {
+  return {
+    support_name: values.support_name?.trim() || null,
+    support_dial_code: values.support_dial_code || DEFAULT_DIAL_CODE,
+    support_phone: values.support_phone || null,
+    support_email: values.support_email || null,
+  };
+}
+
 export function useSchools(initialFilters: SchoolFilters = {}) {
   const [schools, setSchools] = useState<School[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -49,7 +63,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   const createForm = useForm<CreateSchoolFormValues>({
     mode: 'onTouched',
     resolver: zodResolver(createSchoolSchema),
-    defaultValues: { dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE },
+    defaultValues: { dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE, support_dial_code: DEFAULT_DIAL_CODE },
   });
 
   const editForm = useForm<UpdateSchoolFormValues>({
@@ -124,6 +138,8 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.state && { state: values.state }),
       ...(values.pincode && { pincode: values.pincode }),
       ...(values.board_type && { board_type: values.board_type }),
+      ...(values.marking_system && { marking_system: values.marking_system }),
+      ...supportPayload(values),
       ...(values.admin_first_name && { admin_first_name: values.admin_first_name }),
       ...(values.admin_last_name && { admin_last_name: values.admin_last_name }),
       ...(values.admin_phone && { admin_phone: values.admin_phone, admin_dial_code: values.admin_dial_code }),
@@ -154,6 +170,8 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       ...(values.state && { state: values.state }),
       ...(values.pincode && { pincode: values.pincode }),
       ...(values.board_type && { board_type: values.board_type }),
+      ...(values.marking_system && { marking_system: values.marking_system }),
+      ...supportPayload(values),
       ...(values.admin_first_name && { admin_first_name: values.admin_first_name }),
       ...(values.admin_last_name && { admin_last_name: values.admin_last_name }),
       ...(values.admin_phone && { admin_phone: values.admin_phone, admin_dial_code: values.admin_dial_code }),
@@ -168,6 +186,16 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       editForm.reset();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to update school');
+    }
+  }
+
+  async function setApproval(school: School, status: 'APPROVED' | 'REJECTED') {
+    try {
+      await SchoolsService.setApproval(school.id, status);
+      toast.success(status === 'APPROVED' ? `${school.name} approved — the admin can sign in now` : `${school.name} rejected`);
+      await fetchSchools();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update approval');
     }
   }
 
@@ -210,7 +238,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   }
 
   function openCreateModal() {
-    createForm.reset({ dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE });
+    createForm.reset({ dial_code: DEFAULT_DIAL_CODE, admin_dial_code: DEFAULT_DIAL_CODE, support_dial_code: DEFAULT_DIAL_CODE });
     setShowCreateModal(true);
   }
 
@@ -231,6 +259,11 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
       state: school.state ?? '',
       pincode: school.pincode ?? '',
       board_type: (school.board_type as any) ?? undefined,
+      marking_system: school.marking_system ?? '',
+      support_name: school.support_name ?? '',
+      support_dial_code: school.support_dial_code || DEFAULT_DIAL_CODE,
+      support_phone: school.support_phone ?? '',
+      support_email: school.support_email ?? '',
       admin_first_name: '',
       admin_last_name: '',
       admin_dial_code: DEFAULT_DIAL_CODE,
@@ -262,7 +295,7 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
   }
 
   function updateFilters(next: Partial<SchoolFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => { fetchSchools(); }, [fetchSchools]);
@@ -288,6 +321,8 @@ export function useSchools(initialFilters: SchoolFilters = {}) {
     handleEditSubmit: editForm.handleSubmit(handleEditSubmit),
     isUpdating: editForm.formState.isSubmitting,
     deleteSchool,
+    approveSchool: (school: School) => setApproval(school, 'APPROVED'),
+    rejectSchool: (school: School) => setApproval(school, 'REJECTED'),
     loginAsSchool,
     resetAdminPassword,
     downloadBackup,

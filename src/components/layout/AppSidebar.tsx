@@ -13,6 +13,7 @@ import { APP } from "@/constants";
 import { useNavItems } from "@/hooks/useNavItems";
 import { useSchoolLogo } from "@/hooks/useSchoolLogo";
 import { MobileDrawer } from "./MobileDrawer";
+import { SupportContactCard } from "./SupportContact";
 
 const EXPANDED_W = 272;
 const ICON_W = 76;
@@ -172,6 +173,7 @@ function SidebarPanel({ isCollapsed, navMain, navSecondary }: SidebarPanelProps)
       >
         <NavMain items={navMain} isCollapsed={isCollapsed} />
         <div style={{ marginTop: "auto" }}>
+          <SupportContactCard isCollapsed={isCollapsed} />
           <NavSecondary items={navSecondary} isCollapsed={isCollapsed} />
         </div>
       </div>

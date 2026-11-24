@@ -311,7 +311,7 @@ function AttendanceListContent() {
         }))}
         isLoading={isLoading}
         emptyText={ATTENDANCE_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
         fillViewport
       />
     </PageCol>

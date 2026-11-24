@@ -5,9 +5,28 @@ import { Badge, Button, Div, P } from "@/components/ui";
 import { useStaffPunchIn } from "@/hooks/useStaffPunchIn";
 import { ATTENDANCE_MODE_LABEL, formatMarkedTime, mapLink } from "@/lib/attendance-mode";
 
-export function PunchInCard() {
+export function PunchInCard({ variant = "card" }: { variant?: "card" | "hero" }) {
   const { canPunch, today, isLoading, isPunching, punchIn } = useStaffPunchIn();
   if (!canPunch || isLoading) return null;
+
+  if (variant === "hero") {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl bg-white/25 px-3 py-2 backdrop-blur">
+        <Fingerprint size={18} className="shrink-0" />
+        <div className="min-w-0 text-xs leading-tight">
+          <p className="font-semibold">My attendance</p>
+          <p className="opacity-80">
+            {today ? `${today.is_late ? "Late" : "In"} at ${formatMarkedTime(today.marked_at)}` : "Not punched in yet"}
+          </p>
+        </div>
+        {!today && (
+          <Button size="sm" onClick={() => void punchIn()} loading={isPunching}>
+            Punch in
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Div

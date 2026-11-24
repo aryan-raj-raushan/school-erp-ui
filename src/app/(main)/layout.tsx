@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useProfileRefresh } from "@/hooks/useProfileRefresh";
 import { usePathname, useRouter } from "next/navigation";
 import { ROUTES, STORAGE_KEYS } from "@/constants";
 import { AuthContext } from "@/types";
@@ -57,6 +58,8 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [storageReady, setStorageReady] = useState(false);
+  useProfileRefresh(storageReady);
 
   useEffect(() => {
     // On cold start (native): restore from Preferences into localStorage if needed,
@@ -66,6 +69,8 @@ export default function DashboardLayout({
         router.replace(ROUTES.login);
       } else if (TokenStorage.getContext() === AuthContext.PARENT) {
         router.replace(ROUTES.parentPortal);
+      } else {
+        setStorageReady(true);
       }
     });
   }, [router]);

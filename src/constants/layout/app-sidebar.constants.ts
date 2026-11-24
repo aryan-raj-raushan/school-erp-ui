@@ -370,6 +370,11 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
         url: "/fees/payments",
         permissions: [PERMISSIONS.fees.view],
       },
+      {
+        title: "Online Payments & Reminders",
+        url: "/fees/online",
+        permissions: [PERMISSIONS.fees.view],
+      },
     ],
   },
 

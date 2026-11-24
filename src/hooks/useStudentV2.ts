@@ -38,7 +38,7 @@ export function useStudents(initialFilters: StudentFilters = {}) {
   }, [fetchStudents]);
 
   function updateFilters(next: Partial<StudentFilters>) {
-    setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   async function deleteStudent(id: string) {

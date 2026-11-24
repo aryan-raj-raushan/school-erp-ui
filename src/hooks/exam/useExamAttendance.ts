@@ -44,7 +44,7 @@ export function useExamAttendanceList(initialFilters: AttendanceFilters = {}) {
   }, [fetch]);
 
   function updateFilters(next: Partial<AttendanceFilters>) {
-    setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   return {

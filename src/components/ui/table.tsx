@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobileSync } from '@/hooks/useIsMobileSync';
 
@@ -262,13 +263,45 @@ export function TableEmptyRow({ colSpan, children }: { colSpan: number; children
   );
 }
 
-export function TablePagination({ total, page, totalPages }: { total: number; page: number; totalPages: number }) {
+interface TablePaginationProps {
+  total: number;
+  page: number;
+  totalPages: number;
+  onPageChange?: (page: number) => void;
+}
+
+export function TablePagination({ total, page, totalPages, onPageChange }: TablePaginationProps) {
+  const go = (next: number) => onPageChange?.(Math.min(Math.max(next, 1), totalPages));
+  const navButton =
+    'inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-border bg-background px-2 text-xs font-medium transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40';
   return (
-    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
-      <p className="text-xs text-muted-foreground font-medium">{total} total</p>
-      <p className="text-xs text-muted-foreground font-medium">
-        Page {page} / {totalPages}
-      </p>
+    <div className="flex items-center justify-between gap-3 border-t border-border/50 bg-muted/20 px-4 py-2">
+      <p className="text-xs font-medium text-muted-foreground">{total} total</p>
+      <div className="flex items-center gap-1.5">
+        {onPageChange && (
+          <>
+            <button type="button" aria-label="First page" className={navButton} disabled={page <= 1} onClick={() => go(1)}>
+              <ChevronsLeft size={14} />
+            </button>
+            <button type="button" aria-label="Previous page" className={navButton} disabled={page <= 1} onClick={() => go(page - 1)}>
+              <ChevronLeft size={14} />
+            </button>
+          </>
+        )}
+        <p className="px-1 text-xs font-medium text-muted-foreground">
+          Page {page} / {totalPages}
+        </p>
+        {onPageChange && (
+          <>
+            <button type="button" aria-label="Next page" className={navButton} disabled={page >= totalPages} onClick={() => go(page + 1)}>
+              <ChevronRight size={14} />
+            </button>
+            <button type="button" aria-label="Last page" className={navButton} disabled={page >= totalPages} onClick={() => go(totalPages)}>
+              <ChevronsRight size={14} />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

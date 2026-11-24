@@ -231,7 +231,7 @@ function StudentsDesktop() {
         data={students}
         isLoading={isLoading}
         emptyText={STUDENT_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
         fillViewport
       />
 

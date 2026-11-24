@@ -45,7 +45,10 @@ export interface DataTablePagination {
   total: number;
   page: number;
   totalPages: number;
+  onPageChange?: (page: number) => void;
 }
+
+const CLIENT_PAGE_SIZE = 25;
 
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
@@ -81,6 +84,8 @@ export interface DataTableProps<TData> {
   fillViewport?: boolean;
   /** Phones: show every field on each card (use for rows that contain inputs). */
   mobileShowAll?: boolean;
+  /** Turns off automatic client-side paging, for data-entry grids that must show every row. */
+  showAllRows?: boolean;
 }
 
 function getColumnId(col: ColumnDef<any, any>): string | undefined {
@@ -116,10 +121,33 @@ export function DataTable<TData>({
   maxHeight,
   fillViewport,
   mobileShowAll,
+  showAllRows,
 }: DataTableProps<TData>) {
   const isMobile = useIsMobileSync();
   const manualSort = sorting !== undefined && onSortingChange !== undefined;
-  const showsPaginationFooter = !!pagination && pagination.totalPages > 1;
+  const [clientPage, setClientPage] = React.useState(1);
+  const clientPaged = !pagination && !showAllRows && !mobileShowAll && data.length > CLIENT_PAGE_SIZE;
+  const clientTotalPages = Math.max(1, Math.ceil(data.length / CLIENT_PAGE_SIZE));
+  const currentClientPage = Math.min(clientPage, clientTotalPages);
+  const visibleData = React.useMemo(
+    () =>
+      clientPaged
+        ? data.slice((currentClientPage - 1) * CLIENT_PAGE_SIZE, currentClientPage * CLIENT_PAGE_SIZE)
+        : data,
+    [clientPaged, data, currentClientPage],
+  );
+  const effectivePagination: DataTablePagination | undefined = clientPaged
+    ? { total: data.length, page: currentClientPage, totalPages: clientTotalPages, onPageChange: setClientPage }
+    : pagination;
+  const showsPaginationFooter = !!effectivePagination && effectivePagination.totalPages > 1;
+  const paginationFooter = showsPaginationFooter && (
+    <TablePagination
+      total={effectivePagination.total}
+      page={effectivePagination.page}
+      totalPages={effectivePagination.totalPages}
+      onPageChange={effectivePagination.onPageChange}
+    />
+  );
 
   // Default: pin the first two columns so they stay put while the rest of
   // the table scrolls horizontally on narrow screens. Pass `pinnedColumns`
@@ -188,7 +216,7 @@ export function DataTable<TData>({
   }, []);
 
   const table = useReactTable<TData>({
-    data,
+    data: visibleData,
     columns,
     enableColumnPinning: true,
     getCoreRowModel: getCoreRowModel(),
@@ -214,13 +242,7 @@ export function DataTable<TData>({
           getRowVariant={getRowVariant}
           showAllDetails={mobileShowAll}
         />
-        {pagination && pagination.totalPages > 1 && (
-          <TablePagination
-            total={pagination.total}
-            page={pagination.page}
-            totalPages={pagination.totalPages}
-          />
-        )}
+        {paginationFooter}
       </>
     );
   }
@@ -288,13 +310,7 @@ export function DataTable<TData>({
           <div ref={stickyInnerRef} className="h-px" />
         </div>
       )}
-      {pagination && pagination.totalPages > 1 && (
-        <TablePagination
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      {paginationFooter}
     </>
   );
 }

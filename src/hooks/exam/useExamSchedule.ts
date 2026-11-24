@@ -126,7 +126,7 @@ export function useExamSchedules(initialFilters: ScheduleFilters = {}) {
   }, [fetch]);
 
   function updateFilters(next: Partial<ScheduleFilters>) {
-    setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   async function remove(id: string) {

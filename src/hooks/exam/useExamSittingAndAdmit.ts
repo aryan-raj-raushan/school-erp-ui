@@ -48,7 +48,7 @@ export function useSittingPlan(initialFilters: SittingFilters = {}) {
   }, [fetch]);
 
   function updateFilters(next: Partial<SittingFilters>) {
-    setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   async function remove(id: string) {

@@ -297,6 +297,7 @@ export default function StaffAttendancePage() {
         </Div>
       ) : (
         <DataTable
+          showAllRows
           columns={columns}
           data={staff.map(s => ({
             ...s,

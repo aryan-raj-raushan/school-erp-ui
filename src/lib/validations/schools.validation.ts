@@ -42,6 +42,11 @@ const schoolFields = {
   state: optionalText(100),
   pincode: z.union([z.string().regex(REGEX.pincodeIn, 'Enter a valid 6-digit pincode'), z.literal('')]).optional(),
   board_type: z.enum(BOARD_TYPES).optional().or(z.literal('')),
+  marking_system: z.string().optional(),
+  support_name: optionalText(150),
+  support_dial_code: z.string().regex(REGEX.dialCode, 'Invalid dial code').optional(),
+  support_phone: optionalPhone,
+  support_email: optionalEmail,
 };
 
 const createSchoolObjectSchema = z.object({

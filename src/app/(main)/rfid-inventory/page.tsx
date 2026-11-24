@@ -221,7 +221,7 @@ export default function RfidInventoryPage() {
         data={devices}
         isLoading={isLoading}
         emptyText={RFID_INVENTORY_PAGE.empty}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
       />
 
       {isMobile && (

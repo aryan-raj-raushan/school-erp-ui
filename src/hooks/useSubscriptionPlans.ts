@@ -95,7 +95,7 @@ export function useSubscriptionPlans(initialFilters: SubscriptionPlanFilters = {
   }
 
   function updateFilters(next: Partial<SubscriptionPlanFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => { fetchPlans(); }, [fetchPlans]);

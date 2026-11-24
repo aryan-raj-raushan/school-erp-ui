@@ -21,6 +21,7 @@ import type { StudentParent } from '@/types/students.types';
 import { type PaymentsTab } from '@/constants/fee-payments.constants';
 import { errorMessage } from '@/lib/api-error';
 import { confirmCreate } from '@/components/ui/confirm-dialog';
+import { useSessionState } from './useSessionState';
 
 interface FinanceAccount {
   id: string;
@@ -34,7 +35,7 @@ export function useFeesPayments() {
   const [tab, setTab] = useState<PaymentsTab>('student');
 
   // ─── Student tab ────────────────────────────────────────────────────────────
-  const [studentFilter, setStudentFilter] = useState({ academic_year_id: '', class_id: '' });
+  const [studentFilter, setStudentFilter] = useSessionState('fees:student-filter', { academic_year_id: '', class_id: '' });
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [payingBill, setPayingBill] = useState<FeeBill | null>(null);
   const [payForm, setPayForm] = useState<CreateFeePaymentPayload>({
@@ -44,7 +45,7 @@ export function useFeesPayments() {
   const [addFeeForm, setAddFeeForm] = useState({ fee_type_id: '', bill_month: '', amount: '' });
 
   // ─── Monthly tab ────────────────────────────────────────────────────────────
-  const [monthlyFilter, setMonthlyFilter] = useState({ academic_year_id: '', class_id: '', month: '' });
+  const [monthlyFilter, setMonthlyFilter] = useSessionState('fees:monthly-filter', { academic_year_id: '', class_id: '', month: '' });
   const [payingDue, setPayingDue] = useState<StudentMonthlyDue | null>(null);
 
   // ─── Create tab ─────────────────────────────────────────────────────────────
@@ -55,10 +56,10 @@ export function useFeesPayments() {
   const [createClassId, setCreateClassId] = useState('');
 
   // ─── Structure view tab ──────────────────────────────────────────────────────
-  const [structFilter, setStructFilter] = useState({ academic_year_id: '', fee_plan_id: '', class_id: '' });
+  const [structFilter, setStructFilter] = useSessionState('fees:structure-filter', { academic_year_id: '', fee_plan_id: '', class_id: '' });
 
   // ─── Demand receipt tab ──────────────────────────────────────────────────────
-  const [receiptFilter, setReceiptFilter] = useState({ academic_year_id: '', class_id: '', month_from: '', month_to: '' });
+  const [receiptFilter, setReceiptFilter] = useSessionState('fees:receipt-filter', { academic_year_id: '', class_id: '', month_from: '', month_to: '' });
 
   // ─── Bulk ops ────────────────────────────────────────────────────────────────
   const [discountForm, setDiscountForm] = useState({ academic_year_id: '', class_id: '', fee_type_id: '', discount_amount: '', reason: '' });

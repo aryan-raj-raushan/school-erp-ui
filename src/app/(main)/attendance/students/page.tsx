@@ -354,6 +354,7 @@ export default function StudentAttendancePage() {
         </Div>
       ) : (
         <DataTable
+          showAllRows
           columns={columns}
           data={students.map(s => ({
             ...s,

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { SCHOOLS_PAGE, CREATE_SCHOOL_FORM, BOARD_TYPES } from '@/constants';
-import { Role } from '@/types';
+import { Role, type SchoolApprovalStatus } from '@/types';
 import { useSchools } from '@/hooks/useSchools';
 import { useAuthStore } from '@/store/auth.store';
 import {
@@ -23,11 +23,13 @@ import {
   ResponsiveModalContainer,
   RowActions,
 } from '@/components/ui';
-import { DatabaseBackup, KeyRound, LogIn, Pencil, Trash2 } from 'lucide-react';
+import { Ban, BadgeCheck, DatabaseBackup, KeyRound, LogIn, Pencil, Trash2 } from 'lucide-react';
 import { CredentialsDialog } from '@/components/shared/CredentialsDialog';
 import { DeleteSchoolDialog } from '@/components/platform/DeleteSchoolDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SchoolMobileForm } from '@/components/platform/SchoolMobileForm';
+import { SchoolSupportFields } from '@/components/platform/SchoolSupportFields';
+import { MARKING_SYSTEM_OPTIONS } from '@/constants/school-profile.constants';
 
 type SchoolRow = {
   id: string;
@@ -36,8 +38,15 @@ type SchoolRow = {
   board_type?: string;
   city?: string;
   is_active: boolean;
+  approval_status?: SchoolApprovalStatus;
   created_at: string;
 };
+
+const APPROVAL_FILTER_OPTIONS = [
+  { value: 'PENDING', label: 'Awaiting approval' },
+  { value: 'APPROVED', label: 'Approved' },
+  { value: 'REJECTED', label: 'Rejected' },
+];
 
 export default function SchoolsPage() {
   const isMobile = useIsMobile();
@@ -45,7 +54,7 @@ export default function SchoolsPage() {
     schools, pagination, filters, isLoading, switchingId,
     showCreateModal, openCreateModal, closeCreateModal, createForm, handleCreateSubmit, isCreating,
     editingSchool, openEditModal, closeEditModal, editForm, handleEditSubmit, isUpdating,
-    deleteSchool, loginAsSchool, resetAdminPassword, downloadBackup,
+    deleteSchool, approveSchool, rejectSchool, loginAsSchool, resetAdminPassword, downloadBackup,
     deletingSchool, closeDeleteDialog, handleSchoolDeleted,
     issuedCredentials, clearIssuedCredentials,
     updateFilters,
@@ -54,6 +63,8 @@ export default function SchoolsPage() {
 
   const user = useAuthStore((s) => s.user);
   const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
+
+  const schoolById = useMemo(() => new Map(schools.map((school) => [school.id, school])), [schools]);
 
   const columns = useMemo<ColumnDef<SchoolRow>[]>(
     () => [
@@ -80,11 +91,16 @@ export default function SchoolsPage() {
       {
         accessorKey: "is_active",
         header: SCHOOLS_PAGE.table.status,
-        cell: ({ row }) => (
-          <Badge variant={row.original.is_active ? 'success' : 'default'}>
-            {row.original.is_active ? SCHOOLS_PAGE.status.active : SCHOOLS_PAGE.status.inactive}
-          </Badge>
-        ),
+        cell: ({ row }) =>
+          row.original.approval_status === 'PENDING' ? (
+            <Badge variant="warning">Awaiting approval</Badge>
+          ) : row.original.approval_status === 'REJECTED' ? (
+            <Badge variant="danger">Rejected</Badge>
+          ) : (
+            <Badge variant={row.original.is_active ? 'success' : 'default'}>
+              {row.original.is_active ? SCHOOLS_PAGE.status.active : SCHOOLS_PAGE.status.inactive}
+            </Badge>
+          ),
       },
       {
         id: "created_date",
@@ -98,28 +114,43 @@ export default function SchoolsPage() {
           <RowActions
             actions={[
               {
+                label: 'Approve registration',
+                icon: <BadgeCheck size={14} />,
+                hidden: row.original.approval_status === 'APPROVED' || !row.original.approval_status,
+                confirm: { description: `Approve ${row.original.name}? Its admin will be able to sign in.` },
+                onClick: () => approveSchool(schoolById.get(row.original.id)!),
+              },
+              {
+                label: 'Reject registration',
+                icon: <Ban size={14} />,
+                variant: 'destructive',
+                hidden: row.original.approval_status !== 'PENDING',
+                confirm: { description: `Reject the registration of ${row.original.name}? Its admin will not be able to sign in.` },
+                onClick: () => rejectSchool(schoolById.get(row.original.id)!),
+              },
+              {
                 label: 'Login as school',
                 icon: <LogIn size={14} />,
                 disabled: !row.original.is_active || switchingId === row.original.id,
-                onClick: () => loginAsSchool(row.original as any),
+                onClick: () => loginAsSchool(schoolById.get(row.original.id)!),
               },
               {
                 label: 'Edit',
                 icon: <Pencil size={14} />,
-                onClick: () => openEditModal(row.original as any),
+                onClick: () => openEditModal(schoolById.get(row.original.id)!),
               },
               {
                 label: 'Reset admin password',
                 icon: <KeyRound size={14} />,
                 hidden: !isSuperAdmin,
                 confirm: { description: `Issue a new temporary password for the admin of ${row.original.name}? The current password will stop working.` },
-                onClick: () => resetAdminPassword(row.original as any),
+                onClick: () => resetAdminPassword(schoolById.get(row.original.id)!),
               },
               {
                 label: 'Download backup',
                 icon: <DatabaseBackup size={14} />,
                 hidden: !isSuperAdmin,
-                onClick: () => downloadBackup(row.original as any),
+                onClick: () => downloadBackup(schoolById.get(row.original.id)!),
               },
               {
                 label: 'Delete',
@@ -127,14 +158,14 @@ export default function SchoolsPage() {
                 variant: 'destructive',
                 hidden: !isSuperAdmin,
                 confirm: false,
-                onClick: () => deleteSchool(row.original as any),
+                onClick: () => deleteSchool(schoolById.get(row.original.id)!),
               },
             ]}
           />
         ),
       },
     ],
-    [isSuperAdmin, switchingId, loginAsSchool, openEditModal, deleteSchool, resetAdminPassword, downloadBackup]
+    [schoolById, isSuperAdmin, switchingId, loginAsSchool, openEditModal, deleteSchool, resetAdminPassword, downloadBackup, approveSchool, rejectSchool]
   );
 
   const credentialsDialog = (
@@ -202,6 +233,13 @@ export default function SchoolsPage() {
           value={filters.search ?? ''}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
+        <ResponsiveSelect
+          width="md"
+          options={APPROVAL_FILTER_OPTIONS}
+          customPlaceholder="All registrations"
+          value={filters.approval_status ?? ''}
+          onChange={(e) => updateFilters({ approval_status: (e.target.value || undefined) as SchoolApprovalStatus | undefined })}
+        />
       </FilterBar>
 
       <DataTable
@@ -214,7 +252,7 @@ export default function SchoolsPage() {
         }))}
         isLoading={isLoading}
         emptyText={SCHOOLS_PAGE.empty}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
       />
 
       {/* Create Modal */}
@@ -233,13 +271,22 @@ export default function SchoolsPage() {
                       <Input placeholder={CREATE_SCHOOL_FORM.placeholders.code} disabled />
                     </FormField>
                   </Div>
-                  <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
-                    <ResponsiveSelect
-                      {...createForm.register('board_type')}
-                      customPlaceholder={CREATE_SCHOOL_FORM.placeholders.board_type}
-                      options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
-                    />
-                  </FormField>
+                  <Div type="grid" cols={2} gap="md">
+                    <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
+                      <ResponsiveSelect
+                        {...createForm.register('board_type')}
+                        customPlaceholder={CREATE_SCHOOL_FORM.placeholders.board_type}
+                        options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
+                      />
+                    </FormField>
+                    <FormField label="Marking system">
+                      <ResponsiveSelect
+                        {...createForm.register('marking_system')}
+                        customPlaceholder="Select system"
+                        options={MARKING_SYSTEM_OPTIONS}
+                      />
+                    </FormField>
+                  </Div>
                 </Div>
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.contact}</P>
@@ -275,6 +322,7 @@ export default function SchoolsPage() {
                     </FormField>
                   </Div>
                 </Div>
+                <SchoolSupportFields form={createForm} />
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.admin}</P>
                   <P color="muted" className="text-xs">{CREATE_SCHOOL_FORM.adminHint}</P>
@@ -322,13 +370,22 @@ export default function SchoolsPage() {
                       <Input value={editingSchool.code ?? ''} readOnly disabled />
                     </FormField>
                   </Div>
-                  <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
-                    <ResponsiveSelect
-                      {...editForm.register('board_type')}
-                      customPlaceholder={CREATE_SCHOOL_FORM.placeholders.board_type}
-                      options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
-                    />
-                  </FormField>
+                  <Div type="grid" cols={2} gap="md">
+                    <FormField label={CREATE_SCHOOL_FORM.labels.board_type}>
+                      <ResponsiveSelect
+                        {...editForm.register('board_type')}
+                        customPlaceholder={CREATE_SCHOOL_FORM.placeholders.board_type}
+                        options={BOARD_TYPES.map((b) => ({ value: b, label: b }))}
+                      />
+                    </FormField>
+                    <FormField label="Marking system">
+                      <ResponsiveSelect
+                        {...editForm.register('marking_system')}
+                        customPlaceholder="Select system"
+                        options={MARKING_SYSTEM_OPTIONS}
+                      />
+                    </FormField>
+                  </Div>
                 </Div>
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.contact}</P>
@@ -364,6 +421,7 @@ export default function SchoolsPage() {
                     </FormField>
                   </Div>
                 </Div>
+                <SchoolSupportFields form={editForm} />
                 <Div type="col" gap="md">
                   <P color="muted">{CREATE_SCHOOL_FORM.sections.admin}</P>
                   <P color="muted" className="text-xs">{CREATE_SCHOOL_FORM.editAdminHint}</P>

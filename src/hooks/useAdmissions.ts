@@ -68,7 +68,7 @@ export function useAdmissionSources(
   }
 
   function updateFilters(next: Partial<AdmissionSourceFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export function useAdmissionEnquiries(
   }
 
   function updateFilters(next: Partial<AdmissionEnquiryFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => {

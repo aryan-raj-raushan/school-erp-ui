@@ -207,7 +207,7 @@ export function useCompanyUsers(initialFilters: CompanyUserFilters = {}) {
   }
 
   function updateFilters(next: Partial<CompanyUserFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);

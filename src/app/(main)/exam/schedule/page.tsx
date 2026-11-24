@@ -449,7 +449,7 @@ function ScheduleContent() {
         data={schedules}
         isLoading={isLoading}
         emptyText={SCHEDULE_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
         getRowVariant={(row) =>
           row.original.parent_schedule_id ? "muted" : "default"
         }

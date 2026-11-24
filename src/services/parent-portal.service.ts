@@ -33,6 +33,37 @@ export interface ParentFeeBill {
   fee_type_name?: string;
 }
 
+export type OnlinePaymentMode = 'DISABLED' | 'UPI_DIRECT' | 'RAZORPAY_SCHOOL';
+
+export interface FeePaymentOptions {
+  mode: OnlinePaymentMode;
+  upi_id: string | null;
+  payee_name: string | null;
+}
+
+export interface UpiIntent {
+  reference: string;
+  amount: number;
+  upi_id: string;
+  payee_name: string;
+  upi_uri: string;
+}
+
+export interface UpiPaymentClaim {
+  id: string;
+  reference: string;
+  utr: string | null;
+  amount: string;
+  status: 'PENDING_VERIFICATION' | 'PAID' | 'REJECTED';
+  bill_id: string;
+  student_name: string;
+  fee_type_name: string | null;
+  bill_month: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
 export interface RazorpayOrderResponse {
   orderId: string;
   amount: number;
@@ -120,6 +151,26 @@ export const ParentPortalService = {
 
   async getFeeBills(): Promise<ParentFeeBill[]> {
     const res = await apiGateway.get<ParentFeeBill[]>(ENDPOINTS.parentPortal.feeBills);
+    return res.data;
+  },
+
+  async getFeePaymentOptions(): Promise<FeePaymentOptions> {
+    const res = await apiGateway.get<FeePaymentOptions>(ENDPOINTS.parentPortal.feePaymentOptions);
+    return res.data;
+  },
+
+  async getUpiPayments(): Promise<UpiPaymentClaim[]> {
+    const res = await apiGateway.get<UpiPaymentClaim[]>(ENDPOINTS.parentPortal.feeUpiPayments);
+    return res.data;
+  },
+
+  async createUpiIntent(billId: string): Promise<UpiIntent> {
+    const res = await apiGateway.post<UpiIntent>(ENDPOINTS.parentPortal.feeUpiIntent(billId), {});
+    return res.data;
+  },
+
+  async confirmUpiPayment(billId: string, reference: string, utr: string): Promise<{ status: string }> {
+    const res = await apiGateway.post<{ status: string }>(ENDPOINTS.parentPortal.feeUpiConfirm(billId), { reference, utr });
     return res.data;
   },
 

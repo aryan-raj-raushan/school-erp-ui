@@ -162,7 +162,7 @@ export function useInvoices(initialFilters: InvoiceFilters = {}) {
   }
 
   function updateFilters(next: Partial<InvoiceFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);

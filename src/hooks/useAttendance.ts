@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSessionState } from "./useSessionState";
 import { toast } from "sonner";
 import { AttendanceService } from "@/services/attendance.service";
 import { ClassesService, SectionsService } from "@/services/classes.service";
@@ -36,10 +37,10 @@ export function useAttendance() {
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedAcademicYearId, setSelectedAcademicYearId] =
     useState<string>("");
-  const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useSessionState<string>("attendance:class", "");
+  const [selectedSectionId, setSelectedSectionId] = useSessionState<string>("attendance:section", "");
   const [selectedClassSectionId, setSelectedClassSectionId] =
-    useState<string>("");
+    useSessionState<string>("attendance:class-section", "");
   const [date, setDate] = useState<string>(todayISO());
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<AttendanceMap>({});
@@ -49,6 +50,11 @@ export function useAttendance() {
   const [isSaving, setIsSaving] = useState(false);
   const [session, setSession] = useState<AttendanceSession>('MORNING');
   const [holidayEvent, setHolidayEvent] = useState<SchoolEvent | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (selectedClassId) setSections(allSections.filter((s) => s.class_id === selectedClassId));
+  }, [allSections, selectedClassId]);
 
   // Set default academic year from current year
   useEffect(() => {

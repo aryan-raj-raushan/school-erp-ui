@@ -12,11 +12,7 @@ type DivVariant =
   | 'icon-muted'
   | 'gradient-bar'
   /* Auth split layout */
-  | 'auth-force-light'
-  | 'auth-left-panel'
-  | 'auth-blob-tl'
-  | 'auth-blob-br'
-  | 'auth-panel-section';
+  | 'auth-force-light';
 type DivColor = 'default' | 'green' | 'red' | 'yellow';
 
 const justifyMap: Record<JustifyValue, string> = {
@@ -72,10 +68,6 @@ const variantMap: Record<DivVariant, string> = {
   'gradient-bar': 'h-[3px] w-full theme-gradient-bg rounded-full',
   /* Auth split layout */
   'auth-force-light':     'auth-force-light',
-  'auth-left-panel':      'auth-left-panel hidden lg:flex flex-col justify-between',
-  'auth-blob-tl':         'auth-blob-tl',
-  'auth-blob-br':         'auth-blob-br',
-  'auth-panel-section':   'auth-panel-section',
 };
 
 const colorMap: Record<DivColor, string> = {

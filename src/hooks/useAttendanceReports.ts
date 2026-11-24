@@ -7,6 +7,7 @@ import { ClassesService } from "@/services/classes.service";
 import { StudentsService } from "@/services/students.service";
 import { AcademicYearsService } from "@/services/academic-years.service";
 import type { Student, AcademicYear } from "@/types";
+import { useSessionState } from "./useSessionState";
 import type {
   DailyAttendanceReport,
   MonthlyAttendanceSummary,
@@ -55,12 +56,12 @@ export function useAttendanceReports() {
 
   // Class/Section — shared across every tab and the export card, so there's
   // a single filter instead of a separate one duplicated everywhere.
-  const [selectedClassId, setSelectedClassIdRaw] = useState("");
-  const [selectedSectionId, setSelectedSectionId] = useState("");
+  const [selectedClassId, setSelectedClassIdRaw] = useSessionState("attendance-report:class", "");
+  const [selectedSectionId, setSelectedSectionId] = useSessionState("attendance-report:section", "");
   const setSelectedClassId = useCallback((classId: string) => {
     setSelectedClassIdRaw(classId);
     setSelectedSectionId("");
-  }, []);
+  }, [setSelectedClassIdRaw, setSelectedSectionId]);
 
   // Daily
   const [dailyDate, setDailyDate] = useState(todayISO());

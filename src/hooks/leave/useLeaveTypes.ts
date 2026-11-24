@@ -45,7 +45,7 @@ export function useLeaveTypes(initialFilters: LeaveTypeFilters = {}) {
   }
 
   function updateFilters(next: Partial<LeaveTypeFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   useEffect(() => {

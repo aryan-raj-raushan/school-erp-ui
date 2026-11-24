@@ -58,14 +58,57 @@ export interface LoginResult {
 
 export interface SchoolSignupPayload {
   school_name: string;
-  school_code?: string;
   board_type?: string;
+  marking_system?: string;
+  contact_number?: string;
+  school_email?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   first_name: string;
   last_name?: string;
   dial_code?: string;
   phone_number: string;
   email?: string;
   password: string;
+  phone_verification_token: string;
+  email_verification_token?: string;
+}
+
+export interface SchoolSignupPending {
+  status: 'PENDING_APPROVAL';
+  school_id: string;
+  school_name: string;
+  school_code: string | null;
+}
+
+export type OtpChannel = 'PHONE' | 'EMAIL';
+
+export interface OtpTargetPayload {
+  channel: OtpChannel;
+  purpose: 'SIGNUP';
+  dial_code?: string;
+  phone_number?: string;
+  email?: string;
+}
+
+export interface OtpDispatch {
+  channel: OtpChannel;
+  sent_to: string;
+  expires_in: number;
+  resend_in: number;
+  display_code?: string;
+}
+
+export interface PhoneVerificationRequired {
+  phone_verification_required: true;
+  verification_token: string;
+  sent_to: string;
+  resend_in: number;
+  display_code?: string;
+  context: 'SCHOOL' | 'PARENT';
 }
 
 export interface ChangePasswordPayload {
@@ -86,8 +129,8 @@ export interface PasswordChangeRequired {
   context: 'SCHOOL' | 'PARENT';
 }
 
-export type LoginOrChangeResult = LoginResult | PasswordChangeRequired;
-export type LoginParentResult = LoginResult | PasswordChangeRequired;
+export type LoginOrChangeResult = LoginResult | PasswordChangeRequired | PhoneVerificationRequired;
+export type LoginParentResult = LoginResult | PasswordChangeRequired | PhoneVerificationRequired;
 
 export function isLoginResult(result: LoginOrChangeResult): result is LoginResult {
   return 'accessToken' in result;
@@ -153,9 +196,31 @@ export const AuthService = {
     return res.data;
   },
 
-  async schoolSignup(payload: SchoolSignupPayload): Promise<LoginResult> {
-    const res = await apiGateway.post<LoginResult>(ENDPOINTS.auth.schoolSignup, payload, { skipAuth: true, skipRefresh: true });
-    TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, AuthContext.SCHOOL);
+  async schoolSignup(payload: SchoolSignupPayload): Promise<SchoolSignupPending> {
+    const res = await apiGateway.post<SchoolSignupPending>(ENDPOINTS.auth.schoolSignup, payload, { skipAuth: true, skipRefresh: true });
+    return res.data;
+  },
+
+  async sendOtp(payload: OtpTargetPayload): Promise<OtpDispatch> {
+    const res = await apiGateway.post<OtpDispatch>(ENDPOINTS.auth.otpSend, payload, { skipAuth: true, skipRefresh: true });
+    return res.data;
+  },
+
+  async verifyOtp(payload: OtpTargetPayload & { otp: string }): Promise<{ verification_token: string }> {
+    const res = await apiGateway.post<{ verification_token: string }>(ENDPOINTS.auth.otpVerify, payload, { skipAuth: true, skipRefresh: true });
+    return res.data;
+  },
+
+  async verifyPhoneLogin(verification_token: string, otp: string): Promise<LoginOrChangeResult> {
+    const res = await apiGateway.post<LoginOrChangeResult>(ENDPOINTS.auth.verifyPhone, { verification_token, otp }, { skipAuth: true, skipRefresh: true });
+    if (isLoginResult(res.data)) {
+      TokenStorage.save({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken }, res.data.user.context);
+    }
+    return res.data;
+  },
+
+  async resendPhoneOtp(verification_token: string): Promise<OtpDispatch> {
+    const res = await apiGateway.post<OtpDispatch>(ENDPOINTS.auth.verifyPhoneResend, { verification_token }, { skipAuth: true, skipRefresh: true });
     return res.data;
   },
 

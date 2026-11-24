@@ -15,6 +15,7 @@ import {
 import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import { useParentProfile } from "@/hooks/useParentProfile";
 import { useParentChildren } from "@/hooks/useParentChildren";
+import { SupportContactPanel } from "@/components/layout/SupportContact";
 
 function fieldLabel(key: string) {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -47,6 +48,8 @@ export default function ParentProfilePage() {
             ) : undefined
           }
         />
+
+        <SupportContactPanel />
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -97,6 +100,8 @@ export default function ParentProfilePage() {
   return (
     <Div type="col" gap="lg" className="p-4 sm:p-6">
       <H1 className="text-2xl font-bold">Profile</H1>
+
+      <SupportContactPanel className="max-w-md" />
 
       <Div type="col" gap="xs" className="rounded-xl border border-border bg-card p-4">
         <P className="font-semibold">{activeChild?.student_name}</P>

@@ -1,14 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { REGEX } from '@/constants';
 import { unifiedLoginSchema, type UnifiedLoginFormValues } from '@/lib/validations/auth.validation';
 import { useAuth } from './useAuth';
 
 export function useLoginPage() {
   const { loginUnified, isLoading } = useAuth();
+  const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<UnifiedLoginFormValues>({
     mode: 'onTouched',
@@ -23,6 +24,7 @@ export function useLoginPage() {
   const isPhone = trimmedIdentifier.length > 0 && REGEX.digitsOnly.test(trimmedIdentifier);
 
   async function onSubmit(values: UnifiedLoginFormValues) {
+    setFormError(null);
     try {
       // Unified endpoint resolves company vs school users itself (by identifier),
       // and handles email OR phone for school users — see AuthService.loginUnified.
@@ -32,9 +34,9 @@ export function useLoginPage() {
         password: values.password,
       });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Login failed');
+      setFormError(err instanceof Error ? err.message : 'Login failed');
     }
   }
 
-  return { form, onSubmit, isLoading, isPhone };
+  return { form, onSubmit, isLoading, isPhone, formError };
 }

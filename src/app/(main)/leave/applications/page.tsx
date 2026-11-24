@@ -283,7 +283,7 @@ function LeaveApplicationsContent() {
         data={applications}
         isLoading={isLoading}
         emptyText={LEAVE_APPLICATION_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
       />
 
       {/* ─── Apply Leave Modal ────────────────────────────────────────── */}

@@ -38,23 +38,44 @@ export type UnifiedLoginFormValues = z.infer<typeof unifiedLoginSchema>;
 
 export const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-export const schoolSignupSchema = z.object({
-  school_name: z.string().min(1, 'School name is required'),
-  school_code: z.string().optional(),
-  board_type: z.string().optional(),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().optional(),
-  dial_code: z.string().default('+91'),
-  phone_number: z.string().regex(REGEX.phone, 'Enter a valid phone number'),
-  email: z
+const optionalPattern = (pattern: RegExp, message: string) =>
+  z
     .string()
     .optional()
-    .refine((v) => !v || REGEX.email.test(v), { message: 'Invalid email address' }),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(strongPasswordRegex, 'Password must include uppercase, lowercase, number and special character'),
-});
+    .refine((v) => !v || pattern.test(v.trim()), { message });
+
+export const schoolSignupSchema = z
+  .object({
+    school_name: z.string().trim().min(2, 'School name is required'),
+    board_type: z.string().optional(),
+    marking_system: z.string().optional(),
+    contact_number: optionalPattern(REGEX.phoneIn, 'Enter a valid 10-digit number'),
+    school_email: optionalPattern(REGEX.email, 'Invalid email address'),
+    website: optionalPattern(REGEX.url, 'Start with http:// or https://'),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    pincode: optionalPattern(REGEX.pincodeIn, 'Enter a valid 6-digit pincode'),
+    first_name: z.string().trim().min(1, 'First name is required'),
+    last_name: z.string().optional(),
+    dial_code: z.string().default('+91'),
+    phone_number: z.string().regex(REGEX.phoneIn, 'Enter a valid 10-digit mobile number'),
+    email: optionalPattern(REGEX.email, 'Invalid email address'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(strongPasswordRegex, 'Use uppercase, lowercase, a number and a special character (@$!%*?&)'),
+    confirm_password: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: 'Passwords do not match',
+    path: ['confirm_password'],
+  });
+
+export const SCHOOL_SIGNUP_STEP_FIELDS = {
+  school: ['school_name', 'board_type', 'marking_system', 'contact_number', 'school_email', 'website', 'address', 'city', 'state', 'pincode'],
+  admin: ['first_name', 'last_name', 'phone_number', 'email', 'password', 'confirm_password'],
+} as const;
 
 export const changePasswordSchema = z
   .object({

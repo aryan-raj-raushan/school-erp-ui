@@ -42,7 +42,7 @@ export function useReportCards(initialFilters: ReportCardFilters = {}) {
   }, [fetch]);
 
   function updateFilters(next: Partial<ReportCardFilters>) {
-    setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   // ── Generate modal form ───────────────────────────────────────────────────────

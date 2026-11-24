@@ -20,7 +20,7 @@ export function useAuditLog() {
   const [filters, setFilters] = useState<AuditLogFilterState>({ page: 1 });
 
   const updateFilters = useCallback((next: Partial<AuditLogFilterState>) => {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }, []);
 
   const fetch = useCallback(async () => {

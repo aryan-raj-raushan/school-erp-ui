@@ -89,7 +89,7 @@ export function useStaffsPage(initialFilters: StaffFilters = {}) {
   }
 
   function updateFilters(next: Partial<StaffFilters>) {
-    setFilters((prev) => ({ ...prev, ...next }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   function navigateToNew() {

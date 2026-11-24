@@ -14,6 +14,7 @@ import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { useNavItems } from "@/hooks/useNavItems";
 import { useSchoolLogo } from "@/hooks/useSchoolLogo";
 import { APP } from "@/constants";
+import { SupportContactPanel } from "./SupportContact";
 import type { NavItemConfig } from "@/types/layout/app-sidebar";
 
 const TINT = "color-mix(in srgb, var(--theme-gradient-from) 20%, transparent)";
@@ -214,6 +215,7 @@ export function MobileDrawer() {
         </nav>
 
         <div className="shrink-0 border-t border-border px-3 pt-3" style={{ paddingBottom: "calc(var(--sab, 0px) + 12px)" }}>
+          <SupportContactPanel className="mb-2" />
           <button
             type="button"
             onClick={() => {

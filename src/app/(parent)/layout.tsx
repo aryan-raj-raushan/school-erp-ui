@@ -12,6 +12,7 @@ import { useParentChildren } from "@/hooks/useParentChildren";
 import { Div, P, Button, ResponsiveSelect, PullToRefresh } from "@/components/ui";
 import { ParentTabBar } from "@/components/layout/ParentTabBar";
 import { ProfileConfirmGate } from "@/components/onboarding/ProfileConfirmGate";
+import { useProfileRefresh } from "@/hooks/useProfileRefresh";
 
 const ALL_STORAGE_KEYS = [
   STORAGE_KEYS.accessToken,
@@ -34,10 +35,15 @@ export default function ParentLayout({
   const { logout, isLoading: isLoggingOut } = useAuth();
   const { activeChild, activeStudentId, children: linkedChildren, hasMultipleChildren, switchTo, isSwitching } = useParentChildren();
 
+  const [storageReady, setStorageReady] = useState(false);
+  useProfileRefresh(storageReady);
+
   useEffect(() => {
     initAppStorage(ALL_STORAGE_KEYS).then(() => {
       if (!TokenStorage.isAuthenticated() || TokenStorage.getContext() !== AuthContext.PARENT) {
         router.replace(ROUTES.login);
+      } else {
+        setStorageReady(true);
       }
     });
   }, [router]);

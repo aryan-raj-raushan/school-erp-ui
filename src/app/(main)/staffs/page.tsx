@@ -302,7 +302,7 @@ function StaffsDesktop() {
         data={staffList}
         isLoading={isLoading}
         emptyText={STAFF_PAGE.empty}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
         fillViewport
       />
 

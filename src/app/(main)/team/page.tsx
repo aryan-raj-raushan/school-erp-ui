@@ -170,7 +170,7 @@ export default function TeamPage() {
         data={users}
         isLoading={isLoading}
         emptyText={TEAM_PAGE.empty}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
       />
       </>
       )}

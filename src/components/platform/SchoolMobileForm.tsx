@@ -2,7 +2,7 @@
 
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
-import { Building2, MapPin, Phone, ShieldUser } from "lucide-react";
+import { Building2, Headset, MapPin, Phone, ShieldUser } from "lucide-react";
 import {
   FieldRow,
   FormGroup,
@@ -51,6 +51,11 @@ export function SchoolMobileForm<T extends FieldValues>({
     { id: "basic", label: "School", fields: ["name", "board_type"].map(n) },
     { id: "contact", label: "Contact", fields: ["email", "dial_code", "contact_number", "website"].map(n) },
     { id: "location", label: "Location", fields: ["address", "city", "state", "pincode"].map(n) },
+    {
+      id: "support",
+      label: "Support",
+      fields: ["support_name", "support_dial_code", "support_phone", "support_email"].map(n),
+    },
     {
       id: "admin",
       label: "Admin",
@@ -174,6 +179,40 @@ export function SchoolMobileForm<T extends FieldValues>({
             <MobileTextField label={L.city} placeholder={P.city} {...register(n("city"))} />
             <MobileTextField label={L.state} placeholder={P.state} {...register(n("state"))} />
           </FieldRow>
+        </FormGroup>
+      </StepPanel>
+
+      <StepPanel id="support">
+        <StepHeader
+          icon={<Headset size={22} />}
+          title="Support contact"
+          description="Shown only to this school as their help line."
+        />
+        <FormGroup>
+          <MobileTextField
+            label="Support person / team name"
+            placeholder="e.g. Priya — Customer Success"
+            error={err("support_name")}
+            {...register(n("support_name"))}
+          />
+          <input type="hidden" {...register(n("support_dial_code"))} />
+          <MobileTextField
+            label="Support number"
+            type="tel"
+            inputMode="tel"
+            prefix={(form.watch(n("support_dial_code")) as string | undefined) || "+91"}
+            error={err("support_phone")}
+            {...register(n("support_phone"))}
+          />
+          <MobileTextField
+            label="Support email"
+            type="email"
+            inputMode="email"
+            autoCapitalize="none"
+            placeholder="help@yourcompany.com"
+            error={err("support_email")}
+            {...register(n("support_email"))}
+          />
         </FormGroup>
       </StepPanel>
 

@@ -41,7 +41,7 @@ export function useSchoolEvents(initialFilters: SchoolEventFilters = {}) {
         setFilters((prev) => ({ ...prev, search: val || undefined, page: 1 }));
       }, 400);
     } else {
-      setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+      setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
     }
   }
 

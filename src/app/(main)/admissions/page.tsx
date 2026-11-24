@@ -147,7 +147,7 @@ function AdmissionsDesktop() {
         data={enquiries}
         isLoading={isLoading}
         emptyText={ADMISSION_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
         fillViewport
       />
     </PageCol>

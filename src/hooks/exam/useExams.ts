@@ -79,7 +79,7 @@ export function useExams(initialFilters: ExamFilters = {}) {
   }, [fetch]);
 
   function updateFilters(next: Partial<ExamFilters>) {
-    setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+    setFilters((prev) => ({ ...prev, ...next, page: next.page ?? 1 }));
   }
 
   async function remove(id: string) {

@@ -177,7 +177,7 @@ function LeaveTypeContent() {
         data={leaveTypes}
         isLoading={isLoading}
         emptyText={LEAVE_TYPE_PAGE.table.noEntry}
-        pagination={pagination ?? undefined}
+        pagination={pagination ? { ...pagination, onPageChange: (page) => updateFilters({ page }) } : undefined}
       />
     </PageCol>
   );

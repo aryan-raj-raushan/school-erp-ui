@@ -63,11 +63,11 @@ export function H1({ color = 'default', className, ...props }: TypographyProps) 
   );
 }
 
-/** 32px bold page-level heading — use in PageHeader */
+/** 26px bold page-level heading — use in PageHeader */
 export function PageTitle({ color = 'default', className, ...props }: TypographyProps) {
   return (
     <h1
-      className={cn('text-2xl sm:text-[28px] md:text-[32px] font-bold tracking-tight leading-tight', colorMap[color], className)}
+      className={cn('text-2xl md:text-[26px] font-bold tracking-tight leading-tight', colorMap[color], className)}
       {...props}
     />
   );
@@ -150,8 +150,3 @@ export function CheckboxLabel({ className, ...props }: React.LabelHTMLAttributes
 }
 
 /** Auth left-panel headline — 26 px bold, centered, inherits panel CSS var override */
-export function PanelHeading({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return (
-    <h2 className={cn('auth-panel-headline', className)} {...props} />
-  );
-}
