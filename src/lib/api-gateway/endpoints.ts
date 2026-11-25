@@ -438,8 +438,6 @@ export const ENDPOINTS = {
     attendanceSummary: "/parent-portal/attendance/summary",
     attendanceHistory: "/parent-portal/attendance/history",
     feeBills: "/parent-portal/fees/bills",
-    feeRazorpayOrder: (billId: string) => `/parent-portal/fees/bills/${billId}/pay/razorpay-order`,
-    feeRazorpayVerify: (billId: string) => `/parent-portal/fees/bills/${billId}/pay/razorpay-verify`,
     feePaymentOptions: "/parent-portal/fees/payment-options",
     feeUpiPayments: "/parent-portal/fees/upi-payments",
     feeUpiIntent: (billId: string) => `/parent-portal/fees/bills/${billId}/pay/upi-intent`,

@@ -6,16 +6,12 @@ export interface PaymentCollectionSettings {
   online_payment_mode: OnlinePaymentMode;
   upi_id: string | null;
   upi_payee_name: string | null;
-  razorpay_key_id: string | null;
-  razorpay_key_secret_set: boolean;
 }
 
 export interface UpdatePaymentCollectionPayload {
   online_payment_mode: OnlinePaymentMode;
   upi_id?: string | null;
   upi_payee_name?: string | null;
-  razorpay_key_id?: string | null;
-  razorpay_key_secret?: string;
 }
 
 export type ClaimStatus = UpiPaymentClaim['status'];

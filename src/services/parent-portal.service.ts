@@ -33,7 +33,7 @@ export interface ParentFeeBill {
   fee_type_name?: string;
 }
 
-export type OnlinePaymentMode = 'DISABLED' | 'UPI_DIRECT' | 'RAZORPAY_SCHOOL';
+export type OnlinePaymentMode = 'DISABLED' | 'UPI_DIRECT';
 
 export interface FeePaymentOptions {
   mode: OnlinePaymentMode;
@@ -62,13 +62,6 @@ export interface UpiPaymentClaim {
   review_note: string | null;
   created_at: string;
   updated_at: string | null;
-}
-
-export interface RazorpayOrderResponse {
-  orderId: string;
-  amount: number;
-  currency: string;
-  keyId: string;
 }
 
 export interface ParentHomeworkItem {
@@ -171,19 +164,6 @@ export const ParentPortalService = {
 
   async confirmUpiPayment(billId: string, reference: string, utr: string): Promise<{ status: string }> {
     const res = await apiGateway.post<{ status: string }>(ENDPOINTS.parentPortal.feeUpiConfirm(billId), { reference, utr });
-    return res.data;
-  },
-
-  async createRazorpayOrder(billId: string): Promise<RazorpayOrderResponse> {
-    const res = await apiGateway.post<RazorpayOrderResponse>(ENDPOINTS.parentPortal.feeRazorpayOrder(billId), {});
-    return res.data;
-  },
-
-  async verifyRazorpayPayment(
-    billId: string,
-    payload: { razorpay_payment_id: string; razorpay_signature: string; razorpay_order_id: string },
-  ): Promise<{ status: string }> {
-    const res = await apiGateway.post<{ status: string }>(ENDPOINTS.parentPortal.feeRazorpayVerify(billId), payload);
     return res.data;
   },
 

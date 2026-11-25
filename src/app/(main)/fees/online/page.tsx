@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BadgeCheck, Ban, Mail, MessageCircle, QrCode, RefreshCw, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Ban, Mail, MessageCircle, QrCode, RefreshCw } from "lucide-react";
 import {
   Badge,
   Button,
@@ -181,12 +181,6 @@ const MODE_CARDS: { value: OnlinePaymentMode; title: string; text: string; icon:
     icon: QrCode,
   },
   {
-    value: "RAZORPAY_SCHOOL",
-    title: "School's own Razorpay",
-    text: "Your Razorpay account, your settlements. Payments are confirmed automatically.",
-    icon: ShieldCheck,
-  },
-  {
     value: "DISABLED",
     title: "Off",
     text: "Parents see fees but pay at the school office.",
@@ -198,13 +192,11 @@ function SettingsForm({ settings, vm }: { settings: PaymentCollectionSettings; v
   const [mode, setMode] = useState<OnlinePaymentMode>(settings.online_payment_mode);
   const [upiId, setUpiId] = useState(settings.upi_id ?? "");
   const [payeeName, setPayeeName] = useState(settings.upi_payee_name ?? "");
-  const [keyId, setKeyId] = useState(settings.razorpay_key_id ?? "");
-  const [keySecret, setKeySecret] = useState("");
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {MODE_CARDS.map(({ value, title, text, icon: Icon }) => (
             <button
               key={value}
@@ -234,34 +226,16 @@ function SettingsForm({ settings, vm }: { settings: PaymentCollectionSettings; v
           </div>
         )}
 
-        {mode === "RAZORPAY_SCHOOL" && (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <FormField label="Razorpay Key ID" required hint="Razorpay Dashboard → Account & Settings → API Keys">
-              <Input placeholder="rzp_live_xxxxxxxx" value={keyId} onChange={(e) => setKeyId(e.target.value.trim())} />
-            </FormField>
-            <FormField
-              label="Razorpay Key Secret"
-              required={!settings.razorpay_key_secret_set}
-              hint={settings.razorpay_key_secret_set ? "Saved — leave empty to keep it" : "Stored encrypted, never shown again"}
-            >
-              <Input type="password" autoComplete="off" value={keySecret} onChange={(e) => setKeySecret(e.target.value)} />
-            </FormField>
-          </div>
-        )}
-
         <div className="flex justify-end">
           <Button
             loading={vm.isSavingSettings}
-            onClick={async () => {
-              const saved = await vm.saveSettings({
+            onClick={() =>
+              void vm.saveSettings({
                 online_payment_mode: mode,
                 upi_id: upiId || null,
                 upi_payee_name: payeeName || null,
-                razorpay_key_id: keyId || null,
-                ...(keySecret && { razorpay_key_secret: keySecret }),
-              });
-              if (saved) setKeySecret("");
-            }}
+              })
+            }
           >
             Save settings
           </Button>
@@ -273,7 +247,7 @@ function SettingsForm({ settings, vm }: { settings: PaymentCollectionSettings; v
         <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
           <li>Always into the school&apos;s own bank account — the platform never holds fee money.</li>
           <li>UPI to a bank/merchant UPI ID has no transaction charges (zero MDR).</li>
-          <li>Razorpay payments settle to your Razorpay-linked account at Razorpay&apos;s rates; parents are shown UPI first.</li>
+          <li>Parents can always pay at the school office too.</li>
         </ul>
       </div>
     </div>
