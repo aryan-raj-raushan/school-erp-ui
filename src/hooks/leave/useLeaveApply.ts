@@ -6,6 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { LeaveApplicationService, LeaveAssignedService } from '@/services/emp-leave.service';
 import { StaffService } from '@/services/staff.service';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/constants/permissions.registry';
 import type { Staff } from '@/types';
 import type { EmployeeLeaveView, LeaveApplication } from '@/types/leave.types';
 import { LEAVE_APPLY_PAGE } from '@/constants/emp-leave.constants';
@@ -46,6 +48,7 @@ export function useLeaveApply() {
   });
 
   const applyMode = useWatch({ control: form.control, name: 'apply_mode' });
+  const canApplyForOthers = usePermissions().hasPermission(PERMISSIONS.leave.approve);
   const selectedAcademicYearId = useWatch({ control: form.control, name: 'academic_year_id' });
   const selectedLeaveTypeId = useWatch({ control: form.control, name: 'leave_type_id' });
   const startDate = useWatch({ control: form.control, name: 'start_date' });
@@ -201,6 +204,7 @@ export function useLeaveApply() {
   return {
     form,
     applyMode,
+    canApplyForOthers,
     effectiveEmployeeId,
     totalDays,
     currentLeaveBalance,

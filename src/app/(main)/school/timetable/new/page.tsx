@@ -60,7 +60,6 @@ function AutoGenerateForm() {
     return <Div type="col" align="center" justify="center" className="py-20"><Spinner /></Div>;
   }
 
-  const canGenerate = !!academicYearId && !!classId && !!schoolTimingId && mappings.length > 0;
 
   return (
     <PageCol>
@@ -156,7 +155,7 @@ function AutoGenerateForm() {
 
       <Div type="row" gap="md">
         <Button variant="outline" onClick={handleBack}>{SCHOOL_TIMETABLE_PAGE.form.cancel}</Button>
-        <Button onClick={generate} loading={isSubmitting} disabled={!canGenerate}>
+        <Button onClick={generate} loading={isSubmitting}>
           {SCHOOL_TIMETABLE_PAGE.autoGenerate.generateButton}
         </Button>
       </Div>

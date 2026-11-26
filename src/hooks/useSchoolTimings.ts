@@ -7,6 +7,7 @@ import { TIMINGS_PAGE } from '@/constants/school-settings.constants';
 import type { SchoolTiming, CreateSchoolTimingPayload, UpdateSchoolTimingPayload } from '@/types/school-settings.types';
 import { errorMessage } from '@/lib/api-error';
 import { confirmCreate } from '@/components/ui/confirm-dialog';
+import { missingFieldsMessage } from '@/lib/required-fields';
 
 const OPTIONAL_TIME_FIELDS = [
   'late_cutoff_time',
@@ -64,6 +65,18 @@ export function useSchoolTimings() {
   }, []);
 
   const create = useCallback(async (payload: CreateSchoolTimingPayload) => {
+    const missing = missingFieldsMessage(payload, {
+      name: 'Schedule name',
+      timing_type: 'Timing type',
+      school_start_time: 'Start time',
+      school_end_time: 'End time',
+      effective_from: 'Effective from',
+      effective_to: 'Effective to',
+    });
+    if (missing) {
+      toast.error(missing);
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (!(await confirmCreate(`timing schedule "${payload.name}"`))) return;

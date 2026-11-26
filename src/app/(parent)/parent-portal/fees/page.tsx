@@ -5,6 +5,7 @@ import { Receipt } from "lucide-react";
 import { useParentFees } from "@/hooks/useParentFees";
 import { UpiPaySheet } from "@/components/parent/UpiPaySheet";
 import type { ParentFeeBill } from "@/services/parent-portal.service";
+import { monthValueToLabel } from "@/constants/fee-payments.constants";
 
 function fmtRupees(v: string | number) {
   const n = typeof v === "string" ? parseFloat(v) : v;
@@ -20,7 +21,8 @@ const STATUS_VARIANT: Record<string, "success" | "warning" | "danger" | "default
 };
 
 function billLabel(bill: ParentFeeBill) {
-  return bill.fee_type_name ?? bill.bill_month ?? "Fee Bill";
+  const name = bill.fee_type_name ?? "Fee Bill";
+  return bill.bill_month ? `${name} · ${monthValueToLabel(bill.bill_month)}` : name;
 }
 
 export default function ParentFeesPage() {

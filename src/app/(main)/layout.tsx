@@ -104,7 +104,7 @@ export default function DashboardLayout({
             style={{ minHeight: "100%" }}
           >
             <ProfileConfirmGate>
-              <RouteGuard>{children}</RouteGuard>
+              <RouteGuard>{storageReady ? children : null}</RouteGuard>
             </ProfileConfirmGate>
           </div>
         </main>

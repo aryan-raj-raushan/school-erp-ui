@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const admissionSourceSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(200),
+  name: z.string().trim().min(1, 'Name is required').max(200),
   start_date: z.string().optional().or(z.literal('')),
   end_date: z.string().optional().or(z.literal('')),
   is_enabled: z.boolean().optional(),
@@ -16,7 +16,7 @@ export const admissionEnquirySchema = z.object({
   // Parent / Basic Info
   father_name: z.string().max(150).optional().or(z.literal('')),
   mother_name: z.string().max(150).optional().or(z.literal('')),
-  phone: z.string().min(7, 'Valid phone required').regex(/^\d+$/, 'Numbers only'),
+  phone: z.string().regex(/^[6-9]\d{9}$/, 'Enter a 10-digit mobile number starting with 6-9'),
   dial_code: z.string().min(1, 'Dial code required'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   father_occupation: z.string().max(100).optional().or(z.literal('')),
@@ -28,11 +28,16 @@ export const admissionEnquirySchema = z.object({
   country: z.string().max(100).optional().or(z.literal('')),
 
   // Student Info
-  student_name: z.string().min(1, 'Student name is required').max(200),
-  date_of_birth: z.string().optional().or(z.literal('')),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  religion: z.enum(['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKH', 'JAIN', 'BUDDHIST', 'OTHER']).optional(),
-  category: z.enum(['GENERAL', 'OBC', 'SC', 'ST', 'OTHER']).optional(),
+  student_name: z.string().trim().min(1, 'Student name is required').max(200),
+  date_of_birth: z
+    .string()
+    .optional()
+    .refine((v) => !v || v <= new Date().toLocaleDateString('en-CA'), {
+      message: 'Date of birth cannot be in the future',
+    }),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional().or(z.literal('')),
+  religion: z.enum(['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKH', 'JAIN', 'BUDDHIST', 'OTHER']).optional().or(z.literal('')),
+  category: z.enum(['GENERAL', 'OBC', 'SC', 'ST', 'OTHER']).optional().or(z.literal('')),
   student_current_address: z.string().optional().or(z.literal('')),
 
   // Admission Info
@@ -47,7 +52,7 @@ export const admissionEnquirySchema = z.object({
   next_followup_date: z.string().optional().or(z.literal('')),
   next_followup_time: z.string().optional().or(z.literal('')),
   enquiry_source_id: z.string().optional().or(z.literal('')),
-  remarks: z.string().min(1, 'Remarks are required'),
+  remarks: z.string().trim().min(1, 'Remarks are required'),
 
   // Status (for update only)
   status: z.enum(['NEW', 'FOLLOW_UP', 'ADMISSION_CONFIRMED', 'ONBOARDING_IN_PROGRESS', 'REJECTED']).optional(),

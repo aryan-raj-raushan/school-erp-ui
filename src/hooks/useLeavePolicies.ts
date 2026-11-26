@@ -6,6 +6,7 @@ import { LeavePoliciesService, type CreateLeavePolicyPayload } from '@/services/
 import { AcademicYearsService } from '@/services/academic-years.service';
 import type { LeavePolicy, LeaveType, AcademicYear } from '@/types';
 import { errorMessage } from '@/lib/api-error';
+import { missingFieldsMessage } from '@/lib/required-fields';
 
 export function useLeavePolicies() {
   const [policies, setPolicies] = useState<LeavePolicy[]>([]);
@@ -56,6 +57,11 @@ export function useLeavePolicies() {
   }, []);
 
   const submit = useCallback(async (payload: CreateLeavePolicyPayload) => {
+    const missing = missingFieldsMessage(payload, { name: 'Policy name', academic_year_id: 'Academic year' });
+    if (missing) {
+      toast.error(missing);
+      return;
+    }
     setIsSaving(true);
     try {
       if (editingPolicy) {

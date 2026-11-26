@@ -18,7 +18,7 @@ import { StudentsService } from '@/services/students.service';
 import { StudentsService as StudentProfilesService } from '@/services/students-v2.service';
 import type { Student } from '@/types';
 import type { StudentParent } from '@/types/students.types';
-import { type PaymentsTab } from '@/constants/fee-payments.constants';
+import { billBalanceDue, type PaymentsTab } from '@/constants/fee-payments.constants';
 import { errorMessage } from '@/lib/api-error';
 import { confirmCreate } from '@/components/ui/confirm-dialog';
 import { useSessionState } from './useSessionState';
@@ -272,7 +272,12 @@ export function useFeesPayments() {
       if (!(await confirmCreate('fee bills for the whole class'))) return;
       const res = await feeBillService.generateClass(payload);
       const created = (res as any).data?.created ?? 0;
-      toast.success(`${created} bills generated successfully`);
+      const skipped = (res as any).data?.skipped ?? 0;
+      toast.success(
+        skipped
+          ? `${created} bills generated, ${skipped} skipped (already billed)`
+          : `${created} bills generated successfully`,
+      );
     } catch (err) { toast.error(errorMessage(err, 'Failed to generate class bills')); }
   };
 
@@ -324,7 +329,12 @@ export function useFeesPayments() {
     try {
       const res = await feeBulkService.discount(payload);
       const applied = (res as any).data?.applied ?? 0;
-      toast.success(`Discount applied to ${applied} bills`);
+      const skipped = (res as any).data?.skipped ?? 0;
+      toast.success(
+        skipped
+          ? `Discount applied to ${applied} bills, ${skipped} skipped (already discounted or nothing due)`
+          : `Discount applied to ${applied} bills`,
+      );
     } catch (err) { toast.error(errorMessage(err, 'Failed to apply bulk discount')); }
   };
 
@@ -332,7 +342,12 @@ export function useFeesPayments() {
     try {
       const res = await feeBulkService.extra(payload);
       const created = (res as any).data?.created ?? 0;
-      toast.success(`${created} extra bills created`);
+      const skipped = (res as any).data?.skipped ?? 0;
+      toast.success(
+        skipped
+          ? `${created} extra bills created, ${skipped} skipped (already billed)`
+          : `${created} extra bills created`,
+      );
     } catch (err) { toast.error(errorMessage(err, 'Failed to apply bulk extra payment')); }
   };
 
@@ -397,8 +412,26 @@ export function useFeesPayments() {
   };
 
   // ─── Submit handlers ─────────────────────────────────────────────────────────
+  const payFormError = (maxDue: number): string | null => {
+    const amount = Number(payForm.amount);
+    if (!amount || amount <= 0) return 'Enter an amount greater than 0';
+    if (amount > maxDue + 0.001) {
+      return `Amount cannot be more than the due of ₹${maxDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+    if (!payForm.payment_date) return 'Choose the payment date';
+    if (payForm.payment_date > new Date().toLocaleDateString('en-CA')) {
+      return 'Payment date cannot be in the future';
+    }
+    return null;
+  };
+
   const handlePayBill = async () => {
     if (!payingBill || !selectedStudent) return;
+    const problem = payFormError(billBalanceDue(payingBill));
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
     await payBill(payingBill.id, payForm, () => {
       setPayingBill(null);
       fetchStudentData(selectedStudent, studentFilter.academic_year_id, regularPlanId, studentFilter.class_id);
@@ -422,6 +455,11 @@ export function useFeesPayments() {
 
   const handleMonthlyPay = async () => {
     if (!payingDue || !payingDue.bill_ids.length) return;
+    const problem = payFormError(parseFloat(payingDue.due_amount));
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
     await payBill(payingDue.bill_ids[0], payForm, () => {
       setPayingDue(null);
       fetchMonthlyDues(monthlyFilter);

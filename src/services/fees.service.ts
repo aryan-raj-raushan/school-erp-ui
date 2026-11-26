@@ -368,7 +368,7 @@ export const feeBillService = {
   create: (payload: CreateFeeBillPayload) =>
     apiGateway.post<{ data: FeeBill }>(ENDPOINTS.fees.bills, payload),
   generateClass: (payload: BulkCreateFeeBillPayload) =>
-    apiGateway.post<{ data: { created: number } }>(ENDPOINTS.fees.generateClass, payload),
+    apiGateway.post<{ data: { created: number; skipped: number } }>(ENDPOINTS.fees.generateClass, payload),
   generateForStudent: (payload: GenerateStudentBillsPayload) =>
     apiGateway.post<{ data: { created: number; skipped: number } }>(ENDPOINTS.fees.generateForStudent, payload),
   pay: (id: string, payload: CreateFeePaymentPayload) =>
@@ -386,9 +386,9 @@ export const monthlyDuesService = {
 
 export const feeBulkService = {
   discount: (payload: BulkDiscountPayload) =>
-    apiGateway.post<{ data: { applied: number } }>(ENDPOINTS.fees.bulkDiscount, payload),
+    apiGateway.post<{ data: { applied: number; skipped: number } }>(ENDPOINTS.fees.bulkDiscount, payload),
   extra: (payload: BulkExtraPayload) =>
-    apiGateway.post<{ data: { created: number } }>(ENDPOINTS.fees.bulkExtra, payload),
+    apiGateway.post<{ data: { created: number; skipped: number } }>(ENDPOINTS.fees.bulkExtra, payload),
 };
 
 export const demandReceiptService = {

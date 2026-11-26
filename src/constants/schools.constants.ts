@@ -1,4 +1,4 @@
-export const BOARD_TYPES = ['CBSE', 'ICSE', 'IB', 'STATE', 'NIOS'] as const;
+export const BOARD_TYPES = ['CBSE', 'ICSE', 'IB', 'IGCSE', 'STATE', 'NIOS'] as const;
 export type BoardType = (typeof BOARD_TYPES)[number];
 
 export const SCHOOLS_PAGE = {

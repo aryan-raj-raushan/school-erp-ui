@@ -48,6 +48,14 @@ const schema = z.object({
   send_notification: z.boolean().default(false),
   student_upload_allowed: z.boolean().default(false),
   description: z.string().optional(),
+}).superRefine((values, ctx) => {
+  if (values.homework_date && values.due_date && values.due_date < values.homework_date) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['due_date'],
+      message: 'Due date must be on or after the homework date',
+    });
+  }
 });
 
 export type EditHomeworkFormValues = z.infer<typeof schema>;

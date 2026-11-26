@@ -140,7 +140,18 @@ function AuditLogContent() {
   };
 
   const columns: ColumnDef<AuditLogRecord>[] = [
-    { header: 'Time', accessorKey: 'created_at' },
+    {
+      header: 'Time',
+      accessorKey: 'changed_at',
+      cell: ({ row }) => (
+        <span>
+          {new Date(row.original.changed_at).toLocaleString('en-IN', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })}
+        </span>
+      ),
+    },
     { header: 'Entity', accessorKey: 'entity' },
     { header: 'Entity ID', accessorKey: 'entity_id', cell: ({ row }) => <span>{row.original.entity_id.slice(0, 8)}…</span> },
     {
@@ -150,7 +161,11 @@ function AuditLogContent() {
         <Badge variant={ACTION_BADGE[row.original.action] ?? 'default'}>{row.original.action}</Badge>
       ),
     },
-    { header: 'Changed By', accessorKey: 'changed_by' },
+    {
+      header: 'Changed By',
+      accessorKey: 'changed_by',
+      cell: ({ row }) => <span>{row.original.changed_by_name ?? row.original.changed_by ?? '—'}</span>,
+    },
     { header: 'IP', accessorKey: 'ip_address' },
     {
       header: 'Changes',

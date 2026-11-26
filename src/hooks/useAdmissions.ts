@@ -375,6 +375,9 @@ export function useAdmissionEnquiryDetail(id?: string) {
         next_followup_date: values.next_followup_date || undefined,
         next_followup_time: values.next_followup_time || undefined,
         date_of_birth: values.date_of_birth || undefined,
+        gender: values.gender || undefined,
+        religion: values.religion || undefined,
+        category: values.category || undefined,
       };
       if (isNew) {
         const created = await AdmissionEnquiriesService.create(payload);
@@ -446,7 +449,13 @@ export function useAdmissionEnquiryDetail(id?: string) {
     classes,
     sources,
     teachers,
-    handleSubmit: form.handleSubmit(submit),
+    handleSubmit: () =>
+      new Promise<AdmissionEnquiry | null>((resolve) => {
+        void form.handleSubmit(
+          async (values) => resolve(await submit(values)),
+          () => resolve(null),
+        )();
+      }),
     isSubmitting: form.formState.isSubmitting,
     refetch: fetchEnquiry,
     showHistoryModal,

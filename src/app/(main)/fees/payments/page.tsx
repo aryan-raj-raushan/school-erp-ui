@@ -125,6 +125,9 @@ export default function FeePaymentsPage() {
     PAYMENT_MODES,
   } = useFeesPayments();
 
+  const receiptRangeReversed =
+    !!receiptFilter.month_from && !!receiptFilter.month_to && receiptFilter.month_from > receiptFilter.month_to;
+
   const { academicYears, classes } = useFeesSetup();
 
   // Bill columns with DataTable
@@ -150,6 +153,18 @@ export default function FeePaymentsPage() {
       accessorKey: 'fee_type_name',
       header: 'Fee Type',
       meta: { primary: true },
+    },
+    {
+      id: 'action',
+      header: 'Action',
+      cell: ({ row }) => {
+        const due = billBalanceDue(row.original as any);
+        return row.original.status !== 'PAID' && row.original.status !== 'WAIVED' && due > 0 ? (
+          <Button size="sm" onClick={() => openPayBillModal(row.original as any, due)}>
+            <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
+          </Button>
+        ) : null;
+      },
     },
     {
       accessorKey: 'frequency',
@@ -197,18 +212,6 @@ export default function FeePaymentsPage() {
             ₹{due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </P>
         );
-      },
-    },
-    {
-      id: 'action',
-      header: 'Action',
-      cell: ({ row }) => {
-        const due = billBalanceDue(row.original as any);
-        return row.original.status !== 'PAID' && row.original.status !== 'WAIVED' && due > 0 ? (
-          <Button size="sm" onClick={() => openPayBillModal(row.original as any, due)}>
-            <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
-          </Button>
-        ) : null;
       },
     },
   ], [expandedBillId, toggleBillPayments, openPayBillModal]);
@@ -647,10 +650,10 @@ export default function FeePaymentsPage() {
                 />
               </FormField>
               <FormField label="Month From" required>
-                <Input value={receiptFilter.month_from} onChange={e => setReceiptFilter(f => ({ ...f, month_from: e.target.value }))} placeholder="YYYY-MM e.g. 2026-04" />
+                <Input type="month" value={receiptFilter.month_from} onChange={e => setReceiptFilter(f => ({ ...f, month_from: e.target.value }))} />
               </FormField>
-              <FormField label="Month To" required>
-                <Input value={receiptFilter.month_to} onChange={e => setReceiptFilter(f => ({ ...f, month_to: e.target.value }))} placeholder="YYYY-MM e.g. 2026-09" />
+              <FormField label="Month To" required error={receiptRangeReversed ? "Month To cannot be before Month From" : undefined}>
+                <Input type="month" value={receiptFilter.month_to} onChange={e => setReceiptFilter(f => ({ ...f, month_to: e.target.value }))} />
               </FormField>
             </Div>
             <Div type="row" justify="end" gap="sm" padding="mt-4">
@@ -661,7 +664,7 @@ export default function FeePaymentsPage() {
               )}
               <Button
                 onClick={() => fetchDemandReceipt(receiptFilter)}
-                disabled={!receiptFilter.academic_year_id || !receiptFilter.class_id || !receiptFilter.month_from || !receiptFilter.month_to || loadingDemandReceipt}
+                disabled={!receiptFilter.academic_year_id || !receiptFilter.class_id || !receiptFilter.month_from || !receiptFilter.month_to || receiptRangeReversed || loadingDemandReceipt}
               >
                 {loadingDemandReceipt ? <Spinner /> : <><FileText size={14} className="mr-1" />Generate</>}
               </Button>

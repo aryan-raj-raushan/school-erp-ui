@@ -17,6 +17,18 @@ import { errorMessage } from '@/lib/api-error';
 
 const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/;
 
+const checkTimesAndMarks = (
+  value: { start_time: string; end_time: string; exam_marks: number; passing_marks: number },
+  ctx: z.RefinementCtx,
+) => {
+  if (value.start_time && value.end_time && value.end_time <= value.start_time) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["end_time"], message: "End time must be after start time" });
+  }
+  if (value.passing_marks > value.exam_marks) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["passing_marks"], message: "Passing marks cannot be more than max marks" });
+  }
+};
+
 const subScheduleSchema = z.object({
   subject_type: z.enum([
     "MAIN_EXAM",
@@ -32,7 +44,7 @@ const subScheduleSchema = z.object({
   passing_marks: z.coerce.number().int().min(0),
   exam_invigilator_id: z.string().optional(),
   hall_detail_id: z.string().optional(),
-});
+}).superRefine(checkTimesAndMarks);
 
 const scheduleItemSchema = z.object({
   subject_id: z.string().uuid("Select a subject"),
@@ -54,7 +66,7 @@ const scheduleItemSchema = z.object({
   hall_detail_id: z.string().optional(),
   sub_subject_enabled: z.boolean().optional(),
   sub_schedules: z.array(subScheduleSchema).optional(),
-});
+}).superRefine(checkTimesAndMarks);
 
 export const scheduleFormSchema = z.object({
   exam_id: z.string().uuid("Select an exam"),
@@ -264,7 +276,7 @@ const singleScheduleSchema = z.object({
   passing_marks: z.coerce.number().int().min(0),
   hall_detail_id: z.string().optional(),
   sub_subject_enabled: z.boolean().optional(),
-});
+}).superRefine(checkTimesAndMarks);
 
 export type SingleScheduleInput = z.input<typeof singleScheduleSchema>;
 export type SingleScheduleValues = z.infer<typeof singleScheduleSchema>;

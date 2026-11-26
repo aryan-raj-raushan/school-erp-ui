@@ -144,8 +144,12 @@ export function SchoolProfileMobileForm({
           <MobileTextField
             label="UDISE code"
             placeholder="27050101101"
+            inputMode="numeric"
+            maxLength={11}
             value={form.udise_code ?? ""}
+            error={errors.udise_code}
             onChange={(e) => updateField("udise_code", e.target.value)}
+            onBlur={() => touchField("udise_code")}
           />
           <MobileTextField
             label="Affiliation number"
@@ -211,7 +215,9 @@ export function SchoolProfileMobileForm({
             placeholder="10-digit mobile number"
             value={form.contact_number ?? ""}
             error={errors.contact_number}
-            onChange={(e) => updateField("contact_number", e.target.value)}
+            inputMode="numeric"
+            maxLength={10}
+            onChange={(e) => updateField("contact_number", e.target.value.replace(/\D/g, "").slice(0, 10))}
             onBlur={() => touchField("contact_number")}
           />
           <MobileTextField

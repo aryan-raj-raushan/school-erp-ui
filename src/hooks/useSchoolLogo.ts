@@ -4,13 +4,15 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { useSchoolBrandStore } from '@/store/school.store';
 import { SchoolProfileService } from '@/services/school-profile.service';
+import { AuthContext } from '@/types';
 
 export function useSchoolLogo() {
   const { brand, setBrand } = useSchoolBrandStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const context = useAuthStore((s) => s.context);
 
   useEffect(() => {
-    if (brand || !isAuthenticated) return;
+    if (brand || !isAuthenticated || context !== AuthContext.SCHOOL) return;
     SchoolProfileService.get()
       .then((data) =>
         setBrand({
@@ -21,7 +23,7 @@ export function useSchoolLogo() {
         }),
       )
       .catch(() => {});
-  }, [brand, isAuthenticated, setBrand]);
+  }, [brand, isAuthenticated, context, setBrand]);
 
   return brand;
 }

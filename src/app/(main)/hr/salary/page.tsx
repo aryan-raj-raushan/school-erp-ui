@@ -1013,7 +1013,7 @@ export default function SalaryManagementPage() {
                   {financeAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name} (₹
-                      {parseFloat(a.current_balance).toLocaleString()})
+                      {parseFloat(a.current_balance).toLocaleString('en-IN')})
                     </option>
                   ))}
                 </Select>

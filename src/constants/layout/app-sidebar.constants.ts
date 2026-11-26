@@ -491,7 +491,7 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
       {
         title: "Leave Assigned",
         url: "/leave/assigned",
-        permissions: [PERMISSIONS.leave.view],
+        permissions: [PERMISSIONS.leave.approve],
       },
       {
         title: "Leave Apply",
@@ -581,11 +581,13 @@ export const SCHOOL_NAV_MAIN: NavItemConfig[] = [
     title: "Smart Attendance",
     url: "/rfid-setup",
     icon: Wifi,
+    permissions: [PERMISSIONS.staff.update],
   },
   {
     title: "Invoices",
     url: "/invoices",
     icon: Receipt,
+    permissions: [PERMISSIONS.settings.update],
   },
 ];
 

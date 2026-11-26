@@ -267,7 +267,10 @@ export default function RfidInventoryPage() {
             <Div className="px-4 py-4">
               <Div type="col" gap="md">
                 <FormField label={CREATE_DEVICE_FORM.labels.device_identifier} error={createForm.formState.errors.device_identifier?.message}>
-                  <Input placeholder={CREATE_DEVICE_FORM.placeholders.device_identifier} {...createForm.register('device_identifier', { required: true })} />
+                  <Input placeholder={CREATE_DEVICE_FORM.placeholders.device_identifier} {...createForm.register('device_identifier', {
+                    required: 'Device identifier is required',
+                    validate: (v) => v.trim().length > 0 || 'Device identifier is required',
+                  })} />
                 </FormField>
                 <FormField label={CREATE_DEVICE_FORM.labels.device_model}>
                   <Input placeholder={CREATE_DEVICE_FORM.placeholders.device_model} {...createForm.register('device_model')} />
@@ -343,7 +346,7 @@ export default function RfidInventoryPage() {
               <Div type="col" gap="md">
                 <FormField label={ASSIGN_DEVICE_FORM.labels.school} error={assignForm.formState.errors.school_id?.message}>
                   <ResponsiveSelect
-                    {...assignForm.register('school_id', { required: true })}
+                    {...assignForm.register('school_id', { required: 'Select a school' })}
                     customPlaceholder="Select school"
                     options={assignableSchoolOptions}
                   />

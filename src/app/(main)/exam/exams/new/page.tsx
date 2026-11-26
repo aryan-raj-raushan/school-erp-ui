@@ -102,7 +102,6 @@ function AutoGenerateExamForm() {
     isLoadingMappings,
     totalSubjectCount,
     classesMissingMapping,
-    canGenerate,
     isSubmitting,
     conflicts,
     generate,
@@ -314,7 +313,7 @@ function AutoGenerateExamForm() {
 
       <Div type="row" gap="md" className="pt-2">
         <Button variant="outline" onClick={handleBack}>Cancel</Button>
-        <Button onClick={generate} loading={isSubmitting} disabled={!canGenerate}>
+        <Button onClick={generate} loading={isSubmitting}>
           Auto Create Exam
         </Button>
       </Div>

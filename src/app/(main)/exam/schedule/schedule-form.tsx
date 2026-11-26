@@ -236,7 +236,7 @@ export function ScheduleFormContent() {
                 />
               </FormField>
 
-              <FormField label={SCHEDULE_PAGE.labels.passingMarks + " *"}>
+              <FormField label={SCHEDULE_PAGE.labels.passingMarks + " *"} error={errors.passing_marks?.message}>
                 <Input
                   {...register("passing_marks")}
                   type="number"

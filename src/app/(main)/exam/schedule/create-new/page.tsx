@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, BookOpen, Wand2 } from "lucide-react";
-import { useFieldArray, Controller } from "react-hook-form";
+import { useFieldArray, useFormState, Controller } from "react-hook-form";
 import { useExamScheduleForm } from "@/hooks/exam/useExamSchedule";
 import { useAcademicClassSection } from "@/hooks/useAcademicClassSection";
 import { useExams } from "@/hooks/exam/useExams";
@@ -36,6 +36,8 @@ function SubScheduleRows({ nestIndex, control, register, isReadOnly }: any) {
     control,
     name: `schedules.${nestIndex}.sub_schedules`,
   });
+  const { errors } = useFormState({ control, name: `schedules.${nestIndex}.sub_schedules` });
+  const subErrors = (errors.schedules as any)?.[nestIndex]?.sub_schedules;
 
   return (
     <Div type="col" gap="sm" className="pl-4 border-l-2 border-border mt-3">
@@ -66,13 +68,13 @@ function SubScheduleRows({ nestIndex, control, register, isReadOnly }: any) {
             <FormField label="Start Time">
               <Input {...register(`schedules.${nestIndex}.sub_schedules.${si}.start_time`)} type="time" disabled={isReadOnly} />
             </FormField>
-            <FormField label="End Time">
+            <FormField label="End Time" error={subErrors?.[si]?.end_time?.message}>
               <Input {...register(`schedules.${nestIndex}.sub_schedules.${si}.end_time`)} type="time" disabled={isReadOnly} />
             </FormField>
             <FormField label="Max Marks">
               <Input {...register(`schedules.${nestIndex}.sub_schedules.${si}.exam_marks`)} type="number" min={0} disabled={isReadOnly} />
             </FormField>
-            <FormField label="Pass Marks">
+            <FormField label="Pass Marks" error={subErrors?.[si]?.passing_marks?.message}>
               <Input {...register(`schedules.${nestIndex}.sub_schedules.${si}.passing_marks`)} type="number" min={0} disabled={isReadOnly} />
             </FormField>
           </Div>
@@ -336,7 +338,11 @@ function ScheduleCreateDesktop() {
                   />
                 </FormField>
 
-                <FormField label={SCHEDULE_PAGE.labels.exam + " *"} error={errors.exam_id?.message}>
+                <FormField
+                  label={SCHEDULE_PAGE.labels.exam + " *"}
+                  error={errors.exam_id?.message}
+                  hint={canLoadSubjects ? undefined : "Select the academic year and class first"}
+                >
                   <Select {...register("exam_id")} disabled={!canLoadSubjects}>
                     <option value="">Select exam</option>
                     {deduplicatedExams.map((e) => (
@@ -434,7 +440,7 @@ function ScheduleCreateDesktop() {
                           <FormField label={SCHEDULE_PAGE.labels.examMarks + " *"}>
                             <Input {...register(`schedules.${i}.exam_marks`)} type="number" min={0} />
                           </FormField>
-                          <FormField label={SCHEDULE_PAGE.labels.passingMarks + " *"}>
+                          <FormField label={SCHEDULE_PAGE.labels.passingMarks + " *"} error={(errors.schedules?.[i] as any)?.passing_marks?.message}>
                             <Input {...register(`schedules.${i}.passing_marks`)} type="number" min={0} />
                           </FormField>
                           <FormField label={SCHEDULE_PAGE.labels.room}>

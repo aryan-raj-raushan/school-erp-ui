@@ -151,12 +151,14 @@ export function LeaveApplyMobile({ state }: { state: LeaveApplyState }) {
         <h1 className="text-xl font-bold">{PAGE.pageHeading.title}</h1>
 
         <FormGroup title="Who is this for?">
-          <ControlledChoiceChips
-            control={control}
-            name="apply_mode"
-            label="Applying"
-            options={MODE_OPTIONS}
-          />
+          {state.canApplyForOthers && (
+            <ControlledChoiceChips
+              control={control}
+              name="apply_mode"
+              label="Applying"
+              options={MODE_OPTIONS}
+            />
+          )}
           {state.applyMode === "behalf" && (
             <div data-invalid={errors.employee_id ? "true" : undefined}>
               <button

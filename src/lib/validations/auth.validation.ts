@@ -36,7 +36,7 @@ export type SchoolLoginFormValues = z.infer<typeof schoolLoginSchema>;
 export type ParentLoginFormValues = z.infer<typeof parentLoginSchema>;
 export type UnifiedLoginFormValues = z.infer<typeof unifiedLoginSchema>;
 
-export const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+export const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,72}$/;
 
 const optionalPattern = (pattern: RegExp, message: string) =>
   z

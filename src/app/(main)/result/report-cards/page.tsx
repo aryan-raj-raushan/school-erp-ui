@@ -370,7 +370,7 @@ function ReportCardsContent() {
         type: 'select',
         key: 'exam_id',
         label: 'Exam',
-        placeholder: 'All Exams',
+        placeholder: selectedClassId ? 'All Exams' : 'Choose a class first',
         options: exams.map((e) => ({
           value: e.id,
           label: `${e.exam_name} — ${EXAM_TERM_LABELS[e.exam_term] ?? e.exam_term}`,

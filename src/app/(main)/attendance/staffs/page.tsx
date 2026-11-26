@@ -95,9 +95,11 @@ export default function StaffAttendancePage() {
         type: "custom",
         key: "date",
         label: "Date",
-        chipLabel: date ? formatDate(date) : undefined,
+        chipLabel: date
+          ? `${formatDate(date)}${new Date(`${date}T00:00:00`).getDay() === 0 ? " (Sunday)" : ""}`
+          : undefined,
         render: () => (
-          <DatePicker value={date} onChange={handleDateChange} size="compact" className="w-40" />
+          <DatePicker value={date} onChange={handleDateChange} maxDate={new Date()} size="compact" className="w-40" />
         ),
       },
     ],

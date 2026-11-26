@@ -87,7 +87,7 @@ function LeaveApplyContent() {
                 {PAGE.sections.selectEmployee}
               </H2>
 
-              {/* Mode toggle */}
+              {leaveApply.canApplyForOthers && (
               <Div type="row" gap="sm">
                 <Button
                   type="button"
@@ -116,6 +116,7 @@ function LeaveApplyContent() {
                   {PAGE.labels.onBehalf}
                 </Button>
               </Div>
+              )}
 
               {/* Employee picker (only shown in behalf mode) */}
               {applyMode === "behalf" && (

@@ -38,6 +38,8 @@ function validateField(key: SchoolProfileField, form: UpdateSchoolProfilePayload
       return value && !REGEX.phoneIn.test(String(value)) ? 'Enter a 10-digit mobile number starting with 6-9' : undefined;
     case 'website':
       return value && !WEBSITE_PATTERN.test(String(value)) ? 'Enter a valid website, e.g. school.edu.in' : undefined;
+    case 'udise_code':
+      return value && !/^\d{11}$/.test(String(value)) ? 'UDISE code must be exactly 11 digits' : undefined;
     case 'pincode':
       return value && !REGEX.pincodeIn.test(String(value)) ? 'Pincode must be 6 digits and cannot start with 0' : undefined;
     case 'established_year':
@@ -52,6 +54,7 @@ function validateField(key: SchoolProfileField, form: UpdateSchoolProfilePayload
 
 const VALIDATED_FIELDS: SchoolProfileField[] = [
   'name',
+  'udise_code',
   'email',
   'contact_number',
   'website',

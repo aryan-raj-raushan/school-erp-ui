@@ -53,6 +53,10 @@ export function useGatePass() {
   const handleSubmit = useCallback(async () => {
     setAttemptedSubmit(true);
     if (!studentId || !reason || !exitTime || !returnTime) return;
+    if (returnTime <= exitTime) {
+      toast.error('Return time must be after exit time');
+      return;
+    }
     const payload: CreateGatePassPayload = {
       student_id: studentId,
       date: formDate,

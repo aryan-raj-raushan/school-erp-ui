@@ -104,10 +104,14 @@ export default function SchoolProfilePage() {
             <FormField label={SCHOOL_PROFILE_PAGE.fields.code}>
               <Input value={school?.code ?? ''} disabled readOnly />
             </FormField>
-            <FormField label={SCHOOL_PROFILE_PAGE.fields.udise_code}>
+            <FormField label={SCHOOL_PROFILE_PAGE.fields.udise_code} error={errors.udise_code}>
               <Input
                 value={form.udise_code ?? ''}
+                error={errors.udise_code}
+                inputMode="numeric"
+                maxLength={11}
                 onChange={(e) => updateField('udise_code', e.target.value)}
+                onBlur={() => touchField('udise_code')}
                 placeholder="27050101101"
               />
             </FormField>

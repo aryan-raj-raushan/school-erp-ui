@@ -44,6 +44,7 @@ export const BOARD_TYPE_OPTIONS = [
   { value: 'STATE', label: 'State Board' },
   { value: 'IB', label: 'IB' },
   { value: 'IGCSE', label: 'IGCSE' },
+  { value: 'NIOS', label: 'NIOS' },
 ] as const;
 
 export const MARKING_SYSTEM_OPTIONS = [

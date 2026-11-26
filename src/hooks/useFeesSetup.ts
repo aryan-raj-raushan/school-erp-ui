@@ -211,22 +211,30 @@ export function useFeesSetup() {
   const builderTotal = builderItems.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
 
   // Fee type actions
-  const createFeeType = async (payload: CreateFeeTypePayload) => {
+  const createFeeType = async (payload: CreateFeeTypePayload): Promise<boolean> => {
     try {
       await feeTypeService.create(payload);
       toast.success('Fee type created');
       if (payload.fee_category === 'Transport') fetchTransportFeeTypes();
       else fetchClassFeeTypes();
-    } catch (err) { toast.error(errorMessage(err, 'Failed to create fee type')); }
+      return true;
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to create fee type'));
+      return false;
+    }
   };
 
-  const updateFeeType = async (id: string, payload: UpdateFeeTypePayload) => {
+  const updateFeeType = async (id: string, payload: UpdateFeeTypePayload): Promise<boolean> => {
     try {
       await feeTypeService.update(id, payload);
       toast.success('Fee type updated');
       fetchClassFeeTypes();
       fetchTransportFeeTypes();
-    } catch (err) { toast.error(errorMessage(err, 'Failed to update fee type')); }
+      return true;
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to update fee type'));
+      return false;
+    }
   };
 
   const deleteFeeType = async (id: string) => {
@@ -331,8 +339,16 @@ export function useFeesSetup() {
 
   const handleSaveFeeType = async () => {
     const { id, ...payload } = feeTypeForm;
-    if (id) await updateFeeType(id, payload);
-    else await createFeeType(payload);
+    if (!payload.name?.trim()) {
+      toast.error('Fee type name is required');
+      return;
+    }
+    if (payload.frequency === 'Monthly' && !payload.applicable_months?.length) {
+      toast.error('Select at least one month for a monthly fee');
+      return;
+    }
+    const saved = id ? await updateFeeType(id, payload) : await createFeeType(payload);
+    if (!saved) return;
     setShowFeeTypeModal(false);
     setFeeTypeForm(EMPTY_FEE_TYPE);
   };

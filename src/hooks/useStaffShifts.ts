@@ -8,6 +8,7 @@ import { STAFF_SHIFTS_PAGE } from '@/constants/staff-shifts.constants';
 import type { StaffShift, CreateStaffShiftPayload, UpdateStaffShiftPayload } from '@/types/staff-shifts.types';
 import type { Staff } from '@/types';
 import { errorMessage } from '@/lib/api-error';
+import { missingFieldsMessage } from '@/lib/required-fields';
 
 export function useStaffShifts() {
   const [shifts, setShifts] = useState<StaffShift[]>([]);
@@ -61,6 +62,19 @@ export function useStaffShifts() {
   }, []);
 
   const create = useCallback(async (payload: CreateStaffShiftPayload) => {
+    const missing = missingFieldsMessage(payload, {
+      staff_id: 'Staff member',
+      shift_name: 'Shift name',
+      shift_type: 'Shift type',
+      shift_start: 'Start time',
+      shift_end: 'End time',
+      effective_from: 'Effective from',
+      effective_to: 'Effective to',
+    });
+    if (missing) {
+      toast.error(missing);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const created = await StaffShiftsService.create(payload);

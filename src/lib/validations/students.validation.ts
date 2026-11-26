@@ -107,7 +107,12 @@ export const studentFormSchema = z.object({
   // Basic Info
   first_name: requiredNameSchema(100),
   last_name: optionalNameSchema(100),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  date_of_birth: z
+    .string()
+    .min(1, 'Date of birth is required')
+    .refine((v) => v < new Date().toLocaleDateString('en-CA'), {
+      message: 'Date of birth must be in the past',
+    }),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Gender is required' }),
   blood_group: z.enum([
     'A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE',
@@ -119,8 +124,18 @@ export const studentFormSchema = z.object({
   nationality: z.string().max(50).optional(),
   aadhaar_number: optionalAadhaarSchema,
   id_card_number: z.string().max(50).optional(),
-  height_cm: z.string().optional(),
-  weight_kg: z.string().optional(),
+  height_cm: z
+    .string()
+    .optional()
+    .refine((v) => !v || (Number(v) >= 30 && Number(v) <= 250), {
+      message: 'Height must be between 30 and 250 cm',
+    }),
+  weight_kg: z
+    .string()
+    .optional()
+    .refine((v) => !v || (Number(v) >= 2 && Number(v) <= 200), {
+      message: 'Weight must be between 2 and 200 kg',
+    }),
   profile_image: z.string().url('Invalid URL').optional().or(z.literal('')),
   dial_code: optionalDialCodeSchema,
   phone_number: optionalIndianPhoneSchema,

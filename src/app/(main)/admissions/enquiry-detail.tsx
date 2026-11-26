@@ -176,8 +176,8 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
   );
 
   async function onFormSubmit() {
-    await handleSubmit();
-    if (isNew) router.push(ADMISSION_ROUTES.list);
+    const saved = await handleSubmit();
+    if (saved && isNew) router.push(ADMISSION_ROUTES.list);
   }
 
   if (isLoading || viewportIsMobile === undefined) {
@@ -506,7 +506,13 @@ export function AdmissionEnquiryDetail({ id }: { id: string }) {
 
       {/* Create / Edit Form */}
       {(isEditing || isNew) && (
-        <form id="enquiry-form" onSubmit={form.handleSubmit(onFormSubmit as any)}>
+        <form
+          id="enquiry-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onFormSubmit();
+          }}
+        >
           <Div type="col" gap="md">
             {/* Section: Parent Info */}
             <Div

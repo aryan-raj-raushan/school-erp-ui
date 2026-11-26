@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Div, H1, H2, P, Badge, Button, Input, Spinner, EmptyState, FieldRow, MobileTextField } from "@/components/ui";
 import { useIsMobileSync } from "@/hooks/useIsMobileSync";
 import { CalendarOff } from "lucide-react";
+import { toast } from "sonner";
 import { useParentLeave } from "@/hooks/useParentLeave";
 
 const STATUS_VARIANT: Record<string, "success" | "warning" | "danger" | "default"> = {
@@ -21,7 +22,18 @@ export default function ParentLeavePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fromDate || !toDate || !reason.trim()) return;
+    if (!fromDate || !toDate) {
+      toast.error("Choose the From and To dates");
+      return;
+    }
+    if (toDate < fromDate) {
+      toast.error("To date must be on or after From date");
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error("Reason is required");
+      return;
+    }
     const ok = await apply({ from_date: fromDate, to_date: toDate, reason });
     if (ok) {
       setFromDate("");
@@ -54,10 +66,10 @@ export default function ParentLeavePage() {
       <Div type="col" gap="sm" className="rounded-xl border border-border bg-card p-4">
         <H2 className="text-sm font-semibold">Apply for Leave</H2>
         {isMobile ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
             <FieldRow>
               <MobileTextField label="From" type="date" required value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-              <MobileTextField label="To" type="date" required value={toDate} onChange={(e) => setToDate(e.target.value)} />
+              <MobileTextField label="To" type="date" required min={fromDate || undefined} value={toDate} onChange={(e) => setToDate(e.target.value)} />
             </FieldRow>
             <MobileTextField label="Reason" required placeholder="Reason for leave" value={reason} onChange={(e) => setReason(e.target.value)} />
             <Button type="submit" size="lg" loading={isApplying}>
@@ -65,10 +77,10 @@ export default function ParentLeavePage() {
             </Button>
           </form>
         ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <Div type="row" gap="sm" className="flex-col sm:flex-row">
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} required />
-            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} required />
+            <Input type="date" min={fromDate || undefined} value={toDate} onChange={(e) => setToDate(e.target.value)} required />
           </Div>
           <Input placeholder="Reason for leave" value={reason} onChange={(e) => setReason(e.target.value)} required />
           <Button type="submit" loading={isApplying} className="self-start">

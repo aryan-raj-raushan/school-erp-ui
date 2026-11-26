@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import { StudentsService } from "@/services/students.service";
 import { useExams } from "./useExams";
 import { useHallDetails } from "./useExamHall";
@@ -15,7 +16,8 @@ interface UseAutoAssignPanelProps {
 
 export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseAutoAssignPanelProps) {
   const { exams } = useExams(academicYearId ? { academic_year_id: academicYearId } : {});
-  const { details: rooms } = useHallDetails();
+  const { details: halls } = useHallDetails();
+  const rooms = useMemo(() => halls.filter((h) => h.is_enabled), [halls]);
   const { isAssigning, result, shuffle, reset } = useAutoShufflePlan();
 
   const [selectedExamId, setSelectedExamId] = useState("");
@@ -87,7 +89,22 @@ export function useAutoAssignPanel({ academicYearId, classes, onComplete }: UseA
   }
 
   async function handleShuffle() {
-    if (!selectedExamId) return;
+    if (!selectedExamId) {
+      toast.error("Select an exam first");
+      return;
+    }
+    if (selectedClassIds.length === 0) {
+      toast.error("Select at least one class");
+      return;
+    }
+    if (selectedRoomIds.length === 0) {
+      toast.error("Select at least one room");
+      return;
+    }
+    if (capacityShortfall > 0) {
+      toast.error(`Need ${capacityShortfall} more seat${capacityShortfall !== 1 ? "s" : ""} — select more rooms`);
+      return;
+    }
     await shuffle(selectedExamId, selectedClassIds, academicYearId, selectedRoomIds, clearExisting);
     onComplete();
   }

@@ -237,7 +237,6 @@ function AutoAssignPanel({
             type="button"
             size="sm"
             loading={isAssigning}
-            disabled={!selectedExamId || selectedClassIds.length === 0 || selectedRoomIds.length === 0 || capacityShortfall > 0}
             onClick={handleShuffle}
           >
             <Shuffle size={13} />

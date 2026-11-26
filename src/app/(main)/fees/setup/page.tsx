@@ -653,7 +653,7 @@ export default function FeeSetupPage() {
         </Div>
         <Div type="row" className="flex justify-end gap-2 px-4 py-3 border-t border-border/30">
           <Button variant="secondary" onClick={() => setShowFeeTypeModal(false)}>Cancel</Button>
-          <Button onClick={handleSaveFeeType} disabled={!feeTypeForm.name}>{feeTypeForm.id ? 'Update' : 'Create'}</Button>
+          <Button onClick={handleSaveFeeType}>{feeTypeForm.id ? 'Update' : 'Create'}</Button>
         </Div>
       </ResponsiveModalContainer>
 

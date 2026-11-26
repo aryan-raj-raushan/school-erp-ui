@@ -72,12 +72,12 @@ export default function ParentLayout({
               {APP.name} · Parent Portal
             </P>
             <P className="font-semibold truncate" style={{ color: "var(--theme-active-text)" }}>
-              {activeChild?.student_name ?? "—"}
+              {(storageReady && activeChild?.student_name) || "—"}
             </P>
           </Div>
 
           <Div type="row" align="center" gap="sm" className="shrink-0">
-            {hasMultipleChildren && (
+            {storageReady && hasMultipleChildren && (
               <ResponsiveSelect
                 width="sm"
                 value={activeStudentId ?? ""}
@@ -105,7 +105,7 @@ export default function ParentLayout({
       <main className="flex-1 overflow-y-auto">
         <PullToRefresh onRefresh={refreshPage}>
           <div key={refreshKey}>
-            <ProfileConfirmGate>{children}</ProfileConfirmGate>
+            <ProfileConfirmGate>{storageReady ? children : null}</ProfileConfirmGate>
           </div>
         </PullToRefresh>
       </main>

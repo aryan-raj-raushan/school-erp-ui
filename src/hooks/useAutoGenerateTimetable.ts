@@ -31,6 +31,9 @@ export interface AutoGeneratePreview {
   periodDurationMinutes: number;
 }
 
+const DEFAULT_PERIOD_MINUTES = 45;
+const MAX_PERIODS = 20;
+
 export function useAutoGenerateTimetable() {
   const router = useRouter();
   const { years, currentYear } = useAcademicYears();
@@ -97,27 +100,28 @@ export function useAutoGenerateTimetable() {
         const totalMinutes = timeToMinutes(selectedTiming.school_end_time) - timeToMinutes(selectedTiming.school_start_time);
         const lunchMinutes = lunchAfterPeriod && lunchDurationMinutes ? Number(lunchDurationMinutes) : 0;
         const teachingMinutes = totalMinutes - lunchMinutes;
-        const periodCount = mappings.length;
+        const periodDurationMinutes = selectedTiming.period_duration_minutes || DEFAULT_PERIOD_MINUTES;
+        const periodCount = Math.max(0, Math.min(MAX_PERIODS, Math.floor(teachingMinutes / periodDurationMinutes)));
         return {
           totalMinutes,
           totalLabel: formatDuration(totalMinutes),
           lunchMinutes,
           teachingMinutes,
           periodCount,
-          periodDurationMinutes: periodCount > 0 ? teachingMinutes / periodCount : 0,
+          periodDurationMinutes,
         };
       })()
     : null;
 
   async function generate() {
-    if (!academicYearId || !classId || !schoolTimingId) {
-      toast.error('Select academic year, class and timing profile');
+    if (!name.trim() || !academicYearId || !classId || !schoolTimingId) {
+      toast.error('Enter a timetable name and select academic year, class and timing profile');
       return;
     }
     setIsSubmitting(true);
     try {
       const result = await TimetableService.autoGenerate({
-        name: name || undefined,
+        name: name.trim(),
         academic_year_id: academicYearId,
         class_id: classId,
         school_timing_id: schoolTimingId,

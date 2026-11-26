@@ -4,7 +4,12 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/constants';
-import { getRequiredPermissionsForPath, selectNavMain } from '@/lib/route-permissions';
+import {
+  getRequiredPermissionsForPath,
+  isCompanyOnlyPath,
+  selectNavMain,
+} from '@/lib/route-permissions';
+import { AuthContext } from '@/types';
 
 /**
  * Route-level permission enforcement. Until now, a lacking permission only
@@ -24,6 +29,10 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isAuthenticated || pathname === ROUTES.unauthorized) return;
 
+    if (context !== AuthContext.COMPANY && isCompanyOnlyPath(pathname)) {
+      router.replace(ROUTES.unauthorized);
+      return;
+    }
     const navMain = selectNavMain(user, context);
     const required = getRequiredPermissionsForPath(pathname, navMain);
     if (required && required.length > 0 && !required.some((p) => permissions.includes(p))) {

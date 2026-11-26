@@ -40,7 +40,7 @@ import {
 } from "@/components/student/id-cards";
 import { StudentCardMobile } from "@/components/student/StudentCardMobile";
 import { useIsMobileReady } from "@/hooks/useIsMobileReady";
-import { exportCardsAsZip, waitForPaint } from "@/lib/card-export";
+import { exportCardAsPng, exportCardsAsZip, waitForPaint } from "@/lib/card-export";
 import { errorMessage } from "@/lib/api-error";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -113,6 +113,19 @@ function GenerateDesktop() {
   function handlePrint() {
     setPrintTarget("single");
     window.print();
+  }
+
+  async function handleDownload() {
+    if (!printRef.current) return;
+    const name =
+      cardMode === "student"
+        ? `${idCardData?.first_name ?? "student"}-id-card`
+        : `${pickupCardData?.student?.first_name ?? "student"}-pickup-card`;
+    try {
+      if (!(await exportCardAsPng(printRef.current, name))) toast.error("Could not create the card image");
+    } catch {
+      toast.error("Could not create the card image");
+    }
   }
 
   const selectedClassName = classes.find((c) => c.id === selectedClassId)?.name ?? "";
@@ -387,7 +400,7 @@ function GenerateDesktop() {
                 <Printer size={14} />
                 {STUDENT_PAGE.buttons.printCard}
               </Button>
-              <Button size="sm" onClick={handlePrint} disabled={!hasData} className="flex-1 sm:flex-none">
+              <Button size="sm" onClick={handleDownload} disabled={!hasData} className="flex-1 sm:flex-none">
                 <Download size={14} />
                 {STUDENT_PAGE.buttons.downloadCard}
               </Button>
@@ -442,14 +455,14 @@ function GenerateDesktop() {
             // NOTE: kept as a raw <div> intentionally — it carries `ref={printRef}`
             // for window.print(), and the shared <Div> primitive does not forward refs.
             <ScaleToFit width={LAYOUT_DIMS[CARD_THEMES[selectedTemplate].layout].w}>
-              <Div id="card-print-area" ref={printRef} className="mx-auto">
+              <div id="card-print-area" ref={printRef} className="mx-auto">
                 <CardPreview
                   template={selectedTemplate}
                   mode={cardMode}
                   idCardData={idCardData}
                   pickupCardData={pickupCardData}
                 />
-              </Div>
+              </div>
             </ScaleToFit>
           )}
         </Div>

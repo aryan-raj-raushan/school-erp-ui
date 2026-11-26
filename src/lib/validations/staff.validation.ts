@@ -7,6 +7,7 @@ import {
   optionalEmailSchema,
 } from './common.validation';
 import { SALUTATIONS } from '@/constants/person.constants';
+import { strongPasswordRegex } from './auth.validation';
 
 export const staffBaseSchema = z.object({
   salutation: z.enum(SALUTATIONS).optional().or(z.literal('')),
@@ -17,7 +18,12 @@ export const staffBaseSchema = z.object({
   email: optionalEmailSchema,
   role: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Gender is required' }),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  date_of_birth: z
+    .string()
+    .min(1, 'Date of birth is required')
+    .refine((v) => v < new Date().toLocaleDateString('en-CA'), {
+      message: 'Date of birth must be in the past',
+    }),
   blood_group: z.enum(['A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE', 'O_POSITIVE', 'O_NEGATIVE']).optional().or(z.literal('')),
   address: z.string().optional(),
   permanent_address: z.string().optional(),
@@ -39,10 +45,29 @@ export const staffBaseSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-const optionalPassword = z.string().min(6, 'Min 6 characters').optional().or(z.literal(''));
+const optionalPassword = z
+  .string()
+  .refine((v) => v === '' || strongPasswordRegex.test(v), {
+    message: 'Use 8+ characters with uppercase, lowercase, a number and a special character (@$!%*?&)',
+  })
+  .optional();
 
-export const createStaffSchema = staffBaseSchema.extend({ password: optionalPassword });
+function joiningAfterBirth(values: { date_of_birth?: string; joining_date?: string }, ctx: z.RefinementCtx) {
+  if (values.joining_date && values.date_of_birth && values.joining_date <= values.date_of_birth) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['joining_date'],
+      message: 'Joining date must be after date of birth',
+    });
+  }
+}
 
-export const updateStaffSchema = staffBaseSchema.extend({ password: optionalPassword });
+export const createStaffSchema = staffBaseSchema
+  .extend({ password: optionalPassword })
+  .superRefine(joiningAfterBirth);
+
+export const updateStaffSchema = staffBaseSchema
+  .extend({ password: optionalPassword })
+  .superRefine(joiningAfterBirth);
 
 export type StaffFormValues = z.infer<typeof updateStaffSchema>;

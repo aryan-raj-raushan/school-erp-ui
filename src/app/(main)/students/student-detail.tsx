@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
+import type { UseFormRegisterReturn } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { useClassSections } from "@/hooks/useClassSections";
@@ -164,6 +166,29 @@ export function StudentDetail({ id }: { id: string }) {
     watchedAcademicYearId ?? "",
     watchedClassId ?? "",
   );
+
+  useEffect(() => {
+    const yearId = form.getValues("academic_info.academic_year_id");
+    if (yearId && years.some((y) => y.id === yearId)) {
+      setValue("academic_info.academic_year_id", yearId);
+    } else if (isNew && currentYear) {
+      setValue("academic_info.academic_year_id", currentYear.id);
+    }
+  }, [years, currentYear, isNew, form, setValue]);
+
+  useEffect(() => {
+    const classId = form.getValues("academic_info.class_id");
+    if (classId && classes.some((c) => c.id === classId)) {
+      setValue("academic_info.class_id", classId);
+    }
+  }, [classes, form, setValue]);
+
+  useEffect(() => {
+    const sectionId = form.getValues("academic_info.section_id");
+    if (sectionId && sections.some((s) => s.id === sectionId)) {
+      setValue("academic_info.section_id", sectionId);
+    }
+  }, [sections, form, setValue]);
 
   useScrollToFirstError(
     form.formState.submitCount,
@@ -464,7 +489,7 @@ export function StudentDetail({ id }: { id: string }) {
                     error={errors.aadhaar_number?.message}
                   >
                     <Input
-                      {...register("aadhaar_number")}
+                      {...digitsOnly(register("aadhaar_number"))}
                       placeholder="12-digit aadhaar"
                       maxLength={12}
                       disabled={isReadOnly}
@@ -480,18 +505,22 @@ export function StudentDetail({ id }: { id: string }) {
                       className="bg-muted cursor-not-allowed"
                     />
                   </FormField>
-                  <FormField label={STUDENT_PAGE.labels.height}>
+                  <FormField label={STUDENT_PAGE.labels.height} error={errors.height_cm?.message}>
                     <Input
                       {...register("height_cm")}
                       type="number"
+                      min={30}
+                      max={250}
                       placeholder="e.g. 160"
                       disabled={isReadOnly}
                     />
                   </FormField>
-                  <FormField label={STUDENT_PAGE.labels.weight}>
+                  <FormField label={STUDENT_PAGE.labels.weight} error={errors.weight_kg?.message}>
                     <Input
                       {...register("weight_kg")}
                       type="number"
+                      min={2}
+                      max={200}
                       placeholder="e.g. 55"
                       disabled={isReadOnly}
                     />
@@ -925,7 +954,7 @@ export function StudentDetail({ id }: { id: string }) {
                         error={errors.parents?.[index]?.aadhaar_number?.message}
                       >
                         <Input
-                          {...register(`parents.${index}.aadhaar_number`)}
+                          {...digitsOnly(register(`parents.${index}.aadhaar_number`))}
                           placeholder="12-digit aadhaar"
                           maxLength={12}
                           disabled={isReadOnly}
@@ -1168,4 +1197,15 @@ export function StudentDetail({ id }: { id: string }) {
       </Div>
     </PageCol>
   );
+}
+
+function digitsOnly(props: UseFormRegisterReturn) {
+  return {
+    ...props,
+    inputMode: "numeric" as const,
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      e.target.value = e.target.value.replace(/\D/g, "");
+      return props.onChange(e);
+    },
+  };
 }

@@ -43,10 +43,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </TooltipProvider>
         </ThemeProvider>
         <Toaster
-          position="top-right"
+          position="bottom-right"
           richColors
-          offset={{ top: "calc(var(--sat, 0px) + 16px)", right: 16 }}
-          mobileOffset={{ top: "calc(var(--sat, 0px) + 12px)", right: 12, left: 12 }}
+          offset={{ bottom: "calc(var(--sab, 0px) + 16px)", right: 16 }}
+          mobileOffset={{ bottom: "calc(var(--sab, 0px) + 76px)", right: 12, left: 12 }}
         />
       </body>
     </html>

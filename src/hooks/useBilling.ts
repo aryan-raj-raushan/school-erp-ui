@@ -107,6 +107,10 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
   }
 
   async function handleGenerateSubmit(values: GenerateInvoiceFormValues) {
+    if (!values.subscription_id) {
+      toast.error('Select a subscription');
+      return;
+    }
     const validExtraItems = extraItems.filter((item) => item.description.trim() && item.amount > 0);
     const payload: CreateInvoicePayload = {
       subscription_id: values.subscription_id,
@@ -145,6 +149,14 @@ export function useBilling(initialFilters: InvoiceFilters = {}) {
   }, [chargeForm, fetchSchoolInvoices]);
 
   async function handleChargeSubmit(values: OneTimeChargeFormValues) {
+    if (!(Number(values.amount) > 0)) {
+      toast.error('Amount must be more than 0');
+      return;
+    }
+    if (values.quantity !== undefined && !Number.isNaN(values.quantity) && !(Number.isInteger(values.quantity) && values.quantity >= 1)) {
+      toast.error('Quantity must be a whole number of 1 or more');
+      return;
+    }
     try {
       const quantity = values.quantity && values.quantity > 0 ? Number(values.quantity) : 1;
       if (values.target_invoice_id) {

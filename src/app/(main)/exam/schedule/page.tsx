@@ -95,7 +95,15 @@ function ScheduleContent() {
   const [bulkHallId, setBulkHallId] = useState("");
 
   useEffect(() => {
-    StaffService.list({ limit: 200 }).then((r) => setStaff(r.items)).catch(() => {});
+    const loadAllStaff = async () => {
+      const all: Staff[] = [];
+      for (let page = 1; ; page++) {
+        const { items } = await StaffService.list({ limit: STAFF_PAGE_SIZE, page });
+        all.push(...items);
+        if (items.length < STAFF_PAGE_SIZE) return all;
+      }
+    };
+    loadAllStaff().then(setStaff).catch(() => {});
   }, []);
 
   const {
@@ -458,6 +466,8 @@ function ScheduleContent() {
     </PageCol>
   );
 }
+
+const STAFF_PAGE_SIZE = 100;
 
 export default function SchedulePage() {
   return (

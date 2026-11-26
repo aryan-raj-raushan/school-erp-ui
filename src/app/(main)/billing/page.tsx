@@ -442,7 +442,7 @@ export default function BillingPage() {
               <Div type="col" gap="md">
                 <FormField label={BILLING_PAGE.generateForm.subscription} error={generateForm.formState.errors.subscription_id?.message}>
                   <ResponsiveSelect
-                    {...generateForm.register('subscription_id', { required: true })}
+                    {...generateForm.register('subscription_id', { required: 'Select a subscription' })}
                     customPlaceholder="Select subscription"
                     options={activeSubscriptions.map((s) => ({
                       value: s.id,
@@ -508,14 +508,14 @@ export default function BillingPage() {
               <Div type="col" gap="md">
                 <FormField label={BILLING_PAGE.chargeForm.school} error={chargeForm.formState.errors.school_id?.message}>
                   <ResponsiveSelect
-                    {...chargeForm.register('school_id', { required: true })}
+                    {...chargeForm.register('school_id', { required: 'Select a school' })}
                     customPlaceholder="Select school"
                     options={schools.map((s) => ({ value: s.id, label: s.name }))}
                   />
                 </FormField>
                 <FormField label={BILLING_PAGE.chargeForm.chargeType} error={chargeForm.formState.errors.charge_type?.message}>
                   <ResponsiveSelect
-                    {...chargeForm.register('charge_type', { required: true })}
+                    {...chargeForm.register('charge_type', { required: 'Select a charge type' })}
                     customPlaceholder="Select charge type"
                     options={ONE_TIME_CHARGE_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
                   />
@@ -525,15 +525,22 @@ export default function BillingPage() {
                 </FormField>
                 <Div type="row" gap="sm">
                   <FormField label={BILLING_PAGE.chargeForm.amount} error={chargeForm.formState.errors.amount?.message}>
-                    <Input type="number" {...chargeForm.register('amount', { required: true, valueAsNumber: true })} />
+                    <Input type="number" {...chargeForm.register('amount', {
+                        required: 'Enter an amount',
+                        valueAsNumber: true,
+                        validate: (v) => v > 0 || 'Amount must be more than 0',
+                      })} />
                   </FormField>
-                  <FormField label={BILLING_PAGE.chargeForm.quantity}>
+                  <FormField label={BILLING_PAGE.chargeForm.quantity} error={chargeForm.formState.errors.quantity?.message}>
                     <Input
                       type="number"
                       width="sm"
                       min={1}
                       defaultValue={1}
-                      {...chargeForm.register('quantity', { valueAsNumber: true, min: 1 })}
+                      {...chargeForm.register('quantity', {
+                        valueAsNumber: true,
+                        validate: (v) => v === undefined || Number.isNaN(v) || (Number.isInteger(v) && v >= 1) || 'Quantity must be a whole number of 1 or more',
+                      })}
                     />
                   </FormField>
                 </Div>

@@ -118,8 +118,19 @@ export function useAutoGenerateExam() {
 
   async function generate() {
     if (!canGenerate) {
+      const missing = [
+        !academicYearId && "academic year",
+        classIds.length === 0 && "at least one class",
+        !examName && "exam name",
+        !startDate && "start date",
+        !endDate && "end date",
+      ].filter(Boolean);
       toast.error(
-        startDateError || endDateError || "Fill in academic year, class(es), exam name and date range",
+        startDateError ||
+          endDateError ||
+          (missing.length ? `Please fill in: ${missing.join(", ")}` : null) ||
+          (autoAssignSeating && seatingHallIds.length === 0 && "Pick at least one exam hall for seating") ||
+          "None of the selected classes have subjects mapped to teachers yet",
       );
       return;
     }

@@ -25,6 +25,24 @@ export function selectNavMain(
   return SUPER_ADMIN_NAV_MAIN;
 }
 
+function navUrls(navMain: NavItemConfig[]): string[] {
+  return navMain
+    .flatMap((item) => (item.items?.length ? item.items.map((sub) => sub.url) : [item.url]))
+    .filter((url) => url && url !== '#');
+}
+
+function matchesAny(pathname: string, urls: string[]): boolean {
+  return urls.some((url) => pathname === url || pathname.startsWith(`${url}/`));
+}
+
+const COMPANY_NAVS = [SUPER_ADMIN_NAV_MAIN, SALES_NAV_MAIN, OPERATOR_NAV_MAIN, CUSTOM_ROLE_NAV_MAIN];
+
+export function isCompanyOnlyPath(pathname: string): boolean {
+  const schoolUrls = navUrls(SCHOOL_NAV_MAIN);
+  const companyUrls = COMPANY_NAVS.flatMap(navUrls).filter((url) => !schoolUrls.includes(url));
+  return matchesAny(pathname, companyUrls) && !matchesAny(pathname, schoolUrls);
+}
+
 /**
  * Looks up which permissions (if any) a given pathname requires, based on
  * the same nav config that drives sidebar visibility. Returns undefined for

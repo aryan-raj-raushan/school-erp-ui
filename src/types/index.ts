@@ -1160,9 +1160,10 @@ export interface AuditLogRecord {
   entity_id: string;
   action: AuditAction;
   changed_by: string;
+  changed_by_name: string | null;
   ip_address: string | null;
   old_value: Record<string, unknown> | null;
   new_value: Record<string, unknown> | null;
-  created_at: string;
+  changed_at: string;
 }
 

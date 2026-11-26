@@ -12,6 +12,13 @@ export function waitForPaint(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 }
 
+export async function exportCardAsPng(node: HTMLElement, fileName: string): Promise<boolean> {
+  const blob = await toBlob(node, { pixelRatio: PRINT_PIXEL_RATIO, cacheBust: false, backgroundColor: "#ffffff" });
+  if (!blob) return false;
+  saveBlob(blob, `${safeFileName(fileName)}.png`);
+  return true;
+}
+
 export async function exportCardsAsZip(
   cards: Array<{ node: HTMLElement; fileName: string }>,
   zipName: string,
